@@ -1,0 +1,124 @@
+@font-face { 
+    font-family: Muli; 
+    src: url('fonts/Muli-Regular.ttf'); 
+} 
+
+@font-face {
+    font-family: PWStrokes;
+    src: url('fonts/PWStrokes.ttf');
+}
+
+* {
+    font-family: Muli
+}
+body {
+    background-color: #1E1E1E;
+    background-size: cover no-repeat center; 
+    color:white;
+}
+
+nav {
+    position: fixed;
+    left: 80%;
+    top: 10px;
+    word-spacing: 10px;
+    font-size: 18px;
+}
+
+a:active, a:visited, a:link {
+    text-decoration: none;
+    color: white;
+}
+
+a:hover {
+    
+    text-decoration: overline;
+    color:black;
+}
+
+.profile {
+    margin: 0px 0;
+    float: left;
+}
+
+#sidebar {
+    padding: 30px 30px 10px 30px;
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    border-right: 1px solid white;
+    height: 100%;
+    width: 20%;
+    border-radius: 0px;
+}
+
+.userpic img {
+    margin: 0 auto;
+    height: 250px;
+    -webkit-border-radius: 50% !important;
+    -moz-border-radius: 50% !important;
+    border-radius: 50% !important;
+    border: 2px solid white;
+}
+
+.name {
+    color: #5a7391;
+    font-size: 23px;
+    font-weight: 600;
+
+    text-align: center;
+    padding-top: 10px;
+}
+
+.job {
+    color: #5b9bd1;
+    text-transform: uppercase;
+    font-size: 18px;
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 15px;
+    height: 50px;
+}
+
+.buttons a {
+    margin-top: 10px;
+    color: black;
+    
+}
+
+.buttons a:hover {
+    background-color: #1E1E1E;
+    text-shadow: 2px 2px 5px #1E1E1E;
+}
+
+.content {
+        position: fixed;
+        top: 75px;
+        left: 25%;
+        padding: 20px;
+        min-height: 460px;
+        font-family: PWStrokes;
+        font-size: 100px;
+}
+
+.cv {
+    position: fixed;
+    bottom: 5px;
+    left: 12px;
+    width: 350px;
+    background-color: 	#1E1E1E; 
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+.cv:hover {
+    background-color: white;
+    color: black;
+}
