@@ -6,6 +6,12 @@
         <meta name="author" content="Kieran Wadforth">
         <title>Kieran Wadforth</title>
 
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/octicons/2.0.2/octicons.min.css">
+        <link rel="stylesheet" href="github-activity-0.1.5.min.css">
+
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.2/mustache.min.js"></script>
+    <script type="text/javascript" src="github-activity-0.1.5.min.js"></script>
+
         <!-- Core Jquery -->
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="crossorigin="anonymous"></script>
 
@@ -87,12 +93,26 @@
                     </div>
                     <button type="button" class="cv">Curriculum Vitae</button>
                 </div>
+
+
                 <div class="col-md-9">
                     <div class="content">
                         developer.<br>
                         front-end.
+                    </div>
+                    <p>
 
-                        <script language="JavaScript" src="http://feed2js.org//feed2js.php?src=https%3A%2F%2Fgithub.com%2Fwadforth.atom&chan=y&utf=y&html=a"  charset="UTF-8" type="text/javascript"></script>
+                        <!-- Dropdown Button Containing RSS Feed To GitHub-->
+                    <button class="collapsegithub" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                        <span>GitHub Latest Activity</span>
+                        <i class="fas fa-caret-down bounce"></i>
+                            </button>
+                          </p>
+                          <div class="collapse" id="collapseExample">
+                            <div class="card card-body">
+                                    <script language="JavaScript" src="http://feed2js.org//feed2js.php?src=https%3A%2F%2Fgithub.com%2Fwadforth.atom&num=3&desc=1&utf=y"  charset="UTF-8" type="text/javascript"></script>
+                            </div>
+                          </div>           
                     </div>
                 </div>
             </div>    

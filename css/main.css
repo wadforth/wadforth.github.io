@@ -8,6 +8,7 @@
     src: url('fonts/PWStrokes.ttf');
 }
 
+
 * {
     font-family: Muli
 }
@@ -19,10 +20,10 @@ body {
 
 nav {
     position: fixed;
-    left: 80%;
+    left: 74%;
     top: 10px;
     word-spacing: 10px;
-    font-size: 18px;
+    font-size: 24px;
 }
 
 a:active, a:visited, a:link {
@@ -93,8 +94,8 @@ a:hover {
 
 .content {
         position: fixed;
-        top: 75px;
-        left: 25%;
+        top: 150px;
+        left: 45%;
         padding: 20px;
         min-height: 460px;
         font-family: PWStrokes;
@@ -122,3 +123,84 @@ a:hover {
     background-color: white;
     color: black;
 }
+
+#github {
+    position: fixed;
+    bottom: 0px;
+    font-size: 20px;
+    color: black;
+    padding: 60px;
+    list-style-type: none;
+    background-color:#EEEEEE; 
+    width: 100%;
+}
+
+.collapsegithub {
+    position: relative;
+    width: 200px;
+    top: 500px;
+    left:600px;
+    background-color: transparent;
+    border: 0px;
+
+}
+
+.card {
+    position: relative;
+    top: 550px;
+    left: 450px;
+}
+
+span:after,
+span:before{
+    content:"\00a0\00a0\00a0\00a0\00a0";
+    text-decoration:line-through;
+}
+
+/* Animation To Arrow In GitHub Activity Drop Down Start */
+.bounce {
+    display: inline-block;
+    position: relative;
+    -moz-animation: bounce 0.5s infinite linear;
+    -o-animation: bounce 0.5s infinite linear;
+    -webkit-animation: bounce 0.5s infinite linear;
+    animation: bounce 0.5s infinite linear;
+    colr:000;
+  }
+
+  @-webkit-keyframes bounce {
+      0% { top: 0; }
+      50% { top: -0.2em; }
+      70% { top: -0.3em; }
+      100% { top: 0; }
+  }
+
+  @-moz-keyframes bounce {
+      0% { top: 0; }
+      50% { top: -0.2em; }
+      70% { top: -0.3em; }
+      100% { top: 0; }
+  }
+
+  @-o-keyframes bounce {
+      0% { top: 0; }
+      50% { top: -0.2em; }
+      70% { top: -0.3em; }
+      100% { top: 0; }
+  }
+
+  @-ms-keyframes bounce {
+      0% { top: 0; }
+      50% { top: -0.2em; }
+      70% { top: -0.3em; }
+      100% { top: 0; }
+  }
+
+  @keyframes bounce {
+      0% { top: 0; }
+      50% { top: -0.2em; }
+      70% { top: -0.3em; }
+      100% { top: 0; }
+  }
+
+  /*Animation End*/
