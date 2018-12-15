@@ -6,12 +6,6 @@
         <meta name="author" content="Kieran Wadforth">
         <title>Kieran Wadforth</title>
 
-        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/octicons/2.0.2/octicons.min.css">
-        <link rel="stylesheet" href="github-activity-0.1.5.min.css">
-
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/0.7.2/mustache.min.js"></script>
-    <script type="text/javascript" src="github-activity-0.1.5.min.js"></script>
-
         <!-- Core Jquery -->
         <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="crossorigin="anonymous"></script>
 
@@ -22,15 +16,13 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
         
         <!-- Core Style For Website-->
-        <link rel="stylesheet" type="text/css" href="css/main.css">
+        <link rel="stylesheet" type="text/css" href="css/index.css">
 
         <!-- Social Media Glyicons Addon To Bootstrap-->
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
-        
     </head>
 
     <body>
-
         <!-- Navigation Bar -->
         <nav class="navbar navbar-expand navbar-dark bg-dark">
             <div class="nav navbar-nav">
@@ -45,11 +37,13 @@
         <div class="container">
             <div class="row profile">
                 <div class="jumbotron" id='sidebar'>
+                    
                     <!-- Avatar Start -->
                     <div class="userpic">
                         <img src="img/avatar.png" class="img-responsive" alt="avatar">
                     </div>
                     <!-- Avatar End -->
+
                     <!-- Bio Start -->
                     <div class="bio">
                         <div class ="name">
@@ -60,6 +54,7 @@
                         </div>
                     </div>
                     <!-- Bio End -->
+
                     <!-- Buttons Start -->
                     <div class="buttons">
                         <ul class="nav">
@@ -89,11 +84,10 @@
                                 @howmadstha</a>
                             </li>
                         </ul>
-                        <!-- Buttons End -->
                     </div>
                     <button type="button" class="cv">Curriculum Vitae</button>
                 </div>
-
+                <!-- Buttons End -->
 
                 <div class="col-md-9">
                     <div class="content">
@@ -102,12 +96,12 @@
                     </div>
                     <p>
 
-                        <!-- Dropdown Button Containing RSS Feed To GitHub-->
+                    <!-- Dropdown Button Containing RSS Feed To GitHub-->
                     <button class="collapsegithub" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                        <span>GitHub Latest Activity</span>
+                        <span>GitHub Latest Activity</span> <a href="#" data-toggle="tooltip" data-placement="right" title="Activity not displaying? This is due to your browser not being able to load 'unsafe scripts', you should get a popup in URL bar. Script is safe, all its doing is loading RSS feed from GitHub and converting to JS."> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-question" ></i></a>
                         <i class="fas fa-caret-down bounce"></i>
                             </button>
-                          </p>
+                        </p>
                           <div class="collapse" id="collapseExample">
                             <div class="card card-body">
                                     <script language="JavaScript" src="http://feed2js.org//feed2js.php?src=https%3A%2F%2Fgithub.com%2Fwadforth.atom&num=3&desc=1&utf=y"  charset="UTF-8" type="text/javascript"></script>
@@ -117,5 +111,8 @@
                 </div>
             </div>    
         </div>
+
+       <!-- Main JavaScript -->
+        <script src="js/index.js"></script>
     </body>
 </html>

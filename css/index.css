@@ -19,22 +19,23 @@ body {
 }
 
 nav {
-    position: fixed;
+    position: absolute;
     left: 74%;
     top: 10px;
     word-spacing: 10px;
-    font-size: 24px;
+    font-size: 20px;
+    background-color:#EEEEEE; 
+    color:#1E1E1E;
+    padding: 10px 5px 0 60px;
 }
 
 a:active, a:visited, a:link {
     text-decoration: none;
-    color: white;
+    color: #1E1E1E;
 }
 
 a:hover {
-    
-    text-decoration: overline;
-    color:black;
+    color:#53a7ea;
 }
 
 .profile {
@@ -59,7 +60,7 @@ a:hover {
     -webkit-border-radius: 50% !important;
     -moz-border-radius: 50% !important;
     border-radius: 50% !important;
-    border: 2px solid white;
+    border: 2px solid black;
 }
 
 .name {
@@ -94,8 +95,8 @@ a:hover {
 
 .content {
         position: fixed;
-        top: 150px;
-        left: 45%;
+        top: 20%;
+        left: 43%;
         padding: 20px;
         min-height: 460px;
         font-family: PWStrokes;
@@ -136,19 +137,19 @@ a:hover {
 }
 
 .collapsegithub {
-    position: relative;
-    width: 200px;
-    top: 500px;
-    left:600px;
+    position: fixed;
+    width: 230px;
+    top: 60%;
+    left:50%;
     background-color: transparent;
     border: 0px;
 
 }
 
 .card {
-    position: relative;
-    top: 550px;
-    left: 450px;
+    position: fixed;
+    top: 70%;
+    left: 35%;
 }
 
 span:after,
@@ -165,7 +166,7 @@ span:before{
     -o-animation: bounce 0.5s infinite linear;
     -webkit-animation: bounce 0.5s infinite linear;
     animation: bounce 0.5s infinite linear;
-    colr:000;
+    color:000;
   }
 
   @-webkit-keyframes bounce {
@@ -204,3 +205,11 @@ span:before{
   }
 
   /*Animation End*/
+
+.tooltip {
+    width: 800%;
+}
+
+.fa-question {
+    color:white;
+}
