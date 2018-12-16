@@ -214,6 +214,14 @@ span:before{
     color:white;
 }
 
-.card a {
+.card a:active {
+    color:white;
+}
+
+.card a:visited {
+    color:white;
+}
+
+.card a:link {
     color:white;
 }
