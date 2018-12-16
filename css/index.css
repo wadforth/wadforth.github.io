@@ -8,10 +8,10 @@
     src: url('fonts/PWStrokes.ttf');
 }
 
-
 * {
     font-family: Muli
 }
+
 body {
     background-color: #1E1E1E;
     background-size: cover no-repeat center; 
@@ -125,6 +125,7 @@ a:hover {
     color: black;
 }
 
+/*GitHub Activity*/
 #github {
     position: fixed;
     bottom: 0px;
@@ -167,42 +168,42 @@ span:before{
     -webkit-animation: bounce 0.5s infinite linear;
     animation: bounce 0.5s infinite linear;
     color:000;
-  }
+}
 
-  @-webkit-keyframes bounce {
+@-webkit-keyframes bounce {
       0% { top: 0; }
       50% { top: -0.2em; }
       70% { top: -0.3em; }
       100% { top: 0; }
-  }
+}
 
-  @-moz-keyframes bounce {
+@-moz-keyframes bounce {
       0% { top: 0; }
       50% { top: -0.2em; }
       70% { top: -0.3em; }
       100% { top: 0; }
-  }
+}
 
-  @-o-keyframes bounce {
+@-o-keyframes bounce {
       0% { top: 0; }
       50% { top: -0.2em; }
       70% { top: -0.3em; }
       100% { top: 0; }
-  }
+}
 
-  @-ms-keyframes bounce {
+@-ms-keyframes bounce {
       0% { top: 0; }
       50% { top: -0.2em; }
       70% { top: -0.3em; }
       100% { top: 0; }
-  }
+}
 
-  @keyframes bounce {
+@keyframes bounce {
       0% { top: 0; }
       50% { top: -0.2em; }
       70% { top: -0.3em; }
       100% { top: 0; }
-  }
+}
 
   /*Animation End*/
 
