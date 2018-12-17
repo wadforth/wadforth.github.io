@@ -12,108 +12,243 @@
         <!-- Core Bootstrap Javascript-->
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
         
+         <!-- Popper.JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
+
+         <!-- jQuery Custom Scroller CDN -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.concat.min.js"></script>
+
         <!-- Core Style For Bootstrap-->
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
         
+        <!-- Scrollbar Custom CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/malihu-custom-scrollbar-plugin/3.1.5/jquery.mCustomScrollbar.min.css">
+
         <!-- Core Style For Website-->
         <link rel="stylesheet" type="text/css" href="css/index.css">
 
         <!-- Social Media Glyicons Addon To Bootstrap-->
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
+    
+        <!-- Main JS -->
+        <script src="js/index.js"></script>
     </head>
 
     <body>
-        <!-- Navigation Bar -->
-        <nav class="navbar navbar-expand navbar-dark bg-dark">
-            <div class="nav navbar-nav">
-                <a class="nav-item nav-link active" href="/"><i class="fas fa-home"></i> Home<span class="sr-only">(current)</span></a>
-                -
-                <a class="nav-item nav-link" href="/projects"><i class="fas fa-bars"></i> Projects</a>
-                -
-                <a class="nav-item nav-link" href="/contact"><i class="fas fa-envelope"></i> Contact</a>
-            </div>
-        </nav>
-        <!-- Navigation Bar End -->
-
-        <div class="container">
-            <div class="row profile">
-                <div class="jumbotron" id='sidebar'>
-
-                    <!-- Avatar Start -->
-                    <div class="userpic">
-                        <img src="img/avatar.png" class="img-responsive" alt="avatar">
-                    </div>
-                    <!-- Avatar End -->
-
-                    <!-- Bio Start -->
-                    <div class="bio">
-                        <div class ="name">
-                            Kieran Wadforth
+            <div class="wrapper">
+                    <!-- Sidebar -->
+                    <nav id="sidebar">
+                        <div class="sidebar-header">
+                            <img src="img/avatar.png">
                         </div>
-                        <div class="job">
-                            Student
-                        </div>
-                    </div>
-                    <!-- Bio End -->
-
-                    <!-- Buttons Start -->
-                    <div class="buttons">
-                        <ul class="nav">
-                            <li class="active">
-                                <a href="index.html">
+                        <ul class="list-unstyled components">
+                            <h3>Kieran Wadforth</h2>
+                            <h4>STUDENT</h3>
+                                <br>
+                                <li class="active">
+                                    <a href="#projects">
                                     <i class="fas fa-bars"></i>
                                     Projects </a>
-                            </li>
-                            <li>
-                                <a href="https://discordapp.com">
-                                <i class="fab fa-discord"></i>
-                                Kieran#7745</a>
-                            </li>
-                            <li>
-                                <a href="https://steamcommunity.com/id/kierxn">
-                                <i class="fab fa-steam"></i>
-                                kierxn</a>
-                            </li>
-                            <li>
-                                <a href="https://github.com/wadforth">
-                                <i class="fab fa-github"></i>
-                                @wadforth</a>
-                            </li>
-                            <li>
-                                <a href="https://twitter.com/howmadstha">
-                                <i class="fab fa-twitter"></i>
-                                @howmadstha</a>
-                            </li>
+                                </li>
+                                <li>
+                                    <a href="https://discordapp.com">
+                                    <i class="fab fa-discord"></i>
+                                    Kieran#7745</a>
+                                </li>
+                                <li>
+                                    <a href="https://steamcommunity.com/id/kierxn">
+                                    <i class="fab fa-steam"></i>
+                                    kierxn</a>
+                                </li>
+                                <li>
+                                    <a href="https://github.com/wadforth">
+                                    <i class="fab fa-github"></i>
+                                    @wadforth</a>
+                                </li>
+                                <li>
+                                    <a href="https://twitter.com/howmadstha">
+                                    <i class="fab fa-twitter"></i>
+                                    @howmadstha</a>
+                                </li>
+                                <li>
+                                    <a href="#contact">
+                                    <i class="fas fa-envelope"></i>
+                                    Contact Me</a>
+                                </li>
                         </ul>
-                    </div>
-                    <button type="button" class="cv">Curriculum Vitae</button>
-                </div>
-                <!-- Buttons End -->
+                    <button type="button" class="btn btn-dark">Curriculum Vitae</button>   
+                    <button type="button" class="btn btn-dark source">View Source Code</button>   
+                    </nav>
 
-                <div class="col-md-9">
-                    <div class="content">
-                        developer.<br>
-                        front-end.
-                    </div>
-                    <p>
-
-                    <!-- Dropdown Button Containing RSS Feed To GitHub-->
-                    <button class="collapsegithub" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                        <span>GitHub Latest Activity</span> <a href="#" data-toggle="tooltip" data-placement="right" title="Activity not displaying? This is due to your browser not being able to load 'unsafe scripts', you should get a popup in URL bar. Script is safe, all its doing is loading RSS feed from GitHub and converting to JS."> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i class="fas fa-question" ></i></a>
-                        <i class="fas fa-caret-down bounce"></i>
-                            </button>
-                        </p>
-                          <div class="collapse" id="collapseExample">
-                            <div class="card card-body">
-                                    <script language="JavaScript" src="http://feed2js.org//feed2js.php?src=https%3A%2F%2Fgithub.com%2Fwadforth.atom&num=3&desc=1&utf=y"  charset="UTF-8" type="text/javascript"></script>
+                    <!-- Page Content -->
+                    <div id="content">
+                        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                            <div class="container-fluid">
+                                <button type="button" id="sidebarCollapse" class="btn btn-info">
+                                    <i class="fas fa-align-left"></i>
+                                    <span>Toggle Profile</span>
+                                </button>
                             </div>
-                          </div>           
+                        </nav>
+
+                        <p class="devtext">developer.<br>
+                        front-end.</p>
+                        <br>
+                        <button class="collapsegithub" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                <a href="#" data-toggle="tooltip" data-placement="right" title="Activity not displaying? This is due to your browser not being able to load 'unsafe scripts', you should get a popup in URL bar. Script is safe, all its doing is loading RSS feed from GitHub and converting to JS."><span>GitHub Latest Activity</span></a>
+                            <br><i class="fas fa-caret-down bounce"></i>
+                        </button>
+                        
+                    </p>
+                    <div class="collapse" id="collapseExample">
+                        <script language="JavaScript" src="http://feed2js.org//feed2js.php?src=https%3A%2F%2Fgithub.com%2Fwadforth.atom&num=5&desc=1&date=y&utf=y"  charset="UTF-8" type="text/javascript"></script>
+                    </div>
+                    
+                    <div class="line"></div>
+
+                    <h1 id='projects'>Projects</h1>
+                    <!--Project Cards Start-->
+        <div class="box">
+                <div class="container">
+                     <div class="row">
+                         <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                            <div class="box-part text-center">
+                                <i class="fab fa-github fa-3x" aria-hidden="true"></i>
+                                    <div class="title">
+                                        <h4>Personal Website</h4>
+                                    </div>
+                                    <div class="text">
+                                        <span>Website is being devloped with the help of Bootstrap with the purpose of practise, fun and future projects.</span>
+                                    </div>
+                                    <a href="https://github.com/wadforth/wadforth.github.io">Learn More</a>
+                                </div>
+                            </div>	 
+                            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                                <div class="box-part text-center">
+                                    <i class="fab fa-github fa-3x" aria-hidden="true"></i>
+                                    <div class="title">
+                                        <h4>Project #2</h4>
+                                    </div>
+                                    <div class="text">
+                                        <span>Project #2 description.</span>
+                                    </div>
+                                    <a href="#">Learn More</a>
+                                </div>
+                            </div>	 
+                            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                            <div class="box-part text-center">
+                                <i class="fab fa-github fa-3x" aria-hidden="true"></i>
+                                <div class="title">
+                                    <h4>Project #3</h4>
+                                </div>
+                                <div class="text">
+                                    <span>Project #3 description.</span>
+                                </div>
+                                <a href="#">Learn More</a>
+                                </div>
+                            </div>	 
+                            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                                <div class="box-part text-center">
+                                    <i class="fab fa-github fa-3x" aria-hidden="true"></i>
+                                    <div class="title">
+                                        <h4>Project #4</h4>
+                                    </div>
+                                    <div class="text">
+                                        <span>Project #4 description.</span>
+                                    </div>
+                                    <a href="#">Learn More</a>
+                                </div>
+                            </div>	 
+                            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                                <div class="box-part text-center">
+                                    <i class="fab fa-github fa-3x" aria-hidden="true"></i>
+                                    <div class="title">
+                                        <h4>Project #5</h4>
+                                    </div>
+                                    <div class="text">
+                                        <span>Project #5 description.</span>
+                                    </div>
+                                    
+                                    <a href="#">Learn More</a>
+                                </div>
+                            </div>	 
+                            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                                <div class="box-part text-center">
+                                    <i class="fab fa-github fa-3x" aria-hidden="true"></i>
+                                    <div class="title">
+                                        <h4>Project #6</h4>
+                                    </div>
+                                    <div class="text">
+                                        <span>Project #6 description.</span>
+                                    </div>
+                                    <a href="#">Learn More</a>
+                                </div>
+                            </div>
+                        </div>		
+                    </div>
+                </div>
+                <!-- Project Cards End -->
+    
+
+                    <div class="line"></div>
+
+                    <h1 id='contact'>CONTACT ME</h1>
+                     <!-- Email Form -->
+            <div class="box">
+                <div class="form">
+                    <form action="https://formspree.io/kieran.wadforth@hotmail.com" method="POST">
+                        <label for="forename">First Name</label>
+                        <input type="text" id="forename" name="firstname" placeholder="Your name...">
+
+                        <label for="surname">Last Name</label>
+                        <input type="text" id="surname" name="surname" placeholder="Your last name...">
+                        
+                        <label for="email">Email</label>
+                        <input type="text" id="email" name="email" placeholder="Your email...">
+
+                        <label for="subject">Subject</label>
+                        <select id="subject" name="subject">
+                            <option value="website">Website</option>
+                            <option value="availability">Availability</option>
+                            <option value="suggestion">Suggestion</option>
+                            <option value="other">Other</option>
+                        </select>
+
+                        <label for="message">Message</label>
+                        <textarea id="body" name="body" placeholder="Your message..." style="height:200px"></textarea>
+                        <input type="submit" value="Send">
+                        
+                    </form>
+                    <p class="formspree"><a href="http://formspree.io">Powered by FORMSPREE</a></p>
+                </div>
+                </div>
+            </div>
+                <!-- Page Content End-->
+                 <p>
                     </div>
                 </div>
             </div>    
         </div>
 
-       <!-- Main JavaScript -->
+       <!--Main JavaScript -->
         <script src="js/index.js"></script>
+        <script>
+             $(document).ready(function () {
+            $("#sidebar").mCustomScrollbar({
+                theme: "minimal"
+            });
+
+            $('#sidebarCollapse').on('click', function () {
+                $('#sidebar, #content').toggleClass('active');
+                $('.collapse.in').toggleClass('in');
+                $('a[aria-expanded=true]').attr('aria-expanded', 'false');
+            });
+        });
+        </script>
+        <script>
+                $(document).ready(function(){
+                    $('[data-toggle="tooltip"]').tooltip();   
+                });
+                </script>
     </body>
 </html>

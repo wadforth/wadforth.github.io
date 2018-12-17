@@ -8,6 +8,11 @@
     src: url('fonts/PWStrokes.ttf');
 }
 
+@font-face {
+    font-family: Amethyst;
+    src: url('fonts/Amethyst.ttf');
+}
+
 * {
     font-family: Muli
 }
@@ -18,143 +23,202 @@ body {
     color:white;
 }
 
-nav {
-    position: absolute;
-    left: 74%;
-    top: 10px;
-    word-spacing: 10px;
-    font-size: 20px;
-    background-color:#EEEEEE; 
-    color:#1E1E1E;
-    padding: 10px 5px 0 60px;
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
 }
 
-a:active, a:visited, a:link {
+@media (max-width: 768px) {
+    #sidebar {
+        margin-left: -250px;
+    }
+    #sidebar.active {
+        margin-left: 0;
+    }
+}
+#projects {
+    font-family: Amethyst;
+    text-align: center;
+}
+
+#contact {
+    font-family: Amethyst;
+    text-align: center;
+    padding-bottom: 50px;
+}
+
+#sidebar h3 {
+    font-size: 1.4em;
+    font-weight: 300;
+    line-height: 1.7em;
+    color: #5a7391;
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: 600;
+    margin-top: -30px;
+}
+
+#sidebar h4 {
+    font-size: 1.4em;
+    font-weight: 300;
+    line-height: 1.7em;
+    color: #5b9bd1;
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: 600;
+    margin-top: -18px;
+   
+}
+
+a, a:hover, a:focus {
+    color: inherit;
     text-decoration: none;
-    color: #1E1E1E;
-}
-
-a:hover {
-    color:#53a7ea;
-}
-
-.profile {
-    margin: 0px 0;
-    float: left;
+    transition: all 0.3s;
+    text-shadow: black;;
 }
 
 #sidebar {
-    padding: 30px 30px 10px 30px;
+    /* don't forget to add all the previously mentioned styles here too */
+    width: 250px;
     position: fixed;
-    left: 0px;
-    top: 0px;
-    border-right: 1px solid white;
-    height: 100%;
-    width: 20%;
-    border-radius: 0px;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 999;
+    background: #eee;
+    color: #fff;
+    transition: all 0.3s;
 }
 
-.userpic img {
-    margin: 0 auto;
-    height: 250px;
-    -webkit-border-radius: 50% !important;
-    -moz-border-radius: 50% !important;
-    border-radius: 50% !important;
-    border: 2px solid black;
+#sidebar.active {
+    margin-left: -250px;
 }
 
-.name {
-    color: #5a7391;
-    font-size: 23px;
-    font-weight: 600;
-
-    text-align: center;
-    padding-top: 10px;
+#sidebar .sidebar-header {
+    padding: 20px;
+    background: #eee;
 }
 
-.job {
-    color: #5b9bd1;
-    text-transform: uppercase;
-    font-size: 18px;
-    text-align: center;
-    font-weight: 600;
-    margin-bottom: 15px;
-    height: 50px;
+.sidebar-header img {
+    border-radius: 50%;
+    width: 80%;
+    border: 1px black solid;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    object-fit: contain;
 }
 
-.buttons a {
-    margin-top: 10px;
+#sidebar ul.components {
+    padding: 20px 0;
+    border-bottom: 1px solid #47748b;
+}
+
+#sidebar p {
+    color: #fff;
+    padding: 10px;
+}
+
+#sidebar li a {
+    padding: 20px;
+    font-size: 1.1em;
+    display: block;
     color: black;
     
 }
 
-.buttons a:hover {
-    background-color: #1E1E1E;
-    text-shadow: 2px 2px 5px #1E1E1E;
+#sidebar li a:hover {
+    color: #7386D5;
+    background: #1E1E1E;
 }
 
-.content {
-        position: fixed;
-        top: 20%;
-        left: 43%;
-        padding: 20px;
-        min-height: 460px;
-        font-family: PWStrokes;
-        font-size: 100px;
+
+ul ul a {
+    font-size: 0.9em !important;
+    padding-left: 30px !important;
+    background: #6d7fcc;
 }
 
-.cv {
-    position: fixed;
-    bottom: 5px;
-    left: 12px;
-    width: 350px;
-    background-color: 	#1E1E1E; 
-    border: none;
-    color: white;
-    padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
-    font-size: 16px;
-    margin: 4px 2px;
-    cursor: pointer;
+.btn-dark {
+    background: #1E1E1E;
+    border-radius: 0%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 90%;
+    margin-top: 20px;
 }
 
-.cv:hover {
-    background-color: white;
-    color: black;
+.btn-dark:hover {
+    background: transparent;
+    border: 2px solid #1E1E1E;
+    color: #1E1E1E;
 }
 
-/*GitHub Activity*/
-#github {
-    position: fixed;
-    bottom: 0px;
-    font-size: 20px;
-    color: black;
-    padding: 60px;
-    list-style-type: none;
-    background-color:#EEEEEE; 
+.source {
+    background: transparent;
+    border: 2px solid #1E1E1E;
+    color: #1E1E1E;
+}
+
+.source:hover {
+    background: #1E1E1E;
+    color:#eee;
+}
+
+.line {
+    width: 100%;
+    height: 1px;
+    border-bottom: 1px solid #eee;
+    margin: 40px 0;
+}
+
+#content {
+    width: calc(100% - 250px);
+    padding: 40px;
+    min-height: 100vh;
+    transition: all 0.3s;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+#content.active {
     width: 100%;
 }
 
+
+#sidebarCollapse {
+    background: #eee;
+    color: #1E1E1E;
+    border: 2px solid #1E1E1E;
+}
+
+.devtext {
+    font-family: PWStrokes;
+    font-size: 7.0em;
+    display: block;
+    text-align: center;
+}
+
 .collapsegithub {
-    position: fixed;
-    width: 230px;
-    top: 60%;
-    left:50%;
+    display:block;
     background-color: transparent;
     border: 0px;
-
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .card {
-    position: fixed;
-    top: 70%;
-    left: 35%;
+    position: absolute;
+    top: 700px;
+    left: 300px;
+    width: 200%;
 }
 
-span:after,
-span:before{
+.collapsegithub span:after,
+.collapsegithub span:before{
     content:"\00a0\00a0\00a0\00a0\00a0";
     text-decoration:line-through;
 }
@@ -207,22 +271,86 @@ span:before{
 
   /*Animation End*/
 
-.tooltip {
-    width: 800%;
-}
-
 .fa-question {
     color:white;
 }
 
-.card a:active {
-    color:white;
+/*Project Cards*/
+.box span {
+    font-size:15px;
+    color: #1E1E1E;
 }
 
-.card a:visited {
-    color:white;
+.box fab {
+    color: #1E1E1E;
+    padding-bottom: 500px;
 }
 
-.card a:link {
-    color:white;
+.box {
+        padding:60px 0px;
+        
+}
+
+.box-part {
+        background:#FFF;
+        border-radius:0;
+        padding:60px 10px;
+        margin:30px 0px;
+        height: 300px;
+
+        color:#1E1E1E;
+}
+
+.box-part:hover {
+    color: #53a7ea;
+}
+
+.text {
+        margin:20px 0px;
+        
+} 
+
+/*Project Cards End*/
+
+/* Style inputs with type="text", select elements and textareas */
+input[type=text], select, textarea {
+    width: 100%; /* Full width */
+    padding: 12px; /* Some padding */  
+    border: 1px solid #ccc; /* Gray border */
+    border-radius: 4px; /* Rounded borders */
+    box-sizing: border-box; /* Make sure that padding and width stays in place */
+    margin-top: 6px; /* Add a top margin */
+    margin-bottom: 16px; /* Bottom margin */
+    resize: vertical /* Allow the user to vertically resize the textarea (not horizontally) */
+}
+  
+  /* Style the submit button with a specific background color etc */
+input[type=submit] {
+    background-color: #1E1E1E;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    width: 200px;
+    cursor: pointer;
+}
+
+  /* When moving the mouse over the submit button, add a darker green color */
+input[type=submit]:hover {
+    background-color: transparent;
+    color: #1E1E1E;
+    border: 2px solid #1E1E1E;
+}
+  
+  /* Add a background color and some padding around the form */
+.form {
+    background-color: #f2f2f2;
+    color: #1E1E1E;
+    padding: 20px;
+    display: inline-block;
+    margin-right:0 auto;
+    width: 100%;
+}
+
+.formspree {
+    padding-top:10px;
 }
