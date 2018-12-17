@@ -78,8 +78,8 @@ a, a:hover, a:focus {
     text-shadow: black;;
 }
 
+/*Sidebar Start*/
 #sidebar {
-    /* don't forget to add all the previously mentioned styles here too */
     width: 250px;
     position: fixed;
     top: 0;
@@ -165,8 +165,12 @@ ul ul a {
 .source:hover {
     background: #1E1E1E;
     color:#eee;
+    
 }
 
+/*Sidebar End*/
+
+/* Content Start*/
 .line {
     width: 100%;
     height: 1px;
@@ -354,3 +358,4 @@ input[type=submit]:hover {
 .formspree {
     padding-top:10px;
 }
+/* Content Start*/
