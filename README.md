@@ -1,18 +1,19 @@
 # wadforth.github.io
 
-Current Version: **1.0 - initial release**
+Current Version: **2.0 - Design Overhail**
 
 ##Authors
 
 **Kieran Wadforth** - owner, developer. 
 
-###Features
+###Features###
 
-- Sidebar Profile
-- Project Page
-- Contact Page powered by **FormSpree**
+- Togglable Sidebar Profile
+- Projects
+- Contact Form powered by **FormSpree**
+- Responsive Design For All Resolutions
 
-###Upcoming Development 
+###Upcoming Development###
 
 - Projects 
 - Clean Up Design
@@ -21,9 +22,8 @@ Current Version: **1.0 - initial release**
 - PHP Contact Form
 - Responive Design For Different Resolutions
 
-###Bugs // Missing Features
+###Bugs // Missing Features###
 
-- CSS Messed Up On Different Resolutions
-- Able To Scroll Left and Right Causing Nav Bar To Move
 - .htaccess config not setup correctly 
-- Error Pages missings
+- Error Pages missing
+- if profile toggled on, design will be messed up on mobile or similar resolutions.
