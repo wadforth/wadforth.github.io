@@ -26,17 +26,28 @@ body {
 .wrapper {
     display: flex;
     width: 100%;
-    align-items: stretch;
 }
 
+/* Changes Dimensions If Screen Width Is 768px or Less - Start */
 @media (max-width: 768px) {
     #sidebar {
-        margin-left: -250px;
+        margin-left: 0px;
     }
     #sidebar.active {
-        margin-left: 0;
+        margin-left: 0px;
+    }
+    #content {
+        width: 100%;
+    }
+    #content.active {
+        width: calc(100% - 250px);
+    }
+    #sidebarCollapse span {
+        display: none;
     }
 }
+/*End*/
+
 #projects {
     font-family: Amethyst;
     text-align: center;
@@ -84,7 +95,7 @@ a, a:hover, a:focus {
     position: fixed;
     top: 0;
     left: 0;
-    height: 100vh;
+    height: 100%;
     z-index: 999;
     background: #eee;
     color: #fff;
@@ -201,11 +212,17 @@ ul ul a {
 
 .devtext {
     font-family: PWStrokes;
-    font-size: 7.0em;
+    font-size: 4.2em;
     display: block;
     text-align: center;
 }
 
+.front-end {
+        font-family: PWStrokes;
+        font-size: 4.2em;
+        display: block;
+        text-align: center; 
+}
 .collapsegithub {
     display:block;
     background-color: transparent;
@@ -316,19 +333,19 @@ ul ul a {
 
 /*Project Cards End*/
 
-/* Style inputs with type="text", select elements and textareas */
+/*Contact Form - Start*/
 input[type=text], select, textarea {
-    width: 100%; /* Full width */
-    padding: 12px; /* Some padding */  
-    border: 1px solid #ccc; /* Gray border */
-    border-radius: 4px; /* Rounded borders */
-    box-sizing: border-box; /* Make sure that padding and width stays in place */
-    margin-top: 6px; /* Add a top margin */
-    margin-bottom: 16px; /* Bottom margin */
-    resize: vertical /* Allow the user to vertically resize the textarea (not horizontally) */
+    width: 100%; 
+    padding: 12px;  
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    box-sizing: border-box; 
+    margin-top: 6px;
+    margin-bottom: 16px; 
+    resize: vertical 
 }
   
-  /* Style the submit button with a specific background color etc */
+ 
 input[type=submit] {
     background-color: #1E1E1E;
     color: white;
@@ -338,14 +355,14 @@ input[type=submit] {
     cursor: pointer;
 }
 
-  /* When moving the mouse over the submit button, add a darker green color */
+  
 input[type=submit]:hover {
     background-color: transparent;
     color: #1E1E1E;
     border: 2px solid #1E1E1E;
 }
   
-  /* Add a background color and some padding around the form */
+ 
 .form {
     background-color: #f2f2f2;
     color: #1E1E1E;
@@ -358,4 +375,5 @@ input[type=submit]:hover {
 .formspree {
     padding-top:10px;
 }
-/* Content Start*/
+/*Contact Form - End*/
+/* Content End*/
