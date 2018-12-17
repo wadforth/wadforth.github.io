@@ -4,12 +4,12 @@ Latest Version: **2.1**
 
 ## Change Log
 
-### 2.1 - Bug Fixes
+### v2.1 - Bug Fixes
 - Profile Fixed For Lower Resolutions
 - Code More Readable 
 - Font Size Changed To Disable Scrolling On Lower Resolutions
 
-### 2.0 - Content / Bug Fixes
+### v2.0 - Website Redesign / Bug Fixes
 - Design Overhaul
     - Toggleable Profile
     - Pages Merged Into 1 Page
@@ -17,13 +17,13 @@ Latest Version: **2.1**
 - Fixed RSS Feed For GitHub Activity
 - .htaccess config added 
 
-### 1.2 - Content
+### v1.2 
 - Contact Page Added
 
-### 1.1 - Content
+### v1.1 
 - Projects Page Added
 
-### 1.0 - Initial Release
+### v1.0 - Initial Release
 
 ## Authors
 
