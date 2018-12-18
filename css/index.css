@@ -28,8 +28,31 @@ body {
     width: 100%;
 }
 
-/* Changes Dimensions If Screen Width Is 768px or Less - Start */
-@media (max-width: 768px) {
+
+/*Mobile Style*/
+@media (max-width:699px) {
+
+#sidebar {
+        margin-left: 0px;
+    }
+    #sidebar.active {
+        margin-left: 0px;
+    }
+    #content {
+        width: 100%;
+       }
+
+    #content.active {
+        width: calc(100% - 250px);
+    }
+    
+    #sidebarCollapse span {
+        display: none;
+    }
+}
+
+/* Changes Dimensions If Min Screen Width Is 700 and Max 768 (e.g iPad) - Start */
+@media (min-width: 700px) and (max-width:768px) {
     #sidebar {
         margin-left: 0px;
     }
@@ -38,12 +61,33 @@ body {
     }
     #content {
         width: 100%;
+        
     }
     #content.active {
         width: calc(100% - 250px);
     }
-    #sidebarCollapse span {
+
+    #sidebarCollapse {
         display: none;
+    }
+
+    .col-md-3 {
+        width: 410px;
+        padding-left: 25px;
+    }
+
+}
+/*End*/
+
+/* Changes Dimensions If Min Screen Width Is 1000 and Max 1024 (e.g iPad Pro) - Start */
+@media (min-width: 1000px) and (max-width: 1024px) {
+    #sidebarCollapse {
+        display: none;
+    }
+
+    .col-md-3 {
+        width: 570px;
+        padding-left: 125px;
     }
 }
 /*End*/
@@ -316,11 +360,12 @@ ul ul a {
         background:#FFF;
         border-radius:0;
         padding:60px 10px;
-        margin:30px 0px;
-        height: 300px;
+        margin:10px 0px;
+        height: 280px;
 
         color:#1E1E1E;
 }
+
 
 .box-part:hover {
     color: #53a7ea;
@@ -376,4 +421,8 @@ input[type=submit]:hover {
     padding-top:10px;
 }
 /*Contact Form - End*/
+
+footer {
+    text-align: center;
+}
 /* Content End*/

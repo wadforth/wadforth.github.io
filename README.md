@@ -1,8 +1,16 @@
 # wadforth.github.io
 
-Latest Version: **2.1**
+Latest Version: **2.2**
 
 ## Change Log
+
+### v2.2 - Bug Fixes
+- Tablet / Laptop Style Changed
+    - Profile Permantly On
+    - Removed Toggle Button
+    - Project Cards Display 1x1
+    - Larger Screens (e.g 1080 width) should remain 3x3
+- Fixed Footer
 
 ### v2.1 - Bug Fixes
 - Profile Fixed For Lower Resolutions
@@ -43,7 +51,6 @@ Latest Version: **2.1**
 - Interactive Features
 - Domain Switch
 - PHP Contact Form
-- Responive Design For Different Resolutions
 
 ### Bugs // Missing Features
 
