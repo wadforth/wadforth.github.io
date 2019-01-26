@@ -1,8 +1,12 @@
 # wadforth.github.io
 
-Latest Version: **2.2**
+Latest Version: **2.2.1**
 
 ## Change Log
+
+
+### v2.2.1 - Security Tweaks
+- Classified ;)
 
 ### v2.2 - Bug Fixes
 - Tablet / Laptop Style Changed
