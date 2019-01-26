@@ -27,7 +27,6 @@ Latest Version: **2.2.1**
     - Pages Merged Into 1 Page
     - Source Code Available From Website
 - Fixed RSS Feed For GitHub Activity
-- .htaccess config added 
 
 ### v1.2 
 - Contact Page Added
@@ -58,6 +57,5 @@ Latest Version: **2.2.1**
 
 ### Bugs // Missing Features
 
-- .htaccess config not setup correctly 
 - Error Pages missing
 - Content Squashed On Lower Resolutions When Profile Open
