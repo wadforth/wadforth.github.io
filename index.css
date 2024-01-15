@@ -1,0 +1,180 @@
+/* Global Styles */
+body {
+    font-family: 'Titillium Web', sans-serif;
+    background-color: #f2f2f2;
+}
+
+.logo {
+    max-width: 50px;
+}
+
+.text-2xl {
+    font-size: 2rem;
+}
+
+.info-panel-heading {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.info-panel-text {
+    font-size: 1.2rem;
+}
+
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+}
+
+.separator {
+    height: 2px;
+    background-color: #cccccc;
+    margin: 20px 0;
+}
+
+/* Search Bar Styles */
+.search-form {
+    margin: 20px;
+}
+
+.input-group {
+    position: relative;
+    width: 40%;
+}
+
+.form-control-sm {
+    width: 40%;
+    border-radius: 0;
+}
+
+.input-group-append {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.btn-outline-secondary {
+    border-radius: 0;
+    margin-left: 5px; /* Fix for button alignment */
+}
+
+
+.buttons-container,
+.buttons-container-under-search {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+}
+
+.table {
+    margin: 10px;
+    background-color: white;
+}
+.pagination-container {
+    margin: 10px;
+}
+
+.pagination {
+    justify-content: flex-end;
+}
+
+.btn-outline-secondary {
+    border-radius: 0;
+}
+
+.footer {
+    background-color: #6930c3;
+    color: white;
+    padding: 20px 0;
+    margin-top: 20px;
+}
+
+.social-icons {
+    display: flex;
+}
+
+.social-icon {
+    margin-right: 10px;
+    color: white;
+    text-decoration: none;
+}
+
+.created-by {
+    font-size: 0.9rem;
+}
+
+/* Additional Styles from Inline CSS in HTML */
+.navbar {
+    background-color: white;
+    color: black;
+}
+
+.navbar-brand {
+    color: white;
+}
+
+.navbar-toggler-icon {
+    background-color: white;
+}
+
+.info-panel {
+    background-color: #6930c3;
+    color: white;
+    padding: 50px 0;
+}
+
+.info-panel-text {
+    margin-bottom: 20px;
+}
+
+/* Additional Styles for Icons */
+.btn-outline-secondary {
+    border-radius: 0;
+    margin-left: -1px; /* Fix for button alignment */
+}
+
+/* Adjust the icon size */
+.btn-outline-secondary i {
+    font-size: 1.2rem;
+}
+
+/* Style to align icons vertically centered with text */
+.btn-outline-secondary i.fa {
+    line-height: inherit;
+    vertical-align: middle;
+}
+
+/* Import List Modal */
+#importListModal {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+#importListModal .modal-dialog {
+    max-width: 80%;
+}
+
+#iocListTextarea {
+    resize: vertical;
+}
+
+.progress {
+    height: 25px;
+}
+
+/* Adjust the progress bar color based on your design */
+#progressBar {
+    background-color: #3498db;
+}
+
+#progressText {
+    font-size: 14px;
+}
+
+/* Optional: Style the Submit button */
+#submitImportList {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+#submitImportList:hover {
+    background-color: #27ae60;
+}

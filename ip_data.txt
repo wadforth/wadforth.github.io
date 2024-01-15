@@ -1,0 +1,3 @@
+ipAddress,isPublic,isWhitelisted,abuseConfidenceScore,countryName,usageType,isp,domain,isTor,totalReports,lastReportedAt,comment
+80.79.117.42,TRUE,FALSE,100,Estonia,Data Center/Web Hosting/Transit,Aktsiaselts WaveCom,wavecom.ee,FALSE,1323,2024-01-14T17:01:05+00:00, Unauthorized connection attempt from IP address 80.79.117.42 on Port 21
+163.123.141.197,TRUE,FALSE,100,USA,Data Center/Web Hosting/Transit,Serverion LLC,serverion.com,FALSE,475,2024-01-14T15:24:45+00:00, warning: unknown[163.123.141.197]: SASL LOGIN authentication failed: UGFzc3dvcmQ6

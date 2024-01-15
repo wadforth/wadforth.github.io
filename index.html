@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP Data Table</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- choose one -->
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="index.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400&display=swap" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+  <!-- Your existing HTML content remains unchanged -->
+
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light">
+    <div class="container-fluid">
+      <img src="https://static.wixstatic.com/media/4c1ac7_719de5c0f3614ad1a0f7524538e290db~mv2.png" alt="Logo" class="navbar-brand logo">
+      <span class="text-2xl font-bold">IP Data Table</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <button class="nav-link btn btn-outline-secondary" onclick="addIOC()">Add IOC</button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link btn btn-outline-secondary" onclick="openImportListModal()">Import List</button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link btn btn-outline-secondary" onclick="updateData()">Update Data</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+   <!-- Info Panel -->
+   <section class="info-panel">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-6">
+          <h2 class="info-panel-heading">Threat Intelligence Hub</h2>
+          <p class="info-panel-text">
+            Welcome to our Threat Intelligence Hub, where you can explore threat intelligence data observed at Performanta. Our platform provides comprehensive information on various threats, allowing you to export data in different formats.
+          </p>
+          <p class="info-panel-text">
+            Take advantage of our integrated APIs to gather additional data and enhance your threat intelligence capabilities. Export data easily for use with Defender, CrowdStrike, and other security solutions.
+          </p>
+        </div>
+        <div class="col-lg-6">
+          <!-- Add relevant images or visual elements here -->
+          <img src="https://media.tenor.com/q4L3wKD-P7YAAAAj/hydra-we-bhack.gif" alt="Threat Intelligence Image" class="img-fluid">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search Bar -->
+<form class="mb-2 search-form">
+    <div class="input-group">
+        <input
+            id="searchInput"
+            type="text"
+            class="form-control form-control-sm"
+            placeholder="Search..."
+            oninput="updateTable(this.value)"
+        >
+        <div class="input-group-append">
+            <button class="btn btn-outline-secondary" type="button" onclick="changeData('hash_data.txt')">
+                <i data-feather="hash"></i> <!-- Font Awesome fingerprint icon -->
+            </button>
+            <button class="btn btn-outline-secondary" type="button" onclick="changeData('domain_data.txt')">
+                <i data-feather="link"></i> <!-- Font Awesome globe icon -->
+            </button>
+        </div>
+    </div>
+</form>
+
+  <!-- Data Table -->
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark" id="tableHeaders">
+        <!-- Headers will be dynamically updated here -->
+      </thead>
+      <tbody id="dataTableBody">
+        <!-- Table body content will be dynamically updated -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <ul class="pagination justify-content-end">
+      <!-- Pagination buttons will be dynamically updated here -->
+    </ul>
+  </div>
+
+<!-- Import List Modal -->
+<div class="modal fade" id="importListModal" tabindex="-1" aria-labelledby="importListModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importListModalLabel">Import List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Add your modal body content here -->
+                <textarea id="iocListTextarea" rows="5" class="form-control" placeholder="Enter IOCs"></textarea>
+                <div class="progress mt-3">
+                    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <p id="progressText" class="mt-2"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button id="submitImportList" type="button" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+  <!-- Footer -->
+  <footer class="footer mt-auto">
+    <div class="container d-flex justify-content-between align-items-center">
+      <div class="social-icons">
+        <!-- Add your social media icons or links here -->
+        <a href="#" class="social-icon">Social 1</a>
+        <a href="#" class="social-icon">Social 2</a>
+        <!-- Add more social media icons as needed -->
+      </div>
+      <div class="created-by">
+        <span>&copy; Performanta 2024 | Created by Kieran Wadforth, XDR Analyst</span>
+        <br>
+        <span>123 Security Street, Cyber City, CYB 567</span>
+        <br>
+        <span>Email: kieran.wadforth@performanta.com | Phone: +44 7399009985</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="global.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
