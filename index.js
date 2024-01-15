@@ -55,7 +55,7 @@ function openImportListModal() {
             progressBar.style.width = `${progress}%`;
             progressText.textContent = `Processing ${i + 1} of ${iocList.length} IPs`;
 
-            // Add the data to ip_data.txt (you can customize this part)
+            // Append the data to ip_data.txt (you can customize this part)
             if (result) {
                 const newData = `${result.data.ipAddress},${result.data.isPublic},${result.data.abuseConfidenceScore}\n`;
                 // Append the data to ip_data.txt
@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function checkAbuseIP(ip, callback) {
         const apiKey = 'your_api_key'; // Replace with your AbuseIPDB API key
         const apiUrl = `https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&jsonCallback=jsonpCallback`;
-    
+
         // Create a unique callback function for each request
         const callbackName = 'jsonpCallback_' + Date.now();
         window[callbackName] = (data) => {
@@ -118,18 +118,18 @@ document.addEventListener("DOMContentLoaded", function () {
             const reportData = data && data.report ? data.report : data;
             callback(reportData);
         };
-    
+
         // Create a script element to make the JSONP request
         const script = document.createElement('script');
         script.src = apiUrl + `&callback=${callbackName}`;
         document.head.appendChild(script);
-    
+
         // Remove the script element after the request completes
         script.onload = () => {
             document.head.removeChild(script);
             delete window[callbackName];
         };
-    
+
         // Handle errors
         script.onerror = (error) => {
             console.error('Error checking AbuseIPDB:', error);
@@ -211,9 +211,19 @@ document.addEventListener("DOMContentLoaded", function () {
         return lines.map(line => line.split(','));
     }
 
-    // Function to handle file appending using File System API
+    // Function to append data to a file
     async function appendToFile(fileName, data) {
         try {
+            // Check if the IP already exists in the file
+            const fileData = await fetch(fileName).then(response => response.text());
+            const ipList = fileData.split('\n').map(line => line.trim());
+
+            if (ipList.includes(data.trim())) {
+                console.log('Duplicate IP:', data);
+                return; // Skip appending duplicate IPs
+            }
+
+            // Proceed with appending if not a duplicate
             const fileHandle = await window.showOpenFilePicker();
             const file = await fileHandle.getFile();
             const writable = await file.createWritable();
@@ -225,40 +235,34 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Function to handle Import List modal
-    function openImportListModal() {
-        // Clear previous values
-        textArea.value = '';
-        progressBar.style.width = '0%';
-        progressText.textContent = '';
+    // Submit button click event
+    submitImportListButton.onclick = async () => {
+        const iocList = textArea.value.split('\n').filter(ip => ip.trim() !== '');
 
-        importListModal.show();
+        for (let i = 0; i < iocList.length; i++) {
+            const ip = iocList[i].trim();
 
-        submitImportListButton.onclick = async () => {
-            const iocList = textArea.value.split('\n').filter(ip => ip.trim() !== '');
+            // Check if the IP is a duplicate in the file
+            if (!ip) continue; // Skip empty lines
+            const result = await checkAbuseIP(ip);
 
-            for (let i = 0; i < iocList.length; i++) {
-                const ip = iocList[i].trim();
-                const result = await checkAbuseIP(ip);
+            // Process the result as needed (you can customize this part)
 
-                // Process the result as needed (you can customize this part)
+            // Update progress bar
+            const progress = ((i + 1) / iocList.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `Processing ${i + 1} of ${iocList.length} IPs`;
 
-                // Update progress bar
-                const progress = ((i + 1) / iocList.length) * 100;
-                progressBar.style.width = `${progress}%`;
-                progressText.textContent = `Processing ${i + 1} of ${iocList.length} IPs`;
-
-                // Append the data to the file using the File System API
-                if (result) {
-                    const newData = `${result.data.ipAddress},${result.data.isPublic},${result.data.abuseConfidenceScore}\n`;
-                    await appendToFile('ip_data.txt', newData);
-                }
+            // Append the data to the file using the File System API
+            if (result) {
+                const newData = `${result.data.ipAddress},${result.data.isPublic},${result.data.abuseConfidenceScore}\n`;
+                await appendToFile('ip_data.txt', newData);
             }
+        }
 
-            // Close the modal after processing
-            importListModal.hide();
-        };
-    }
+        // Close the modal after processing
+        importListModal.hide();
+    };
 
     // Add input event listener for the search input
     searchInput.addEventListener("input", function () {
