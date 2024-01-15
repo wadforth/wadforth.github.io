@@ -1,7 +1,7 @@
 ipAddress,isPublic,isWhitelisted,abuseConfidenceScore,countryCode,usageType,isp,domain,isTor,totalReports,lastReportedAt
 192.241.239.27,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-25T07:35:46+00:00
 192.241.239.23,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-22T01:56:56+00:00
-118.36.234.156,True,False,100,KR,None,KT Corporation,kt.com,False,143,2024-01-15T20:27:38+00:00
+118.36.234.156,True,False,100,KR,None,KT Corporation,kt.com,False,144,2024-01-15T21:20:39+00:00
 117.195.61.237,True,None,0,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,0,None
 175.107.0.121,True,False,28,PK,Fixed Line ISP,National Telecommunication Corporation,ntc.net.pk,False,0,2023-12-12T06:10:58+00:00
 175.107.0.124,True,False,25,PK,Fixed Line ISP,National Telecommunication Corporation,ntc.net.pk,False,0,2023-11-23T21:13:19+00:00
