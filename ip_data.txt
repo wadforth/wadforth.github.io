@@ -1,2 +1,261 @@
-ipAddress,isPublic,isWhitelisted,abuseConfidenceScore,countryName,usageType,isp,domain,isTor,totalReports,lastReportedAt,comment,reports
-103.43.141.169,True,False,0,,Fixed Line ISP,44 Shibokuchi Takatu-Ku,bekkoame.jp,False,0,2023-01-14T19:36:20+00:00,,[]
+ipAddress,isPublic,isWhitelisted,abuseConfidenceScore,countryCode,usageType,isp,domain,isTor,totalReports,lastReportedAt
+192.241.239.27,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-25T07:35:46+00:00
+192.241.239.23,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-22T01:56:56+00:00
+118.36.234.156,True,False,100,KR,None,KT Corporation,kt.com,False,143,2024-01-15T20:27:38+00:00
+117.195.61.237,True,None,0,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,0,None
+175.107.0.121,True,False,28,PK,Fixed Line ISP,National Telecommunication Corporation,ntc.net.pk,False,0,2023-12-12T06:10:58+00:00
+175.107.0.124,True,False,25,PK,Fixed Line ISP,National Telecommunication Corporation,ntc.net.pk,False,0,2023-11-23T21:13:19+00:00
+117.200.181.251,True,None,0,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,0,None
+8.222.172.128,True,False,0,SG,Data Center/Web Hosting/Transit,Alibaba Cloud (Singapore) Private Limited,alicloud.com,False,0,2023-06-17T05:37:47+00:00
+110.183.30.171,True,False,64,CN,Data Center/Web Hosting/Transit,ChinaNet Shanxi Province Network,chinatelecom.com.cn,False,16,2024-01-09T08:40:57+00:00
+93.55.208.12,True,False,0,IT,None,Fastweb SpA,fastweb.it,False,0,2022-08-23T01:03:32+00:00
+125.141.139.31,True,False,24,KR,None,KT Corporation,kt.com,False,2,2024-01-05T01:50:30+00:00
+42.242.58.244,True,False,29,CN,None,ChinaNet Yunnan Province Network,chinatelecom.com.cn,False,5,2024-01-14T03:04:20+00:00
+72.26.4.175,True,False,0,US,Fixed Line ISP,Consolidated Communications Inc.,consolidated.com,False,0,2022-07-14T19:15:05+00:00
+35.234.109.234,True,False,0,DE,Data Center/Web Hosting/Transit,Google LLC,google.com,False,0,2023-07-04T10:21:29+00:00
+117.197.255.235,True,False,11,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,2,2024-01-10T17:03:54+00:00
+188.247.90.252,True,False,0,JO,None,LINKdotNET-Jordan,link.net,False,0,2022-11-30T17:03:32+00:00
+220.89.239.5,True,False,0,KR,None,KT Corporation,kt.com,False,0,2023-08-05T22:00:28+00:00
+123.173.90.173,True,False,40,CN,Fixed Line ISP,Jilin Telecom Corporation,chinatelecom.com.cn,False,7,2024-01-13T11:20:08+00:00
+27.25.81.216,True,False,52,CN,Data Center/Web Hosting/Transit,ChinaNet Hubei Province Network,chinatelecom.com.cn,False,11,2024-01-15T18:54:03+00:00
+31.40.144.36,True,False,0,UA,None,Osipenko Alexander Nikolaevich,amostv.ru,False,0,2023-11-09T10:19:06+00:00
+124.234.245.250,True,False,0,CN,Fixed Line ISP,Jilin Telecom Corporation,chinatelecom.com.cn,False,0,2023-01-28T12:42:22+00:00
+34.85.153.83,True,False,0,US,Data Center/Web Hosting/Transit,Google LLC,google.com,False,0,2023-08-03T13:57:52+00:00
+101.109.166.18,True,False,2,TH,None,TOT Public Company Limited,tot.co.th,False,1,2024-01-12T18:14:14+00:00
+138.68.247.97,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-12T19:06:00+00:00
+59.182.10.46,True,False,2,IN,Fixed Line ISP,Mahanagar Telephone Nigam Limited,mtnl.in,False,1,2024-01-10T06:58:08+00:00
+51.182.150.114,True,False,0,GB,None,SKY UK Limited,sky.com,False,0,2022-12-12T02:31:23+00:00
+223.151.72.213,True,False,28,CN,Data Center/Web Hosting/Transit,ChinaNet Hunan Province Network,chinatelecom.com.cn,False,6,2024-01-12T07:31:16+00:00
+176.37.185.206,True,False,100,UA,Fixed Line ISP,Lanet Network Ltd,lanet.ua,False,101,2024-01-15T20:17:52+00:00
+148.72.211.168,True,False,24,SG,Data Center/Web Hosting/Transit,GoDaddy.com LLC,godaddy.com,False,1,2024-01-08T13:55:36+00:00
+219.140.124.237,True,False,14,CN,None,ChinaNet Network in Wuhan City Hubei Province,chinatelecom.com.cn,False,2,2024-01-11T16:31:14+00:00
+117.173.154.185,True,False,50,CN,None,China Mobile Communications Corporation,chinamobileltd.com,False,3,2023-12-24T10:17:23+00:00
+23.251.7.248,True,False,0,US,Fixed Line ISP,New Wave Communications,newwavecom.com,False,0,2022-07-04T10:40:54+00:00
+70.114.142.128,True,None,0,US,Fixed Line ISP,Charter Communications Inc,spectrum.com,False,0,None
+122.117.104.99,True,False,0,TW,None,Chunghwa Telecom Co. Ltd.,cht.com.tw,False,0,2023-07-12T19:05:45+00:00
+161.97.160.149,True,False,1,DE,Data Center/Web Hosting/Transit,Contabo GmbH,contabo.com,False,0,2023-11-30T00:28:41+00:00
+190.11.15.14,True,False,0,EC,None,Corporacion Nacional de Telecomunicaciones - CNT EP,cnt.com.ec,False,0,2021-10-30T15:14:01+00:00
+116.105.79.126,True,False,0,VN,None,Viettel Group,viettel.com.vn,False,0,2022-08-06T15:14:48+00:00
+60.172.6.70,True,False,0,CN,None,ChinaNet Anhui Province Network,chinatelecom.com.cn,False,0,2023-07-14T22:15:25+00:00
+123.160.173.55,True,False,13,CN,None,ChinaNet Henan Province Network,chinatelecom.com.cn,False,2,2024-01-13T06:00:14+00:00
+27.203.65.211,True,False,0,CN,None,China Unicom Shandong Province Network,chinaunicom.com,False,1,2024-01-15T19:31:10+00:00
+89.147.229.178,True,False,100,AZ,Fixed Line ISP,Az.StarNet LLC,simsiz.net,False,54,2024-01-09T23:45:11+00:00
+67.84.142.83,True,False,0,US,Fixed Line ISP,Optimum Online,optimum.net,False,0,2022-07-14T07:57:37+00:00
+45.61.188.170,True,False,0,US,Data Center/Web Hosting/Transit,Frantech Solutions,frantech.ca,False,0,2023-09-23T09:00:30+00:00
+45.61.188.177,True,False,0,US,Data Center/Web Hosting/Transit,Frantech Solutions,frantech.ca,False,0,2022-12-12T00:44:29+00:00
+1.70.173.110,True,False,0,CN,Data Center/Web Hosting/Transit,ChinaNet Shanxi Province Network,chinatelecom.com.cn,False,0,2023-06-05T01:03:57+00:00
+81.68.181.52,True,False,0,CN,Data Center/Web Hosting/Transit,Tencent Cloud Computing (Beijing) Co. Ltd,tencent.com,False,0,2022-11-20T04:58:23+00:00
+196.200.32.57,True,False,0,KE,Fixed Line ISP,Wananchi Group Kenya,wananchi.com,False,0,2023-01-23T19:01:15+00:00
+182.183.206.204,True,None,0,PK,None,Pakistan Telecommunication Company Limited,ptcl.com.pk,False,0,None
+103.35.65.124,True,False,0,VN,Fixed Line ISP,FPT Telecom,fpt.com.vn,False,0,2023-11-03T16:50:34+00:00
+216.152.252.79,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.78,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.75,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.74,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.77,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.76,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.71,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.70,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.73,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+216.152.252.72,True,False,0,US,Fixed Line ISP,Beamspeed LLC,beamspeed.com,False,0,2021-11-07T12:54:13+00:00
+36.11.211.193,True,False,30,JP,None,KDDI Corporation,kddi.com,False,4,2024-01-15T08:21:19+00:00
+219.149.220.82,True,False,0,CN,Commercial,Changchun Dongruan Corp,chinatelecom.com.cn,False,0,2023-03-22T20:08:56+00:00
+110.140.16.155,True,False,0,AU,None,Telstra,telstra.com.au,False,0,2023-07-12T19:05:30+00:00
+31.186.60.191,True,False,22,RU,Fixed Line ISP,Gazprom telecom LLC,gazpromtelecom.ru,False,3,2024-01-13T10:13:42+00:00
+138.2.63.234,True,False,0,JP,Data Center/Web Hosting/Transit,Oracle Corporation,oracle.com,False,0,2023-07-12T19:06:00+00:00
+59.26.145.206,True,False,0,KR,None,KT Corporation,kt.com,False,0,2023-06-05T18:54:30+00:00
+80.66.77.83,True,False,0,RU,Data Center/Web Hosting/Transit,Alexander Valerevich Mokhonko,serverlux.ru,False,0,2023-01-31T20:48:35+00:00
+103.147.3.111,True,False,1,ID,Data Center/Web Hosting/Transit,CV. Mitra Global Utama,mitraglobalweb.com,False,0,2023-11-29T23:50:43+00:00
+103.147.3.118,True,False,0,ID,Data Center/Web Hosting/Transit,CV. Mitra Global Utama,mitraglobalweb.com,False,0,2023-10-27T14:41:07+00:00
+2.185.105.36,True,False,0,IR,Fixed Line ISP,Telecommunication of Kermanshah for ADSL users,itc.ir,False,1,2024-01-14T07:31:07+00:00
+42.100.60.201,True,False,23,CN,Fixed Line ISP,Heilongjiang Telecom Corporation,chinatelecom.com.cn,False,5,2024-01-15T10:31:31+00:00
+213.155.210.176,True,False,0,RU,None,OJSC Rostelecom,rostelecom.ru,False,0,2023-06-06T06:04:08+00:00
+222.66.148.170,True,False,1,CN,University/College/School,Shanghai University of Finance&Economics,shufe.edu.cn,False,0,2023-11-30T01:06:13+00:00
+2.189.159.87,True,None,0,IR,Fixed Line ISP,Toloe Rayaneh Loghman,itc.ir,False,0,None
+88.249.40.51,True,False,26,TR,Fixed Line ISP,Turk Telekomunikasyon Anonim Sirketi,turktelekom.com.tr,False,5,2024-01-14T04:57:41+00:00
+117.243.204.129,True,False,14,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,2,2024-01-11T01:10:02+00:00
+138.204.70.249,True,False,35,BR,Fixed Line ISP,Wantel Tecnologia Ltda. Epp,wantel.net.br,False,5,2024-01-13T14:50:05+00:00
+134.236.22.148,True,False,30,TH,None,CAT Telecom Public Company Ltd,cattelecom.com,False,5,2024-01-15T03:42:01+00:00
+211.196.111.192,True,False,0,KR,None,KT Corporation,kt.com,False,0,2023-08-29T15:52:13+00:00
+121.17.125.8,True,False,9,CN,None,China Unicom Hebei Province Network,chinaunicom.com,False,1,2023-12-21T07:24:50+00:00
+103.141.52.59,True,False,39,IN,Data Center/Web Hosting/Transit,MAXtech,maxtechagency.com,False,5,2024-01-12T00:54:34+00:00
+119.45.129.166,True,False,27,CN,Data Center/Web Hosting/Transit,Tencent Cloud Computing (Beijing) Co. Ltd.,tencent.com,False,6,2024-01-06T23:31:55+00:00
+190.185.99.67,True,False,100,BR,Fixed Line ISP,Suppernet Servicos de Telecomunicacoes Ltda,suppernet.com.br,False,27,2024-01-14T03:18:49+00:00
+190.185.99.66,True,False,35,BR,Fixed Line ISP,Suppernet Servicos de Telecomunicacoes Ltda,suppernet.com.br,False,0,2023-12-11T20:51:52+00:00
+181.17.235.66,True,None,0,VE,None,Telecomunicaciones Movilnet,movilnet.com.ve,False,0,None
+143.255.104.126,True,False,62,CL,Fixed Line ISP,Artec Telecomunicaciones Limitada,arteclimitada.cl,False,13,2024-01-09T08:28:29+00:00
+39.73.16.204,True,False,73,CN,None,China Unicom Shandong Province Network,chinaunicom.com,False,27,2024-01-09T07:30:12+00:00
+106.41.74.132,True,False,100,CN,Data Center/Web Hosting/Transit,ChinaNet Hunan Province Network,chinatelecom.com.cn,False,88,2024-01-09T23:45:44+00:00
+113.58.234.78,True,False,0,CN,Data Center/Web Hosting/Transit,China Unicom Hainan Province Network,chinaunicom.com,False,0,2023-07-25T00:20:06+00:00
+47.236.24.102,True,False,27,SG,Data Center/Web Hosting/Transit,Alibaba Cloud LLC,alicloud.com,False,0,2023-11-30T01:28:38+00:00
+103.239.254.70,True,False,0,BD,Fixed Line ISP,Doze,dozeinternet.com,False,0,2023-11-03T16:50:13+00:00
+221.200.50.133,True,None,0,CN,None,China Unicom Liaoning Province Network,chinaunicom.com,False,0,None
+107.170.250.22,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-29T05:15:19+00:00
+59.88.176.117,True,False,14,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,2,2024-01-08T03:41:34+00:00
+107.170.250.20,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-24T22:00:15+00:00
+47.185.24.198,True,False,100,US,Fixed Line ISP,Frontier Communications Corporation,frontiernet.net,False,43,2024-01-15T20:49:36+00:00
+136.49.106.190,True,False,0,US,Fixed Line ISP,Google Fiber Inc.,googlefiber.net,False,0,2023-06-21T06:21:01+00:00
+185.108.129.53,True,None,0,IE,Data Center/Web Hosting/Transit,Webworld,remeshr.com,False,0,None
+185.108.129.51,True,None,0,IE,Data Center/Web Hosting/Transit,Webworld,remeshr.com,False,0,None
+204.144.196.220,True,False,12,US,Fixed Line ISP,Imon Communications LLC,imon.net,False,0,2023-11-19T20:55:28+00:00
+38.137.249.21,True,False,54,UA,Data Center/Web Hosting/Transit,Limited Liability Company 'Lecol',cogentco.com,False,10,2024-01-14T14:35:57+00:00
+175.23.36.136,True,False,15,CN,None,China Unicom Jilin Province Network,chinaunicom.com,False,2,2024-01-12T12:21:15+00:00
+114.190.193.104,True,None,0,JP,None,NTT DoCoMo Inc.,nttdocomo.com,False,0,None
+59.178.2.23,True,False,14,IN,Fixed Line ISP,Mahanagar Telephone Nigam Limited,mtnl.in,False,2,2024-01-11T23:03:52+00:00
+59.178.2.20,True,False,23,IN,Fixed Line ISP,Mahanagar Telephone Nigam Limited,mtnl.in,False,4,2023-12-22T08:31:44+00:00
+27.22.150.59,True,False,44,CN,None,ChinaNet Hubei Province Network,chinatelecom.com.cn,False,10,2024-01-09T13:30:44+00:00
+118.232.15.48,True,False,100,TW,Fixed Line ISP,Kbro Co. Ltd.,kbro.com.tw,False,143,2024-01-15T19:30:51+00:00
+223.82.233.7,True,False,100,CN,None,China Mobile Communications Corporation,chinamobileltd.com,False,113,2024-01-15T20:19:53+00:00
+68.194.172.17,True,False,23,US,Fixed Line ISP,Optimum Online,optimum.net,False,3,2024-01-14T20:20:53+00:00
+60.246.137.232,True,False,0,MO,None,CTM,ctm.net,False,0,2023-03-24T21:05:40+00:00
+113.221.24.140,True,False,2,CN,Data Center/Web Hosting/Transit,ChinaNet Hunan Province Network,chinatelecom.com.cn,False,1,2024-01-14T12:25:26+00:00
+197.188.91.12,True,False,0,NA,None,Telecom Namibia,telecom.na,False,0,2023-10-08T09:45:03+00:00
+221.171.92.42,True,False,62,JP,None,BIGLOBE Inc.,biglobe.co.jp,False,18,2024-01-15T19:22:19+00:00
+185.101.94.85,True,None,0,DE,Data Center/Web Hosting/Transit,OneCorp GmbH,onecorp.eu,False,0,None
+119.186.2.133,True,False,0,CN,None,China Unicom Shandong Province Network,chinaunicom.com,False,0,2023-01-14T02:04:49+00:00
+37.195.201.145,True,False,65,RU,Fixed Line ISP,Novotelecom Ltd,novotelecom.ru,False,25,2024-01-12T23:08:16+00:00
+80.32.115.21,True,None,0,ES,None,Telefonica de Espana Sau,telefonica.com,False,0,None
+58.23.20.65,True,False,22,CN,Fixed Line ISP,Xiamen City Fujian Provincial Network of Cncgroup,chinaunicom.com,False,0,2023-11-19T03:15:04+00:00
+185.234.218.68,True,False,0,NL,Data Center/Web Hosting/Transit,3W Infra B.V.,3winfra.com,False,0,2023-01-06T00:22:32+00:00
+46.36.65.117,True,False,0,LT,Fixed Line ISP,UAB Besmegeniai,besmegeniai.lt,False,0,2023-10-25T15:25:29+00:00
+201.141.45.233,True,None,0,MX,Fixed Line ISP,Cablevision S.A. de C.V.,cablevision.net.mx,False,0,None
+144.86.3.50,True,False,3,SA,None,Saudi Telecom Company JSC,stc.com.sa,False,1,2024-01-13T04:31:04+00:00
+197.188.86.254,True,False,0,NA,None,Telecom Namibia,telecom.na,False,1,2023-12-20T04:31:11+00:00
+152.242.89.84,True,False,0,BR,Mobile ISP,Telefonica Brasil S.A,telefonica.com.br,False,0,2023-11-30T18:38:56+00:00
+115.133.243.142,True,False,0,MY,Fixed Line ISP,Telekom Malaysia Berhad,tm.net.my,False,0,2023-11-07T10:50:58+00:00
+223.151.251.203,True,False,23,CN,None,ChinaNet Hunan Province Network,chinatelecom.com.cn,False,3,2024-01-15T07:37:20+00:00
+119.158.128.20,True,None,0,PK,None,Pakistan Telecommunication Company Limited,ptcl.com.pk,False,0,None
+62.210.90.181,True,False,92,FR,Data Center/Web Hosting/Transit,Scaleway S.A.S.,scaleway.com,False,24,2024-01-14T02:59:48+00:00
+219.157.23.246,True,False,0,CN,None,China Unicom IP Network,chinaunicom.com,False,0,2023-06-09T01:33:58+00:00
+164.163.21.78,True,False,1,BR,Fixed Line ISP,Tony Jose de Oliveira Eireli,ajustconsulting.com.br,False,0,2023-11-30T00:29:35+00:00
+164.92.199.74,True,False,0,DE,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-05-04T00:11:19+00:00
+138.36.230.152,True,False,100,BR,Fixed Line ISP,Delta Telecom,delta-telecom.net,False,163,2024-01-12T20:21:46+00:00
+47.100.59.51,True,False,31,CN,Data Center/Web Hosting/Transit,Aliyun Computing Co. Ltd,aliyun.com,False,5,2024-01-15T16:40:52+00:00
+201.8.133.180,True,None,0,BR,None,Brasil Telecom Comunicacao Multimidia S.A,brasiltelecom.net.br,False,0,None
+116.52.25.111,True,False,35,CN,None,ChinaNet Yunnan Province Network,chinatelecom.com.cn,False,6,2024-01-14T01:59:08+00:00
+123.168.175.84,True,False,53,CN,Fixed Line ISP,Shandong Telecom Corporation,chinatelecom.com.cn,False,0,2023-12-13T23:46:04+00:00
+59.61.50.229,True,False,23,CN,Data Center/Web Hosting/Transit,ChinaNet Fujian Province Network,chinatelecom.com.cn,False,4,2024-01-15T01:42:26+00:00
+159.89.114.40,True,False,0,CA,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2022-10-21T22:05:11+00:00
+94.67.120.235,True,False,0,GR,None,Otenet,otenet.gr,False,0,2023-05-28T11:33:53+00:00
+154.222.226.110,True,False,0,HK,Data Center/Web Hosting/Transit,Longteng Cloud Technology Limited,cloudinnovation.com,False,0,2023-04-07T19:17:21+00:00
+196.196.247.196,True,False,2,EE,Data Center/Web Hosting/Transit,Fiber Grid Inc,fibergrid.eu,False,1,2023-12-29T06:55:28+00:00
+171.223.75.29,True,False,4,CN,None,ChinaNet Sichuan Province Network,chinatelecom.com.cn,False,1,2024-01-14T09:33:06+00:00
+77.49.163.165,True,False,2,GR,None,Nova Telecommunications & Media Single Member S.A,nova.gr,False,2,2024-01-15T08:51:27+00:00
+220.133.173.65,True,False,0,TW,None,Chunghwa Telecom Co. Ltd.,cht.com.tw,False,0,2023-01-29T01:22:21+00:00
+123.23.119.142,True,False,2,VN,None,Vietnam Posts and Telecommunications Group,vnpt.com.vn,False,1,2023-12-22T12:08:34+00:00
+112.68.226.54,True,None,0,JP,None,OPTAGE Inc.,optage.co.jp,False,0,None
+124.220.72.234,True,False,100,CN,Data Center/Web Hosting/Transit,Tencent Cloud Computing (Beijing) Co. Ltd.,tencent.com,False,5,2024-01-12T20:21:24+00:00
+175.139.149.5,True,False,100,MY,Fixed Line ISP,Telekom Malaysia Berhad,tm.net.my,False,110,2024-01-15T19:38:52+00:00
+123.157.237.187,True,False,60,CN,None,China Unicom Zhejiang Province Network,chinaunicom.com,False,29,2024-01-15T10:31:34+00:00
+123.166.66.186,True,None,0,CN,Fixed Line ISP,Heilongjiang Telecom Corporation,chinatelecom.com.cn,False,0,None
+120.57.215.94,True,False,37,IN,Fixed Line ISP,Mahanagar Telephone Nigam Limited,mtnl.in,False,5,2024-01-11T19:01:04+00:00
+143.110.146.185,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2021-12-14T09:51:46+00:00
+86.77.51.230,True,False,1,FR,None,Societe Francaise du Radiotelephone - SFR SA,sfr.net,False,0,2023-11-30T01:47:29+00:00
+177.22.191.176,True,False,0,BR,Commercial,Atende Telecom Ltda,atendeinformatica.com.br,False,1,2024-01-12T04:30:57+00:00
+117.215.168.190,True,False,63,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,20,2024-01-09T23:46:50+00:00
+170.81.140.79,True,False,10,MX,Fixed Line ISP,Nueva Red Internet de Mexico S de RL de CV,nuevared.mx,False,0,2023-12-08T15:10:18+00:00
+50.217.226.42,True,False,1,US,Fixed Line ISP,Comcast Cable Communications LLC,comcast.net,False,0,2023-12-09T18:45:05+00:00
+58.42.205.48,True,False,0,CN,None,ChinaNet Guizhou Province Network,chinatelecom.com.cn,False,3,2024-01-15T18:08:22+00:00
+45.128.220.77,True,False,0,HK,Data Center/Web Hosting/Transit,Hizakura B.V.,hizakura.nl,False,0,2023-07-04T10:28:23+00:00
+165.232.176.11,True,False,39,IN,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,11,2024-01-15T14:15:36+00:00
+59.85.211.1,True,False,29,JP,None,Tokai Communications Corporation,tokai-com.co.jp,False,5,2024-01-15T16:44:50+00:00
+36.67.135.42,True,False,0,ID,None,PT Telkom Indonesia,telkom.co.id,False,0,2021-10-22T21:25:31+00:00
+111.231.101.1,True,False,83,CN,Data Center/Web Hosting/Transit,Tencent Cloud Computing (Beijing) Co. Ltd.,tencent.com,False,8,2023-12-22T23:10:06+00:00
+47.156.76.124,True,False,0,US,Fixed Line ISP,Frontier Communications Corporation,frontiernet.net,False,0,2023-07-12T19:08:26+00:00
+79.12.72.144,True,False,40,IT,None,Telecom Italia S.p.A.,telecomitalia.it,False,8,2024-01-15T19:16:01+00:00
+133.167.73.91,True,False,0,JP,Data Center/Web Hosting/Transit,Sakura Internet Inc.,sakura.ad.jp,False,0,2023-07-11T04:06:27+00:00
+45.183.112.156,True,None,0,BR,Fixed Line ISP,Marcelo da Silva Brasil ME,netiontelecom.com.br,False,0,None
+42.6.35.84,True,False,36,CN,None,Unicom Liaoning Province Network,chinaunicom.com,False,7,2024-01-15T07:30:14+00:00
+66.175.208.94,True,False,11,US,Content Delivery Network,Akamai Technologies Inc.,akamai.com,False,1,2024-01-14T08:04:03+00:00
+190.92.216.132,True,False,26,SG,Data Center/Web Hosting/Transit,Huawei International Pte. Ltd.,huawei.com,False,8,2024-01-14T14:12:53+00:00
+185.244.48.58,True,False,54,NL,Data Center/Web Hosting/Transit,AdminVPS OOO,adminvps.ru,False,20,2024-01-12T08:30:54+00:00
+122.243.168.247,True,False,0,CN,None,ChinaNet Zhejiang Province Network,chinatelecom.com.cn,False,2,2024-01-14T08:04:06+00:00
+66.175.208.98,True,False,21,US,Content Delivery Network,Akamai Technologies Inc.,akamai.com,False,3,2024-01-11T10:06:07+00:00
+194.165.16.71,True,False,0,BE,Data Center/Web Hosting/Transit,FlyServers S.A.,flyservers.com,False,1,2024-01-15T05:19:42+00:00
+194.165.16.77,True,False,0,BE,Data Center/Web Hosting/Transit,FlyServers S.A.,flyservers.com,False,1,2024-01-15T05:19:42+00:00
+69.27.107.94,True,None,0,CA,Data Center/Web Hosting/Transit,VDC Virtual Data Corp.,virtualdata.com,False,0,None
+111.208.115.123,True,None,0,CN,Commercial,Jiangsu Broadcasting Data Network Corporation Limited,jstv.com,False,0,None
+43.129.217.168,True,False,1,HK,Data Center/Web Hosting/Transit,Aceville Pte.Ltd.,tencent.com,False,0,2023-12-04T08:27:28+00:00
+179.243.210.149,True,None,0,BR,Mobile ISP,Claro S.A.,claro.com.br,False,0,None
+186.45.132.134,True,False,0,TT,None,Telecommunication Services of Trinidad and Tobago,tstt.co.tt,False,1,2024-01-14T00:10:54+00:00
+122.195.31.131,True,False,57,CN,None,China Unicom Jiangsu Province Network,chinaunicom.com,False,22,2024-01-15T19:31:30+00:00
+210.54.39.238,True,False,0,NZ,Fixed Line ISP,Bigpipe.co.nz,bigpipe.co.nz,False,0,2021-01-07T23:39:32+00:00
+27.184.210.70,True,None,0,CN,Data Center/Web Hosting/Transit,ChinaNet Hebei Province Network,chinatelecom.com.cn,False,0,None
+79.127.0.179,True,False,42,IR,Fixed Line ISP,Asiatech Data Transmission Company,asiatech.ir,False,11,2024-01-14T17:51:38+00:00
+137.184.228.164,True,False,2,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,1,2023-12-22T12:13:54+00:00
+195.242.232.212,True,False,44,PL,Fixed Line ISP,C3 NET Sp. z o.o. Sp. k.,c3.net.pl,False,1,2024-01-12T12:18:50+00:00
+109.186.60.114,True,False,38,IL,None,Cellcom Fixed Line Communication L.P,cellcom.co.il,False,8,2024-01-13T21:27:20+00:00
+207.255.193.47,True,None,0,US,Fixed Line ISP,Breezeline,breezeline.com,False,0,None
+193.0.129.43,True,None,0,NL,Data Center/Web Hosting/Transit,Connectria LLC,connectria.com,False,0,None
+181.129.144.59,True,False,0,CO,Fixed Line ISP,EPM Telecomunicaciones S.A. E.S.P.,epm.net.co,False,0,2023-02-20T22:01:51+00:00
+43.153.1.75,True,False,100,US,Data Center/Web Hosting/Transit,Tencent Cloud Computing (Beijing) Co. Ltd.,tencent.com,False,6,2024-01-12T20:22:02+00:00
+185.20.133.177,True,False,43,RU,Fixed Line ISP,Yuzhniy Telecom Ltd.,ugtel.ru,False,9,2024-01-15T14:03:58+00:00
+192.241.204.186,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2022-12-21T22:58:15+00:00
+117.216.108.62,True,False,0,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,2,2024-01-10T07:31:00+00:00
+172.104.12.183,True,False,18,US,Data Center/Web Hosting/Transit,Linode LLC,linode.com,False,3,2024-01-15T14:00:00+00:00
+213.108.161.35,True,False,100,CZ,Fixed Line ISP,JON.CZ s.r.o.,jon.cz,False,55,2024-01-14T06:21:20+00:00
+111.250.76.26,True,False,0,TW,None,Chunghwa Telecom Co. Ltd.,cht.com.tw,False,1,2024-01-10T07:30:14+00:00
+20.166.183.156,True,False,0,IE,Data Center/Web Hosting/Transit,Microsoft Corporation,microsoft.com,False,0,2023-04-07T13:53:37+00:00
+113.221.29.186,True,False,37,CN,None,ChinaNet Hunan Province Network,chinatelecom.com.cn,False,6,2024-01-13T10:46:13+00:00
+103.146.207.23,True,False,37,PH,Fixed Line ISP,Luzvimin Fiber,apluszure.com,False,1,2024-01-03T13:24:36+00:00
+200.50.253.230,True,None,0,AR,Fixed Line ISP,Cooperativa Telefonica de Calafate Ltda.,cotecal.com.ar,False,0,None
+89.144.14.41,True,False,2,DE,Data Center/Web Hosting/Transit,GHOSTnet GmbH,ghostnet.de,False,1,2024-01-06T01:25:36+00:00
+123.193.152.64,True,False,62,TW,Fixed Line ISP,Kbro Co. Ltd.,kbro.com.tw,False,14,2024-01-14T16:38:03+00:00
+153.136.227.131,True,False,0,JP,Fixed Line ISP,Open Computer Network,ocn.ne.jp,False,0,2023-03-14T00:47:08+00:00
+178.207.10.246,True,False,0,RU,Fixed Line ISP,PJSC Tattelecom,tattelecom.ru,False,0,2023-07-12T19:06:44+00:00
+91.205.210.166,True,False,100,RU,Commercial,Kommunikatsyi Stels Ltd.,magnezit.com.ru,False,36,2024-01-10T22:33:27+00:00
+168.119.72.213,True,None,0,DE,Data Center/Web Hosting/Transit,Hetzner Online GmbH,hetzner.de,False,0,None
+185.61.138.104,True,None,0,NL,Data Center/Web Hosting/Transit,BlazingFast LLC,blazingfast.io,False,0,None
+95.170.118.79,True,False,0,RU,Fixed Line ISP,Limited Company Information and Consulting Agency,tomica.ru,False,0,2021-10-30T15:13:27+00:00
+75.158.135.249,True,False,0,CA,None,Telus Communications Inc.,telus.com,False,0,2022-07-08T04:27:49+00:00
+102.220.167.8,True,False,0,CV,Fixed Line ISP,Fixed Broadband Customers,cvt.cv,False,2,2024-01-11T01:31:20+00:00
+68.183.114.3,True,False,5,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,8,2024-01-14T01:00:47+00:00
+117.199.179.167,True,None,0,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,0,None
+85.202.121.117,True,False,90,RS,Fixed Line ISP,Astra Telekom Doo Beograd,astratelekom.com,False,45,2024-01-15T16:49:30+00:00
+103.61.11.201,True,False,17,MM,Fixed Line ISP,No (797/A) Mac Tower II Lanmadaw TSP,kineticmyanmar.com,False,2,2024-01-09T22:49:13+00:00
+116.48.142.242,True,False,100,HK,None,Hong Kong Telecommunications (HKT) Limited,netvigator.com,False,195,2024-01-14T03:21:14+00:00
+43.239.121.135,True,False,0,CN,Data Center/Web Hosting/Transit,Hebei Huiri Information Technology Co. Ltd.,idc518.cn,False,0,2023-01-18T12:48:03+00:00
+117.209.109.143,True,False,0,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,1,2024-01-10T23:08:23+00:00
+126.25.153.60,True,False,0,JP,None,SoftBank Corp.,softbank.jp,False,2,2024-01-08T20:03:48+00:00
+222.222.180.202,True,False,0,CN,Data Center/Web Hosting/Transit,ChinaNet Hebei Province Network,chinatelecom.com.cn,False,0,2023-10-22T22:18:43+00:00
+96.246.156.236,True,False,38,US,None,Verizon Business,verizonenterprise.com,False,10,2024-01-09T07:00:11+00:00
+110.182.12.183,True,False,3,CN,None,ChinaNet Shanxi Province Network,chinatelecom.com.cn,False,1,2024-01-10T13:04:04+00:00
+176.91.198.55,True,False,22,TR,Mobile ISP,Turkcell Iletisim Hizmetleri A.S,turkcell.com.tr,False,3,2024-01-12T16:31:06+00:00
+198.23.203.187,True,False,36,US,Data Center/Web Hosting/Transit,IP Now LLC,colocrossing.com,False,8,2024-01-14T06:41:42+00:00
+117.215.175.38,True,False,21,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,3,2024-01-08T07:04:21+00:00
+197.246.77.149,True,False,0,EG,Fixed Line ISP,Noor Advanced Technologies Sae,noor.net,False,0,2022-06-05T08:14:00+00:00
+117.215.175.33,True,False,0,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,3,2024-01-08T15:40:06+00:00
+180.218.231.133,True,False,19,TW,Fixed Line ISP,TFN Media Co. Ltd.,tfn.net.tw,False,2,2024-01-11T07:10:16+00:00
+161.97.172.154,True,False,0,DE,Data Center/Web Hosting/Transit,Contabo GmbH,contabo.com,False,0,2023-09-11T11:06:32+00:00
+115.53.78.169,True,False,57,CN,None,China Unicom Henan Province Network,chinaunicom.com,False,12,2024-01-10T13:04:13+00:00
+59.127.173.62,True,False,93,TW,None,Chunghwa Telecom Co. Ltd.,cht.com.tw,False,41,2024-01-13T22:33:06+00:00
+86.106.93.103,True,None,0,BG,Data Center/Web Hosting/Transit,Fast Serv Inc.,qhoster.com,False,0,None
+117.215.122.124,True,False,14,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,2,2024-01-10T16:08:06+00:00
+68.183.114.211,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2021-06-10T06:10:36+00:00
+38.122.16.146,True,False,0,MX,Fixed Line ISP,Riagatech Servicios de Telecomunicaciones Y Comercializadora Sa de CV,riagatech.com,False,0,2021-10-30T15:13:11+00:00
+123.201.56.92,True,False,1,IN,Fixed Line ISP,You Telecom India Pvt Ltd,youbroadband.in,False,1,2024-01-13T16:28:09+00:00
+2.100.72.206,True,False,81,GB,Fixed Line ISP,Opal DSL NPE001 POR,talktalkbusiness.co.uk,False,16,2024-01-15T08:03:39+00:00
+170.79.182.82,True,False,0,AR,Fixed Line ISP,Techtron Argentina S.A.,celerargentina.com.ar,False,0,2023-01-14T20:35:29+00:00
+65.20.144.91,True,False,0,IQ,Fixed Line ISP,Earthlink Telecommunications Equipment Trading & Services DMCC,earthlinktele.com,False,0,2023-09-29T00:36:13+00:00
+117.217.69.209,True,False,22,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,3,2024-01-12T12:15:10+00:00
+107.170.197.164,True,False,0,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,0,2023-07-03T11:12:26+00:00
+145.239.254.138,True,False,0,GB,Data Center/Web Hosting/Transit,OVH SAS,ovh.com,False,0,2023-07-19T01:12:39+00:00
+209.105.151.200,True,False,25,US,Fixed Line ISP,Fairpoint Communications Inc.,fairpoint.com,False,0,2023-12-04T23:46:49+00:00
+148.153.110.76,True,False,21,DE,Data Center/Web Hosting/Transit,CDS Global Cloud Co. Ltd,cdsglobalcloud.com,False,5,2023-12-31T23:21:24+00:00
+191.102.120.13,True,False,94,CO,Fixed Line ISP,TV Azteca Sucursal Colombia,azteca-comunicaciones.com,False,10,2023-12-20T17:12:43+00:00
+117.243.215.232,True,False,39,IN,None,Bharat Sanchar Nigam Limited,bsnl.in,False,6,2024-01-13T05:20:01+00:00
+167.172.244.156,True,False,14,US,Data Center/Web Hosting/Transit,DigitalOcean LLC,digitalocean.com,False,5,2024-01-14T06:04:26+00:00
+85.114.184.182,True,False,4,RU,Fixed Line ISP,AIST ISP PPTP,aist.net.ru,False,1,2024-01-11T12:40:28+00:00
+190.109.227.85,True,False,100,BO,Fixed Line ISP,Cotel Ltda.,redcotel.bo,False,86,2024-01-15T13:30:36+00:00
+153.202.139.221,True,False,34,JP,Fixed Line ISP,Open Computer Network,ocn.ne.jp,False,6,2024-01-11T23:45:56+00:00
+115.76.205.94,True,None,0,VN,None,Viettel Group,viettel.com.vn,False,0,None
+125.26.175.28,True,False,31,TH,None,TOT Public Company Limited,tot.co.th,False,5,2024-01-10T20:37:30+00:00
+8.219.250.100,True,False,1,SG,Data Center/Web Hosting/Transit,Alibaba Cloud (Singapore) Private Limited,alicloud.com,False,0,2023-11-30T01:42:23+00:00
+1.182.12.218,True,False,35,CN,Data Center/Web Hosting/Transit,ChinaNet Neimenggu Province Network,chinatelecom.com.cn,False,13,2024-01-15T12:04:30+00:00
+115.96.125.26,True,False,0,IN,Fixed Line ISP,Hathway Cable and Datacom Limited,hathway.com,False,1,2024-01-12T05:11:19+00:00
+141.101.19.103,True,False,70,UA,Fixed Line ISP,WildPark Co,wildpark.net,False,17,2024-01-14T21:46:02+00:00
+208.91.65.134,True,False,100,US,Data Center/Web Hosting/Transit,Paradise Networks LLC,paradisenetworks.net,False,26,2024-01-15T17:02:06+00:00
+45.173.198.130,True,False,4,VE,Fixed Line ISP,360Net C.A.,360net.com.ve,False,1,2024-01-14T04:20:03+00:00
+182.123.141.150,True,False,4,CN,None,China Unicom Henan Province Network,chinaunicom.com,False,1,2024-01-13T23:39:38+00:00
+123.9.196.127,True,False,0,CN,None,China Unicom Henan Province Network,chinaunicom.com,False,0,2022-10-23T22:30:50+00:00
+135.0.230.210,True,None,0,CA,Fixed Line ISP,CIK Telecom Inc,ciktel.com,False,0,None
