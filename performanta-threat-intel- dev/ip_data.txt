@@ -1,2 +1,0 @@
-ipAddress,isPublic,isWhitelisted,abuseConfidenceScore,countryCode,usageType,isp,domain,isTor,totalReports,lastReportedAt,reportedAt,comment,categories,reporterId,reporterCountryCode,reporterCountryName
-
