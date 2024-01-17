@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        integrity="sha512-ET3oOjHROO6+mzvyiSH8AxFnv8JdZqhpxtGr/B5f5KyjEZBpCpQD7h6PLOeP3fiIuq3R93i1pZcIcCgg9+8u6g=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo:ital,wght@0,100;1,100&display=swap" rel="stylesheet">
+    <title>Performanta</title>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f3f4f6;
+            color: #374151;
+            font-family: 'Exo', sans-serif;
+            text-transform: uppercase;
+        }
+
+        footer {
+            background: #111827;
+            color: #ffffff;
+            padding: 2rem;
+            margin-top: auto;
+        }
+
+        .nav-bar {
+            background: linear-gradient(to right, #8B5CF6, #9333EA);
+            color: #ffffff;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            max-height: 50px;
+        }
+
+        .nav-bar a {
+            color: #ffffff;
+            transition: color 0.3s ease;
+        }
+
+        .nav-bar a:hover {
+            color: #9CA3AF;
+        }
+
+        .social-icon {
+            color: #ffffff;
+            font-size: 1.5rem;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .social-icon:hover {
+            color: #9CA3AF;
+        }
+
+        .info-panel {
+            background: linear-gradient(to right, #667EEA, #764BA2);
+            color: #ffffff;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .info-panel h2 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .info-panel p {
+            font-size: 1.25rem;
+            line-height: 1.5;
+        }
+
+        ..table-container {
+    overflow-x: auto;
+    width: 100%;
+    margin-top: 1rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        th {
+            background: #6B7280;
+            color: #ffffff;
+        }
+
+        td a {
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        td a:hover {
+            text-decoration: underline;
+        }
+
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            background-color: #f3f4f6; /* Adjust the background color */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagination-numbers {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .pagination-link {
+            background-color: #6B7280; /* Adjust the background color */
+            color: #ffffff; /* Adjust the text color */
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.25rem;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .pagination-link:hover {
+            background-color: #4B5563; /* Adjust the hover background color */
+        }
+
+        .page-input {
+            width: 3rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            text-align: center;
+            margin: 0 0.25rem;
+        }
+
+        .pagination-info {
+            flex: 1;
+            text-align: center;
+            color: #6B7280; /* Adjust the text color */
+        }
+        .footer-icons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .footer-icons i {
+            font-size: 1.5rem;
+            color: #ffffff;
+            transition: color 0.3s ease;
+        }
+
+        .footer-icons i:hover {
+            color: #9CA3AF;
+        }
+
+        .search-bar {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .search-bar input {
+            width: 100%;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-bar input:focus {
+            border-color: #93C5FD;
+        }
+    </style>
+</head>
+
+<body class="font-sans flex-grow">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white p-4 shadow">
+        <div class="container mx-auto flex justify-between items-center">
+            <!-- Uncomment the line below if you want to include a title -->
+            <h1 class="text-2xl font-bold">Performanta</h1>
+            <img src="https://pbs.twimg.com/profile_images/1455522226212466695/jCFVmZmo_400x400.jpg" alt="Performanta Logo" class="h-16 w-16 rounded-full">
+            <div class="flex space-x-4">
+                <button class="text-blue-500 hover:text-blue-700 font-bold py-2 px-4 rounded-full transition duration-300">
+                    Add IOC List
+                </button>
+                <button class="text-green-500 hover:text-green-700 font-bold py-2 px-4 rounded-full transition duration-300">
+                    Export Data
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Info Panel -->
+    <section class="bg-gradient-to-r from-indigo-800 to-purple-600 text-white py-12">
+        <div class="container mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-4">Centralized Hub for Threat Intelligence</h2>
+            <p class="text-lg">A platform that provides threat intelligence data and allows exporting custom data in CSV form for integration with EDR platforms such as Defender and CrowdStrike.</p>
+        </div>
+    </section>
+
+   
+    </div>
+
+    <!-- Table Section -->
+    <section class="py-8">
+        <div class="container mx-auto">
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <input id="searchInput" type="text" class="w-full border rounded py-2 px-3 focus:outline-none focus:ring focus:border-blue-300" placeholder="Search...">
+            </div>
+
+            
+            <div class="pagination-container">
+                <div class="pagination-numbers" id="pagination-numbers">
+                    <!-- Pagination links will be added dynamically here -->
+                </div>
+
+                <div class="pagination-info" id="pagination-info">
+                    Showing 1-10 of 100 results | Page <input type="number" id="pageSelector" min="1" max="1" value="1"> of <span id="totalPagesDisplay">1</span>
+                </div>
+
+                <div class="pagination-numbers">
+                    <a href="#" class="pagination-link" id="prevPage">« Prev</a>
+                    <!-- Pagination links will be added dynamically here -->
+                    <a href="#" class="pagination-link" id="nextPage">Next »</a>
+                </div>
+            </div>
+            
+            <!-- Data Table -->
+            <div class="table-container w-full overflow-x-auto">
+                <table class="w-full min-w-full bg-white border border-gray-300 rounded-lg overflow-hidden shadow-md">
+                    <thead class="bg-gradient-to-r from-indigo-700 to-blue-500 text-white">
+                        <th>Last Updated</th>
+                    <th>IP Address</th>
+                    <th>Is Public</th>
+                    <th>IP Version</th>
+                    <th>Is Whitelisted</th>
+                    <th>Abuse Confidence Score</th>
+                    <th>Country Code</th>
+                    <th>Country Name</th>
+                    <th>Usage Type</th>
+                    <th>ISP</th>
+                    <th>Domain</th>
+                    <th>Hostnames</th>
+                    <th>Is Tor</th>
+                    <th>Total Reports</th>
+                    <th>Distinct Users</th>
+                    <th>Last Reported At</th>
+                    </thead>
+                    
+                    <tbody id="dataTableBody">
+                        <!-- Table Data will be dynamically populated with JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ... existing code ... -->
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto flex flex-col items-center">
+            <div class="mb-4">
+                <img src="https://pbs.twimg.com/profile_images/1455522226212466695/jCFVmZmo_400x400.jpg" alt="Performanta Logo" class="h-16 w-16 rounded-full">
+            </div>
+            <div class="flex gap-4 mb-4">
+                <a href="#" class="social-icon" title="Twitter">
+                    <!-- Twitter icon SVG -->
+                </a>
+                <a href="#" class="social-icon" title="LinkedIn">
+                    <!-- LinkedIn icon SVG -->
+                </a>
+                <a href="#" class="social-icon" title="Facebook">
+                    <!-- Facebook icon SVG -->
+                </a>
+            </div>
+            <p class="text-lg font-semibold mb-2">St Cloud Gate, Saint-Cloud Way, Maidenhead SL6 8X</p>
+            <p class="text-sm text-gray-300">
+                Created with <span class="text-red-500">&hearts;</span> by Kieran Wadforth XDR Analyst
+                <br>
+                Copyright by Performanta
+            </p>
+        </div>
+    </footer>
+
+    <!-- Include your JavaScript file here -->
+    <script src="script.js"></script>
+
+</body>
+
+</html>
