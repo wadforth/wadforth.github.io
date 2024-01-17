@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Define custom column names mapping to original column names
     const columnNames = {
+        "Last Updated": "updated",
         "IP Address": "ipAddress",
         "Is Public": "isPublic",
         "IP Version": "ipVersion",
