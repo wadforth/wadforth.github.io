@@ -165,6 +165,8 @@ def git_pull_allow_unrelated_histories():
 def git_push_text_file(text_file):
     try:
         # Add and commit the text file
+        os.system("git add .")
+        os.system('git commit -m "Resolve conflicts"')
         os.system(f'git add "{text_file}"')
         os.system(f'git commit -m "Update text file: {text_file}"')
 
