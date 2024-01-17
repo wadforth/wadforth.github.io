@@ -263,5 +263,4 @@ document.addEventListener("DOMContentLoaded", function () {
  
    // Initial display of data
    updateTable("");
->>>>>>> 96cb41f2e5ffe4884855a99499fd63ce30dede39
  });
