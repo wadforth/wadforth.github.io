@@ -6,11 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Free Games Tracker | Kieran</title>
     <meta name="description"
-        content="Track current free PC games and giveaways from Steam, Epic Games, GOG, and more. Updated daily.">
+        content="Track the latest free PC games and time-limited giveaways from Steam, Epic Games, GOG, and Ubisoft. Get browser notifications for new freebies. Updated daily.">
     <meta name="keywords"
-        content="Free games, PC games, Steam giveaways, Epic Games free, GOG free games, game tracker">
+        content="Free games, PC games, Steam giveaways, Epic Games free, GOG free games, game tracker, freebies, loot, dlc">
     <meta name="author" content="Kieran">
     <link rel="canonical" href="https://wadforth.github.io/free-games/">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://wadforth.github.io/free-games/">
+    <meta property="og:title" content="Free Games Tracker | Kieran">
+    <meta property="og:description"
+        content="Never miss a free game again. Track live giveaways from major PC platforms.">
+    <meta property="og:image" content="https://wadforth.github.io/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://wadforth.github.io/free-games/">
+    <meta property="twitter:title" content="Free Games Tracker | Kieran">
+    <meta property="twitter:description"
+        content="Never miss a free game again. Track live giveaways from major PC platforms.">
+    <meta property="twitter:image" content="https://wadforth.github.io/og-image.jpg">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="../favicon.png">
@@ -69,27 +85,36 @@
     <div class="max-w-7xl mx-auto min-h-screen p-6">
 
         <!-- Header -->
-        <header class="mb-12">
-            <div class="flex items-center justify-between mb-6">
-                <a href="../"
-                    class="text-slate-400 hover:text-accent transition-colors font-mono text-sm flex items-center gap-2">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    Back to Portfolio
-                </a>
-                <div class="flex items-center gap-2 text-xs font-mono text-slate-500">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    API Live
+        <header class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <div class="flex items-center justify-between mb-6 md:justify-start md:gap-6">
+                    <a href="../"
+                        class="text-slate-400 hover:text-accent transition-colors font-mono text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        Back to Portfolio
+                    </a>
+                    <div class="flex items-center gap-2 text-xs font-mono text-slate-500">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        API Live
+                    </div>
                 </div>
+
+                <h1 class="text-4xl font-bold text-white mb-4 flex items-center gap-3">
+                    <i class="fa-solid fa-gift text-accent"></i>
+                    Free Games Tracker
+                </h1>
+                <p class="text-secondary max-w-2xl">
+                    Aggregating the <span class="text-accent">latest free PC games</span> from Steam, Epic, GOG, &
+                    Ubisoft.
+                </p>
             </div>
 
-            <h1 class="text-4xl font-bold text-white mb-4 flex items-center gap-3">
-                <i class="fa-solid fa-gift text-accent"></i>
-                Free Games Tracker
-            </h1>
-            <p class="text-secondary max-w-2xl">
-                Aggregating the <span class="text-accent">latest free PC games</span> and time-limited giveaways from
-                Steam, Epic Games, GOG, and more. Never miss a freebie.
-            </p>
+            <!-- Buy Me a Coffee -->
+            <a href="https://www.buymeacoffee.com/wadforth" target="_blank"
+                class="hidden md:flex items-center gap-2 px-4 py-2 bg-[#FFDD00] text-black font-bold rounded-lg hover:bg-[#FFDD00]/90 transition-transform hover:scale-105 shadow-lg shadow-yellow-500/20">
+                <i class="fa-solid fa-mug-hot"></i>
+                <span>Buy me a coffee</span>
+            </a>
         </header>
 
         <!-- Controls -->
