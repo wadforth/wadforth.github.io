@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kieran | Senior SOC Analyst & Developer</title>
+    <meta name="description"
+        content="Senior SOC Analyst and Full Stack Developer specializing in Threat Hunting, SIEM (Splunk/Sentinel), and Security Automation.">
+    <meta name="keywords"
+        content="SOC Analyst, Cyber Security, Developer, Threat Hunting, Splunk, Azure Sentinel, Python, React, EDF, Performanta">
+    <meta name="author" content="Kieran">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon.png">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://wadforth.github.io/">
+    <meta property="og:title" content="Kieran | Senior SOC Analyst & Developer">
+    <meta property="og:description"
+        content="Bridging the gap between security operations and software engineering. View my portfolio, projects, and experience.">
+    <meta property="og:image" content="https://wadforth.github.io/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://wadforth.github.io/">
+    <meta property="twitter:title" content="Kieran | Senior SOC Analyst & Developer">
+    <meta property="twitter:description"
+        content="Bridging the gap between security operations and software engineering. View my portfolio, projects, and experience.">
+    <meta property="twitter:image" content="https://wadforth.github.io/assets/og-image.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        dark: '#050505',
+                        card: 'rgba(20, 20, 20, 0.6)',
+                        'card-hover': 'rgba(30, 30, 30, 0.8)',
+                        accent: '#00ff9d',
+                        'accent-dim': 'rgba(0, 255, 157, 0.1)',
+                        secondary: '#94a3b8',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.8s ease-out forwards',
+                        'cursor-blink': 'blink 1s step-end infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        blink: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="bg-dark text-slate-200 font-sans antialiased selection:bg-accent selection:text-black">
+
+    <!-- Background Mesh -->
+    <div class="fixed inset-0 z-[-1] opacity-20 pointer-events-none">
+        <div
+            class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_15%_50%,rgba(0,255,157,0.08),transparent_25%)]">
+        </div>
+        <div
+            class="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_85%_30%,rgba(56,189,248,0.08),transparent_25%)]">
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto min-h-screen lg:flex">
+
+        <!-- Sidebar Profile -->
+        <aside
+            class="lg:w-80 lg:fixed lg:h-screen p-6 flex flex-col justify-center border-r border-white/5 bg-dark/50 backdrop-blur-sm z-50 overflow-y-auto custom-scrollbar print:hidden">
+            <div class="space-y-8">
+                <!-- Header -->
+                <div class="text-center">
+                    <div class="relative w-28 h-28 mx-auto mb-6 group cursor-pointer">
+                        <div
+                            class="absolute inset-0 bg-accent/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500">
+                        </div>
+                        <div
+                            class="relative w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-black border border-white/10 flex items-center justify-center text-4xl font-bold font-mono text-accent shadow-2xl overflow-hidden">
+                            <span class="z-10">K</span>
+                            <!-- Glitch effect layer -->
+                            <div
+                                class="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
+                            </div>
+                        </div>
+                        <div class="absolute bottom-1 right-1 w-4 h-4 bg-accent rounded-full border-4 border-dark animate-pulse"
+                            title="Available for work"></div>
+                    </div>
+
+                    <h1 class="text-3xl font-bold tracking-tight text-white mb-2">Kieran</h1>
+                    <div class="h-6">
+                        <span class="typing-text font-mono text-accent text-sm tracking-wider"></span><span
+                            class="animate-cursor-blink text-accent">_</span>
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                <p class="text-secondary text-center text-sm leading-relaxed">
+                    Senior SOC Analyst by day, Developer by night. Specializing in Threat Hunting, SOAR automation, and
+                    building resilient security tools.
+                </p>
+
+                <!-- Categorized Skills -->
+                <div class="space-y-4">
+                    <!-- Security -->
+                    <div>
+                        <h3
+                            class="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-accent/70"></i> Security Ops
+                        </h3>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="skill-tag">Sentinel</span>
+                            <span class="skill-tag">Defender</span>
+                            <span class="skill-tag">Crowdstrike</span>
+                            <span class="skill-tag">QRadar</span>
+                            <span class="skill-tag">KQL</span>
+                        </div>
+                    </div>
+
+                    <!-- Development -->
+                    <div>
+                        <h3
+                            class="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-code text-blue-400/70"></i> Development
+                        </h3>
+                        <div class="flex flex-wrap gap-1.5">
+                            <span class="skill-tag">Python</span>
+                            <span class="skill-tag">React</span>
+                            <span class="skill-tag">TypeScript</span>
+                            <span class="skill-tag">Node.js</span>
+                            <span class="skill-tag">C#</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="space-y-3 pt-4">
+                    <button id="copy-email-btn" data-email="kieran.wadforth@pm.me"
+                        class="w-full py-2.5 px-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-accent/50 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 group">
+                        <i class="fa-regular fa-envelope group-hover:text-accent transition-colors"></i>
+                        <span>Copy Email</span>
+                    </button>
+
+                    <a href="https://drive.proton.me/urls/DS7PFEEW54#66DDSIOQpcgP" target="_blank"
+                        class="w-full py-2.5 px-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-blue-400/50 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 group">
+                        <i class="fa-solid fa-file-arrow-down group-hover:text-blue-400 transition-colors"></i>
+                        <span>Download CV</span>
+                    </a>
+
+                    <div class="flex justify-center gap-3 pt-2">
+                        <a href="https://github.com/wadforth" target="_blank" class="social-btn" aria-label="GitHub">
+                            <i class="fa-brands fa-github text-lg"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/in/kieranwadforth/" target="_blank" class="social-btn"
+                            aria-label="LinkedIn">
+                            <i class="fa-brands fa-linkedin-in text-lg"></i>
+                        </a>
+                        <a href="#" target="_blank" class="social-btn" aria-label="Twitter">
+                            <i class="fa-brands fa-twitter text-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="lg:ml-80 flex-1 p-6 lg:p-12 relative print:ml-0 print:p-0">
+
+            <!-- Print Header (Only visible when printing) -->
+            <div class="hidden print:block mb-8 border-b border-black pb-4">
+                <h1 class="text-3xl font-bold text-black">Kieran</h1>
+                <p class="text-lg text-gray-600">Senior SOC Analyst & Developer</p>
+                <div class="mt-2 text-sm text-gray-500">
+                    kieran.wadforth@pm.me • github.com/wadforth • linkedin.com/in/kieranwadforth
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="sticky top-6 z-40 mb-16 hidden lg:block print:hidden">
+                <ul
+                    class="flex gap-1 p-1.5 rounded-2xl bg-dark/80 backdrop-blur-md border border-white/10 inline-flex shadow-xl">
+                    <li><a href="#about" class="nav-link">Terminal</a></li>
+                    <li><a href="#projects" class="nav-link">Projects</a></li>
+                    <li><a href="#experience" class="nav-link">Experience</a></li>
+                    <li><a href="#education" class="nav-link">Education</a></li>
+                </ul>
+            </nav>
+
+            <!-- Mobile Header -->
+            <div
+                class="lg:hidden flex justify-between items-center mb-12 sticky top-0 bg-dark/90 backdrop-blur-md py-4 z-40 border-b border-white/5 -mx-6 px-6 print:hidden">
+                <span class="font-bold text-xl tracking-tight font-mono">Kieran<span class="text-accent">_</span></span>
+                <button id="mobile-menu-btn" class="text-slate-400 hover:text-white transition-colors"><i
+                        class="fa-solid fa-bars text-xl"></i></button>
+            </div>
+
+            <!-- Mobile Menu Overlay -->
+            <div id="mobile-menu"
+                class="lg:hidden fixed inset-0 bg-dark/95 backdrop-blur-lg z-50 opacity-0 pointer-events-none transition-all duration-300 print:hidden">
+                <div class="flex flex-col h-full">
+                    <!-- Mobile Menu Header -->
+                    <div class="flex justify-between items-center p-6 border-b border-white/10">
+                        <span class="font-bold text-xl tracking-tight font-mono">Kieran<span
+                                class="text-accent">_</span></span>
+                        <button id="mobile-menu-close" class="text-slate-400 hover:text-white transition-colors">
+                            <i class="fa-solid fa-times text-2xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Mobile Menu Navigation -->
+                    <nav class="flex-1 px-6 py-8">
+                        <ul class="space-y-4">
+                            <li>
+                                <a href="#about"
+                                    class="mobile-nav-link flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
+                                    <i class="fa-solid fa-terminal text-accent w-6"></i>
+                                    <span>Terminal</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#projects"
+                                    class="mobile-nav-link flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
+                                    <i class="fa-solid fa-folder-open text-accent w-6"></i>
+                                    <span>Projects</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#experience"
+                                    class="mobile-nav-link flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
+                                    <i class="fa-solid fa-briefcase text-accent w-6"></i>
+                                    <span>Experience</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#education"
+                                    class="mobile-nav-link flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
+                                    <i class="fa-solid fa-graduation-cap text-accent w-6"></i>
+                                    <span>Education</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#contact"
+                                    class="mobile-nav-link flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
+                                    <i class="fa-solid fa-envelope text-accent w-6"></i>
+                                    <span>Contact</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <!-- Mobile Menu Footer -->
+                    <div class="p-6 border-t border-white/10">
+                        <div class="flex justify-center gap-4 mb-4">
+                            <a href="https://github.com/wadforth" target="_blank" class="social-btn"
+                                aria-label="GitHub">
+                                <i class="fa-brands fa-github text-xl"></i>
+                            </a>
+                            <a href="https://www.linkedin.com/in/kieranwadforth/" target="_blank" class="social-btn"
+                                aria-label="LinkedIn">
+                                <i class="fa-brands fa-linkedin-in text-xl"></i>
+                            </a>
+                            <a href="mailto:kieran.wadforth@pm.me" class="social-btn" aria-label="Email">
+                                <i class="fa-regular fa-envelope text-xl"></i>
+                            </a>
+                        </div>
+                        <a href="https://drive.proton.me/urls/DS7PFEEW54#66DDSIOQpcgP" target="_blank"
+                            class="block w-full py-3 px-4 rounded-lg bg-accent text-dark font-bold text-center hover:bg-accent/90 transition-all">
+                            <i class="fa-solid fa-file-arrow-down"></i>
+                            Download CV
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-32 max-w-4xl print:space-y-8">
+
+                <!-- Interactive Terminal (About) -->
+                <section id="about" class="scroll-mt-32 print:hidden">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="text-accent font-mono text-sm">01.</span>
+                        <h2 class="text-2xl font-bold text-white">Terminal</h2>
+                        <div class="h-px bg-white/10 flex-1"></div>
+                    </div>
+
+                    <div
+                        class="bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden shadow-2xl font-mono text-sm">
+                        <!-- Terminal Header -->
+                        <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/5">
+                            <div class="flex gap-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                            </div>
+                            <div class="flex-1 text-center text-xs text-slate-500">kieran@kali: ~</div>
+                        </div>
+
+                        <!-- Terminal Body -->
+                        <div class="p-4 h-64 overflow-y-auto custom-scrollbar" id="terminal-output">
+                            <!-- Boot sequence will be injected here by JS -->
+                            <div class="flex items-center gap-2" id="terminal-input-line" style="display: none;">
+                                <span class="text-accent">➜</span>
+                                <span class="text-blue-400">~</span>
+                                <input type="text" id="terminal-input"
+                                    class="bg-transparent border-none outline-none text-slate-200 flex-1 focus:ring-0 p-0"
+                                    autocomplete="off" spellcheck="false">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Projects Section -->
+                <section id="projects" class="scroll-mt-32 print:break-inside-avoid">
+                    <div class="flex items-center justify-between mb-8 print:mb-4">
+                        <div class="flex items-center gap-4">
+                            <span class="text-accent font-mono text-sm print:hidden">02.</span>
+                            <h2 class="text-2xl font-bold text-white print:text-black">Selected Works</h2>
+                            <div class="h-px bg-white/10 flex-1 print:hidden"></div>
+                        </div>
+
+                        <!-- Project Filters -->
+                        <div class="flex gap-2 print:hidden">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="security">Security</button>
+                            <button class="filter-btn" data-filter="dev">Dev</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-1 print:gap-4">
+                        <!-- Project 1 -->
+                        <a href="https://github.com/wadforth/pulse-optimizer" target="_blank"
+                            class="project-card group block print:border-gray-300 print:bg-white print:text-black"
+                            data-category="dev">
+                            <div class="project-card-glow print:hidden"></div>
+                            <div class="relative z-10 flex flex-col h-full">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3
+                                            class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
+                                            Pulse Optimizer</h3>
+                                        <span
+                                            class="badge-latest print:border-gray-400 print:text-gray-600">LATEST</span>
+                                    </div>
+                                    <i
+                                        class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
+                                </div>
+                                <p class="text-secondary text-sm mb-6 flex-1 leading-relaxed print:text-gray-700">
+                                    Comprehensive system optimization tool featuring real-time monitoring, automated
+                                    performance tweaks, and process management.
+                                </p>
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="tech-tag print:text-gray-600"><i class="devicon-electron-original"></i>
+                                        Electron</span>
+                                    <span class="tech-tag print:text-gray-600"><i class="devicon-react-original"></i>
+                                        React</span>
+                                    <span class="tech-tag print:text-gray-600"><i class="devicon-nodejs-plain"></i>
+                                        Node.js</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Project 2 -->
+                        <a href="https://github.com/wadforth/malware-simulation" target="_blank"
+                            class="project-card group block print:border-gray-300 print:bg-white print:text-black"
+                            data-category="security">
+                            <div class="project-card-glow print:hidden"></div>
+                            <div class="relative z-10 flex flex-col h-full">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3
+                                        class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
+                                        Malware Simulation</h3>
+                                    <i
+                                        class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
+                                </div>
+                                <p class="text-secondary text-sm mb-6 flex-1 leading-relaxed print:text-gray-700">
+                                    Isolated environment for simulating and analyzing malware behavior, persistence
+                                    mechanisms, and defense evasion techniques.
+                                </p>
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="tech-tag print:text-gray-600"><i class="devicon-powershell-plain"></i>
+                                        PowerShell</span>
+                                    <span class="tech-tag print:text-gray-600"><i class="fa-solid fa-bug"></i> Malware
+                                        Dev</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Project 3 -->
+                        <a href="https://github.com/wadforth/Network-Dumper" target="_blank"
+                            class="project-card group block print:border-gray-300 print:bg-white print:text-black"
+                            data-category="security">
+                            <div class="project-card-glow print:hidden"></div>
+                            <div class="relative z-10 flex flex-col h-full">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3
+                                            class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
+                                            Network-Dumper</h3>
+                                        <span
+                                            class="badge-archived print:border-gray-400 print:text-gray-600">ARCHIVED</span>
+                                    </div>
+                                    <i
+                                        class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
+                                </div>
+                                <p class="text-secondary text-sm mb-6 flex-1 leading-relaxed print:text-gray-700">
+                                    Network traffic analysis utility for capturing and dumping packets for security
+                                    auditing and forensic analysis.
+                                </p>
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="tech-tag print:text-gray-600"><i class="devicon-java-plain"></i>
+                                        Java</span>
+                                    <span class="tech-tag print:text-gray-600"><i class="fa-solid fa-network-wired"></i>
+                                        Networking</span>
+                                </div>
+                            </div>
+                        </a>
+
+                        <!-- Project 4 -->
+                        <a href="https://github.com/wadforth/SteamAccountSwitcher" target="_blank"
+                            class="project-card group block print:border-gray-300 print:bg-white print:text-black"
+                            data-category="dev">
+                            <div class="project-card-glow print:hidden"></div>
+                            <div class="relative z-10 flex flex-col h-full">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3
+                                            class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
+                                            SteamSwitcher</h3>
+                                        <span
+                                            class="badge-archived print:border-gray-400 print:text-gray-600">ARCHIVED</span>
+                                    </div>
+                                    <i
+                                        class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
+                                </div>
+                                <p class="text-secondary text-sm mb-6 flex-1 leading-relaxed print:text-gray-700">
+                                    PowerShell and Python scripts to allow seamless account switching without
+                                    re-entering credentials.
+                                </p>
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="tech-tag print:text-gray-600"><i class="devicon-powershell-plain"></i>
+                                        PowerShell</span>
+                                    <span class="tech-tag print:text-gray-600"><i class="devicon-python-plain"></i>
+                                        Python</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Experience Timeline -->
+                <section id="experience" class="scroll-mt-32 print:break-inside-avoid">
+                    <div class="flex items-center gap-4 mb-8 print:mb-4">
+                        <span class="text-accent font-mono text-sm print:hidden">03.</span>
+                        <h2 class="text-2xl font-bold text-white print:text-black">Experience</h2>
+                        <div class="h-px bg-white/10 flex-1 print:hidden"></div>
+                    </div>
+
+                    <div
+                        class="relative border-l border-white/10 ml-3 space-y-12 print:border-l-2 print:border-gray-300 print:ml-0 print:pl-4">
+
+                        <!-- Role 1: EDF -->
+                        <div class="relative pl-8 group print:pl-0">
+                            <div
+                                class="absolute -left-[5px] top-2 w-2.5 h-2.5 rounded-full bg-accent border border-dark shadow-[0_0_10px_rgba(0,255,157,0.5)] print:hidden">
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-2">
+                                <h3
+                                    class="text-lg font-bold text-white group-hover:text-accent transition-colors print:text-black">
+                                    Senior SOC Analyst</h3>
+                                <span class="text-xs font-mono text-slate-500 print:text-gray-600">Nov 2025 -
+                                    Present</span>
+                            </div>
+                            <h4 class="text-sm font-medium text-slate-400 mb-4 print:text-gray-800">EDF (UK)</h4>
+                            <p class="text-sm text-secondary leading-relaxed print:text-gray-700">
+                                Recently joined as a Senior SOC Analyst to lead threat detection and response
+                                initiatives.
+                            </p>
+                        </div>
+
+                        <!-- Role 2: Performanta (Senior) -->
+                        <div class="relative pl-8 group print:pl-0">
+                            <div
+                                class="absolute -left-[5px] top-2 w-2.5 h-2.5 rounded-full bg-slate-600 border border-dark group-hover:bg-accent transition-colors print:hidden">
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-2">
+                                <h3
+                                    class="text-lg font-bold text-white group-hover:text-accent transition-colors print:text-black">
+                                    Senior Security Analyst - SOC/MDR</h3>
+                                <span class="text-xs font-mono text-slate-500 print:text-gray-600">Mar 2024 - Nov
+                                    2025</span>
+                            </div>
+                            <h4 class="text-sm font-medium text-slate-400 mb-4 print:text-gray-800">Performanta</h4>
+                            <ul
+                                class="list-disc list-outside ml-4 text-sm text-secondary space-y-2 marker:text-slate-600 group-hover:marker:text-accent print:text-gray-700 print:marker:text-black">
+                                <li>Led incident response using CrowdStrike, Sentinel, Defender, and QRadar. Conducted
+                                    forensic analysis with KQL and LogScale.</li>
+                                <li>Developed custom detection logic and mapped MITRE ATT&CK techniques to identify
+                                    threats missed by standard EDRs.</li>
+                                <li>Led automation initiatives using KQL and custom scripts to streamline threat
+                                    detection workflows.</li>
+                                <li>Created and expanded the Threat Intelligence Platform (TIP), integrating sources
+                                    like AlienVault and RiskIQ.</li>
+                                <li>Mentored and trained new team members on security tools, threat detection processes,
+                                    and KQL query writing.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Role 3: Performanta (Analyst) -->
+                        <div class="relative pl-8 group print:pl-0">
+                            <div
+                                class="absolute -left-[5px] top-2 w-2.5 h-2.5 rounded-full bg-slate-600 border border-dark group-hover:bg-accent transition-colors print:hidden">
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-2">
+                                <h3
+                                    class="text-lg font-bold text-white group-hover:text-accent transition-colors print:text-black">
+                                    MDR & Threat Intelligence Analyst</h3>
+                                <span class="text-xs font-mono text-slate-500 print:text-gray-600">Jun 2022 - Mar
+                                    2024</span>
+                            </div>
+                            <h4 class="text-sm font-medium text-slate-400 mb-4 print:text-gray-800">Performanta</h4>
+                            <p class="text-sm text-secondary leading-relaxed print:text-gray-700">
+                                Focused on threat intelligence gathering, incident response, and monitoring emerging
+                                attack vectors.
+                            </p>
+                        </div>
+
+                        <!-- Role 4: NextGenUpdate -->
+                        <div class="relative pl-8 group print:pl-0">
+                            <div
+                                class="absolute -left-[5px] top-2 w-2.5 h-2.5 rounded-full bg-slate-600 border border-dark group-hover:bg-accent transition-colors print:hidden">
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-2">
+                                <h3
+                                    class="text-lg font-bold text-white group-hover:text-accent transition-colors print:text-black">
+                                    Senior Management / Administrator</h3>
+                                <span class="text-xs font-mono text-slate-500 print:text-gray-600">May 2015 - Apr
+                                    2016</span>
+                            </div>
+                            <h4 class="text-sm font-medium text-slate-400 mb-4 print:text-gray-800">NextGenUpdate</h4>
+                            <ul
+                                class="list-disc list-outside ml-4 text-sm text-secondary space-y-2 marker:text-slate-600 group-hover:marker:text-accent print:text-gray-700 print:marker:text-black">
+                                <li>Reverse engineered user binaries to ensure code safety and prevent malicious
+                                    uploads.</li>
+                                <li>Managed forum security and staff performance reviews.</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Education & Certs -->
+                <section id="education" class="scroll-mt-32 print:break-inside-avoid">
+                    <div class="flex items-center gap-4 mb-8 print:mb-4">
+                        <span class="text-accent font-mono text-sm print:hidden">04.</span>
+                        <h2 class="text-2xl font-bold text-white print:text-black">Education & Certs</h2>
+                        <div class="h-px bg-white/10 flex-1 print:hidden"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 print:grid-cols-1 print:gap-4">
+                        <!-- Education -->
+                        <div class="space-y-6 print:space-y-4">
+                            <h3
+                                class="text-sm font-mono uppercase tracking-widest text-slate-500 mb-4 print:text-black print:font-bold">
+                                Academic</h3>
+
+                            <div
+                                class="bg-card border border-white/5 rounded-lg p-5 hover:border-white/10 transition-colors print:border-none print:p-0">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="text-white font-bold print:text-black">MSc Computing & Info Systems</h4>
+                                    <span class="text-xs font-mono text-accent print:text-gray-600">Merit</span>
+                                </div>
+                                <p class="text-sm text-slate-400 mb-1 print:text-gray-800">Liverpool John Moores
+                                    University</p>
+                                <p class="text-xs text-slate-500 print:text-gray-600">Sep 2020 - Dec 2021</p>
+                            </div>
+
+                            <div
+                                class="bg-card border border-white/5 rounded-lg p-5 hover:border-white/10 transition-colors print:border-none print:p-0">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="text-white font-bold print:text-black">BSc Computer Security</h4>
+                                    <span class="text-xs font-mono text-accent print:text-gray-600">First-Class</span>
+                                </div>
+                                <p class="text-sm text-slate-400 mb-1 print:text-gray-800">Liverpool John Moores
+                                    University</p>
+                                <p class="text-xs text-slate-500 print:text-gray-600">Sep 2017 - Sep 2020</p>
+                            </div>
+                        </div>
+
+                        <!-- Certifications -->
+                        <div class="space-y-6 print:space-y-4">
+                            <h3
+                                class="text-sm font-mono uppercase tracking-widest text-slate-500 mb-4 print:text-black print:font-bold">
+                                Certifications</h3>
+
+                            <div class="space-y-3 print:space-y-2">
+                                <div
+                                    class="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors print:border-none print:p-0">
+                                    <i class="fa-solid fa-certificate text-accent print:hidden"></i>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-white print:text-black">Chronicle Certified
+                                            SOAR Developer</h4>
+                                        <p class="text-xs text-slate-500 print:text-gray-600">CCSD</p>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors print:border-none print:p-0">
+                                    <i class="fa-solid fa-certificate text-accent print:hidden"></i>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-white print:text-black">Siemplify Certified
+                                            SOAR Analyst</h4>
+                                        <p class="text-xs text-slate-500 print:text-gray-600">SCSA</p>
+                                    </div>
+                                </div>
+
+                                <div
+                                    class="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition-colors print:border-none print:p-0">
+                                    <i class="fa-solid fa-shield-halved text-blue-400 print:hidden"></i>
+                                    <div>
+                                        <h4 class="text-sm font-bold text-white print:text-black">CompTIA CySA+</h4>
+                                        <p class="text-xs text-slate-500 print:text-gray-600">CS0-002</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Contact Section -->
+                <section id="contact" class="scroll-mt-32 pb-20 print:hidden">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="text-accent font-mono text-sm">05.</span>
+                        <h2 class="text-2xl font-bold text-white">Initialize Handshake</h2>
+                        <div class="h-px bg-white/10 flex-1"></div>
+                    </div>
+
+                    <div
+                        class="bg-gradient-to-br from-card to-white/5 border border-white/5 rounded-xl p-8 text-center relative overflow-hidden group">
+                        <div
+                            class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,255,157,0.05),transparent_50%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        </div>
+
+                        <p class="text-secondary mb-8 max-w-lg mx-auto relative z-10">
+                            I'm always open to discussing new opportunities, security research, or potential
+                            collaborations. Whether you have a question or just want to say hi, my inbox is open.
+                        </p>
+                        <a href="mailto:kieran.wadforth@pm.me"
+                            class="relative z-10 inline-flex items-center gap-2 px-8 py-3 rounded-lg bg-accent text-dark font-bold hover:bg-accent/90 transition-all duration-300 shadow-[0_0_20px_rgba(0,255,157,0.3)] hover:shadow-[0_0_30px_rgba(0,255,157,0.5)] hover:-translate-y-1">
+                            <i class="fa-regular fa-paper-plane"></i>
+                            <span>Send Packet</span>
+                        </a>
+                    </div>
+
+                    <footer class="mt-20 text-center text-xs text-slate-600 font-mono space-y-3">
+                        <!-- Visitor Counter -->
+                        <div class="flex items-center justify-center gap-2 mb-2">
+                            <span class="text-slate-500">👥</span>
+                            <span class="text-slate-400">Visitors:</span>
+                            <span class="text-accent font-bold" id="visitor-count">
+                                <img src="https://hits.sh/wadforth.github.io.svg?view=today-total&style=flat&label=&color=00ff9d&labelColor=1a1a1a"
+                                    alt="Visitor count" class="inline-block h-5" />
+                            </span>
+                        </div>
+                        <p>&copy; <span id="year"></span> Kieran. <span class="text-accent">System Online</span>.</p>
+                    </footer>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scroll to Top -->
+    <button id="scroll-top"
+        class="fixed bottom-8 right-8 w-10 h-10 rounded-full bg-accent text-dark flex items-center justify-center shadow-lg translate-y-20 opacity-0 transition-all duration-300 hover:bg-white z-50 print:hidden">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
