@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Games Tracker | Kieran</title>
+    <meta name="description"
+        content="Track current free PC games and giveaways from Steam, Epic Games, GOG, and more. Updated daily.">
+    <meta name="keywords"
+        content="Free games, PC games, Steam giveaways, Epic Games free, GOG free games, game tracker">
+    <meta name="author" content="Kieran">
+    <link rel="canonical" href="https://wadforth.github.io/free-games/">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="../favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="../favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        dark: '#050505',
+                        card: 'rgba(20, 20, 20, 0.6)',
+                        'card-hover': 'rgba(30, 30, 30, 0.8)',
+                        accent: '#00ff9d',
+                        'accent-dim': 'rgba(0, 255, 157, 0.1)',
+                        secondary: '#94a3b8',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body class="bg-dark text-slate-200 font-sans antialiased selection:bg-accent selection:text-black">
+
+    <!-- Background Mesh (Reused) -->
+    <div class="fixed inset-0 z-[-1] opacity-20 pointer-events-none">
+        <div
+            class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_15%_50%,rgba(0,255,157,0.08),transparent_25%)]">
+        </div>
+        <div
+            class="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_85%_30%,rgba(56,189,248,0.08),transparent_25%)]">
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto min-h-screen p-6">
+
+        <!-- Header -->
+        <header class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <a href="../"
+                    class="text-slate-400 hover:text-accent transition-colors font-mono text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to Portfolio
+                </a>
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-500">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    API Live
+                </div>
+            </div>
+
+            <h1 class="text-4xl font-bold text-white mb-4 flex items-center gap-3">
+                <i class="fa-solid fa-gift text-accent"></i>
+                Free Games Tracker
+            </h1>
+            <p class="text-secondary max-w-2xl">
+                Aggregating the <span class="text-accent">latest free PC games</span> and time-limited giveaways from
+                Steam, Epic Games, GOG, and more. Never miss a freebie.
+            </p>
+        </header>
+
+        <!-- Controls -->
+        <div
+            class="mb-8 flex flex-wrap items-center gap-4 bg-card border border-white/5 p-4 rounded-xl backdrop-blur-md">
+            <!-- Platform Filter -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 custom-scrollbar">
+                <button
+                    class="filter-chip active px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-accent/10 border border-accent/20 text-accent hover:bg-accent/20 whitespace-nowrap"
+                    data-platform="all">
+                    All Platforms
+                </button>
+                <button
+                    class="filter-chip px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 whitespace-nowrap"
+                    data-platform="steam">
+                    <i class="fa-brands fa-steam"></i> Steam
+                </button>
+                <button
+                    class="filter-chip px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 whitespace-nowrap"
+                    data-platform="epic-games-store">
+                    <i class="fa-solid fa-cube"></i> Epic Games
+                </button>
+                <button
+                    class="filter-chip px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 whitespace-nowrap"
+                    data-platform="gog">
+                    GOG
+                </button>
+                <button
+                    class="filter-chip px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 whitespace-nowrap"
+                    data-platform="ubisoft">
+                    Ubisoft
+                </button>
+            </div>
+
+            <div class="h-6 w-px bg-white/10 hidden md:block"></div>
+
+            <!-- Search -->
+            <div class="flex-1 min-w-[200px] relative order-3 md:order-2">
+                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+                <input type="text" id="game-search"
+                    class="w-full bg-[#0c0c0c] border border-white/10 rounded-lg py-1.5 pl-8 pr-4 text-sm text-white focus:outline-none focus:border-accent placeholder:text-slate-600"
+                    placeholder="Search games...">
+            </div>
+
+            <!-- Advanced Controls -->
+            <div class="flex items-center gap-2 order-2 md:order-3 w-full md:w-auto justify-end">
+                <!-- Type Filter -->
+                <select id="type-filter"
+                    class="bg-[#0c0c0c] border border-white/10 rounded-lg py-1.5 px-3 text-sm text-slate-300 focus:outline-none focus:border-accent cursor-pointer">
+                    <option value="all">All Types</option>
+                    <option value="game">Games Only</option>
+                    <option value="dlc">DLCs Only</option>
+                </select>
+
+                <!-- Sort -->
+                <select id="sort-filter"
+                    class="bg-[#0c0c0c] border border-white/10 rounded-lg py-1.5 px-3 text-sm text-slate-300 focus:outline-none focus:border-accent cursor-pointer">
+                    <option value="newest">Newest</option>
+                    <option value="value-high">Highest Value</option>
+                </select>
+
+                <!-- Notification Bell -->
+                <button id="params-btn"
+                    class="bg-[#0c0c0c] border border-white/10 rounded-lg p-2 text-slate-400 hover:text-accent hover:border-accent transition-colors relative group"
+                    title="Notification Settings">
+                    <i class="fa-regular fa-bell"></i>
+                    <!-- Active Dot -->
+                    <span id="notif-badge"
+                        class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full hidden"></span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Notification Modal -->
+        <div id="notif-modal" class="fixed inset-0 z-50 hidden">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="notif-backdrop"></div>
+            <!-- Panel -->
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[#0c0c0c] border border-white/10 rounded-xl p-6 shadow-2xl shadow-accent/5">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-white"><i class="fa-regular fa-bell text-accent mr-2"></i>
+                        Notifications</h3>
+                    <button id="close-notif" class="text-slate-400 hover:text-white"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <p class="text-slate-400 text-sm mb-6">Get browser alerts when new freebies are detected. (Requires the
+                    tab to be open/pinned).</p>
+
+                <div class="space-y-4">
+                    <label
+                        class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                        <span class="text-slate-200">Alert for <strong class="text-white">Full Games</strong></span>
+                        <input type="checkbox" id="check-games"
+                            class="w-5 h-5 accent-accent bg-transparent border-white/20 rounded">
+                    </label>
+
+                    <label
+                        class="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                        <span class="text-slate-200">Alert for <strong class="text-white">DLCs / Loot</strong></span>
+                        <input type="checkbox" id="check-dlc"
+                            class="w-5 h-5 accent-accent bg-transparent border-white/20 rounded">
+                    </label>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-white/5 flex gap-3">
+                    <button id="enable-notifs-btn"
+                        class="flex-1 py-2.5 bg-accent text-dark font-bold rounded-lg hover:bg-emerald-400 transition-colors text-sm">
+                        Enable & Save
+                    </button>
+                    <button id="test-notif-btn"
+                        class="px-4 py-2.5 bg-white/5 text-slate-300 font-medium rounded-lg hover:bg-white/10 transition-colors text-sm">
+                        Test
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Instructions Modal -->
+        <div id="instructions-modal" class="fixed inset-0 z-50 hidden">
+            <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="instr-backdrop"></div>
+            <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[#0c0c0c] border border-white/10 rounded-xl p-6 shadow-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white">How to Claim</h3>
+                    <button id="close-instr" class="text-slate-400 hover:text-white"><i
+                            class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div id="instr-content"
+                    class="text-slate-300 text-sm space-y-4 leading-relaxed max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                    <!-- Content injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Grid -->
+        <div id="games-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Loading Skeletons -->
+            <div class="skeleton-card bg-card border border-white/5 rounded-xl overflow-hidden h-80 animate-pulse">
+                <div class="h-40 bg-white/5"></div>
+                <div class="p-4 space-y-3">
+                    <div class="h-4 bg-white/5 rounded w-3/4"></div>
+                    <div class="h-3 bg-white/5 rounded w-1/2"></div>
+                    <div class="h-8 bg-white/5 rounded w-full mt-4"></div>
+                </div>
+            </div>
+            <div class="skeleton-card bg-card border border-white/5 rounded-xl overflow-hidden h-80 animate-pulse">
+                <div class="h-40 bg-white/5"></div>
+                <div class="p-4 space-y-3">
+                    <div class="h-4 bg-white/5 rounded w-3/4"></div>
+                    <div class="h-3 bg-white/5 rounded w-1/2"></div>
+                    <div class="h-8 bg-white/5 rounded w-full mt-4"></div>
+                </div>
+            </div>
+            <div class="skeleton-card bg-card border border-white/5 rounded-xl overflow-hidden h-80 animate-pulse">
+                <div class="h-40 bg-white/5"></div>
+                <div class="p-4 space-y-3">
+                    <div class="h-4 bg-white/5 rounded w-3/4"></div>
+                    <div class="h-3 bg-white/5 rounded w-1/2"></div>
+                    <div class="h-8 bg-white/5 rounded w-full mt-4"></div>
+                </div>
+            </div>
+            <div class="skeleton-card bg-card border border-white/5 rounded-xl overflow-hidden h-80 animate-pulse">
+                <div class="h-40 bg-white/5"></div>
+                <div class="p-4 space-y-3">
+                    <div class="h-4 bg-white/5 rounded w-3/4"></div>
+                    <div class="h-3 bg-white/5 rounded w-1/2"></div>
+                    <div class="h-8 bg-white/5 rounded w-full mt-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Results -->
+        <div id="no-results" class="hidden text-center py-20">
+            <i class="fa-solid fa-ghost text-4xl text-slate-600 mb-4"></i>
+            <p class="text-slate-400">No games found matching your filters.</p>
+        </div>
+
+        <!-- Scroll to Top (Auto-managed by script if I add it, or inline JS) -->
+        <button id="scroll-to-top"
+            class="fixed bottom-6 right-6 bg-accent/20 hover:bg-accent hover:text-black text-accent border border-accent/50 p-3 rounded-xl transition-all duration-300 opacity-0 invisible translate-y-4 shadow-lg shadow-accent/10 z-30"
+            onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+            <i class="fa-solid fa-arrow-up"></i>
+        </button>
+
+    </div>
+
+    <!-- Script -->
+    <script src="script.js"></script>
+</body>
+
+</html>
