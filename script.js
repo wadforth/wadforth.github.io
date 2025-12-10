@@ -5,6 +5,19 @@ document.addEventListener('DOMContentLoaded', () => {
         yearSpan.textContent = new Date().getFullYear();
     }
 
+    // Visitor Counter
+    const visitorCountSpan = document.getElementById('visitor-count');
+    if (visitorCountSpan) {
+        let count = localStorage.getItem('visitorCount');
+        if (!count) {
+            count = Math.floor(Math.random() * (5000 - 1000 + 1) + 1000); // Random start
+        } else {
+            count = parseInt(count) + 1;
+        }
+        localStorage.setItem('visitorCount', count);
+        visitorCountSpan.textContent = count.toLocaleString();
+    }
+
     // Typing Effect
     const typingText = document.querySelector('.typing-text');
     const phrases = [
@@ -206,12 +219,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Boot Sequence
     const bootLines = [
         { text: 'Initializing kernel...', delay: 500 },
-        { text: 'Loading modules: security, network, dev...', delay: 1200 },
-        { text: 'Mounting file system...', delay: 1800 },
-        { text: 'Starting SOC interface...', delay: 2400 },
-        { text: 'System ready.', delay: 3000, color: 'text-accent' },
-        { text: "Welcome to Kieran's Interactive Terminal v1.0.0", delay: 3500 },
-        { text: "Type <span class='text-accent'>'help'</span> to see available commands.", delay: 3600 }
+        { text: 'Loading modules: security, network, dev...', delay: 300 },
+        { text: 'Mounting file system...', delay: 300 },
+        { text: 'Starting SOC interface...', delay: 400 },
+        { text: 'Access granted.', delay: 400, color: 'text-accent' },
+        { text: "Welcome to Kieran's Interactive Terminal v2.0", delay: 800, color: 'text-white font-bold' },
+        { text: "Type <span class='text-accent'>'help'</span> to see available commands.", delay: 0 }
     ];
 
     const runBootSequence = async () => {
@@ -254,13 +267,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const hackPasswords = ['cyberdefense', 'th2025', 'soc4life', 'kqlmaster', 'sentinelops'];
 
         const commands = {
-            help: 'Available commands: <span class="text-accent">help</span>, <span class="text-accent">whoami</span>, <span class="text-accent">skills</span>, <span class="text-accent">contact</span>, <span class="text-accent">projects</span>, <span class="text-accent">experience</span>, <span class="text-accent">certs</span>, <span class="text-accent">social</span>, <span class="text-accent">resume</span>, <span class="text-accent">clear</span><br><span class="text-slate-500 text-xs">Hint: Try some Linux commands... or type "matrix"</span>',
+            help: '<div class="space-y-1"><div class="text-white mb-2">Available commands:</div><div class="grid grid-cols-[100px_1fr] gap-2"><span class="text-accent">about</span><span class="text-slate-400">View profile summary</span><span class="text-accent">projects</span><span class="text-slate-400">List my projects</span><span class="text-accent">contact</span><span class="text-slate-400">Get contact info</span><span class="text-accent">social</span><span class="text-slate-400">Social media links</span><span class="text-accent">ls</span><span class="text-slate-400">List directory contents</span><span class="text-accent">cat</span><span class="text-slate-400">Read file contents</span><span class="text-accent">whoami</span><span class="text-slate-400">Current user info</span><span class="text-accent">pwd</span><span class="text-slate-400">Print working directory</span><span class="text-accent">joke</span><span class="text-slate-400">Tell a joke</span><span class="text-accent">hack</span><span class="text-slate-400">Start hack simulation</span><span class="text-accent">matrix</span><span class="text-slate-400">Enter the matrix</span><span class="text-accent">sudo</span><span class="text-slate-400">Execute as superuser</span><span class="text-accent">clear</span><span class="text-slate-400">Clear terminal</span></div></div>',
             whoami: 'Kieran | Senior SOC Analyst & Developer based in the UK.',
             skills: 'Security: SIEM, Splunk, Wireshark, Threat Hunting<br>Dev: Python, React, TypeScript, Node.js',
             contact: 'LinkedIn: linkedin.com/in/kieranwadforth | GitHub: @wadforth',
             projects: '<span class="text-accent font-bold">Featured Projects:</span><br>• <span class="text-white">Pulse Optimizer</span> - System optimization tool (Electron, React)<br>• <span class="text-white">Malware Simulation</span> - Isolated malware analysis environment<br>• <span class="text-white">Network-Dumper</span> - Network traffic analysis utility<br>• <span class="text-white">SteamSwitcher</span> - Quick Steam account switching tool',
-            experience: '<span class="text-accent font-bold">Current Role:</span><br><span class="text-white">Senior SOC Analyst @ EDF</span> (Nov 2025 - Present)<br><br><span class="text-accent font-bold">Previous:</span><br>• Senior Security Analyst @ Performanta (Mar 2024 - Nov 2025)<br>• MDR & Threat Intelligence Analyst @ Performanta (Jun 2022 - Mar 2024)',
-            certs: '<span class="text-accent font-bold">Certifications:</span><br>• Chronicle Certified SOAR Developer (CCSD)<br>• Siemplify Certified SOAR Analyst (SCSA)<br>• CompTIA CySA+ (CS0-002)',
             social: '<span class="text-accent font-bold">Connect with me:</span><br>• GitHub: <a href="https://github.com/wadforth" target="_blank" class="text-blue-400 hover:text-accent">github.com/wadforth</a><br>• LinkedIn: <a href="https://www.linkedin.com/in/kieranwadforth/" target="_blank" class="text-blue-400 hover:text-accent">linkedin.com/in/kieranwadforth</a>',
 
             clear: 'CLEAR',
@@ -360,3 +371,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+

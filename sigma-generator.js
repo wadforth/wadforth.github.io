@@ -1,61 +1,201 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Global Error Handler for debugging
+    window.onerror = function (msg, url, line, col, error) {
+        showToast(`Error: ${msg}`, 'error');
+        console.error(error);
+        return false;
+    };
+    // Toast Container
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        const icon = type === 'success' ? 'fa-check' :
+            type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info';
+
+        toast.innerHTML = `
+            <i class="fa-solid ${icon}"></i>
+            <span>${message}</span>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Trigger reflow
+        toast.offsetHeight;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
     // State
     let currentMode = 'simple';
     let selectionCounter = 0;
     let savedRules = JSON.parse(localStorage.getItem('sigma-rules') || '[]');
 
-    // Common field names by category
-    const commonFields = {
-        process_creation: ['CommandLine', 'Image', 'ParentImage', 'ParentCommandLine', 'User', 'IntegrityLevel', 'ProcessId', 'ParentProcessId'],
-        network_connection: ['DestinationIp', 'DestinationPort', 'SourceIp', 'SourcePort', 'Protocol', 'Image', 'User'],
-        file_event: ['TargetFilename', 'Image', 'User', 'ProcessId'],
-        registry_event: ['TargetObject', 'Details', 'Image', 'User', 'EventType'],
-        image_load: ['ImageLoaded', 'Image', 'Signature', 'SignatureStatus', 'User'],
-        dns_query: ['QueryName', 'QueryResults', 'Image', 'User'],
-        webserver: ['c-ip', 'cs-method', 'cs-uri-query', 'sc-status', 'cs-User-Agent']
-    };
-
-    // Common services by product
-    const commonServices = {
-        windows: ['sysmon', 'security', 'powershell', 'system', 'application', 'defender'],
-        linux: ['syslog', 'auth', 'auditd'],
-        aws: ['cloudtrail', 'vpc', 'guardduty'],
-        azure: ['activitylogs', 'signinlogs', 'auditlogs'],
-        office365: ['exchange', 'sharepoint', 'azuread', 'threat_management']
-    };
-
     // Quick Templates
     const templates = {
         powershell: {
-            title: 'Suspicious PowerShell Execution',
+            title: 'Suspicious PowerShell Encoded Command',
             category: 'process_creation',
             product: 'windows',
             service: 'powershell',
-            status: 'experimental',
+            status: 'stable',
             level: 'high',
-            description: 'Detects suspicious encoded PowerShell command execution',
+            description: 'Detects usage of the "EncodedCommand" parameter in PowerShell, often used to conceal malicious scripts. Handles all abbreviations of the parameter.',
             tags: 'attack.t1059.001, attack.execution',
-            selections: [{ field: 'CommandLine', value: '-enc', modifier: 'contains' }]
+            falsepositives: 'Legitimate administrative scripts using encoded commands\nSCCM/System management tools',
+            selections: [{ field: 'CommandLine', value: ' -(e|en|enc|enco|encod|encode|encoded|encodedc|encodedco|encodedcom|encodedcomm|encodedcomma|encodedcomman|encodedcommand) ', modifier: 're' }]
         },
         privilege_esc: {
-            title: 'Privilege Escalation Attempt',
+            title: 'Sticky Keys Binary Replacement Backdoor',
+            category: 'file_event',
+            product: 'windows',
+            status: 'critical',
+            level: 'critical',
+            description: 'Detects the replacement of accessibility binaries (like sethc.exe) with cmd.exe or other tools, a common persistence and privilege escalation technique.',
+            tags: 'attack.t1546.008, attack.persistence, attack.privilege_escalation',
+            falsepositives: 'None expected in a healthy environment',
+            selections: [
+                { field: 'TargetFilename', value: '\\sethc.exe', modifier: 'endswith' },
+                { field: 'Image', value: '\\cmd.exe', modifier: 'endswith' }
+            ]
+        },
+        suspicious_network: {
+            title: 'CertUtil Download (Ingress Tool Transfer)',
             category: 'process_creation',
             product: 'windows',
             status: 'stable',
-            level: 'critical',
-            description: 'Detects attempts to escalate to high integrity level',
-            tags: 'attack.t1068, attack.privilege_escalation',
-            selections: [{ field: 'IntegrityLevel', value: 'High' }]
+            level: 'high',
+            description: 'Detects the use of certutil.exe to download files from the internet, a technique often used by attackers to download tools (Living off the Land).',
+            tags: 'attack.t1105, attack.command_and_control',
+            falsepositives: 'Legitimate certificate downloads (rare via command line)',
+            selections: [
+                { field: 'Image', value: 'certutil.exe', modifier: 'endswith' },
+                { field: 'CommandLine', value: 'urlcache', modifier: 'contains' },
+                { field: 'CommandLine', value: 'split', modifier: 'contains' }
+            ]
         },
-        suspicious_network: {
-            title: 'Outbound Connection to Suspicious IP',
-            category: 'network_connection',
+        malware_process: {
+            title: 'Mimikatz Command Line Arguments',
+            category: 'process_creation',
+            product: 'windows',
+            status: 'stable',
+            level: 'high',
+            description: 'Detects well-known Mimikatz command line arguments used for credential dumping.',
+            tags: 'attack.t1003, attack.credential_access',
+            falsepositives: 'Security testing / Red teaming',
+            selections: [
+                { field: 'CommandLine', value: 'sekurlsa::logonpasswords', modifier: 'contains' },
+                { field: 'CommandLine', value: 'lsadump::sam', modifier: 'contains' },
+                { field: 'CommandLine', value: 'privilege::debug', modifier: 'contains' }
+            ]
+        },
+        lateral_movement: {
+            title: 'RDP Session Hijacking via TSCON',
+            category: 'process_creation',
+            product: 'windows',
+            status: 'critical',
+            level: 'high',
+            description: 'Detects RDP session hijacking attempts using the tscon.exe utility to connect to existing sessions without credentials.',
+            tags: 'attack.t1563.002, attack.lateral_movement',
+            falsepositives: 'Administrator switching sessions (rare)',
+            selections: [
+                { field: 'Image', value: 'tscon.exe', modifier: 'endswith' },
+                { field: 'CommandLine', value: '/dest:rdp-tcp', modifier: 'contains' }
+            ]
+        },
+        data_exfil: {
+            title: 'DNS Tunneling via Long Domains',
+            category: 'dns_query',
             product: 'windows',
             status: 'experimental',
             level: 'medium',
-            description: 'Detects network connections to known suspicious IP ranges',
-            tags: 'attack.t1071, attack.command_and_control',
-            selections: [{ field: 'DestinationIp', value: '10.' }]
+            description: 'Detects potentially malicious DNS tunneling or C2 by identifying DNS queries with unusually long domain names (>180 chars).',
+            tags: 'attack.t1048.003, attack.exfiltration',
+            falsepositives: 'CDN domains\nCloud services with long subdomains',
+            selections: [{ field: 'QueryName', value: '.{180,}', modifier: 're' }]
+        }
+    };
+
+    // Platform Mappings & Schema
+    const mappings = {
+        defender: {
+            process_creation: {
+                table: 'DeviceProcessEvents',
+                columns: ['Timestamp', 'DeviceName', 'AccountName', 'FileName', 'ProcessCommandLine', 'InitiatingProcessFileName', 'SHA256']
+            },
+            network_connection: {
+                table: 'DeviceNetworkEvents',
+                columns: ['Timestamp', 'DeviceName', 'AccountName', 'RemoteIP', 'RemotePort', 'LocalIP', 'LocalPort', 'RemoteUrl']
+            },
+            file_event: {
+                table: 'DeviceFileEvents',
+                columns: ['Timestamp', 'DeviceName', 'AccountName', 'FileName', 'FolderPath', 'SHA256', 'ActionType']
+            },
+            registry_event: {
+                table: 'DeviceRegistryEvents',
+                columns: ['Timestamp', 'DeviceName', 'AccountName', 'RegistryKey', 'RegistryValueName', 'RegistryValueData', 'ActionType']
+            },
+            image_load: {
+                table: 'DeviceImageLoadEvents',
+                columns: ['Timestamp', 'DeviceName', 'AccountName', 'FileName', 'FolderPath', 'SHA256']
+            },
+            fields: {
+                'Image': 'FileName',
+                'CommandLine': 'ProcessCommandLine',
+                'ParentImage': 'InitiatingProcessFileName',
+                'User': 'AccountName',
+                'Hashes': 'SHA256',
+                'DestinationIp': 'RemoteIP',
+                'DestinationPort': 'RemotePort',
+                'SourceIp': 'LocalIP',
+                'SourcePort': 'LocalPort',
+                'Protocol': 'Protocol',
+                'TargetFilename': 'FileName'
+            }
+        },
+        crowdstrike: {
+            process_creation: {
+                table: '#event_simpleName=ProcessRollup2',
+                columns: ['_time', 'ComputerName', 'UserName', 'ImageFileName', 'CommandLine', 'ParentBaseFileName']
+            },
+            network_connection: {
+                table: '#event_simpleName=NetworkConnect',
+                columns: ['_time', 'ComputerName', 'UserName', 'RemoteAddress', 'RemotePort', 'LocalAddress', 'LocalPort']
+            },
+            fields: {
+                'Image': 'ImageFileName',
+                'CommandLine': 'CommandLine',
+                'ParentImage': 'ParentBaseFileName',
+                'User': 'UserName',
+                'DestinationIp': 'RemoteAddress',
+                'DestinationPort': 'RemotePort'
+            }
+        },
+        sentinel: {
+            process_creation: {
+                table: 'SecurityEvent | where EventID == 4688',
+                columns: ['TimeGenerated', 'Computer', 'SubjectUserName', 'NewProcessName', 'CommandLine', 'ParentProcessName']
+            },
+            network_connection: {
+                table: 'CommonSecurityLog | where DeviceVendor == "Palo Alto Networks"',
+                columns: ['TimeGenerated', 'DeviceName', 'SourceIP', 'DestinationIP', 'DestinationPort', 'ApplicationProtocol']
+            },
+            fields: {
+                'Image': 'NewProcessName',
+                'CommandLine': 'CommandLine',
+                'ParentImage': 'ParentProcessName',
+                'User': 'SubjectUserName',
+                'DestinationIp': 'DestinationIP',
+                'DestinationPort': 'DestinationPort'
+            }
         }
     };
 
@@ -97,44 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
         metadataChevron.style.transform = isHidden ? 'rotate(180deg)' : '';
     });
 
-    // Update service datalist when product changes
-    const productSelect = document.getElementById('logsource-product');
-    const serviceInput = document.getElementById('logsource-service');
-
-    productSelect.addEventListener('change', () => {
-        const product = productSelect.value;
-        const services = commonServices[product] || [];
-
-        let datalist = document.getElementById('service-options');
-        if (!datalist) {
-            datalist = document.createElement('datalist');
-            datalist.id = 'service-options';
-            serviceInput.setAttribute('list', 'service-options');
-            document.body.appendChild(datalist);
-        }
-
-        datalist.innerHTML = services.map(s => `<option value="${s}">`).join('');
-    });
-
-    // Keyboard Shortcuts
-    document.addEventListener('keydown', (e) => {
-        // Ctrl+S to save
-        if (e.ctrlKey && e.key === 's') {
-            e.preventDefault();
-            saveRuleBtn.click();
-        }
-        // Ctrl+Shift+C to copy
-        if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-            e.preventDefault();
-            copyYamlBtn.click();
-        }
-        // Ctrl+Shift+D to download
-        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-            e.preventDefault();
-            downloadYamlBtn.click();
-        }
-    });
-
     // Add Selection
     addSelectionBtn.addEventListener('click', () => {
         addSelection();
@@ -163,11 +265,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('rule-description').value = template.description || '';
                 document.getElementById('rule-tags').value = template.tags || '';
 
+                // Check if we need advanced mode
+                const needsAdvanced = template.selections && template.selections.some(s => s.modifier);
+                if (needsAdvanced && currentMode !== 'advanced') {
+                    // Switch to advanced mode
+                    currentMode = 'advanced';
+                    advancedModeBtn.click(); // Trigger UI update
+                }
+
                 // Add selections
                 if (template.selections) {
                     template.selections.forEach(sel => {
                         addSelection(sel.field || '', sel.value || '', sel.modifier || '');
                     });
+                }
+
+                // Update Badge
+                const badge = document.getElementById('current-template-badge');
+                if (badge) {
+                    const selectedOption = templateSelector.options[templateSelector.selectedIndex];
+                    badge.textContent = selectedOption ? selectedOption.text : template.title;
+                    badge.classList.remove('hidden');
                 }
 
                 generateYAML();
@@ -197,6 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('rule-falsepositives').value = '';
             document.getElementById('detection-condition').value = 'selection';
 
+            // Hide Badge
+            const badge = document.getElementById('current-template-badge');
+            if (badge) badge.classList.add('hidden');
+
             // Clear selections
             selectionsContainer.innerHTML = '';
             selectionCounter = 0;
@@ -207,11 +329,70 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function validateForm() {
+        const title = document.getElementById('rule-title').value.trim();
+        const category = document.getElementById('logsource-category').value;
+        const product = document.getElementById('logsource-product').value;
+        const selections = document.querySelectorAll('[data-selection-id]');
+
+        let isValid = true;
+        let errorMessage = "Please check the following:\n";
+
+        if (!title) {
+            isValid = false;
+            errorMessage += "- Title is required\n";
+            document.getElementById('rule-title').classList.add('!border-red-400', 'bg-red-400/10');
+            setTimeout(() => document.getElementById('rule-title').classList.remove('!border-red-400', 'bg-red-400/10'), 3000);
+        }
+
+        if (!category) {
+            isValid = false;
+            errorMessage += "- Log Source Category is required\n";
+            document.getElementById('logsource-category').classList.add('!border-red-400', 'bg-red-400/10');
+            setTimeout(() => document.getElementById('logsource-category').classList.remove('!border-red-400', 'bg-red-400/10'), 3000);
+        }
+
+        if (!product) {
+            isValid = false;
+            errorMessage += "- Log Source Product is required\n";
+            document.getElementById('logsource-product').classList.add('!border-red-400', 'bg-red-400/10');
+            setTimeout(() => document.getElementById('logsource-product').classList.remove('!border-red-400', 'bg-red-400/10'), 3000);
+        }
+
+        if (selections.length === 0) {
+            isValid = false;
+            errorMessage += "- At least one Detection Logic selection is required\n";
+            document.getElementById('selections-container').classList.add('border', 'border-red-400', 'rounded', 'p-2');
+            setTimeout(() => document.getElementById('selections-container').classList.remove('border', 'border-red-400', 'rounded', 'p-2'), 3000);
+        } else {
+            // Check if any selection fields are empty
+            let emptyFields = false;
+            selections.forEach(sel => {
+                const field = sel.querySelector('.selection-field').value.trim();
+                const value = sel.querySelector('.selection-value').value.trim();
+                if (!field || !value) {
+                    emptyFields = true;
+                    sel.classList.add('!border-red-400', 'bg-red-400/10');
+                    setTimeout(() => sel.classList.remove('!border-red-400', 'bg-red-400/10'), 3000);
+                }
+            });
+
+            if (emptyFields) {
+                isValid = false;
+                errorMessage += "- All detection fields and values must be filled\n";
+            }
+        }
+
+        if (!isValid) {
+            showToast(errorMessage.replace(/\n/g, '<br>'), 'error');
+        }
+
+        return isValid;
+    }
+
     function addSelection(field = '', value = '', modifier = '') {
         selectionCounter++;
         const selectionId = `selection${selectionCounter}`;
-        const category = document.getElementById('logsource-category').value;
-        const fieldOptions = commonFields[category] || ['CommandLine', 'Image', 'User', 'ProcessId'];
 
         const selectionDiv = document.createElement('div');
         selectionDiv.className = 'p-4 bg-dark/50 border border-white/10 rounded-lg';
@@ -225,27 +406,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
             </div>
             <div class="grid grid-cols-${currentMode === 'advanced' ? '3' : '2'} gap-3">
-                <div class="relative">
-                    <input type="text" list="field-options-${selectionId}" class="selection-field px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none w-full" placeholder="Field name (type or select)" value="${field}" title="Common fields for ${category || 'all categories'}">
-                    <datalist id="field-options-${selectionId}">
-                        ${fieldOptions.map(opt => `<option value="${opt}">`).join('')}
-                    </datalist>
-                </div>
-                <input type="text" class="selection-value px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none" placeholder="Value" value="${value}">
+                <input type="text" list="sigma-fields" class="selection-field px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none" placeholder="Select or type field...">
+                <input type="text" class="selection-value px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none" placeholder="Value">
                 ${currentMode === 'advanced' ? `
                 <select class="selection-modifier px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none">
                     <option value="">No Modifier</option>
-                    <option value="contains" ${modifier === 'contains' ? 'selected' : ''}>Contains</option>
-                    <option value="startswith" ${modifier === 'startswith' ? 'selected' : ''}>Starts With</option>
-                    <option value="endswith" ${modifier === 'endswith' ? 'selected' : ''}>Ends With</option>
-                    <option value="all" ${modifier === 'all' ? 'selected' : ''}>All</option>
-                    <option value="re" ${modifier === 're' ? 'selected' : ''}>Regex</option>
+                    <option value="contains">Contains</option>
+                    <option value="startswith">Starts With</option>
+                    <option value="endswith">Ends With</option>
+                    <option value="all">All</option>
+                    <option value="re">Regex</option>
                 </select>
                 ` : ''}
             </div>
         `;
 
         selectionsContainer.appendChild(selectionDiv);
+
+        // Safely set values (avoids quote breaking)
+        selectionDiv.querySelector('.selection-field').value = field;
+        selectionDiv.querySelector('.selection-value').value = value;
+        if (currentMode === 'advanced' && modifier) {
+            const modSelect = selectionDiv.querySelector('.selection-modifier');
+            if (modSelect) modSelect.value = modifier;
+        }
 
         // Add event listeners to inputs
         const inputs = selectionDiv.querySelectorAll('input, select');
@@ -376,7 +560,171 @@ document.addEventListener('DOMContentLoaded', () => {
             yaml += `level: ${level}\n`;
         }
 
-        yamlOutput.textContent = yaml || '# Your SIGMA rule will appear here...';
+        // Syntax Highlighting
+        yamlOutput.innerHTML = highlightYAML(yaml) || '<span class="text-slate-500"># Your SIGMA rule will appear here...</span>';
+    }
+
+    function highlightYAML(yaml) {
+        if (typeof yaml !== 'string') return '';
+        try {
+            return yaml
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/^([a-z0-9_]+):/gm, '<span class="yaml-key">$1</span>:')
+                .replace(/: (.+)$/gm, ': <span class="yaml-string">$1</span>')
+                .replace(/- (.+)$/gm, '<span class="yaml-bullet">-</span> <span class="yaml-string">$1</span>')
+                .replace(/(^#.*$)/gm, '<span class="yaml-comment">$1</span>');
+        } catch (e) {
+            console.error(e);
+            return yaml;
+        }
+    }
+
+    // Threat Hunting Query Conversion
+    const convertBtn = document.getElementById('convert-btn');
+    const copyQueryBtn = document.getElementById('copy-query-btn');
+    const queryOutput = document.getElementById('query-output');
+    const targetPlatform = document.getElementById('target-platform');
+
+    function convertRule() {
+        if (!validateForm()) return;
+
+        const platform = targetPlatform.value;
+        const category = document.getElementById('logsource-category').value;
+        const selections = document.querySelectorAll('[data-selection-id]');
+
+        // Get Schema Config from global mappings
+        const schema = mappings[platform] && mappings[platform][category] ? mappings[platform][category] : null;
+        let baseTable = schema ? schema.table : (platform === 'crowdstrike' ? 'event_simpleName=*' : 'Union *');
+
+        // Warn if no mapping
+        let warnings = [];
+        if (!schema && platform !== 'crowdstrike' && mappings[platform]) {
+            warnings.push(`No specific mapping for category '${category}' on ${platform}. Using generic table.`);
+        }
+
+        // 1. Build Conditions
+        let conditions = [];
+        selections.forEach(sel => {
+            const field = sel.querySelector('.selection-field').value;
+            const value = sel.querySelector('.selection-value').value;
+            const modifier = currentMode === 'advanced' ? sel.querySelector('.selection-modifier')?.value : '';
+
+            // Map field name if possible, else keep original and warn
+            let mappedField = field;
+            if (mappings[platform] && mappings[platform].fields && mappings[platform].fields[field]) {
+                mappedField = mappings[platform].fields[field];
+            } else {
+                warnings.push(`Custom field '${field}' may not exist in ${platform} schema.`);
+            }
+
+            if (platform === 'defender' || platform === 'sentinel') {
+                // KQL Logic
+                let operator = '==';
+                let valQuote = `"${value}"`;
+
+                if (modifier === 'contains') operator = 'contains';
+                if (modifier === 'startswith') operator = 'startswith';
+                if (modifier === 'endswith') operator = 'endswith';
+
+                conditions.push(`${mappedField} ${operator} ${valQuote}`);
+            } else if (platform === 'crowdstrike') {
+                // FQL Logic (Splunk-like)
+                let valStr = `"${value}"`;
+                if (modifier === 'contains') valStr = `"*${value}*"`;
+                if (modifier === 'startswith') valStr = `"${value}*"`;
+                if (modifier === 'endswith') valStr = `"*${value}"`;
+
+                conditions.push(`${mappedField}=${valStr}`);
+            }
+        });
+
+        // 2. Assemble Query
+        let query = '';
+        if (platform === 'defender' || platform === 'sentinel') {
+            query = `${baseTable}\n| where ${conditions.join(' or ')}`;
+        } else if (platform === 'crowdstrike') {
+            query = `${baseTable} ${conditions.join(' OR ')}`;
+        }
+
+        // 3. Add Projection/Selection
+        const selectedColumns = Array.from(document.querySelectorAll('input[name="display-columns"]:checked'))
+            .map(cb => cb.value);
+        if (selectedColumns.length > 0) {
+            if (platform === 'defender' || platform === 'sentinel') {
+                query += `\n| project ${selectedColumns.join(', ')}`;
+            } else if (platform === 'crowdstrike') {
+                query += ` | select([${selectedColumns.join(', ')}])`;
+            }
+        }
+
+        // 4. Append Warnings
+        if (warnings.length > 0) {
+            query = `// WARNING: ${warnings.join(' | ')}\n` + query;
+            showToast('Query generated with warnings (check top of query)', 'warning');
+        } else {
+            showToast(`Generated ${platform} query`, 'success');
+        }
+
+        queryOutput.textContent = query;
+    }
+
+    // Dynamic Columns Options
+    function updateQueryOptions() {
+        const platform = targetPlatform.value;
+        const category = document.getElementById('logsource-category').value;
+        const optionsDiv = document.getElementById('query-options');
+        const checkboxContainer = document.getElementById('column-checkboxes');
+
+        // Lookup Schema
+        const schema = mappings[platform] && mappings[platform][category] ? mappings[platform][category] : null;
+        let columns = schema ? schema.columns : [];
+
+        // Fallback defaults
+        if (!columns || columns.length === 0) {
+            if (platform === 'defender') columns = ['Timestamp', 'DeviceName', 'ActionType'];
+            if (platform === 'crowdstrike') columns = ['_time', 'ComputerName', 'event_simpleName'];
+            if (platform === 'sentinel') columns = ['TimeGenerated', 'Computer', 'EventID'];
+        }
+
+        checkboxContainer.innerHTML = '';
+        columns.forEach(col => {
+            const wrapper = document.createElement('label');
+            wrapper.className = 'flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded border border-white/10 cursor-pointer hover:bg-white/10 text-[10px] text-slate-300 select-none';
+            wrapper.innerHTML = `
+                <input type="checkbox" name="display-columns" value="${col}" class="rounded bg-dark border-white/20 text-accent focus:ring-0 w-3 h-3">
+                ${col}
+            `;
+            checkboxContainer.appendChild(wrapper);
+        });
+
+        optionsDiv.classList.remove('hidden');
+    }
+
+    if (convertBtn) {
+        convertBtn.addEventListener('click', convertRule);
+    }
+
+    // Add listener for platform AND category change
+    if (targetPlatform) {
+        const categorySelect = document.getElementById('logsource-category');
+
+        targetPlatform.addEventListener('change', updateQueryOptions);
+        if (categorySelect) {
+            categorySelect.addEventListener('change', updateQueryOptions);
+        }
+
+        updateQueryOptions(); // Init
+    }
+
+    if (copyQueryBtn) {
+        copyQueryBtn.addEventListener('click', () => {
+            if (queryOutput.textContent.includes('Select a platform')) return;
+            navigator.clipboard.writeText(queryOutput.textContent).then(() => {
+                showToast('Query copied to clipboard!', 'success');
+            });
+        });
     }
 
     // Generate UUID
@@ -388,23 +736,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+S to Save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            saveRuleBtn.click();
+        }
+        // Ctrl+C to Copy (only if not selecting text)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c' && !window.getSelection().toString()) {
+            e.preventDefault();
+            copyYamlBtn.click();
+        }
+    });
+
     // Copy YAML
     copyYamlBtn.addEventListener('click', () => {
+        if (!validateForm()) return;
         const yaml = yamlOutput.textContent;
         navigator.clipboard.writeText(yaml).then(() => {
-            const originalHTML = copyYamlBtn.innerHTML;
-            copyYamlBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
-            copyYamlBtn.classList.add('!bg-accent/30', '!text-accent');
-
-            setTimeout(() => {
-                copyYamlBtn.innerHTML = originalHTML;
-                copyYamlBtn.classList.remove('!bg-accent/30', '!text-accent');
-            }, 2000);
+            showToast('Rule copied to clipboard!', 'success');
         });
     });
 
     // Download YAML
     downloadYamlBtn.addEventListener('click', () => {
+        if (!validateForm()) return;
         const yaml = yamlOutput.textContent;
         const title = document.getElementById('rule-title').value || 'sigma-rule';
         const filename = title.toLowerCase().replace(/\s+/g, '-') + '.yml';
@@ -416,10 +773,12 @@ document.addEventListener('DOMContentLoaded', () => {
         a.download = filename;
         a.click();
         URL.revokeObjectURL(url);
+        showToast('Rule downloaded successfully!', 'success');
     });
 
     // Save Rule to LocalStorage
     saveRuleBtn.addEventListener('click', () => {
+        if (!validateForm()) return;
         const title = document.getElementById('rule-title').value || 'Untitled Rule';
         const yaml = yamlOutput.textContent;
 
@@ -436,15 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sigma-rules', JSON.stringify(savedRules));
         renderSavedRules();
 
-        // Show feedback
-        const originalHTML = saveRuleBtn.innerHTML;
-        saveRuleBtn.innerHTML = '<i class="fa-solid fa-check"></i> Saved!';
-        saveRuleBtn.classList.add('!bg-accent/30', '!text-accent');
-
-        setTimeout(() => {
-            saveRuleBtn.innerHTML = originalHTML;
-            saveRuleBtn.classList.remove('!bg-accent/30', '!text-accent');
-        }, 2000);
+        showToast('Rule saved to history!', 'success');
     });
 
     // Render Saved Rules
@@ -473,8 +824,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const rule = savedRules.find(r => r.id === ruleId);
         if (rule) {
             // This is a simplified load - in production you'd parse the YAML back into form fields
-            yamlOutput.textContent = rule.yaml;
-            alert('Rule loaded into preview. (Full form population coming in v2)');
+            yamlOutput.innerHTML = highlightYAML(rule.yaml);
+            showToast('Rule loaded into preview (Read-only)', 'info');
         }
     };
 

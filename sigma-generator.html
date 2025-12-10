@@ -61,246 +61,477 @@
             class="absolute top-0 right-0 w-full h-full bg-[radial-gradient(circle_at_85%_30%,rgba(56,189,248,0.08),transparent_25%)]">
         </div>
     </div>
-    </h1>
-    <p class="text-secondary max-w-3xl">
-        Create platform-independent detection rules following the <span class="text-accent">Sigma 2.0</span>
-        specification.
-        Generate valid YAML output for use across SIEM systems.
-    </p>
 
-    <!-- Warning Banner -->
-    <div class="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-        <div class="flex items-start gap-3">
-            <i class="fa-solid fa-triangle-exclamation text-yellow-500 mt-1"></i>
-            <div>
-                <p class="text-yellow-200 font-medium mb-1">⚠️ Validation Notice</p>
-                <p class="text-yellow-100/80 text-sm">
-                    This generator follows the latest Sigma 2.0 schema, but generated syntax may contain errors.
-                    Always validate and test your rules before deployment using official Sigma tools.
-                </p>
+    <div class="max-w-7xl mx-auto min-h-screen p-6">
+
+        <!-- Header -->
+        <header class="mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <a href="index.html"
+                    class="text-slate-400 hover:text-accent transition-colors font-mono text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to Portfolio
+                </a>
+            </div>
+
+            <h1 class="text-4xl font-bold text-white mb-4">
+                <i class="fa-solid fa-shield-halved text-accent"></i>
+                SIGMA Rule Generator
+            </h1>
+            <p class="text-secondary max-w-3xl">
+                Create platform-independent detection rules following the <span class="text-accent">Sigma 2.0</span>
+                specification.
+                Generate valid YAML output for use across SIEM systems.
+            </p>
+
+            <!-- Warning Banner -->
+            <div class="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-yellow-500 mt-1"></i>
+                    <div>
+                        <p class="text-yellow-200 font-medium mb-1">⚠️ Validation Notice</p>
+                        <p class="text-yellow-100/80 text-sm">
+                            This generator follows the latest Sigma 2.0 schema, but generated syntax may contain errors.
+                            Always validate and test your rules before deployment using official Sigma tools.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mode Toggle -->
+        <div class="mb-8 flex items-center gap-4">
+            <span class="text-sm text-slate-400 font-mono">Mode:</span>
+            <div class="flex gap-2 p-1 rounded-lg bg-dark/80 border border-white/10">
+                <button id="simple-mode-btn"
+                    class="mode-btn active px-4 py-2 rounded-md text-sm font-medium transition-all">
+                    Simple
+                </button>
+                <button id="advanced-mode-btn" class="mode-btn px-4 py-2 rounded-md text-sm font-medium transition-all">
+                    Advanced
+                </button>
             </div>
         </div>
-    </div>
-    </header>
 
-    <!-- Mode Toggle -->
-    <div class="mb-8 flex items-center gap-4">
-        <span class="text-sm text-slate-400 font-mono">Mode:</span>
-        <div class="flex gap-2 p-1 rounded-lg bg-dark/80 border border-white/10">
-            <button id="simple-mode-btn"
-                class="mode-btn active px-4 py-2 rounded-md text-sm font-medium transition-all">
-                Simple
-            </button>
-            <button id="advanced-mode-btn" class="mode-btn px-4 py-2 rounded-md text-sm font-medium transition-all">
-                Advanced
-            </button>
-        </div>
-    </div>
+        <div class="grid lg:grid-cols-2 gap-8">
 
-    <div class="grid lg:grid-cols-2 gap-8">
+            <!-- Form Section -->
+            <div class="space-y-6">
 
-        <!-- Form Section -->
-        <div class="space-y-6">
+                <!-- Required Fields -->
+                <section class="bg-card border border-white/5 rounded-lg p-6">
+                    <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-asterisk text-red-400 text-xs"></i>
+                        Required Fields
+                    </h2>
 
-            <!-- Required Fields -->
-            <section class="bg-card border border-white/5 rounded-lg p-6">
-                <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-asterisk text-red-400 text-xs"></i>
-                    Required Fields
-                </h2>
-
-                <div class="space-y-4">
-                    <!-- Title -->
-                    <div>
-                        <label class="block text-sm font-medium text-slate-300 mb-2">Title *</label>
-                        <input type="text" id="rule-title"
-                            class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none"
-                            placeholder="Suspicious PowerShell Execution">
-                    </div>
-
-                    <!-- Log Source -->
-                    <div class="space-y-3">
-                        <label class="block text-sm font-medium text-slate-300">Log Source *</label>
-
+                    <div class="space-y-4">
+                        <!-- Title -->
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1">Category</label>
-                            <select id="logsource-category"
-                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none">
-                                <option value="">Select category...</option>
-                                <option value="process_creation">Process Creation</option>
-                                <option value="network_connection">Network Connection</option>
-                                <option value="file_event">File Event</option>
-                                <option value="registry_event">Registry Event</option>
-                                <option value="image_load">Image Load</option>
-                                <option value="pipe_created">Pipe Created</option>
-                                <option value="dns_query">DNS Query</option>
-                                <option value="webserver">Webserver</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Product</label>
-                            <select id="logsource-product"
-                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none">
-                                <option value="">Select product...</option>
-                                <option value="windows">Windows</option>
-                                <option value="linux">Linux</option>
-                                <option value="macos">macOS</option>
-                                <option value="azure">Azure</option>
-                                <option value="aws">AWS</option>
-                                <option value="gcp">GCP</option>
-                                <option value="office365">Office 365</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Service (optional)</label>
-                            <input type="text" id="logsource-service"
+                            <div class="tooltip-container mb-2">
+                                <label class="block text-sm font-medium text-slate-300">Title *</label>
+                                <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                <div class="tooltip-content">A short, descriptive title for the rule (e.g., 'Suspicious
+                                    Process Creation').</div>
+                            </div>
+                            <input type="text" id="rule-title"
                                 class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none"
-                                placeholder="e.g., sysmon, security">
+                                placeholder="Suspicious PowerShell Execution">
+                        </div>
+
+                        <!-- Log Source -->
+                        <div class="space-y-3">
+                            <label class="block text-sm font-medium text-slate-300">Log Source *</label>
+
+                            <div>
+                                <div class="tooltip-container mb-1">
+                                    <label class="block text-xs text-slate-400">Category</label>
+                                    <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                    <div class="tooltip-content">The type of event to detect (e.g., 'process_creation').
+                                    </div>
+                                </div>
+                                <select id="logsource-category"
+                                    class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none">
+                                    <option value="">Select category...</option>
+                                    <option value="process_creation">Process Creation</option>
+                                    <option value="network_connection">Network Connection</option>
+                                    <option value="file_event">File Event</option>
+                                    <option value="registry_event">Registry Event</option>
+                                    <option value="image_load">Image Load</option>
+                                    <option value="pipe_created">Pipe Created</option>
+                                    <option value="dns_query">DNS Query</option>
+                                    <option value="webserver">Webserver</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="tooltip-container mb-1">
+                                    <label class="block text-xs text-slate-400">Product</label>
+                                    <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                    <div class="tooltip-content">The platform generating the logs (e.g., 'windows',
+                                        'linux').</div>
+                                </div>
+                                <select id="logsource-product"
+                                    class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none">
+                                    <option value="">Select product...</option>
+                                    <option value="windows">Windows</option>
+                                    <option value="linux">Linux</option>
+                                    <option value="macos">macOS</option>
+                                    <option value="azure">Azure</option>
+                                    <option value="aws">AWS</option>
+                                    <option value="gcp">GCP</option>
+                                    <option value="office365">Office 365</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="tooltip-container mb-1">
+                                    <label class="block text-xs text-slate-400">Service (Optional)</label>
+                                    <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                    <div class="tooltip-content">Specific service or application (e.g., 'sysmon',
+                                        'powershell').</div>
+                                </div>
+                                <input type="text" id="logsource-service" list="common-services"
+                                    class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm"
+                                    placeholder="Select or type custom service...">
+                            </div>
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="tooltip-container">
+                                    <label class="block text-sm font-medium text-slate-300">Detection Logic
+                                        *</label>
+                                    <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                    <div class="tooltip-content">Define the search criteria. All selections are OR'd
+                                        by
+                                        default in Simple mode.</div>
+                                </div>
+                                <button id="add-selection-btn"
+                                    class="px-3 py-1 text-xs bg-accent/20 border border-accent/30 rounded-md text-accent hover:bg-accent/30 transition-all">
+                                    <i class="fa-solid fa-plus"></i> Add Selection
+                                </button>
+                            </div>
+
+                            <div id="selections-container" class="space-y-3">
+                                <!-- Selections will be added here dynamically -->
+                            </div>
+
+                            <div class="mt-4" id="advanced-detection" style="display:none;">
+                                <label class="block text-xs text-slate-400 mb-1">Condition (Advanced)</label>
+                                <input type="text" id="detection-condition"
+                                    class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white font-mono text-sm focus:border-accent focus:outline-none"
+                                    placeholder="selection1 and not filter1" value="selection">
+                            </div>
                         </div>
                     </div>
+                </section>
 
-                    <!-- Detection Logic -->
-                    <div>
-                        <div class="flex items-center justify-between mb-3">
-                            <label class="block text-sm font-medium text-slate-300">Detection Logic *</label>
-                            <button id="add-selection-btn"
-                                class="px-3 py-1 text-xs bg-accent/20 border border-accent/30 rounded-md text-accent hover:bg-accent/30 transition-all">
-                                <i class="fa-solid fa-plus"></i> Add Selection
+                <!-- Optional Metadata -->
+                <section class="bg-card border border-white/5 rounded-lg p-6">
+                    <button id="toggle-metadata-btn" class="w-full flex items-center justify-between text-left">
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-info-circle text-blue-400"></i>
+                            Optional Metadata
+                        </h2>
+                        <i class="fa-solid fa-chevron-down transition-transform" id="metadata-chevron"></i>
+                    </button>
+
+                    <div id="metadata-section" class="mt-4 space-y-4" style="display:none;">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <div class="tooltip-container mb-1">
+                                    <label class="block text-xs text-slate-400">Status</label>
+                                    <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                    <div class="tooltip-content">Maturity level of the rule: 'experimental', 'test',
+                                        'stable', or 'deprecated'.</div>
+                                </div>
+                                <select id="rule-status"
+                                    class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm">
+                                    <option value="experimental">Experimental</option>
+                                    <option value="test">Test</option>
+                                    <option value="stable">Stable</option>
+                                    <option value="deprecated">Deprecated</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <div class="tooltip-container mb-1">
+                                    <label class="block text-xs text-slate-400">Level</label>
+                                    <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                    <div class="tooltip-content">Severity of the alert: 'informational', 'low',
+                                        'medium', 'high', or 'critical'.</div>
+                                </div>
+                                <select id="rule-level"
+                                    class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm">
+                                    <option value="informational">Informational</option>
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="tooltip-container mb-1">
+                                <label class="block text-xs text-slate-400">Author</label>
+                                <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                <div class="tooltip-content">Name or handle of the rule creator.</div>
+                            </div>
+                            <input type="text" id="rule-author"
+                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm">
+                        </div>
+
+                        <div>
+                            <div class="tooltip-container mb-1">
+                                <label class="block text-xs text-slate-400">Description</label>
+                                <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                <div class="tooltip-content">Detailed explanation of what the rule detects and why it's
+                                    relevant.</div>
+                            </div>
+                            <textarea id="rule-description" rows="3"
+                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm"
+                                placeholder="Detailed explanation of what this rule detects..."></textarea>
+                        </div>
+
+                        <div>
+                            <div class="tooltip-container mb-1">
+                                <label class="block text-xs text-slate-400">References (one per line)</label>
+                                <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                <div class="tooltip-content">Links to threat reports, articles, or documentation
+                                    supporting the rule.</div>
+                            </div>
+                            <textarea id="rule-references" rows="2"
+                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white font-mono focus:border-accent focus:outline-none text-sm"
+                                placeholder="https://example.com/threat-report"></textarea>
+                        </div>
+
+                        <div>
+                            <div class="tooltip-container mb-1">
+                                <label class="block text-xs text-slate-400">Tags (comma-separated)</label>
+                                <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                <div class="tooltip-content">MITRE ATT&CK IDs (e.g., T1059) or other relevant tags.
+                                </div>
+                            </div>
+                            <input type="text" id="rule-tags"
+                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm font-mono"
+                                placeholder="attack.t1059, attack.execution">
+                        </div>
+
+                        <div>
+                            <div class="tooltip-container mb-1">
+                                <label class="block text-xs text-slate-400">False Positives (one per line)</label>
+                                <i class="fa-solid fa-circle-info tooltip-icon"></i>
+                                <div class="tooltip-content">Known benign activities that might trigger this rule.</div>
+                            </div>
+                            <textarea id="rule-falsepositives" rows="2"
+                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm"
+                                placeholder="Legitimate admin scripts"></textarea>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="lg:sticky lg:top-6 h-fit">
+                <div class="bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden">
+                    <!-- Preview Header -->
+                    <!-- Preview Header -->
+                    <div class="bg-white/5 p-4 border-b border-white/5 space-y-4">
+                        <!-- Top Toolbar -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3 flex-1">
+                                <select id="template-selector"
+                                    class="w-full max-w-xs px-3 py-2 rounded-lg bg-[#0c0c0c] border border-white/10 hover:border-accent/50 text-slate-200 text-sm font-medium transition-all cursor-pointer focus:outline-none focus:border-accent">
+                                    <option value="" class="bg-dark text-slate-400">📋 Select Template...</option>
+                                    <option value="powershell" class="bg-dark text-white">⚡ PowerShell</option>
+                                    <option value="privilege_esc" class="bg-dark text-white">🔐 Privilege Escalation
+                                    </option>
+                                    <option value="suspicious_network" class="bg-dark text-white">🌐 Suspicious Network
+                                    </option>
+                                    <option value="malware_process" class="bg-dark text-white">🦠 Malware Process
+                                    </option>
+                                    <option value="lateral_movement" class="bg-dark text-white">↔️ Lateral Movement
+                                    </option>
+                                    <option value="data_exfil" class="bg-dark text-white">📤 Data Exfiltration</option>
+                                </select>
+                                <span id="current-template-badge"
+                                    class="hidden px-2 py-1 bg-accent/10 border border-accent/20 rounded text-accent text-xs font-mono whitespace-nowrap"></span>
+                            </div>
+
+                            <button id="clear-form-btn"
+                                class="px-3 py-2 rounded-lg bg-red-400/5 border border-white/10 hover:bg-red-400/10 hover:border-red-400/30 text-sm font-medium transition-all flex items-center gap-2 text-red-300">
+                                <i class="fa-solid fa-eraser"></i>
+                                <span class="hidden sm:inline">Clear</span>
                             </button>
                         </div>
 
-                        <div id="selections-container" class="space-y-3">
-                            <!-- Selections will be added here dynamically -->
+                        <!-- Bottom Toolbar -->
+                        <div class="flex items-center justify-between pt-2 border-t border-white/5">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-file-code text-accent"></i>
+                                <span class="font-mono text-sm text-slate-400">rule.yml</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="save-rule-btn"
+                                    class="px-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:border-accent/50 transition-all text-slate-300">
+                                    <i class="fa-solid fa-save"></i> Save
+                                </button>
+                                <button id="copy-yaml-btn"
+                                    class="px-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:border-accent/50 transition-all text-slate-300">
+                                    <i class="fa-solid fa-copy"></i> Copy
+                                </button>
+                                <button id="download-yaml-btn"
+                                    class="px-3 py-1.5 text-xs bg-accent/10 border border-accent/20 rounded text-accent hover:bg-accent/20 transition-all">
+                                    <i class="fa-solid fa-download"></i> Download
+                                </button>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="mt-4" id="advanced-detection" style="display:none;">
-                            <label class="block text-xs text-slate-400 mb-1">Condition (Advanced)</label>
-                            <input type="text" id="detection-condition"
-                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white font-mono text-sm focus:border-accent focus:outline-none"
-                                placeholder="selection1 and not filter1" value="selection">
-                        </div>
+                    <!-- YAML Content -->
+                    <div class="p-4 overflow-x-auto max-h-[70vh] overflow-y-auto custom-scrollbar">
+                        <pre id="yaml-output"
+                            class="font-mono text-sm text-slate-300 leading-relaxed"><code># Your SIGMA rule will appear here...</code></pre>
                     </div>
                 </div>
-            </section>
 
-            <!-- Optional Metadata -->
-            <section class="bg-card border border-white/5 rounded-lg p-6">
-                <button id="toggle-metadata-btn" class="w-full flex items-center justify-between text-left">
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-info-circle text-blue-400"></i>
-                        Optional Metadata
-                    </h2>
-                    <i class="fa-solid fa-chevron-down transition-transform" id="metadata-chevron"></i>
-                </button>
 
-                <div id="metadata-section" class="mt-4 space-y-4" style="display:none;">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Status</label>
-                            <select id="rule-status"
-                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm">
-                                <option value="experimental">Experimental</option>
-                                <option value="test">Test</option>
-                                <option value="stable">Stable</option>
-                                <option value="deprecated">Deprecated</option>
+                <!-- Query Converter -->
+                <div class="mt-6 bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden">
+                    <div class="bg-white/5 p-4 border-b border-white/5 flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-accent"></i>
+                            Query Converter <span
+                                class="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded border border-accent/20">BETA</span>
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <div class="relative group">
+                                <i
+                                    class="fa-solid fa-circle-question text-slate-500 hover:text-slate-300 cursor-help text-xs"></i>
+                                <div
+                                    class="absolute right-0 top-6 w-64 p-3 bg-dark border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-xs text-slate-300">
+                                    <p class="mb-2">This converter is in early beta. Complex logic or custom fields may
+                                        not map correctly.</p>
+                                    <a href="https://linkedin.com/in/kierxn" target="_blank"
+                                        class="text-accent hover:underline">Send feedback on LinkedIn</a>
+                                </div>
+                            </div>
+                            <select id="target-platform"
+                                class="bg-dark border border-white/10 rounded px-2 py-1 text-xs text-slate-300 focus:border-accent focus:outline-none">
+                                <option value="defender">Microsoft Defender (KQL)</option>
+                                <option value="crowdstrike">CrowdStrike (FQL)</option>
+                                <option value="sentinel">Microsoft Sentinel (KQL)</option>
                             </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs text-slate-400 mb-1">Level</label>
-                            <select id="rule-level"
-                                class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm">
-                                <option value="informational">Informational</option>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="critical">Critical</option>
-                            </select>
+                            <button id="convert-btn"
+                                class="px-2 py-1 text-xs bg-accent/10 text-accent border border-accent/20 rounded hover:bg-accent/20 transition-all">
+                                Generate
+                            </button>
                         </div>
                     </div>
+                    <div class="p-4 relative group">
+                        <!-- Column Selector -->
+                        <div id="query-options" class="mb-3 hidden">
+                            <label class="block text-xs text-slate-500 mb-2 font-mono">Display Columns
+                                (Projection):</label>
+                            <div id="column-checkboxes" class="flex flex-wrap gap-2">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
 
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Author</label>
-                        <input type="text" id="rule-author"
-                            class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Description</label>
-                        <textarea id="rule-description" rows="3"
-                            class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm"
-                            placeholder="Detailed explanation of what this rule detects..."></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">References (one per line)</label>
-                        <textarea id="rule-references" rows="2"
-                            class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white font-mono focus:border-accent focus:outline-none text-sm"
-                            placeholder="https://example.com/threat-report"></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">Tags (comma-separated)</label>
-                        <input type="text" id="rule-tags"
-                            class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm font-mono"
-                            placeholder="attack.t1059, attack.execution">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs text-slate-400 mb-1">False Positives (one per line)</label>
-                        <textarea id="rule-falsepositives" rows="2"
-                            class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm"
-                            placeholder="Legitimate admin scripts"></textarea>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Preview Section -->
-        <div class="lg:sticky lg:top-6 h-fit">
-            <div class="bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden">
-                <!-- Preview Header -->
-                <div class="bg-white/5 px-4 py-3 flex items-center justify-between border-b border-white/5">
-                    <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-file-code text-accent"></i>
-                        <span class="font-mono text-sm">rule.yml</span>
-                    </div>
-                    <div class="flex gap-2">
-                        <button id="copy-yaml-btn"
-                            class="px-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded hover:bg-white/10 hover:border-accent/50 transition-all">
-                            <i class="fa-solid fa-copy"></i> Copy
-                        </button>
-                        <button id="download-yaml-btn"
-                            class="px-3 py-1.5 text-xs bg-accent/20 border border-accent/30 rounded text-accent hover:bg-accent/30 transition-all">
-                            <i class="fa-solid fa-download"></i> Download
+                        <pre id="query-output"
+                            class="font-mono text-sm text-slate-400 whitespace-pre-wrap break-all min-h-[60px]">Select a platform and click Generate...</pre>
+                        <button id="copy-query-btn"
+                            class="absolute top-4 right-4 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Copy Query">
+                            <i class="fa-solid fa-copy"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- YAML Content -->
-                <div class="p-4 overflow-x-auto max-h-[70vh] overflow-y-auto custom-scrollbar">
-                    <pre id="yaml-output"
-                        class="font-mono text-sm text-slate-300 leading-relaxed"><code># Your SIGMA rule will appear here...</code></pre>
-                </div>
-            </div>
-
-            <!-- Saved Rules -->
-            <div class="mt-6 bg-card border border-white/5 rounded-lg p-4">
-                <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
-                    Saved Rules
-                </h3>
-                <div id="saved-rules-list" class="space-y-2 text-sm">
-                    <p class="text-slate-500 italic">No saved rules yet</p>
+                <!-- History Panel -->
+                <div class="mt-6 bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden">
+                    <div class="bg-white/5 p-4 border-b border-white/5 flex items-center justify-between">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+                            History
+                        </h3>
+                        <span class="text-xs text-slate-500">Local Storage</span>
+                    </div>
+                    <div id="saved-rules-list" class="p-4 space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                        <!-- Saved rules will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Sticky Support Footer -->
+    <div id="support-footer"
+        class="fixed bottom-6 left-6 right-6 md:left-auto md:right-8 md:w-auto bg-[#1a1a1a]/90 backdrop-blur-md border border-yellow-500/20 rounded-xl p-4 shadow-2xl z-40 flex items-center justify-between md:justify-start gap-4 transform transition-all duration-300 slide-up-animation">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-yellow-500/10 rounded-lg shrink-0">
+                <i class="fa-solid fa-mug-hot text-yellow-500 text-lg"></i>
+            </div>
+            <div>
+                <p class="text-white font-medium text-sm">Enjoying my work?</p>
+                <a href="https://buymeacoffee.com/kierxn" target="_blank"
+                    class="text-xs text-yellow-500 hover:text-yellow-400 transition-colors font-medium">
+                    Buy me a coffee <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+        <button onclick="this.parentElement.style.opacity='0'; setTimeout(() => this.parentElement.remove(), 300)"
+            class="text-slate-500 hover:text-white transition-colors p-1 rounded-md hover:bg-white/5">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
     </div>
+
+    <!-- Scroll to Top -->
+    <button id="scroll-to-top"
+        class="fixed bottom-6 right-6 md:right-auto md:left-8 bg-accent/20 hover:bg-accent hover:text-black text-accent border border-accent/50 p-3 rounded-xl transition-all duration-300 opacity-0 invisible translate-y-4 shadow-lg shadow-accent/10 z-30"
+        onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fa-solid fa-arrow-up"></i>
+    </button>
+
+    <!-- Datalists for Autocomplete -->
+    <datalist id="common-services">
+        <option value="sysmon">
+        <option value="security">
+        <option value="system">
+        <option value="powershell">
+        <option value="application">
+    </datalist>
+
+    <datalist id="sigma-fields">
+        <option value="Image">
+        <option value="CommandLine">
+        <option value="ParentImage">
+        <option value="ParentCommandLine">
+        <option value="OriginalFileName">
+        <option value="TargetFilename">
+        <option value="CurrentDirectory">
+        <option value="User">
+        <option value="LogonType">
+        <option value="DestinationIp">
+        <option value="DestinationPort">
+        <option value="SourceIp">
+        <option value="SourcePort">
+        <option value="Protocol">
+        <option value="QueryName">
+        <option value="Hashes">
+    </datalist>
 
     <script src="sigma-generator.js"></script>
+    <script>
+        // Scroll to top logic
+        const scrollBtn = document.getElementById('scroll-to-top');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                scrollBtn.classList.remove('opacity-0', 'invisible', 'translate-y-4');
+            } else {
+                scrollBtn.classList.add('opacity-0', 'invisible', 'translate-y-4');
+            }
+        });
+    </script>
 </body>
 
 </html>
