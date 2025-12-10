@@ -4,6 +4,61 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectionCounter = 0;
     let savedRules = JSON.parse(localStorage.getItem('sigma-rules') || '[]');
 
+    // Common field names by category
+    const commonFields = {
+        process_creation: ['CommandLine', 'Image', 'ParentImage', 'ParentCommandLine', 'User', 'IntegrityLevel', 'ProcessId', 'ParentProcessId'],
+        network_connection: ['DestinationIp', 'DestinationPort', 'SourceIp', 'SourcePort', 'Protocol', 'Image', 'User'],
+        file_event: ['TargetFilename', 'Image', 'User', 'ProcessId'],
+        registry_event: ['TargetObject', 'Details', 'Image', 'User', 'EventType'],
+        image_load: ['ImageLoaded', 'Image', 'Signature', 'SignatureStatus', 'User'],
+        dns_query: ['QueryName', 'QueryResults', 'Image', 'User'],
+        webserver: ['c-ip', 'cs-method', 'cs-uri-query', 'sc-status', 'cs-User-Agent']
+    };
+
+    // Common services by product
+    const commonServices = {
+        windows: ['sysmon', 'security', 'powershell', 'system', 'application', 'defender'],
+        linux: ['syslog', 'auth', 'auditd'],
+        aws: ['cloudtrail', 'vpc', 'guardduty'],
+        azure: ['activitylogs', 'signinlogs', 'auditlogs'],
+        office365: ['exchange', 'sharepoint', 'azuread', 'threat_management']
+    };
+
+    // Quick Templates
+    const templates = {
+        powershell: {
+            title: 'Suspicious PowerShell Execution',
+            category: 'process_creation',
+            product: 'windows',
+            service: 'powershell',
+            status: 'experimental',
+            level: 'high',
+            description: 'Detects suspicious encoded PowerShell command execution',
+            tags: 'attack.t1059.001, attack.execution',
+            selections: [{ field: 'CommandLine', value: '-enc', modifier: 'contains' }]
+        },
+        privilege_esc: {
+            title: 'Privilege Escalation Attempt',
+            category: 'process_creation',
+            product: 'windows',
+            status: 'stable',
+            level: 'critical',
+            description: 'Detects attempts to escalate to high integrity level',
+            tags: 'attack.t1068, attack.privilege_escalation',
+            selections: [{ field: 'IntegrityLevel', value: 'High' }]
+        },
+        suspicious_network: {
+            title: 'Outbound Connection to Suspicious IP',
+            category: 'network_connection',
+            product: 'windows',
+            status: 'experimental',
+            level: 'medium',
+            description: 'Detects network connections to known suspicious IP ranges',
+            tags: 'attack.t1071, attack.command_and_control',
+            selections: [{ field: 'DestinationIp', value: '10.' }]
+        }
+    };
+
     // Elements
     const simpleModeBtn = document.getElementById('simple-mode-btn');
     const advancedModeBtn = document.getElementById('advanced-mode-btn');
@@ -42,14 +97,121 @@ document.addEventListener('DOMContentLoaded', () => {
         metadataChevron.style.transform = isHidden ? 'rotate(180deg)' : '';
     });
 
+    // Update service datalist when product changes
+    const productSelect = document.getElementById('logsource-product');
+    const serviceInput = document.getElementById('logsource-service');
+
+    productSelect.addEventListener('change', () => {
+        const product = productSelect.value;
+        const services = commonServices[product] || [];
+
+        let datalist = document.getElementById('service-options');
+        if (!datalist) {
+            datalist = document.createElement('datalist');
+            datalist.id = 'service-options';
+            serviceInput.setAttribute('list', 'service-options');
+            document.body.appendChild(datalist);
+        }
+
+        datalist.innerHTML = services.map(s => `<option value="${s}">`).join('');
+    });
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+S to save
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            saveRuleBtn.click();
+        }
+        // Ctrl+Shift+C to copy
+        if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+            e.preventDefault();
+            copyYamlBtn.click();
+        }
+        // Ctrl+Shift+D to download
+        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+            e.preventDefault();
+            downloadYamlBtn.click();
+        }
+    });
+
     // Add Selection
     addSelectionBtn.addEventListener('click', () => {
         addSelection();
     });
 
+    // Template Selector
+    const templateSelector = document.getElementById('template-selector');
+    if (templateSelector) {
+        templateSelector.addEventListener('change', (e) => {
+            const templateKey = e.target.value;
+            if (!templateKey) return;
+
+            const template = templates[templateKey];
+            if (template) {
+                // Clear existing selections
+                selectionsContainer.innerHTML = '';
+                selectionCounter = 0;
+
+                // Populate form
+                document.getElementById('rule-title').value = template.title || '';
+                document.getElementById('logsource-category').value = template.category || '';
+                document.getElementById('logsource-product').value = template.product || '';
+                document.getElementById('logsource-service').value = template.service || '';
+                document.getElementById('rule-status').value = template.status || 'experimental';
+                document.getElementById('rule-level').value = template.level || 'high';
+                document.getElementById('rule-description').value = template.description || '';
+                document.getElementById('rule-tags').value = template.tags || '';
+
+                // Add selections
+                if (template.selections) {
+                    template.selections.forEach(sel => {
+                        addSelection(sel.field || '', sel.value || '', sel.modifier || '');
+                    });
+                }
+
+                generateYAML();
+            }
+
+            e.target.value = ''; // Reset selector
+        });
+    }
+
+    // Clear Form
+    const clearFormBtn = document.getElementById('clear-form-btn');
+    if (clearFormBtn) {
+        clearFormBtn.addEventListener('click', () => {
+            if (!confirm('Are you sure you want to clear the entire form?')) return;
+
+            // Clear all inputs
+            document.getElementById('rule-title').value = '';
+            document.getElementById('logsource-category').value = '';
+            document.getElementById('logsource-product').value = '';
+            document.getElementById('logsource-service').value = '';
+            document.getElementById('rule-status').value = 'experimental';
+            document.getElementById('rule-level').value = 'informational';
+            document.getElementById('rule-author').value = '';
+            document.getElementById('rule-description').value = '';
+            document.getElementById('rule-references').value = '';
+            document.getElementById('rule-tags').value = '';
+            document.getElementById('rule-falsepositives').value = '';
+            document.getElementById('detection-condition').value = 'selection';
+
+            // Clear selections
+            selectionsContainer.innerHTML = '';
+            selectionCounter = 0;
+
+            // Add default selection
+            addSelection();
+            generateYAML();
+        });
+    }
+
     function addSelection(field = '', value = '', modifier = '') {
         selectionCounter++;
         const selectionId = `selection${selectionCounter}`;
+        const category = document.getElementById('logsource-category').value;
+        const fieldOptions = commonFields[category] || ['CommandLine', 'Image', 'User', 'ProcessId'];
 
         const selectionDiv = document.createElement('div');
         selectionDiv.className = 'p-4 bg-dark/50 border border-white/10 rounded-lg';
@@ -63,7 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
             </div>
             <div class="grid grid-cols-${currentMode === 'advanced' ? '3' : '2'} gap-3">
-                <input type="text" class="selection-field px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none" placeholder="Field name" value="${field}">
+                <div class="relative">
+                    <input type="text" list="field-options-${selectionId}" class="selection-field px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none w-full" placeholder="Field name (type or select)" value="${field}" title="Common fields for ${category || 'all categories'}">
+                    <datalist id="field-options-${selectionId}">
+                        ${fieldOptions.map(opt => `<option value="${opt}">`).join('')}
+                    </datalist>
+                </div>
                 <input type="text" class="selection-value px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none" placeholder="Value" value="${value}">
                 ${currentMode === 'advanced' ? `
                 <select class="selection-modifier px-3 py-2 bg-dark border border-white/10 rounded text-white text-sm focus:border-accent focus:outline-none">
