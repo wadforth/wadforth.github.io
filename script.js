@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Card Glow Effect
-    const cards = document.querySelectorAll('.project-card');
+    const cards = document.querySelectorAll('.project-card, .spotlight-card');
     cards.forEach(card => {
         card.addEventListener('mousemove', (e) => {
             const rect = card.getBoundingClientRect();

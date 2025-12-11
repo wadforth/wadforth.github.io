@@ -60,7 +60,12 @@ document.addEventListener('DOMContentLoaded', () => {
     checkGames.checked = notifSettings.games;
     checkDlc.checked = notifSettings.dlc;
     updateViewButtons();
-    renderKeywords();
+    // Last Visited Logic
+    const lastVisited = localStorage.getItem('fg_last_visit') || 0;
+    localStorage.setItem('fg_last_visit', Date.now());
+
+    // Inject Aurora Background
+    document.body.classList.add('aurora-bg');
 
     // --- Helpers ---
 
@@ -140,13 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
         filterGames();
         startCountdownTimer();
         updatePageTitle(data);
+        initSpotlightEffect();
     }
 
     function updatePageTitle(games) {
-        // Count "New" games (last 3 days)
-        const newCount = games.filter(g => (Date.now() - new Date(g.published_date).getTime()) < (3 * 86400000)).length;
+        // "New" now means "New since you closed the tab last time"
+        const newCount = games.filter(g => new Date(g.published_date).getTime() > lastVisited).length;
         if (newCount > 0) {
-            document.title = `(${newCount}) Free Games Tracker | Kieran`;
+            document.title = `(${newCount}) New Freebies | Kieran`;
         }
     }
 
@@ -158,11 +164,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const isList = currentView === 'list';
 
         games.forEach(game => {
+            // Badges & Timer
+            const isFresh = new Date(game.published_date).getTime() > lastVisited;
+            const isNew = (Date.now() - new Date(game.published_date).getTime()) < (3 * 86400000); // 3 days
+
+            const validEndDate = game.end_date && game.end_date !== 'N/A';
+            const endDateObj = validEndDate ? new Date(game.end_date) : null;
+            const isEndingSoon = endDateObj && endDateObj > new Date() && endDateObj < new Date(Date.now() + 86400000);
+
+            // Urgent Visuals
+            let cardBorderClass = 'border-white/5 hover:border-accent/50';
+            let shadowClass = 'shadow-accent/5';
+
+            if (isEndingSoon) {
+                // RED GLOW for Ending Soon
+                cardBorderClass = 'border-red-500/60 hover:border-red-500';
+                shadowClass = 'shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+            }
+
             const card = document.createElement('div');
-            // List View vs Grid View Classes
+            // Add 'spotlight-card' class
             card.className = isList
-                ? 'group bg-card border border-white/5 rounded-xl overflow-hidden hover:border-accent/50 transition-all hover:translate-x-1 flex relative items-center gap-4 p-2'
-                : 'group bg-card border border-white/5 rounded-xl overflow-hidden hover:border-accent/50 transition-all hover:-translate-y-1 hover:shadow-xl shadow-accent/5 flex flex-col h-full relative';
+                ? `spotlight-card group bg-card ${cardBorderClass} rounded-xl overflow-hidden transition-all hover:translate-x-1 flex relative items-center gap-4 p-2 ${shadowClass}`
+                : `spotlight-card group bg-card ${cardBorderClass} rounded-xl overflow-hidden transition-all hover:-translate-y-1 hover:shadow-xl ${shadowClass} flex flex-col h-full relative`;
 
             // Platform Logic
             const pLower = game.platforms.toLowerCase();
@@ -174,23 +198,18 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (pLower.includes('gog')) { pIcon = '<i class="fa-solid fa-gamepad"></i>'; pStyle = PLATFORM_STYLES.gog; }
             else if (pLower.includes('ubisoft')) { pIcon = '<i class="fa-brands fa-ubisoft"></i>'; pStyle = PLATFORM_STYLES.ubisoft; }
 
-            // Badges & Timer
-            const isNew = (Date.now() - new Date(game.published_date).getTime()) < (3 * 86400000);
-            const validEndDate = game.end_date && game.end_date !== 'N/A';
-            const endDateObj = validEndDate ? new Date(game.end_date) : null;
-            const isEndingSoon = endDateObj && endDateObj > new Date() && endDateObj < new Date(Date.now() + 86400000);
-
             let badgesHtml = '';
             let timerHtml = '';
 
-            if (isNew) badgesHtml += '<span class="px-2 py-0.5 bg-accent text-dark text-[10px] font-bold rounded uppercase tracking-wider shadow-lg shadow-accent/20">New</span>';
+            if (isFresh) badgesHtml += '<span class="px-2 py-0.5 bg-yellow-500 text-black text-[10px] font-bold rounded uppercase tracking-wider shadow-lg shadow-yellow-500/20 animate-pulse">New Item</span>';
+            else if (isNew) badgesHtml += '<span class="px-2 py-0.5 bg-accent text-dark text-[10px] font-bold rounded uppercase tracking-wider shadow-lg shadow-accent/20">Recent</span>';
 
             if (validEndDate && endDateObj > new Date()) {
                 const timeLeft = endDateObj - new Date();
                 const isUrgent = timeLeft < 86400000;
                 // High Visibility Logic
                 timerHtml = `
-                     <span class="countdown-timer px-2 py-1 ${isUrgent ? 'bg-red-600 text-white shadow-lg shadow-red-500/40 animate-pulse' : 'bg-black/80 text-slate-300 border border-white/20'} text-xs font-bold rounded uppercase tracking-wider font-mono backdrop-blur flex items-center gap-2" data-end="${game.end_date}">
+                     <span class="countdown-timer px-2 py-1 ${isUrgent ? 'bg-red-600 text-white shadow-lg shadow-red-500/40 animate-pulse border border-red-400' : 'bg-black/80 text-slate-300 border border-white/20'} text-xs font-bold rounded uppercase tracking-wider font-mono backdrop-blur flex items-center gap-2" data-end="${game.end_date}">
                         <i class="fa-regular fa-clock"></i> <span>--:--</span>
                      </span>`;
             }
@@ -290,6 +309,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }
             grid.appendChild(card);
+        });
+
+        // Re-init spotlight after render
+        initSpotlightEffect();
+    }
+
+    // --- Spotlight Logic ---
+    function initSpotlightEffect() {
+        const cards = document.querySelectorAll('.spotlight-card');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
         });
     }
 
@@ -444,6 +480,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Event Listeners ---
+
+    // Keyboard Shortcuts
+    document.addEventListener('keydown', (e) => {
+        // ESC -> Close Modals
+        if (e.key === 'Escape') {
+            notifModal.classList.add('hidden');
+            instrModal.classList.add('hidden');
+            searchInput.blur();
+        }
+        // / -> Focus Search (if not already typing)
+        if (e.key === '/' && document.activeElement !== searchInput && document.activeElement !== keywordInput) {
+            e.preventDefault();
+            searchInput.focus();
+        }
+    });
 
     // View Switchers
     viewGridBtn.addEventListener('click', () => { currentView = 'grid'; localStorage.setItem('fg_view', 'grid'); updateViewButtons(); filterGames(); });
