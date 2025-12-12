@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League of Legends Tracker</title>
+    <meta name="description"
+        content="Premium League of Legends Stats Tracker. View match history, live games, and summoner profiles.">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="../favicon.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Beaufort+for+LoL:wght@700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#050508',
+                        surface: '#0c0c10',
+                        surfaceLight: '#14141a',
+                        lolGold: '#C89B3C',
+                        lolBlue: '#0AC8B9',
+                        lolPurple: '#9B6DFF',
+                        lolRed: '#E84057',
+                        accent: '#00D9FF',
+                        muted: '#64748b',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 3s linear infinite',
+                        'enter': 'enter 0.5s ease-out forwards',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        enter: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '0.5' },
+                            '50%': { opacity: '1' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-8px)' }
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% 0' },
+                            '100%': { backgroundPosition: '200% 0' }
+                        }
+                    },
+                    backgroundImage: {
+                        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+                        'grid-pattern': "url(\"data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='grid' width='40' height='40' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 40 0 L 0 0 0 40' fill='none' stroke='white' stroke-opacity='0.02' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23grid)'/%3E%3C/svg%3E\")",
+                    },
+                    boxShadow: {
+                        'glow-gold': '0 0 40px rgba(200, 155, 60, 0.15)',
+                        'glow-blue': '0 0 40px rgba(10, 200, 185, 0.15)',
+                        'glow-purple': '0 0 40px rgba(155, 109, 255, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="../style.css">
+
+    <style>
+        /* === Modern LoL Tracker Theme === */
+        :root {
+            --bg-primary: #050508;
+            --bg-surface: #0c0c10;
+            --bg-elevated: #14141a;
+            --gold: #C89B3C;
+            --blue: #0AC8B9;
+            --purple: #9B6DFF;
+            --red: #E84057;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(155, 109, 255, 0.08), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(10, 200, 185, 0.06), transparent);
+        }
+
+        /* Smooth Animations */
+        .animate-enter {
+            animation: enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes enter {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Premium Glass Card */
+        .glass-card {
+            background: linear-gradient(135deg, rgba(20, 20, 26, 0.9) 0%, rgba(12, 12, 16, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow:
+                0 4px 24px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Special Highlight Cards */
+        .highlight-card {
+            background: linear-gradient(135deg, rgba(155, 109, 255, 0.1) 0%, rgba(10, 200, 185, 0.05) 100%);
+            border: 1px solid rgba(155, 109, 255, 0.2);
+        }
+
+        /* Rank Badge Glow */
+        .rank-badge {
+            filter: drop-shadow(0 0 15px rgba(200, 155, 60, 0.3));
+        }
+
+        .rank-emblem {
+            filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.6));
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Profile Header */
+        .profile-header-bg {
+            mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+            opacity: 0.5;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Stat Bars */
+        .stat-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Kill Badges */
+        .kill-badge {
+            background: linear-gradient(135deg, var(--red) 0%, #b91c1c 100%);
+            border: 1px solid rgba(248, 113, 113, 0.5);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 2px 12px rgba(232, 64, 87, 0.4);
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(232, 64, 87, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(232, 64, 87, 0);
+            }
+        }
+
+        /* Item Slots */
+        .item-slot {
+            background: rgba(8, 8, 12, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .item-slot:hover {
+            border-color: rgba(200, 155, 60, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* Loading Animation */
+        .loading-ring {
+            display: inline-block;
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .loading-ring div {
+            box-sizing: border-box;
+            display: block;
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border: 3px solid var(--purple);
+            border-radius: 50%;
+            animation: loading-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            border-color: var(--purple) transparent transparent transparent;
+        }
+
+        .loading-ring div:nth-child(1) {
+            animation-delay: -0.45s;
+        }
+
+        .loading-ring div:nth-child(2) {
+            animation-delay: -0.3s;
+        }
+
+        .loading-ring div:nth-child(3) {
+            animation-delay: -0.15s;
+        }
+
+        @keyframes loading-ring {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Tooltip */
+        #global-tooltip {
+            position: fixed;
+            z-index: 9999;
+            background: linear-gradient(135deg, rgba(14, 14, 18, 0.98) 0%, rgba(8, 8, 12, 0.98) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 1rem;
+            border-radius: 12px;
+            max-width: 300px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            transform: translateY(8px);
+        }
+
+        #global-tooltip.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #global-tooltip h4 {
+            color: var(--gold);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        #global-tooltip p {
+            color: #94a3b8;
+            font-size: 0.8rem;
+            line-height: 1.5;
+        }
+
+        /* Gradient Text */
+        .text-gradient-gold {
+            background: linear-gradient(135deg, #C89B3C 0%, #f0d890 50%, #C89B3C 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .text-gradient-blue {
+            background: linear-gradient(135deg, #0AC8B9 0%, #00D9FF 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Navbar Input */
+        #nav-search-container {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #nav-search-container input {
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+        }
+
+        /* Region Button Selector */
+        .region-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #64748b;
+            border: 1px solid transparent;
+        }
+
+        .region-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+        }
+
+        .region-btn.active {
+            background: rgba(155, 109, 255, 0.15);
+            color: #9B6DFF;
+            border-color: rgba(155, 109, 255, 0.3);
+        }
+
+        /* Match Filter Buttons */
+        .match-filter-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: #64748b;
+            border: 1px solid transparent;
+        }
+
+        .match-filter-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+        }
+
+        .match-filter-btn.active {
+            background: rgba(155, 109, 255, 0.15);
+            color: #9B6DFF;
+            border-color: rgba(155, 109, 255, 0.3);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0c0c10;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1e1e24;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2a2a32;
+        }
+    </style>
+</head>
+
+<body class="text-slate-200 font-sans antialiased min-h-screen flex flex-col bg-dark">
+    <!-- Tooltip Element -->
+    <div id="global-tooltip" class="hidden"></div>
+
+    <!-- Navbar -->
+    <header class="fixed top-0 w-full z-50 transition-all duration-300 pointer-events-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+            <div
+                class="bg-surface/80 backdrop-blur-2xl border border-white/[0.06] rounded-2xl shadow-2xl shadow-black/60 pointer-events-auto h-16 flex items-center justify-between px-5 sm:px-6 relative overflow-hidden">
+
+                <!-- Subtle gradient accent on top -->
+                <div
+                    class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-lolPurple/30 to-transparent">
+                </div>
+
+                <!-- Brand -->
+                <a href="#" id="home-link" class="flex items-center gap-3 group shrink-0 relative z-10">
+                    <div class="relative w-10 h-10">
+                        <div
+                            class="absolute inset-0 bg-lolPurple/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        </div>
+                        <div
+                            class="relative w-full h-full rounded-xl bg-gradient-to-br from-surfaceLight to-surface border border-white/[0.08] flex items-center justify-center text-lolPurple text-lg font-bold shadow-lg group-hover:scale-105 group-hover:border-lolPurple/30 transition-all duration-300">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                    </div>
+                    <div class="hidden sm:block">
+                        <span
+                            class="block font-bold text-white tracking-tight leading-none group-hover:text-lolPurple transition-colors text-lg">LoL
+                            Tracker</span>
+                        <span
+                            class="block text-[10px] text-muted uppercase tracking-widest font-semibold leading-none mt-0.5">Season
+                            2025</span>
+                    </div>
+                </a>
+
+                <!-- Navbar Search (Visible only on Profile) -->
+                <div id="nav-search-container" class="hidden opacity-0 transition-all duration-500 ease-out z-20">
+                    <div class="relative group w-full transition-all duration-300 focus-within:scale-[1.02]">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <i
+                                class="fa-solid fa-magnifying-glass text-muted group-focus-within:text-lolPurple transition-colors text-sm"></i>
+                        </div>
+                        <input type="text" id="nav-summ-input"
+                            class="block w-full pl-10 pr-16 py-2.5 border border-white/[0.06] rounded-xl leading-5 bg-dark/60 text-white placeholder-muted focus:outline-none focus:bg-dark/80 focus:border-lolPurple/40 focus:ring-1 focus:ring-lolPurple/20 text-sm transition-all font-medium"
+                            placeholder="Search summoner...">
+                        <div class="absolute inset-y-0 right-1.5 flex items-center pointer-events-none">
+                            <span
+                                class="text-[10px] font-bold text-muted bg-white/5 px-2 py-1 rounded-lg border border-white/[0.06] font-mono">EUW</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Link -->
+                <a href="../"
+                    class="group flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-white/5 transition-all relative z-10">
+                    <span
+                        class="text-xs font-semibold text-muted group-hover:text-white uppercase tracking-wider transition-colors">Portfolio</span>
+                    <i
+                        class="fa-solid fa-arrow-up-right-from-square text-muted group-hover:text-lolBlue text-xs transition-colors"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 w-full relative pt-24">
+
+        <!-- ================= HOME VIEW ================= -->
+        <div id="home-view"
+            class="min-h-[calc(100vh-64px)] flex flex-col justify-center items-center pb-20 relative overflow-hidden transition-all duration-500">
+
+            <!-- Background Effects -->
+            <div class="absolute inset-0 bg-grid-pattern opacity-30"></div>
+            <div
+                class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial from-lolPurple/20 via-transparent to-transparent opacity-60 blur-3xl pointer-events-none">
+            </div>
+            <div
+                class="absolute bottom-0 right-0 w-[600px] h-[400px] bg-gradient-radial from-lolBlue/15 to-transparent opacity-60 blur-3xl pointer-events-none">
+            </div>
+            <div
+                class="absolute top-1/2 left-0 w-[400px] h-[400px] bg-gradient-radial from-lolGold/10 to-transparent opacity-50 blur-3xl pointer-events-none">
+            </div>
+
+            <section class="max-w-4xl w-full px-6 text-center relative z-10">
+
+                <!-- Badge -->
+                <div class="mb-8 animate-enter" style="animation-delay: 0.1s; opacity: 0;">
+                    <span
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lolPurple/10 border border-lolPurple/20 text-lolPurple text-xs font-semibold tracking-widest uppercase backdrop-blur-sm">
+                        <i class="fa-solid fa-sparkles text-[10px]"></i>
+                        Season 2025 Ready
+                    </span>
+                </div>
+
+                <!-- Headline -->
+                <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-[1.1] animate-enter"
+                    style="animation-delay: 0.2s; opacity: 0;">
+                    Track Your<br>
+                    <span class="text-gradient-gold">Legend</span>
+                </h1>
+
+                <!-- Subtitle -->
+                <p class="text-muted mb-12 text-lg max-w-lg mx-auto font-normal leading-relaxed animate-enter"
+                    style="animation-delay: 0.3s; opacity: 0;">
+                    Analyze matches, track progress, and dominate the rift with real-time insights.
+                </p>
+
+                <!-- Hero Search Bar -->
+                <div class="glass-card rounded-2xl p-2.5 flex flex-col gap-3 relative z-20 hover:border-white/10 transition-all max-w-2xl mx-auto animate-enter"
+                    style="animation-delay: 0.4s; opacity: 0;">
+
+                    <!-- Region Button Selector -->
+                    <div id="region-buttons" class="flex gap-1.5 justify-center flex-wrap">
+                        <button type="button" data-region="euw1"
+                            class="region-btn active px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">EUW</button>
+                        <button type="button" data-region="na1"
+                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">NA</button>
+                        <button type="button" data-region="kr"
+                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">KR</button>
+                        <button type="button" data-region="eun1"
+                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">EUNE</button>
+                        <button type="button" data-region="br1"
+                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">BR</button>
+                    </div>
+
+                    <!-- Hidden select for JS compatibility -->
+                    <select id="region-select" class="hidden">
+                        <option value="euw1">EUW</option>
+                        <option value="na1">NA</option>
+                        <option value="kr">KR</option>
+                        <option value="eun1">EUNE</option>
+                        <option value="br1">BR</option>
+                    </select>
+
+                    <!-- Search Row -->
+                    <div class="flex gap-2">
+                        <!-- Search Input -->
+                        <div class="relative flex-1">
+                            <input type="text" id="summoner-input"
+                                class="w-full bg-surfaceLight/40 border border-white/[0.06] rounded-xl px-4 py-3.5 pl-11 text-white placeholder-muted focus:outline-none focus:border-lolPurple/40 text-base font-medium transition-colors"
+                                placeholder="Enter Name#Tag...">
+                            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-muted"></i>
+                        </div>
+
+                        <!-- Search Button -->
+                        <button id="search-btn"
+                            class="bg-lolPurple hover:bg-lolPurple/80 text-white font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-lolPurple/20 whitespace-nowrap active:scale-[0.98] uppercase tracking-wider text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="search-error"
+                    class="mt-6 text-lolRed hidden text-sm font-semibold bg-lolRed/10 py-3 px-6 rounded-xl border border-lolRed/20 inline-flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span></span>
+                </div>
+            </section>
+
+            <!-- Quick Lists -->
+            <div class="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 mt-24 px-6 animate-enter"
+                style="animation-delay: 0.5s; opacity: 0;">
+
+                <!-- Favorites -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 pl-1">
+                        <i class="fa-solid fa-star text-lolGold text-xs"></i>
+                        <h3 class="text-xs font-semibold text-muted uppercase tracking-widest">Favorites</h3>
+                    </div>
+                    <div id="favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- JS Populated -->
+                    </div>
+                </div>
+
+                <!-- Recent Searches -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2 pl-1">
+                        <i class="fa-solid fa-clock-rotate-left text-lolBlue text-xs"></i>
+                        <h3 class="text-xs font-semibold text-muted uppercase tracking-widest">Recent Searches</h3>
+                    </div>
+                    <div id="recent-grid" class="space-y-2">
+                        <!-- JS Populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PROFILE VIEW ================= -->
+        <div id="profile-view" class="hidden min-h-screen">
+
+            <!-- Loading State -->
+            <div id="loading" class="hidden flex-col items-center justify-center min-h-[calc(100vh-64px)] pb-20">
+                <div class="loading-ring mb-6">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+                <p class="text-lolPurple animate-pulse text-lg tracking-[0.25em] uppercase font-semibold">Loading
+                    Profile...</p>
+            </div>
+
+            <div id="profile-content" class="hidden animate-enter">
+
+                <!-- Profile Header -->
+                <div class="relative w-full min-h-[420px] overflow-hidden border-b border-white/[0.06]">
+
+                    <!-- Splash Background -->
+                    <div id="header-splash" class="absolute inset-0 bg-cover bg-center profile-header-bg z-0"
+                        style="background-image: url(''); background-position: center 20%;"></div>
+
+                    <!-- Gradient Overlays -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-dark via-dark/95 to-dark/40 z-0"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-dark/60 via-transparent to-dark/60 z-0"></div>
+
+                    <div class="relative z-10 max-w-6xl mx-auto px-6 pt-28 pb-8">
+
+                        <!-- Top: Profile Identity -->
+                        <div class="flex flex-col md:flex-row items-center md:items-end gap-5 mb-8">
+
+                            <!-- Profile Icon -->
+                            <div class="relative shrink-0">
+                                <div
+                                    class="w-24 h-24 md:w-28 md:h-28 rounded-2xl border-2 border-white/10 p-0.5 bg-dark/80 backdrop-blur shadow-xl overflow-hidden">
+                                    <img id="profile-icon" src="" class="w-full h-full rounded-xl object-cover">
+                                </div>
+                                <div id="profile-level"
+                                    class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-dark border border-lolPurple/40 text-lolPurple text-[10px] font-bold px-2.5 py-0.5 rounded-md whitespace-nowrap shadow-lg">
+                                    Lvl --
+                                </div>
+                            </div>
+
+                            <!-- Name & Actions -->
+                            <div class="flex-1 text-center md:text-left">
+                                <h2 id="profile-name"
+                                    class="text-3xl md:text-5xl font-black text-white tracking-tight leading-none mb-1.5">
+                                    Summoner</h2>
+                                <div class="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+                                    <span id="profile-tag" class="text-lg text-muted font-medium">#TAG</span>
+                                    <button id="favorite-btn"
+                                        class="text-muted hover:text-lolGold transition-all text-base p-1.5 rounded-md hover:bg-white/5">
+                                        <i class="far fa-star"></i>
+                                    </button>
+                                    <button id="update-btn"
+                                        class="bg-lolPurple/15 hover:bg-lolPurple/25 text-lolPurple font-semibold text-[10px] px-3 py-1 rounded-md transition-all uppercase tracking-widest border border-lolPurple/20 flex items-center gap-1.5 ml-1">
+                                        <i class="fa-solid fa-rotate text-[9px]"></i>
+                                        Refresh
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats Row - Clean Inline -->
+                        <div
+                            class="flex flex-wrap items-center justify-center md:justify-start gap-6 md:gap-8 py-4 border-t border-white/[0.06]">
+
+                            <!-- Ranked Solo -->
+                            <div class="flex items-center gap-3">
+                                <img id="banner-rank-icon" src="" class="w-14 h-14 object-contain drop-shadow-lg">
+                                <div>
+                                    <div class="text-[9px] uppercase tracking-widest text-muted font-medium">Solo/Duo
+                                    </div>
+                                    <div id="banner-rank-tier" class="text-sm font-black text-white">UNRANKED</div>
+                                    <div id="banner-rank-lp" class="text-[10px] text-lolGold font-mono">0 LP</div>
+                                </div>
+                            </div>
+
+                            <div class="hidden md:block w-px h-10 bg-white/10"></div>
+
+                            <!-- Ranked Flex -->
+                            <div class="flex items-center gap-3">
+                                <img id="banner-flex-icon" src="" class="w-14 h-14 object-contain drop-shadow-lg">
+                                <div>
+                                    <div class="text-[9px] uppercase tracking-widest text-muted font-medium">Flex</div>
+                                    <div id="banner-flex-tier" class="text-sm font-black text-white">UNRANKED</div>
+                                    <div id="banner-flex-lp" class="text-[10px] text-lolBlue font-mono">0 LP</div>
+                                </div>
+                            </div>
+
+                            <div class="hidden md:block w-px h-10 bg-white/10"></div>
+
+                            <!-- KDA -->
+                            <div class="text-center">
+                                <div class="text-[9px] uppercase tracking-widest text-muted font-medium mb-0.5">Avg KDA
+                                </div>
+                                <div id="banner-kda-val" class="text-2xl font-black text-white leading-none">0.00</div>
+                                <div class="w-16 h-1 bg-white/10 rounded-full mt-1.5 mx-auto overflow-hidden">
+                                    <div id="banner-kda-bar"
+                                        class="h-full bg-gradient-to-r from-lolPurple to-lolBlue w-0 transition-all duration-1000">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="hidden md:block w-px h-10 bg-white/10"></div>
+
+                            <!-- Win Streak -->
+                            <div id="win-streak-section" class="text-center hidden">
+                                <div class="text-[9px] uppercase tracking-widest text-muted font-medium mb-0.5">Streak
+                                </div>
+                                <div id="win-streak-val" class="text-xl font-black text-white leading-none">-</div>
+                                <div id="win-streak-type" class="text-[9px] text-muted mt-0.5">N/A</div>
+                            </div>
+
+                            <div class="hidden md:block w-px h-10 bg-white/10"></div>
+
+                            <!-- Top Masteries -->
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="text-[9px] uppercase tracking-widest text-muted font-medium flex items-center gap-1">
+                                    <i class="fa-solid fa-crown text-lolGold text-[8px]"></i>
+                                    Mastery
+                                </div>
+                                <div id="banner-top-champs" class="flex items-center gap-1">
+                                    <!-- JS Injected -->
+                                </div>
+                            </div>
+
+                            <div class="hidden md:block w-px h-10 bg-white/10"></div>
+
+                            <!-- Arena God Tracker -->
+                            <div id="arena-god-tracker" class="hidden">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <div
+                                        class="text-[9px] uppercase tracking-widest text-muted font-medium flex items-center gap-1">
+                                        <i class="fa-solid fa-trophy text-lolGold text-[8px]"></i>
+                                        Arena God
+                                    </div>
+                                    <span id="arena-god-count" class="text-[10px] font-bold text-lolGold">0/60</span>
+                                </div>
+                                <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                    <div id="arena-god-bar"
+                                        class="h-full bg-gradient-to-r from-lolGold to-yellow-500 w-0 transition-all duration-1000">
+                                    </div>
+                                </div>
+                                <div id="arena-god-champs"
+                                    class="flex items-center gap-0.5 mt-1 flex-wrap max-w-32 overflow-hidden"
+                                    style="max-height: 20px;">
+                                    <!-- JS Injected -->
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Match List Container -->
+                <div
+                    class="max-w-7xl mx-auto px-4 sm:px-6 relative -top-6 z-20 grid grid-cols-1 lg:grid-cols-[200px_1fr_200px] gap-5">
+
+                    <!-- Left Sidebar (Friends) -->
+                    <div class="space-y-4">
+                        <div id="friends-sidebar" class="glass-card rounded-xl p-3 sticky top-24">
+                            <div
+                                class="text-[10px] font-semibold text-muted uppercase tracking-widest px-3 py-2 border-b border-white/[0.06] mb-2 flex items-center gap-2">
+                                <i class="fa-solid fa-users text-lolBlue"></i>
+                                Recent Allies
+                            </div>
+                            <div class="text-xs text-muted italic px-3 pb-2">Load matches to see...</div>
+                        </div>
+                    </div>
+
+                    <!-- Center Column (Matches) -->
+                    <div>
+                        <div class="glass-card py-2 px-4 rounded-xl mb-4 flex flex-col gap-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-history text-lolPurple text-xs"></i>
+                                <span class="text-[10px] font-semibold text-muted uppercase tracking-widest">Match
+                                    History</span>
+                            </div>
+                            <!-- Filter Buttons -->
+                            <div id="match-filters" class="flex flex-wrap gap-1.5">
+                                <button data-filter="all"
+                                    class="match-filter-btn active text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-all">All</button>
+                                <button data-filter="ranked"
+                                    class="match-filter-btn text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-all">Ranked</button>
+                                <button data-filter="aram"
+                                    class="match-filter-btn text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-all">ARAM</button>
+                                <button data-filter="arena"
+                                    class="match-filter-btn text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-all">Arena</button>
+                                <button data-filter="arena-1st"
+                                    class="match-filter-btn text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-all">🏆
+                                    1st</button>
+                                <button data-filter="best-kda"
+                                    class="match-filter-btn text-[9px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-all">⭐
+                                    Best KDA</button>
+                            </div>
+                        </div>
+
+                        <div id="match-list" class="space-y-3 pb-20">
+                            <!-- Matches -->
+                        </div>
+
+                        <!-- Load More Button -->
+                        <div id="load-more-container" class="hidden py-4 text-center">
+                            <button id="load-more-btn"
+                                class="bg-lolPurple/20 hover:bg-lolPurple/30 text-lolPurple font-semibold text-sm px-6 py-2.5 rounded-xl transition-all border border-lolPurple/30 flex items-center gap-2 mx-auto">
+                                <i class="fa-solid fa-plus"></i>
+                                Load More Matches
+                            </button>
+                            <div id="load-more-spinner" class="hidden">
+                                <i class="fa-solid fa-spinner fa-spin text-lolPurple text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Sidebar (Penta Tracker) -->
+                    <div class="space-y-4">
+                        <div id="penta-sidebar" class="glass-card rounded-xl p-3 sticky top-24">
+                            <div
+                                class="text-[10px] font-semibold text-muted uppercase tracking-widest px-2 py-2 border-b border-white/[0.06] mb-3 flex items-center gap-2">
+                                <i class="fa-solid fa-skull text-lolRed"></i>
+                                Penta Tracker <span class="text-muted/50 font-normal">(2025)</span>
+                            </div>
+                            <div id="penta-content" class="flex flex-col items-center justify-center min-h-[80px]">
+                                <div class="text-xs text-muted italic">Load matches to scan...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+    </main>
+
+    <!-- Templates -->
+    <template id="history-card-template">
+        <div
+            class="glass-card group p-3 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-white/[0.04] transition-all border border-transparent hover:border-lolBlue/20">
+            <img src=""
+                class="w-10 h-10 rounded-lg border border-white/10 h-icon object-cover group-hover:border-lolBlue/30 transition-colors">
+            <div class="overflow-hidden flex-1">
+                <div
+                    class="font-semibold text-white text-sm truncate h-name group-hover:text-lolBlue transition-colors">
+                    Name</div>
+                <div class="text-[10px] text-muted h-region uppercase font-semibold tracking-wide">EUW</div>
+            </div>
+            <i
+                class="fa-solid fa-chevron-right text-muted text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+        </div>
+    </template>
+
+    <template id="favorite-card-template">
+        <div
+            class="glass-card group p-3 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-white/[0.04] transition-all border border-transparent hover:border-lolGold/20 relative overflow-hidden">
+            <div class="absolute right-2 top-2">
+                <i class="fa-solid fa-star text-lolGold text-[10px]"></i>
+            </div>
+            <img src=""
+                class="w-10 h-10 rounded-lg border border-white/10 f-icon object-cover group-hover:border-lolGold/30 transition-colors">
+            <div class="overflow-hidden flex-1">
+                <div
+                    class="font-semibold text-white text-sm truncate f-name group-hover:text-lolGold transition-colors">
+                    Name</div>
+                <div class="text-[10px] text-muted f-region uppercase font-semibold tracking-wide">EUW</div>
+            </div>
+        </div>
+    </template>
+
+    <template id="match-card-template">
+        <div
+            class="match-card relative bg-gradient-to-r from-surface/90 to-dark/80 border border-white/[0.06] rounded-xl overflow-hidden hover:border-white/10 transition-all shadow-lg group">
+
+            <!-- Result Color Strip -->
+            <div class="absolute left-0 top-0 bottom-0 w-1 result-indicator bg-muted/30 rounded-l-xl"></div>
+
+            <!-- Card Content -->
+            <div class="p-3 pl-4 flex items-center gap-3 relative z-10">
+
+                <!-- Champion Icon with Level -->
+                <div class="relative shrink-0">
+                    <img src="" class="w-14 h-14 rounded-xl border-2 border-white/10 champ-icon shadow-lg object-cover">
+                    <div
+                        class="absolute -bottom-1 -right-1 bg-dark text-white text-[9px] font-bold w-5 h-5 flex items-center justify-center rounded-lg border border-white/20 champ-level shadow-sm">
+                        18</div>
+                </div>
+
+                <!-- Game Info & Result -->
+                <div class="flex flex-col gap-0.5 min-w-[90px]">
+                    <div class="font-black text-sm result-text uppercase tracking-wider text-white leading-none">VICTORY
+                    </div>
+                    <div class="font-semibold text-[10px] text-white/70 game-mode uppercase tracking-wide">RANKED SOLO
+                    </div>
+                    <div class="flex items-center gap-2 text-[9px] text-muted">
+                        <span class="game-duration font-mono">24:12</span>
+                        <span class="text-white/20">•</span>
+                        <span class="game-time">2 days ago</span>
+                    </div>
+                </div>
+
+                <!-- KDA Block -->
+                <div class="flex flex-col items-center px-4 border-l border-r border-white/[0.06]">
+                    <div class="kda-block text-lg font-black text-white tracking-tight leading-none">
+                        <span class="kills">0</span><span class="text-muted/50 mx-0.5">/</span><span
+                            class="deaths text-lolRed">0</span><span class="text-muted/50 mx-0.5">/</span><span
+                            class="assists">0</span>
+                    </div>
+                    <div class="text-[10px] font-semibold text-muted kda-ratio mt-0.5">3.50 KDA</div>
+                    <div class="badges flex gap-1 mt-1 flex-wrap"></div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="hidden md:flex items-center gap-4 text-center">
+                    <!-- CS -->
+                    <div class="flex flex-col items-center">
+                        <div class="text-sm font-bold text-white cs-score">0</div>
+                        <div class="text-[8px] text-muted uppercase tracking-wide">CS</div>
+                    </div>
+                    <!-- Damage -->
+                    <div class="flex flex-col items-center">
+                        <div class="text-sm font-bold text-orange-400 dmg-total">0</div>
+                        <div class="text-[8px] text-muted uppercase tracking-wide">DMG</div>
+                    </div>
+                    <!-- Vision -->
+                    <div class="flex flex-col items-center">
+                        <div class="text-sm font-bold text-lolPurple vision-score">0</div>
+                        <div class="text-[8px] text-muted uppercase tracking-wide">VIS</div>
+                    </div>
+                    <!-- KP -->
+                    <div class="flex flex-col items-center">
+                        <div class="text-sm font-bold text-lolBlue kp-score">0%</div>
+                        <div class="text-[8px] text-muted uppercase tracking-wide">KP</div>
+                    </div>
+                </div>
+
+                <!-- Items -->
+                <div class="hidden lg:flex items-center gap-0.5 ml-auto">
+                    <div class="item-0 w-7 h-7 rounded bg-dark/80 border border-white/[0.08] overflow-hidden"></div>
+                    <div class="item-1 w-7 h-7 rounded bg-dark/80 border border-white/[0.08] overflow-hidden"></div>
+                    <div class="item-2 w-7 h-7 rounded bg-dark/80 border border-white/[0.08] overflow-hidden"></div>
+                    <div class="item-3 w-7 h-7 rounded bg-dark/80 border border-white/[0.08] overflow-hidden"></div>
+                    <div class="item-4 w-7 h-7 rounded bg-dark/80 border border-white/[0.08] overflow-hidden"></div>
+                    <div class="item-5 w-7 h-7 rounded bg-dark/80 border border-white/[0.08] overflow-hidden"></div>
+                    <div
+                        class="item-6 w-6 h-6 rounded-full bg-dark/80 border border-white/[0.08] ml-1 overflow-hidden opacity-70">
+                    </div>
+                </div>
+
+                <!-- Expand Button Placeholder -->
+                <button
+                    class="expand-btn ml-2 text-muted hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 shrink-0">
+                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-300"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

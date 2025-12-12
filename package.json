@@ -1,0 +1,25 @@
+{
+  "name": "wadforth.github.io",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wadforth/wadforth.github.io.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/wadforth/wadforth.github.io/issues"
+  },
+  "homepage": "https://github.com/wadforth/wadforth.github.io#readme",
+  "dependencies": {
+    "bottleneck": "^2.19.5",
+    "node-fetch": "^2.7.0"
+  }
+}

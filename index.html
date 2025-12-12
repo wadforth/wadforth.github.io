@@ -82,6 +82,234 @@
             }
         }
     </script>
+
+    <style>
+        /* === Premium Glass-Card Styling === */
+        .glass-card {
+            background: rgba(12, 12, 16, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 255, 157, 0.3);
+            background: rgba(18, 18, 24, 0.9);
+        }
+
+        /* Enhanced Project Cards with Animated Border */
+        .project-card {
+            background: rgba(12, 12, 16, 0.8) !important;
+            backdrop-filter: blur(8px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 1px;
+            background: linear-gradient(135deg, transparent 40%, rgba(0, 255, 157, 0.4) 50%, transparent 60%);
+            background-size: 300% 300%;
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .project-card:hover::before {
+            opacity: 1;
+            animation: borderGlow 2s linear infinite;
+        }
+
+        @keyframes borderGlow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .project-card:hover {
+            transform: translateY(-8px) scale(1.02) !important;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6),
+                0 0 50px rgba(0, 255, 157, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        }
+
+        /* Animate Entry */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-enter {
+            animation: slideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Terminal Glass Effect with Glow */
+        .terminal-card {
+            background: rgba(8, 8, 10, 0.95);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7),
+                0 0 0 1px rgba(0, 255, 157, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .terminal-card:hover {
+            border-color: rgba(0, 255, 157, 0.15);
+            box-shadow: 0 35px 70px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(0, 255, 157, 0.08);
+        }
+
+        /* Contact Section Glow */
+        .contact-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(0, 255, 157, 0.03) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-card::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: radial-gradient(circle, rgba(0, 255, 157, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .contact-card:hover::before {
+            opacity: 1;
+        }
+
+        .contact-card:hover {
+            border-color: rgba(0, 255, 157, 0.25);
+            box-shadow: 0 0 80px rgba(0, 255, 157, 0.12);
+            transform: scale(1.01);
+        }
+
+        /* Sidebar Glass with Accent Line */
+        .sidebar-glass {
+            background: rgba(5, 5, 8, 0.97);
+            backdrop-filter: blur(24px);
+            position: relative;
+        }
+
+        .sidebar-glass::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 20%;
+            height: 60%;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, rgba(0, 255, 157, 0.3), transparent);
+        }
+
+        /* Nav Pills Glass */
+        .nav-glass {
+            background: rgba(12, 12, 16, 0.9);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Avatar Breathing Glow */
+        @keyframes breathe {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(0, 255, 157, 0.2),
+                    0 0 40px rgba(0, 255, 157, 0.1);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(0, 255, 157, 0.3),
+                    0 0 60px rgba(0, 255, 157, 0.15);
+            }
+        }
+
+        .sidebar-glass .group:first-child>div:first-child {
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        /* Skill Tags Enhanced Hover */
+        .skill-tag {
+            transition: all 0.3s ease !important;
+        }
+
+        .skill-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 157, 0.2);
+        }
+
+        /* Section Headers Accent Line */
+        #projects h2,
+        #about h2 {
+            position: relative;
+        }
+
+        /* Subtle Background Gradient - More Visible */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 70vh;
+            background: radial-gradient(ellipse at 20% 0%, rgba(0, 255, 157, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Filter Button Enhanced */
+        .filter-btn.active {
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.2);
+        }
+
+        /* Link Hover Underline Animation */
+        .nav-link {
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: #00ff9d;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active-nav::after {
+            width: 60%;
+        }
+    </style>
 </head>
 
 <body class="bg-dark text-slate-200 font-sans antialiased selection:bg-accent selection:text-black aurora-bg">
@@ -92,57 +320,51 @@
 
         <!-- Sidebar Profile -->
         <aside
-            class="lg:w-80 lg:fixed lg:h-screen p-6 flex flex-col justify-center border-r border-white/5 bg-dark/95 backdrop-blur-md z-50 overflow-y-auto custom-scrollbar print:hidden">
-            <div class="space-y-8">
-                <!-- Header -->
+            class="lg:w-80 lg:fixed lg:h-screen p-6 flex flex-col justify-center border-r border-white/5 z-50 overflow-y-auto custom-scrollbar print:hidden bg-transparent">
+            <div class="space-y-6">
+                <!-- Avatar -->
                 <div class="text-center">
-                    <div class="relative w-28 h-28 mx-auto mb-6 group cursor-pointer">
+                    <div class="relative w-24 h-24 mx-auto mb-4 group cursor-pointer">
                         <div
                             class="absolute inset-0 bg-accent/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-500">
                         </div>
                         <div
-                            class="relative w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-black border border-white/10 flex items-center justify-center text-4xl font-bold font-mono text-accent shadow-2xl overflow-hidden">
-                            <span class="z-10">K</span>
-                            <!-- Glitch effect layer -->
-                            <div
-                                class="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-100">
-                            </div>
+                            class="relative w-full h-full rounded-full bg-gradient-to-br from-slate-800 to-black border border-white/10 flex items-center justify-center text-4xl font-bold font-mono text-accent shadow-2xl">
+                            K
                         </div>
-                        <div class="absolute bottom-1 right-1 w-4 h-4 bg-accent rounded-full border-4 border-dark animate-pulse"
+                        <div class="absolute bottom-0 right-0 w-4 h-4 bg-accent rounded-full border-2 border-dark animate-pulse"
                             title="Available for work"></div>
                     </div>
 
-                    <h1 class="text-3xl font-bold tracking-tight text-white mb-2">Kieran</h1>
-                    <div class="h-6">
-                        <span class="typing-text font-mono text-accent text-sm tracking-wider"></span><span
+                    <h1 class="text-2xl font-bold tracking-tight text-white mb-1">Kieran</h1>
+                    <div class="h-5 mb-3">
+                        <span class="typing-text font-mono text-accent text-xs tracking-wider"></span><span
                             class="animate-cursor-blink text-accent">_</span>
                     </div>
+                    <p class="text-slate-500 text-xs">Senior SOC Analyst • Developer</p>
                 </div>
 
                 <!-- Bio -->
-                <p class="text-secondary text-center text-sm leading-relaxed">
-                    Senior SOC Analyst by day, Developer by night. Specializing in Threat Hunting, SOAR automation, and
-                    building resilient security tools.
+                <p class="text-slate-400 text-center text-sm leading-relaxed">
+                    Bridging security operations and software engineering. Threat hunting, SOAR automation, and security
+                    tools.
                 </p>
 
-                <!-- Categorized Skills -->
-                <div class="space-y-4">
-                    <!-- Security -->
+                <!-- Skills -->
+                <div class="space-y-3">
                     <div>
                         <h3
                             class="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
-                            <i class="fa-solid fa-shield-halved text-accent/70"></i> Security Ops
+                            <i class="fa-solid fa-shield-halved text-accent/70"></i> Security
                         </h3>
                         <div class="flex flex-wrap gap-1.5">
                             <span class="skill-tag">Sentinel</span>
                             <span class="skill-tag">Defender</span>
-                            <span class="skill-tag">Crowdstrike</span>
-                            <span class="skill-tag">QRadar</span>
+                            <span class="skill-tag">CrowdStrike</span>
                             <span class="skill-tag">KQL</span>
                         </div>
                     </div>
 
-                    <!-- Development -->
                     <div>
                         <h3
                             class="text-[10px] font-mono uppercase tracking-widest text-slate-500 mb-2 flex items-center gap-2">
@@ -153,24 +375,22 @@
                             <span class="skill-tag">React</span>
                             <span class="skill-tag">TypeScript</span>
                             <span class="skill-tag">Node.js</span>
-                            <span class="skill-tag">C#</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Actions -->
-
-                <div class="space-y-3 pt-4">
+                <div class="space-y-2">
                     <a href="https://www.linkedin.com/in/kieran-wadforth/" target="_blank"
-                        class="w-full py-2.5 px-4 rounded-lg bg-accent text-dark font-bold hover:bg-white transition-all duration-300 flex items-center justify-center gap-2 group shadow-lg shadow-accent/10">
-                        <i class="fa-brands fa-linkedin-in text-lg"></i>
-                        <span>Connect on LinkedIn</span>
+                        class="w-full py-2.5 px-4 rounded-lg bg-accent text-dark font-bold hover:bg-white transition-all duration-300 flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                        Connect on LinkedIn
                     </a>
 
                     <a href="https://github.com/wadforth" target="_blank"
-                        class="w-full py-2.5 px-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-accent/50 text-slate-300 font-medium transition-all duration-300 flex items-center justify-center gap-2 group">
-                        <i class="fa-brands fa-github text-lg group-hover:text-white"></i>
-                        <span>View GitHub</span>
+                        class="w-full py-2.5 px-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 hover:border-accent/50 text-slate-300 font-medium transition-all duration-300 flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-brands fa-github"></i>
+                        View GitHub
                     </a>
                 </div>
             </div>
@@ -190,8 +410,7 @@
 
             <!-- Navigation -->
             <nav class="sticky top-6 z-40 mb-16 hidden lg:block print:hidden">
-                <ul
-                    class="flex gap-1 p-1.5 rounded-2xl bg-dark/80 backdrop-blur-md border border-white/10 inline-flex shadow-xl">
+                <ul class="nav-glass flex gap-1 p-1.5 rounded-2xl inline-flex shadow-xl">
                     <li><a href="#about" class="nav-link">Terminal</a></li>
                     <li><a href="#projects" class="nav-link">Projects</a></li>
                     <li><a href="#contact" class="nav-link">Contact</a></li>
@@ -272,8 +491,7 @@
                         <div class="h-px bg-white/10 flex-1"></div>
                     </div>
 
-                    <div
-                        class="bg-[#0c0c0c] border border-white/10 rounded-lg overflow-hidden shadow-2xl font-mono text-sm">
+                    <div class="terminal-card rounded-xl overflow-hidden font-mono text-sm animate-enter">
                         <!-- Terminal Header -->
                         <div class="bg-white/5 px-4 py-2 flex items-center gap-2 border-b border-white/5">
                             <div class="flex gap-2">
@@ -316,6 +534,39 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-1 print:gap-4">
+                        <!-- Project: LoL Tracker -->
+                        <a href="lol-tracker/"
+                            class="project-card group block print:border-gray-300 print:bg-white print:text-black"
+                            data-category="dev">
+                            <div class="project-card-glow print:hidden"></div>
+                            <div class="relative z-10 flex flex-col h-full">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h3
+                                            class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
+                                            LoL Tracker</h3>
+                                        <span class="badge-latest print:border-gray-400 print:text-gray-600">NEW</span>
+                                        <span
+                                            class="badge-latest print:border-gray-400 print:text-gray-600">LATEST</span>
+                                    </div>
+                                    <i
+                                        class="fa-solid fa-gamepad text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
+                                </div>
+                                <p class="text-secondary text-sm mb-6 flex-1 leading-relaxed print:text-gray-700">
+                                    League of Legends match history tracker with detailed stats, win streaks,
+                                    penta kill scanner, and ranked performance analytics.
+                                </p>
+                                <div class="flex flex-wrap gap-3">
+                                    <span class="tech-tag print:text-gray-600"><i class="fa-brands fa-js"></i>
+                                        JavaScript</span>
+                                    <span class="tech-tag print:text-gray-600"><i class="fa-solid fa-chart-line"></i>
+                                        Riot API</span>
+                                    <span class="tech-tag print:text-gray-600"><i class="fa-solid fa-gamepad"></i>
+                                        Gaming</span>
+                                </div>
+                            </div>
+                        </a>
+
                         <!-- Project: Free Games Tracker -->
                         <a href="free-games/"
                             class="project-card group block print:border-gray-300 print:bg-white print:text-black"
@@ -327,7 +578,6 @@
                                         <h3
                                             class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
                                             Free Games Tracker</h3>
-                                        <span class="badge-latest print:border-gray-400 print:text-gray-600">NEW</span>
                                     </div>
                                     <i
                                         class="fa-solid fa-gift text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
@@ -356,7 +606,6 @@
                                         <h3
                                             class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
                                             SIGMA Rule Generator</h3>
-                                        <span class="badge-latest print:border-gray-400 print:text-gray-600">NEW</span>
                                     </div>
                                     <i
                                         class="fa-solid fa-shield-halved text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
@@ -387,8 +636,6 @@
                                         <h3
                                             class="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors font-mono print:text-black">
                                             Pulse Optimizer</h3>
-                                        <span
-                                            class="badge-latest print:border-gray-400 print:text-gray-600">LATEST</span>
                                     </div>
                                     <i
                                         class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-white transition-colors print:hidden"></i>
@@ -503,8 +750,7 @@
                 <!-- Contact Section -->
                 <section id="contact" class="scroll-mt-32 pb-20 print:hidden">
                     <div class="container mx-auto px-6">
-                        <div
-                            class="bg-gradient-to-br from-white/5 to-white/10 rounded-2xl p-8 md:p-12 border border-white/10 text-center relative overflow-hidden group">
+                        <div class="contact-card rounded-2xl p-8 md:p-12 text-center relative overflow-hidden group">
                             <div
                                 class="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                             </div>
