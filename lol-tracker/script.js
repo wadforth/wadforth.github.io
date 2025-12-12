@@ -163,10 +163,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize rate tracker
     apiRateTracker.init();
 
-    // Wrapped fetch that tracks API calls
+    // Wrapped fetch that tracks API calls (only counts cache misses)
     async function trackedFetch(url, options = {}) {
-        apiRateTracker.track();
         const response = await fetch(url, options);
+
+        // Only count as API call if it was a cache miss (actually hit Riot API)
+        const cacheStatus = response.headers.get('X-Cache');
+        if (cacheStatus !== 'HIT') {
+            apiRateTracker.track();
+        }
 
         // If rate limited, set cooldown
         if (response.status === 429) {
