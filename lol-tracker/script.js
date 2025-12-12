@@ -1227,41 +1227,47 @@ document.addEventListener('DOMContentLoaded', () => {
         // Show loading while checking server cache
         pentaContent.innerHTML = '<div class="text-xs text-muted italic animate-pulse">Loading...</div>';
 
+        let cachedData = null;
+        let cacheSource = null;
+
         try {
             // Check server-side cache first
             const cacheRes = await fetch(`/.netlify/functions/penta-cache?puuid=${puuid}`);
             const cacheData = await cacheRes.json();
 
             if (cacheData.found && cacheData.pentas) {
-                // Show cached data with rescan option
-                renderPentaUI(pentaContent, cacheData.pentas, cacheData.total, cacheData.scanned, true);
-
-                // Add rescan button
-                const rescanBtn = document.createElement('button');
-                rescanBtn.className = 'mt-3 w-full text-[9px] uppercase tracking-widest text-muted hover:text-white bg-white/5 hover:bg-white/10 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5';
-                rescanBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Rescan';
-                rescanBtn.onclick = () => showPentaScanConfirmation(region, puuid, true);
-                pentaContent.appendChild(rescanBtn);
-                return;
+                cachedData = cacheData;
+                cacheSource = 'server';
             }
         } catch (e) {
             console.warn('Server penta cache check failed, falling back to localStorage', e);
         }
 
-        // Fallback: Check localStorage (for backwards compatibility)
-        const localCacheKey = `penta_cache_${puuid}`;
-        const localCache = JSON.parse(localStorage.getItem(localCacheKey) || 'null');
+        // Fallback: Check localStorage
+        if (!cachedData) {
+            const localCacheKey = `penta_cache_${puuid}`;
+            const localCache = JSON.parse(localStorage.getItem(localCacheKey) || 'null');
+            if (localCache && localCache.pentas) {
+                cachedData = localCache;
+                cacheSource = 'local';
+            }
+        }
 
-        if (localCache && localCache.pentas) {
-            renderPentaUI(pentaContent, localCache.pentas, localCache.total, localCache.scanned, true);
+        // If we have cached data, show it and check for updates
+        if (cachedData) {
+            renderPentaUI(pentaContent, cachedData.pentas, cachedData.total, cachedData.scanned, true);
 
+            // Add rescan button
             const rescanBtn = document.createElement('button');
             rescanBtn.className = 'mt-3 w-full text-[9px] uppercase tracking-widest text-muted hover:text-white bg-white/5 hover:bg-white/10 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5';
-            rescanBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Rescan';
+            rescanBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Full Rescan';
             rescanBtn.onclick = () => showPentaScanConfirmation(region, puuid, true);
             pentaContent.appendChild(rescanBtn);
+
+            // Check for new matches in the background
+            checkForNewPentas(region, puuid, cachedData);
         } else {
-            // Show scan button
+            // No cached data - show scan button
             pentaContent.innerHTML = `
                 <div class="flex flex-col items-center gap-3 py-2">
                     <i class="fa-solid fa-skull text-lolRed/30 text-2xl"></i>
@@ -1272,6 +1278,138 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             document.getElementById('penta-scan-btn').onclick = () => showPentaScanConfirmation(region, puuid, false);
+        }
+    }
+
+    // Check for new matches and update penta count incrementally
+    async function checkForNewPentas(region, puuid, cachedData) {
+        const pentaContent = document.getElementById('penta-content');
+
+        try {
+            // Get current match IDs (just the latest 20)
+            const matchListRes = await trackedFetch(`${PROXY_BASE}?endpoint=match-list&region=${region}&puuid=${puuid}&count=20`);
+            if (!matchListRes.ok) return;
+
+            const currentMatchIds = await matchListRes.json();
+            if (!Array.isArray(currentMatchIds) || currentMatchIds.length === 0) return;
+
+            // Find matches we haven't scanned yet
+            const scannedMatchIds = cachedData.matchIds || [];
+            const newMatchIds = currentMatchIds.filter(id => !scannedMatchIds.includes(id));
+
+            if (newMatchIds.length === 0) {
+                console.log('[Penta] No new matches to check');
+                return;
+            }
+
+            console.log(`[Penta] Found ${newMatchIds.length} new matches to check`);
+
+            // Show update indicator
+            const updateIndicator = document.createElement('div');
+            updateIndicator.className = 'text-[8px] text-lolPurple mt-2 animate-pulse';
+            updateIndicator.innerHTML = `<i class="fa-solid fa-sync fa-spin mr-1"></i> Checking ${newMatchIds.length} new matches...`;
+            pentaContent.appendChild(updateIndicator);
+
+            // Fetch new match details
+            let newPentasFound = 0;
+            const updatedPentas = { ...cachedData.pentas };
+
+            for (const matchId of newMatchIds) {
+                try {
+                    const matchRes = await trackedFetch(`${PROXY_BASE}?endpoint=match-details&region=${region}&matchId=${matchId}`);
+                    if (!matchRes.ok) continue;
+
+                    const match = await matchRes.json();
+                    if (!match || !match.info) continue;
+
+                    // Skip Arena
+                    if (match.info.gameMode === 'ARENA' || match.info.gameMode === 'CHERRY') continue;
+
+                    const player = match.info.participants.find(p => p.puuid === puuid);
+                    if (!player || player.pentaKills === 0) continue;
+
+                    // Found penta(s)!
+                    const champName = player.championName;
+                    const isAram = match.info.queueId === 450;
+                    const mode = isAram ? 'ARAM' : 'SR';
+
+                    if (!updatedPentas[champName]) {
+                        updatedPentas[champName] = { count: 0, modes: [] };
+                    }
+
+                    updatedPentas[champName].count += player.pentaKills;
+                    if (!updatedPentas[champName].modes.includes(mode)) {
+                        updatedPentas[champName].modes.push(mode);
+                    }
+
+                    newPentasFound += player.pentaKills;
+                    console.log(`[Penta] Found ${player.pentaKills} penta(s) on ${champName} (${mode})`);
+                } catch (e) {
+                    console.warn('[Penta] Error checking match', matchId, e);
+                }
+            }
+
+            // Remove update indicator
+            updateIndicator.remove();
+
+            if (newPentasFound > 0) {
+                // Update totals
+                const newTotal = cachedData.total + newPentasFound;
+                const newScanned = cachedData.scanned + newMatchIds.length;
+                const allMatchIds = [...newMatchIds, ...scannedMatchIds];
+
+                // Save to server cache
+                try {
+                    await fetch(`/.netlify/functions/penta-cache?puuid=${puuid}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pentas: updatedPentas,
+                            total: newTotal,
+                            scanned: newScanned
+                        })
+                    });
+                } catch (e) {
+                    console.warn('[Penta] Failed to save updated cache', e);
+                }
+
+                // Save to localStorage
+                localStorage.setItem(`penta_cache_${puuid}`, JSON.stringify({
+                    pentas: updatedPentas,
+                    total: newTotal,
+                    scanned: newScanned,
+                    matchIds: allMatchIds,
+                    timestamp: Date.now()
+                }));
+
+                // Re-render UI with updated data
+                renderPentaUI(pentaContent, updatedPentas, newTotal, newScanned, true);
+
+                // Show update notification
+                const notification = document.createElement('div');
+                notification.className = 'text-[9px] text-green-400 mt-2 animate-enter';
+                notification.innerHTML = `<i class="fa-solid fa-check mr-1"></i> Found ${newPentasFound} new penta${newPentasFound > 1 ? 's' : ''}!`;
+                pentaContent.appendChild(notification);
+
+                // Re-add rescan button
+                const rescanBtn = document.createElement('button');
+                rescanBtn.className = 'mt-2 w-full text-[9px] uppercase tracking-widest text-muted hover:text-white bg-white/5 hover:bg-white/10 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5';
+                rescanBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Full Rescan';
+                rescanBtn.onclick = () => showPentaScanConfirmation(region, puuid, true);
+                pentaContent.appendChild(rescanBtn);
+            } else {
+                // Update localStorage with new match IDs even if no pentas found (so we don't recheck)
+                const allMatchIds = [...newMatchIds, ...scannedMatchIds];
+                localStorage.setItem(`penta_cache_${puuid}`, JSON.stringify({
+                    ...cachedData,
+                    matchIds: allMatchIds,
+                    scanned: cachedData.scanned + newMatchIds.length,
+                    timestamp: Date.now()
+                }));
+            }
+
+        } catch (e) {
+            console.warn('[Penta] Error checking for new matches', e);
         }
     }
 
