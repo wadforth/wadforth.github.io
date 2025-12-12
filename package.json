@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/wadforth/wadforth.github.io#readme",
   "dependencies": {
+    "@netlify/blobs": "^10.4.3",
     "bottleneck": "^2.19.5",
     "node-fetch": "^2.7.0"
   }

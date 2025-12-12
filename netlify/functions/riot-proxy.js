@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const Bottleneck = require('bottleneck');
+const { getStore, connectLambda } = require('@netlify/blobs');
 
 // Initialize Rate Limiter
 // Riot Limits: 20 reqs / 1 sec, 100 reqs / 2 min
@@ -25,6 +26,46 @@ const longLimiter = new Bottleneck({
 // Wrapper to Fetch with Rate Limits
 const rateLimitedFetch = longLimiter.wrap(limiter.wrap(fetch));
 
+// Cache TTLs (in milliseconds)
+const CACHE_TTL = {
+    'match-details': null,       // Forever - match data never changes
+    'summoner-by-puuid': 3600000, // 1 hour
+    'league-entries': 3600000,    // 1 hour
+    'mastery-top': 3600000,       // 1 hour
+    'challenges': 3600000,        // 1 hour
+    'match-list': 300000,         // 5 minutes
+    'account-by-riot-id': 86400000, // 24 hours (accounts rarely change)
+};
+
+// Helper: Generate cache key
+function getCacheKey(endpoint, params) {
+    switch (endpoint) {
+        case 'match-details':
+            return `match_${params.matchId}`;
+        case 'summoner-by-puuid':
+            return `summoner_${params.puuid}`;
+        case 'league-entries':
+            return `league_${params.summonerId}`;
+        case 'mastery-top':
+            return `mastery_${params.puuid}`;
+        case 'challenges':
+            return `challenges_${params.puuid}`;
+        case 'match-list':
+            return `matchlist_${params.puuid}_${params.start || 0}_${params.count || 10}`;
+        case 'account-by-riot-id':
+            return `account_${params.gameName}_${params.tagLine}`.toLowerCase();
+        default:
+            return null;
+    }
+}
+
+// Helper: Check if cache is valid
+function isCacheValid(cached, ttl) {
+    if (!cached || !cached.data) return false;
+    if (ttl === null) return true; // Forever cache
+    return (Date.now() - cached.timestamp) < ttl;
+}
+
 exports.handler = async function (event, context) {
     const API_KEY = process.env.RIOT_API_KEY;
 
@@ -44,6 +85,39 @@ exports.handler = async function (event, context) {
         };
     }
 
+    // --- CACHE CHECK ---
+    const cacheKey = getCacheKey(endpoint, params);
+    const ttl = CACHE_TTL[endpoint];
+    let store = null;
+
+    // Only use cache for supported endpoints
+    if (cacheKey && ttl !== undefined) {
+        try {
+            // Connect Lambda environment for Blobs
+            connectLambda(event);
+            store = getStore('riot-cache');
+            const cached = await store.get(cacheKey, { type: 'json' });
+
+            if (isCacheValid(cached, ttl)) {
+                console.log(`[Cache HIT] ${endpoint}: ${cacheKey}`);
+                return {
+                    statusCode: 200,
+                    headers: {
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Headers": "Content-Type",
+                        "X-Cache": "HIT",
+                        "X-Cache-Age": String(Math.round((Date.now() - cached.timestamp) / 1000))
+                    },
+                    body: JSON.stringify(cached.data)
+                };
+            }
+            console.log(`[Cache MISS] ${endpoint}: ${cacheKey}`);
+        } catch (e) {
+            console.warn('[Cache Error]', e.message);
+            // Continue without cache on error
+        }
+    }
+
     // Map "region" (e.g., euw1) to "routing" (americas, europe, asia) for Match V5
     const routingMap = {
         'na1': 'americas',
@@ -61,43 +135,31 @@ exports.handler = async function (event, context) {
         'th2': 'sea',
         'tw2': 'sea',
         'vn2': 'sea',
-        'oc1': 'sea' // Oceania is weird, often groups with americas or sea depending on endpoint, usually SEA for routing context or AMERICAS historically. MatchV5 uses clusters.
-        // Riot docs say: "AMERICAS", "ASIA", "EUROPE", "SEA".
-        // Let's default to mapping based on platform.
+        'oc1': 'sea'
     };
 
-    // Some APIs use platform (euw1), others use routing (europe).
-    // MatchV5 and AccountV1 use Routing.
-    // SummonerV4, LeagueV4, etc use Platform.
-
     let targetHost = `https://${region}.api.riotgames.com`; // Default to platform
-
-    // Setup URL based on requested endpoint type
     let targetPath = '';
 
     // --- ENDPOINT ROUTING LOGIC ---
 
     // ACCOUNT-V1 (Get PUUID by Riot ID or name)
-    // /riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}
     if (endpoint === 'account-by-riot-id') {
-        const routing = routingMap[region] || 'europe'; // Fallback
+        const routing = routingMap[region] || 'europe';
         targetHost = `https://${routing}.api.riotgames.com`;
         targetPath = `/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(params.gameName)}/${encodeURIComponent(params.tagLine)}`;
     }
 
     // SUMMONER-V4 (Get by PUUID)
-    // /lol/summoner/v4/summoners/by-puuid/{encryptedPUUID}
     else if (endpoint === 'summoner-by-puuid') {
         targetPath = `/lol/summoner/v4/summoners/by-puuid/${encodeURIComponent(params.puuid)}`;
     }
 
     // MATCH-V5 (Get Match List by PUUID)
-    // /lol/match/v5/matches/by-puuid/{puuid}/ids
     else if (endpoint === 'match-list') {
         const routing = routingMap[region] || 'europe';
         targetHost = `https://${routing}.api.riotgames.com`;
         targetPath = `/lol/match/v5/matches/by-puuid/${encodeURIComponent(params.puuid)}/ids`;
-        // Optional params: start, count, startTime
         const count = params.count || 10;
         const start = params.start || 0;
         const startTime = params.startTime || '';
@@ -110,7 +172,6 @@ exports.handler = async function (event, context) {
     }
 
     // MATCH-V5 (Get Match Details by ID)
-    // /lol/match/v5/matches/{matchId}
     else if (endpoint === 'match-details') {
         const routing = routingMap[region] || 'europe';
         targetHost = `https://${routing}.api.riotgames.com`;
@@ -118,31 +179,26 @@ exports.handler = async function (event, context) {
     }
 
     // LEAGUE-V4 (Ranked stats by Summoner ID)
-    // /lol/league/v4/entries/by-summoner/{encryptedSummonerId}
     else if (endpoint === 'league-entries') {
         targetPath = `/lol/league/v4/entries/by-summoner/${encodeURIComponent(params.summonerId)}`;
     }
 
     // CHAMPION-MASTERY-V4 (Top Champs)
-    // /lol/champion-mastery/v4/champion-masteries/by-puuid/{encryptedPUUID}/top
     else if (endpoint === 'mastery-top') {
         targetPath = `/lol/champion-mastery/v4/champion-masteries/by-puuid/${encodeURIComponent(params.puuid)}/top`;
     }
 
     // LOL-STATUS-V4 (Platform Data)
-    // /lol/status/v4/platform-data
     else if (endpoint === 'status') {
         targetPath = `/lol/status/v4/platform-data`;
     }
 
     // SPECTATOR-V4 (Active Game)
-    // /lol/spectator/v4/active-games/by-summoner/{encryptedSummonerId}
     else if (endpoint === 'spectator') {
         targetPath = `/lol/spectator/v4/active-games/by-summoner/${encodeURIComponent(params.summonerId)}`;
     }
 
     // CHALLENGES-V1 (Player Data)
-    // /lol/challenges/v1/player-data/{puuid}
     else if (endpoint === 'challenges') {
         targetPath = `/lol/challenges/v1/player-data/${encodeURIComponent(params.puuid)}`;
     }
@@ -172,12 +228,26 @@ exports.handler = async function (event, context) {
             };
         }
 
+        // --- SAVE TO CACHE ---
+        if (store && cacheKey) {
+            try {
+                await store.setJSON(cacheKey, {
+                    data: data,
+                    timestamp: Date.now()
+                });
+                console.log(`[Cache SAVE] ${endpoint}: ${cacheKey}`);
+            } catch (e) {
+                console.warn('[Cache Save Error]', e.message);
+            }
+        }
+
         return {
             statusCode: 200,
             headers: {
-                "Access-Control-Allow-Origin": "*", // Allow from anywhere (or restrict to your domain)
+                "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Headers": "Content-Type",
-                "Cache-Control": "public, max-age=60" // Cache success for 60s
+                "X-Cache": "MISS",
+                "Cache-Control": "public, max-age=60"
             },
             body: JSON.stringify(data)
         };

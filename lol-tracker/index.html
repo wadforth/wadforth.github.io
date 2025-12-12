@@ -332,20 +332,41 @@
 
         /* Region Button Selector */
         .region-btn {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
             color: #64748b;
             border: 1px solid transparent;
+            transition: all 0.2s ease;
         }
 
         .region-btn:hover {
             background: rgba(255, 255, 255, 0.08);
             color: #94a3b8;
+            transform: translateY(-1px);
         }
 
         .region-btn.active {
-            background: rgba(155, 109, 255, 0.15);
+            background: linear-gradient(135deg, rgba(155, 109, 255, 0.2) 0%, rgba(10, 200, 185, 0.1) 100%);
             color: #9B6DFF;
-            border-color: rgba(155, 109, 255, 0.3);
+            border-color: rgba(155, 109, 255, 0.35);
+            box-shadow: 0 0 20px rgba(155, 109, 255, 0.15);
+        }
+
+        /* Custom Scrollbar for Lists */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* Match Filter Buttons */
@@ -389,6 +410,35 @@
 <body class="text-slate-200 font-sans antialiased min-h-screen flex flex-col bg-dark">
     <!-- Tooltip Element -->
     <div id="global-tooltip" class="hidden"></div>
+
+    <!-- API Status Indicator (Fixed bottom-right) -->
+    <div id="api-status"
+        class="fixed bottom-4 right-4 z-50 flex items-center gap-2 cursor-pointer group opacity-60 hover:opacity-100 transition-all"
+        title="API Rate Limit Status">
+        <div id="api-status-dot" class="w-2 h-2 rounded-full bg-green-500"></div>
+        <span id="api-status-text" class="text-[9px] font-bold text-muted uppercase tracking-wider">OK</span>
+        <span id="api-status-count" class="text-[8px] text-muted/50 font-mono">0/100</span>
+
+        <!-- Tooltip on hover -->
+        <div
+            class="absolute bottom-full right-0 mb-2 w-40 p-2.5 bg-dark/95 border border-white/10 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all text-left backdrop-blur-sm">
+            <div class="text-[8px] font-bold text-muted uppercase tracking-wider mb-1.5">Rate Limits</div>
+            <div class="space-y-1 text-[9px]">
+                <div class="flex justify-between">
+                    <span class="text-muted">Per sec:</span>
+                    <span id="api-per-sec" class="text-white font-mono">0/20</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-muted">Per 2min:</span>
+                    <span id="api-per-2min" class="text-white font-mono">0/100</span>
+                </div>
+                <div id="api-cooldown-row" class="hidden flex justify-between text-yellow-400">
+                    <span>Cooldown:</span>
+                    <span id="api-cooldown-time" class="font-mono">0s</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Navbar -->
     <header class="fixed top-0 w-full z-50 transition-all duration-300 pointer-events-none">
@@ -472,43 +522,49 @@
             <section class="max-w-4xl w-full px-6 text-center relative z-10">
 
                 <!-- Badge -->
-                <div class="mb-8 animate-enter" style="animation-delay: 0.1s; opacity: 0;">
+                <div class="mb-6 animate-enter" style="animation-delay: 0.1s; opacity: 0;">
                     <span
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lolPurple/10 border border-lolPurple/20 text-lolPurple text-xs font-semibold tracking-widest uppercase backdrop-blur-sm">
-                        <i class="fa-solid fa-sparkles text-[10px]"></i>
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-lolPurple/15 to-lolBlue/10 border border-lolPurple/25 text-lolPurple text-xs font-semibold tracking-widest uppercase backdrop-blur-sm shadow-lg shadow-lolPurple/5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-lolPurple animate-pulse"></span>
                         Season 2025 Ready
                     </span>
                 </div>
 
                 <!-- Headline -->
-                <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-[1.1] animate-enter"
+                <h1 class="text-5xl md:text-7xl font-black text-white mb-5 tracking-tight leading-[1.05] animate-enter"
                     style="animation-delay: 0.2s; opacity: 0;">
-                    Track Your<br>
-                    <span class="text-gradient-gold">Legend</span>
+                    Track Your
+                    <span class="text-gradient-gold relative">
+                        Legend
+                        <span
+                            class="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-lolGold/40 to-transparent"></span>
+                    </span>
                 </h1>
 
                 <!-- Subtitle -->
-                <p class="text-muted mb-12 text-lg max-w-lg mx-auto font-normal leading-relaxed animate-enter"
+                <p class="text-muted mb-10 text-lg md:text-xl max-w-xl mx-auto font-normal leading-relaxed animate-enter"
                     style="animation-delay: 0.3s; opacity: 0;">
-                    Analyze matches, track progress, and dominate the rift with real-time insights.
+                    Analyze matches, track progress, and dominate the rift with <span
+                        class="text-white/80 font-medium">real-time insights</span>.
                 </p>
 
                 <!-- Hero Search Bar -->
-                <div class="glass-card rounded-2xl p-2.5 flex flex-col gap-3 relative z-20 hover:border-white/10 transition-all max-w-2xl mx-auto animate-enter"
+                <div class="glass-card rounded-2xl p-3 relative z-20 hover:border-white/10 transition-all max-w-2xl mx-auto animate-enter shadow-2xl shadow-black/40"
                     style="animation-delay: 0.4s; opacity: 0;">
 
                     <!-- Region Button Selector -->
-                    <div id="region-buttons" class="flex gap-1.5 justify-center flex-wrap">
+                    <div id="region-buttons"
+                        class="flex gap-1 justify-center flex-wrap mb-3 pb-3 border-b border-white/[0.04]">
                         <button type="button" data-region="euw1"
-                            class="region-btn active px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">EUW</button>
+                            class="region-btn active px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">EUW</button>
                         <button type="button" data-region="na1"
-                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">NA</button>
+                            class="region-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">NA</button>
                         <button type="button" data-region="kr"
-                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">KR</button>
+                            class="region-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">KR</button>
                         <button type="button" data-region="eun1"
-                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">EUNE</button>
+                            class="region-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">EUNE</button>
                         <button type="button" data-region="br1"
-                            class="region-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all">BR</button>
+                            class="region-btn px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all">BR</button>
                     </div>
 
                     <!-- Hidden select for JS compatibility -->
@@ -523,18 +579,21 @@
                     <!-- Search Row -->
                     <div class="flex gap-2">
                         <!-- Search Input -->
-                        <div class="relative flex-1">
+                        <div class="relative flex-1 group">
                             <input type="text" id="summoner-input"
-                                class="w-full bg-surfaceLight/40 border border-white/[0.06] rounded-xl px-4 py-3.5 pl-11 text-white placeholder-muted focus:outline-none focus:border-lolPurple/40 text-base font-medium transition-colors"
-                                placeholder="Enter Name#Tag...">
-                            <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-muted"></i>
+                                class="w-full bg-dark/60 border border-white/[0.08] rounded-xl px-4 py-4 pl-12 text-white placeholder-muted/60 focus:outline-none focus:border-lolPurple/50 focus:bg-dark/80 text-base font-medium transition-all"
+                                placeholder="Summoner Name#TAG">
+                            <i
+                                class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-lolPurple transition-colors"></i>
                         </div>
 
                         <!-- Search Button -->
                         <button id="search-btn"
-                            class="bg-lolPurple hover:bg-lolPurple/80 text-white font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-lolPurple/20 whitespace-nowrap active:scale-[0.98] uppercase tracking-wider text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-magnifying-glass text-sm"></i>
-                            Search
+                            class="relative bg-gradient-to-r from-lolPurple to-lolPurple/80 hover:from-lolPurple hover:to-lolBlue text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg shadow-lolPurple/25 whitespace-nowrap active:scale-[0.98] uppercase tracking-wider text-sm flex items-center gap-2 overflow-hidden">
+                            <span class="relative z-10 flex items-center gap-2">
+                                <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                                Search
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -548,25 +607,25 @@
             </section>
 
             <!-- Quick Lists -->
-            <div class="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 mt-24 px-6 animate-enter"
+            <div class="max-w-4xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 mt-20 px-6 animate-enter"
                 style="animation-delay: 0.5s; opacity: 0;">
 
                 <!-- Favorites -->
                 <div class="space-y-4">
-                    <div class="flex items-center gap-2 pl-1">
-                        <i class="fa-solid fa-star text-lolGold text-xs"></i>
-                        <h3 class="text-xs font-semibold text-muted uppercase tracking-widest">Favorites</h3>
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-star text-lolGold text-sm"></i>
+                        <h3 class="text-xs font-bold text-muted uppercase tracking-widest">Favorites</h3>
                     </div>
-                    <div id="favorites-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div id="favorites-grid" class="grid grid-cols-1 gap-2">
                         <!-- JS Populated -->
                     </div>
                 </div>
 
                 <!-- Recent Searches -->
                 <div class="space-y-4">
-                    <div class="flex items-center gap-2 pl-1">
-                        <i class="fa-solid fa-clock-rotate-left text-lolBlue text-xs"></i>
-                        <h3 class="text-xs font-semibold text-muted uppercase tracking-widest">Recent Searches</h3>
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-clock-rotate-left text-lolBlue text-sm"></i>
+                        <h3 class="text-xs font-bold text-muted uppercase tracking-widest">Recent Searches</h3>
                     </div>
                     <div id="recent-grid" class="space-y-2">
                         <!-- JS Populated -->

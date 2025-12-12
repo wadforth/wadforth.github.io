@@ -45,6 +45,137 @@ document.addEventListener('DOMContentLoaded', () => {
     let cachedHeavyMatches = null; // Cache for 50-match fetches
     let matchesLoadedCount = 20; // Track how many matches are loaded for pagination
 
+    // --- API Rate Tracking ---
+    const apiRateTracker = {
+        requests: [], // Timestamps of requests
+        LIMIT_PER_SEC: 20,
+        LIMIT_PER_2MIN: 100,
+        WINDOW_2MIN: 120000, // 2 minutes in ms
+        cooldownUntil: 0,
+
+        // Track a new request
+        track() {
+            const now = Date.now();
+            this.requests.push(now);
+            // Clean old requests (older than 2 min)
+            this.requests = this.requests.filter(t => now - t < this.WINDOW_2MIN);
+            this.updateUI();
+        },
+
+        // Get counts
+        getPerSecond() {
+            const now = Date.now();
+            return this.requests.filter(t => now - t < 1000).length;
+        },
+
+        getPer2Min() {
+            return this.requests.length;
+        },
+
+        // Check if approaching limit
+        isNearLimit() {
+            return this.getPer2Min() >= this.LIMIT_PER_2MIN * 0.7; // 70% of limit
+        },
+
+        isAtLimit() {
+            return this.getPer2Min() >= this.LIMIT_PER_2MIN * 0.9; // 90% of limit
+        },
+
+        // Set cooldown
+        setCooldown(ms) {
+            this.cooldownUntil = Date.now() + ms;
+            this.startCooldownTimer();
+        },
+
+        startCooldownTimer() {
+            const updateCooldown = () => {
+                const remaining = Math.max(0, this.cooldownUntil - Date.now());
+                const cooldownRow = document.getElementById('api-cooldown-row');
+                const cooldownTime = document.getElementById('api-cooldown-time');
+
+                if (remaining > 0) {
+                    if (cooldownRow) cooldownRow.classList.remove('hidden');
+                    if (cooldownTime) cooldownTime.textContent = Math.ceil(remaining / 1000) + 's';
+                    setTimeout(updateCooldown, 1000);
+                } else {
+                    if (cooldownRow) cooldownRow.classList.add('hidden');
+                    this.updateUI();
+                }
+            };
+            updateCooldown();
+        },
+
+        // Update UI
+        updateUI() {
+            const dot = document.getElementById('api-status-dot');
+            const statusText = document.getElementById('api-status-text');
+            const countText = document.getElementById('api-status-count');
+            const perSecEl = document.getElementById('api-per-sec');
+            const per2MinEl = document.getElementById('api-per-2min');
+
+            if (!dot || !statusText) return;
+
+            const perSec = this.getPerSecond();
+            const per2Min = this.getPer2Min();
+            const inCooldown = Date.now() < this.cooldownUntil;
+
+            // Update counts
+            if (countText) countText.textContent = `${per2Min}/${this.LIMIT_PER_2MIN}`;
+            if (perSecEl) perSecEl.textContent = `${perSec}/${this.LIMIT_PER_SEC}`;
+            if (per2MinEl) per2MinEl.textContent = `${per2Min}/${this.LIMIT_PER_2MIN}`;
+
+            // Update status
+            if (inCooldown) {
+                dot.className = 'w-2 h-2 rounded-full bg-yellow-500 animate-pulse';
+                statusText.textContent = 'WAIT';
+                statusText.className = 'text-[9px] font-bold text-yellow-400 uppercase tracking-wider';
+            } else if (this.isAtLimit()) {
+                dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
+                statusText.textContent = 'LIMIT';
+                statusText.className = 'text-[9px] font-bold text-red-400 uppercase tracking-wider';
+            } else if (this.isNearLimit()) {
+                dot.className = 'w-2 h-2 rounded-full bg-yellow-500';
+                statusText.textContent = 'BUSY';
+                statusText.className = 'text-[9px] font-bold text-yellow-400 uppercase tracking-wider';
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-green-500';
+                statusText.textContent = 'OK';
+                statusText.className = 'text-[9px] font-bold text-green-400 uppercase tracking-wider';
+            }
+        },
+
+        // Reset (for when 2 min window passes)
+        init() {
+            // Clean old requests on init
+            const now = Date.now();
+            this.requests = this.requests.filter(t => now - t < this.WINDOW_2MIN);
+            this.updateUI();
+
+            // Periodic cleanup and UI update
+            setInterval(() => {
+                const now = Date.now();
+                this.requests = this.requests.filter(t => now - t < this.WINDOW_2MIN);
+                this.updateUI();
+            }, 5000);
+        }
+    };
+
+    // Initialize rate tracker
+    apiRateTracker.init();
+
+    // Wrapped fetch that tracks API calls
+    async function trackedFetch(url, options = {}) {
+        apiRateTracker.track();
+        const response = await fetch(url, options);
+
+        // If rate limited, set cooldown
+        if (response.status === 429) {
+            apiRateTracker.setCooldown(120000); // 2 min cooldown
+        }
+
+        return response;
+    }
+
     // --- Load More Matches ---
     async function loadMoreMatches() {
         const loadMoreBtn = document.getElementById('load-more-btn');
@@ -59,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             // Fetch next batch of 20 matches
-            const matchIdsRes = await fetch(`${PROXY_BASE}?endpoint=match-list&region=${currentRegion}&puuid=${currentPuuid}&count=20&start=${matchesLoadedCount}`);
+            const matchIdsRes = await trackedFetch(`${PROXY_BASE}?endpoint=match-list&region=${currentRegion}&puuid=${currentPuuid}&count=20&start=${matchesLoadedCount}`);
             if (!matchIdsRes.ok) throw new Error('Failed to fetch more matches');
 
             const newMatchIds = await matchIdsRes.json();
@@ -72,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Fetch match details
             const promises = newMatchIds.map(id =>
-                fetch(`${PROXY_BASE}?endpoint=match-details&region=${currentRegion}&matchId=${id}`)
+                trackedFetch(`${PROXY_BASE}?endpoint=match-details&region=${currentRegion}&matchId=${id}`)
                     .then(r => r.ok ? r.json() : null)
                     .catch(() => null)
             );
@@ -153,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fetch more matches to ensure we get enough filtered results
             const count = (filter === 'aram' || filter === 'arena') ? 50 : 20;
             const matchesUrl = `${PROXY_BASE}?endpoint=match-list&region=${currentRegion}&puuid=${currentPuuid}&count=${count}`;
-            const matchesRes = await fetch(matchesUrl);
+            const matchesRes = await trackedFetch(matchesUrl);
 
             if (!matchesRes.ok) throw new Error('Failed to fetch matches');
 
@@ -171,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < matchIds.length; i += BATCH_SIZE) {
                 const chunk = matchIds.slice(i, i + BATCH_SIZE);
                 const promises = chunk.map(id =>
-                    fetch(`${PROXY_BASE}?endpoint=match-details&region=${currentRegion}&matchId=${id}`)
+                    trackedFetch(`${PROXY_BASE}?endpoint=match-details&region=${currentRegion}&matchId=${id}`)
                         .then(r => r.ok ? r.json() : null)
                         .catch(() => null)
                 );
@@ -239,7 +370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Fetch 50 match IDs
             const matchesUrl = `${PROXY_BASE}?endpoint=match-list&region=${currentRegion}&puuid=${currentPuuid}&count=50`;
-            const matchesRes = await fetch(matchesUrl);
+            const matchesRes = await trackedFetch(matchesUrl);
 
             if (!matchesRes.ok) throw new Error('Failed to fetch matches');
 
@@ -257,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < matchIds.length; i += BATCH_SIZE) {
                 const chunk = matchIds.slice(i, i + BATCH_SIZE);
                 const promises = chunk.map(id =>
-                    fetch(`${PROXY_BASE}?endpoint=match-details&region=${currentRegion}&matchId=${id}`)
+                    trackedFetch(`${PROXY_BASE}?endpoint=match-details&region=${currentRegion}&matchId=${id}`)
                         .then(r => r.ok ? r.json() : null)
                         .catch(() => null)
                 );
@@ -461,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // 1. Get PUUID (Account V1)
             const accountUrl = `${PROXY_BASE}?endpoint=account-by-riot-id&region=${region}&gameName=${gameName}&tagLine=${tagLine}`;
-            const accountRes = await fetch(accountUrl);
+            const accountRes = await trackedFetch(accountUrl);
             if (!accountRes.ok) throw new Error('Account not found. Check Name#Tag.');
             const accountData = await accountRes.json();
 
@@ -469,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 2. Get Summoner Details (Summoner V4 needs PUUID)
             const summUrl = `${PROXY_BASE}?endpoint=summoner-by-puuid&region=${region}&puuid=${puuid}`;
-            const summRes = await fetch(summUrl);
+            const summRes = await trackedFetch(summUrl);
 
             if (!summRes.ok) {
                 throw new Error(`Summoner not found in ${region.toUpperCase()}. Are they in a different region?`);
@@ -493,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let rankData = [];
             if (summData.id) {
                 const rankUrl = `${PROXY_BASE}?endpoint=league-entries&region=${region}&summonerId=${summData.id}`;
-                const rankRes = await fetch(rankUrl);
+                const rankRes = await trackedFetch(rankUrl);
                 if (rankRes.ok) {
                     rankData = await rankRes.json();
                 } else {
@@ -506,7 +637,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (puuid) {
                 // Fetch top 10 just in case, use top 3
                 const masteryUrl = `${PROXY_BASE}?endpoint=mastery-top&region=${region}&puuid=${puuid}&count=6`; // Endpoint might default to all or top X
-                const masteryRes = await fetch(masteryUrl);
+                const masteryRes = await trackedFetch(masteryUrl);
                 if (masteryRes.ok) {
                     const data = await masteryRes.json();
                     if (Array.isArray(data)) {
@@ -520,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 5. Get Match History (Match V5)
             const matchesUrl = `${PROXY_BASE}?endpoint=match-list&region=${region}&puuid=${puuid}&count=20`; // Fetch 20 for better stats
-            const matchesRes = await fetch(matchesUrl);
+            const matchesRes = await trackedFetch(matchesUrl);
 
             if (!matchesRes.ok) {
                 console.warn("Match history fetch failed");
@@ -540,7 +671,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Approach: Fetch first 5 for quick render, then fetch rest for stats? 
                 // Let's fetch all 20 in parallel but limit concurrency if needed. For now, Promise.all on chunks.
 
-                const matchPromises = matchIds.map(id => fetch(`${PROXY_BASE}?endpoint=match-details&region=${region}&matchId=${id}`).then(r => r.json()));
+                const matchPromises = matchIds.map(id => trackedFetch(`${PROXY_BASE}?endpoint=match-details&region=${region}&matchId=${id}`).then(r => r.json()));
                 const matchesData = await Promise.all(matchPromises);
 
                 // Filter valid
@@ -784,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!tracker) return;
 
         try {
-            const res = await fetch(`${PROXY_BASE}?endpoint=challenges&region=${region}&puuid=${puuid}`);
+            const res = await trackedFetch(`${PROXY_BASE}?endpoint=challenges&region=${region}&puuid=${puuid}`);
             if (!res.ok) {
                 console.warn('Failed to fetch challenges data');
                 return;
@@ -1080,18 +1211,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize Penta Tracker UI (show cached or scan button)
-    function initPentaTracker(region, puuid) {
+    async function initPentaTracker(region, puuid) {
         const pentaContent = document.getElementById('penta-content');
         if (!pentaContent) return;
 
-        const cacheKey = `penta_cache_${puuid}`;
-        const cache = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        // Store region/puuid for later use
+        pentaContent.dataset.region = region;
+        pentaContent.dataset.puuid = puuid;
 
-        if (cache && cache.pentas) {
-            // Show cached data with rescan option
-            renderPentaUI(pentaContent, cache.pentas, cache.total, cache.scanned, true);
+        // Show loading while checking server cache
+        pentaContent.innerHTML = '<div class="text-xs text-muted italic animate-pulse">Loading...</div>';
 
-            // Add rescan button
+        try {
+            // Check server-side cache first
+            const cacheRes = await fetch(`/.netlify/functions/penta-cache?puuid=${puuid}`);
+            const cacheData = await cacheRes.json();
+
+            if (cacheData.found && cacheData.pentas) {
+                // Show cached data with rescan option
+                renderPentaUI(pentaContent, cacheData.pentas, cacheData.total, cacheData.scanned, true);
+
+                // Add rescan button
+                const rescanBtn = document.createElement('button');
+                rescanBtn.className = 'mt-3 w-full text-[9px] uppercase tracking-widest text-muted hover:text-white bg-white/5 hover:bg-white/10 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5';
+                rescanBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Rescan';
+                rescanBtn.onclick = () => showPentaScanConfirmation(region, puuid, true);
+                pentaContent.appendChild(rescanBtn);
+                return;
+            }
+        } catch (e) {
+            console.warn('Server penta cache check failed, falling back to localStorage', e);
+        }
+
+        // Fallback: Check localStorage (for backwards compatibility)
+        const localCacheKey = `penta_cache_${puuid}`;
+        const localCache = JSON.parse(localStorage.getItem(localCacheKey) || 'null');
+
+        if (localCache && localCache.pentas) {
+            renderPentaUI(pentaContent, localCache.pentas, localCache.total, localCache.scanned, true);
+
             const rescanBtn = document.createElement('button');
             rescanBtn.className = 'mt-3 w-full text-[9px] uppercase tracking-widest text-muted hover:text-white bg-white/5 hover:bg-white/10 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1.5';
             rescanBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Rescan';
@@ -1110,10 +1268,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             document.getElementById('penta-scan-btn').onclick = () => showPentaScanConfirmation(region, puuid, false);
         }
-
-        // Store region/puuid for later use
-        pentaContent.dataset.region = region;
-        pentaContent.dataset.puuid = puuid;
     }
 
     // Show confirmation modal before scanning
@@ -1210,7 +1364,7 @@ document.addEventListener('DOMContentLoaded', () => {
             while (hasMore) {
                 try {
                     const matchesUrl = `${PROXY_BASE}?endpoint=match-list&region=${region}&puuid=${puuid}&count=100&start=${startIndex}&startTime=${Math.floor(startOfYear)}`;
-                    const matchesRes = await fetch(matchesUrl);
+                    const matchesRes = await trackedFetch(matchesUrl);
 
                     if (!matchesRes.ok) {
                         if (matchesRes.status === 429) {
@@ -1306,7 +1460,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     const promises = chunk.map(id =>
-                        fetch(`${PROXY_BASE}?endpoint=match-details&region=${region}&matchId=${id}`)
+                        trackedFetch(`${PROXY_BASE}?endpoint=match-details&region=${region}&matchId=${id}`)
                             .then(r => {
                                 if (r.status === 429) throw new Error('RATE_LIMITED');
                                 if (!r.ok) return null;
@@ -1330,7 +1484,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (m.info.gameMode !== 'ARENA' && m.info.gameMode !== 'CHERRY') {
                             if (p.pentaKills > 0) {
                                 totalPentas += p.pentaKills;
-                                pentas[p.championName] = (pentas[p.championName] || 0) + p.pentaKills;
+
+                                // Track game mode for each champion
+                                if (!pentas[p.championName]) {
+                                    pentas[p.championName] = { count: 0, modes: new Set() };
+                                }
+                                pentas[p.championName].count += p.pentaKills;
+
+                                // Determine game mode
+                                const queueId = m.info.queueId;
+                                const isARAM = queueId === 450 || queueId === 900 || queueId === 860; // ARAM, ARURF, etc.
+                                pentas[p.championName].modes.add(isARAM ? 'ARAM' : 'SR');
                             }
                         }
                     });
@@ -1353,17 +1517,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (i + BATCH_SIZE < allMatchIds.length) await sleep(BATCH_DELAY);
             }
 
-            // Save to cache
-            localStorage.setItem(cacheKey, JSON.stringify({
-                pentas,
+            // Convert Sets to Arrays for JSON serialization
+            const pentasForCache = {};
+            for (const [champ, data] of Object.entries(pentas)) {
+                pentasForCache[champ] = {
+                    count: data.count,
+                    modes: Array.from(data.modes)
+                };
+            }
+
+            const cacheData = {
+                pentas: pentasForCache,
                 total: totalPentas,
-                scanned: allMatchIds.length,
+                scanned: allMatchIds.length
+            };
+
+            // Save to server cache
+            try {
+                await fetch(`/.netlify/functions/penta-cache?puuid=${puuid}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cacheData)
+                });
+                console.log('[Penta] Saved to server cache');
+            } catch (e) {
+                console.warn('[Penta] Server cache save failed', e);
+            }
+
+            // Also save to localStorage as fallback
+            localStorage.setItem(cacheKey, JSON.stringify({
+                ...cacheData,
                 matchIds: allMatchIds,
                 timestamp: Date.now()
             }));
 
-            // Final UI update
-            renderPentaUI(pentaContent, pentas, totalPentas, allMatchIds.length, false);
+            // Final UI update (use pentasForCache which has arrays instead of Sets)
+            renderPentaUI(pentaContent, pentasForCache, totalPentas, allMatchIds.length, false);
 
         } catch (e) {
             console.warn("Penta fetch error", e);
@@ -1420,7 +1609,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPentaUI(container, pentas, totalPentas, scanned, isCached) {
-        const sortedPentas = Object.entries(pentas).sort((a, b) => b[1] - a[1]);
+        // Sort by count (handle both old format {champ: count} and new format {champ: {count, modes}})
+        const sortedPentas = Object.entries(pentas)
+            .map(([name, data]) => {
+                // Handle both old and new cache formats
+                if (typeof data === 'number') {
+                    return [name, { count: data, modes: [] }];
+                }
+                return [name, { count: data.count, modes: data.modes || [] }];
+            })
+            .sort((a, b) => b[1].count - a[1].count);
 
         container.innerHTML = `
             <div class="text-center mb-3">
@@ -1428,19 +1626,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="text-[9px] text-muted uppercase tracking-widest">Total Pentas</div>
             </div>
             ${sortedPentas.length > 0 ? `
-                <div class="w-full space-y-1">
-                    ${sortedPentas.map(([name, count]) => `
-                        <div class="flex items-center justify-between text-xs bg-white/5 rounded-lg px-2 py-1">
-                            <div class="flex items-center gap-1.5">
-                                <img src="https://ddragon.leagueoflegends.com/cdn/${ddragonVer}/img/champion/${name}.png" class="w-4 h-4 rounded-full border border-white/20">
-                                <span class="text-white text-[10px]">${name}</span>
+                <div class="w-full space-y-1.5">
+                    ${sortedPentas.map(([name, data]) => {
+            // Determine mode indicator
+            let modeHtml = '';
+            const modes = data.modes || [];
+            if (modes.includes('SR') && modes.includes('ARAM')) {
+                modeHtml = '<span class="text-[7px] bg-gradient-to-r from-lolBlue/30 to-lolPurple/30 text-white px-1.5 py-0.5 rounded font-bold" title="Both Summoner\'s Rift and ARAM">BOTH</span>';
+            } else if (modes.includes('SR')) {
+                modeHtml = '<span class="text-[7px] bg-lolBlue/20 text-lolBlue px-1.5 py-0.5 rounded font-bold" title="Summoner\'s Rift">SR</span>';
+            } else if (modes.includes('ARAM')) {
+                modeHtml = '<span class="text-[7px] bg-lolPurple/20 text-lolPurple px-1.5 py-0.5 rounded font-bold" title="ARAM">ARAM</span>';
+            }
+
+            return `
+                            <div class="flex items-center justify-between text-xs bg-white/5 hover:bg-white/10 rounded-lg px-2 py-1.5 transition-all">
+                                <div class="flex items-center gap-2">
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/${ddragonVer}/img/champion/${name}.png" class="w-5 h-5 rounded-full border border-white/20">
+                                    <span class="text-white text-[10px] font-medium">${name}</span>
+                                    ${modeHtml}
+                                </div>
+                                <span class="text-lolGold font-bold text-[11px]">${data.count}</span>
                             </div>
-                            <span class="text-lolGold font-bold text-[10px]">${count}</span>
-                        </div>
-                    `).join('')}
+                        `;
+        }).join('')}
                 </div>
             ` : `<div class="text-[9px] text-muted italic mt-1">No pentas this year</div>`}
-            <div class="text-[8px] text-muted/50 mt-2">${scanned} games ${isCached ? '(cached)' : ''}</div>
+            <div class="text-[8px] text-muted/50 mt-3 flex items-center justify-center gap-2">
+                <span>${scanned} games ${isCached ? '(cached)' : ''}</span>
+            </div>
+            <div class="text-[7px] text-muted/30 mt-1 flex items-center justify-center gap-3">
+                <span><span class="inline-block w-2 h-2 rounded bg-lolBlue/40 mr-0.5"></span>SR</span>
+                <span><span class="inline-block w-2 h-2 rounded bg-lolPurple/40 mr-0.5"></span>ARAM</span>
+            </div>
         `;
     }
 
@@ -1561,13 +1779,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const expandBtn = clone.querySelector('.expand-btn');
 
         const detailsSection = document.createElement('div');
-        detailsSection.className = "hidden border-t border-white/5 bg-black/40 p-4 animate-enter mt-2 backdrop-blur-sm rounded-b-xl";
+        detailsSection.className = "hidden border-t border-white/[0.06] bg-gradient-to-b from-black/60 to-black/40 p-5 animate-enter mt-2 backdrop-blur-sm rounded-b-xl";
 
         // Teams Grid Logic
         const team1 = participants.filter(x => x.teamId === 100);
         const team2 = participants.filter(x => x.teamId === 200);
         const allyTeam = myTeamId === 100 ? team1 : team2;
         const enemyTeam = myTeamId === 100 ? team2 : team1;
+        const allyWon = allyTeam[0]?.win;
+
+        // Team stats
+        const getTeamStats = (team) => ({
+            kills: team.reduce((acc, t) => acc + t.kills, 0),
+            deaths: team.reduce((acc, t) => acc + t.deaths, 0),
+            assists: team.reduce((acc, t) => acc + t.assists, 0),
+            damage: team.reduce((acc, t) => acc + (t.totalDamageDealtToChampions || 0), 0),
+            gold: team.reduce((acc, t) => acc + (t.goldEarned || 0), 0)
+        });
+        const allyStats = getTeamStats(allyTeam);
+        const enemyStats = getTeamStats(enemyTeam);
 
         // Calculate highlights across both teams
         const allPlayers = [...team1, ...team2];
@@ -1575,16 +1805,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const topDamage = sortedByDamage[0]?.puuid;
         const secondDamage = sortedByDamage[1]?.puuid;
         const lowestDeaths = [...allPlayers].sort((a, b) => a.deaths - b.deaths)[0]?.puuid;
+        const topKDA = [...allPlayers].sort((a, b) => ((b.kills + b.assists) / Math.max(1, b.deaths)) - ((a.kills + a.assists) / Math.max(1, a.deaths)))[0]?.puuid;
 
-        const renderTeamList = (team, title, isAlly) => {
+        const renderTeamList = (team, title, isAlly, stats) => {
             const col = document.createElement('div');
-            col.className = "space-y-1";
+            col.className = `rounded-xl p-3 ${isAlly ? 'bg-lolBlue/5 border border-lolBlue/10' : 'bg-lolRed/5 border border-lolRed/10'}`;
+
+            // Team Header with Stats
             col.innerHTML = `
-                <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-2">
-                    <span class="text-[10px] font-bold ${isAlly ? 'text-lolBlue' : 'text-lolRed'} uppercase tracking-widest">${title}</span>
-                    <div class="flex gap-3 text-[8px] text-muted uppercase tracking-wider">
-                        <span class="w-14 text-center">KDA</span>
+                <div class="flex items-center justify-between border-b ${isAlly ? 'border-lolBlue/10' : 'border-lolRed/10'} pb-2 mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold ${isAlly ? 'text-lolBlue' : 'text-lolRed'} uppercase tracking-widest">${title}</span>
+                        <span class="text-[9px] ${isAlly && allyWon ? 'text-lolBlue' : (!isAlly && !allyWon ? 'text-lolRed' : 'text-muted')} font-semibold">${(isAlly && allyWon) || (!isAlly && !allyWon) ? 'VICTORY' : 'DEFEAT'}</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[9px]">
+                        <span class="text-white font-semibold">${stats.kills}<span class="text-muted/50">/</span><span class="text-red-400">${stats.deaths}</span><span class="text-muted/50">/</span>${stats.assists}</span>
+                        <span class="text-lolGold">${formatK(stats.gold)}g</span>
+                    </div>
+                </div>
+                <div class="hidden sm:flex items-center justify-between text-[8px] text-muted uppercase tracking-wider mb-2 px-1">
+                    <span>Player</span>
+                    <div class="flex gap-4">
+                        <span class="w-10 text-center">KDA</span>
                         <span class="w-12 text-center">DMG</span>
+                        <span class="w-10 text-center">GOLD</span>
                     </div>
                 </div>
             `;
@@ -1596,19 +1840,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isTopDmg = tm.puuid === topDamage;
                 const isSecondDmg = tm.puuid === secondDamage;
                 const isLowDeaths = tm.puuid === lowestDeaths && tm.deaths <= 3;
+                const isBestKDA = tm.puuid === topKDA;
 
-                row.className = `flex items-center justify-between text-xs p-1.5 rounded transition-colors ${isMe ? 'bg-lolPurple/10 border border-lolPurple/20' : 'hover:bg-white/5'}`;
+                row.className = `flex items-center justify-between text-xs p-2 rounded-lg transition-all mb-1 last:mb-0 ${isMe ? 'bg-lolPurple/15 border border-lolPurple/25' : 'hover:bg-white/5'}`;
                 const tmName = tm.riotIdGameName || tm.summonerName || 'Unknown';
                 const kda = ((tm.kills + tm.assists) / Math.max(1, tm.deaths)).toFixed(1);
                 const dmg = tm.totalDamageDealtToChampions;
+                const gold = tm.goldEarned || 0;
+                const cs = (tm.totalMinionsKilled || 0) + (tm.neutralMinionsKilled || 0);
 
                 // Build badges
                 let badges = '';
-                if (isMe) badges += '<span class="text-[8px] bg-lolPurple/30 text-lolPurple px-1 rounded font-bold">YOU</span>';
-                if (isFriend && !isMe) badges += '<span class="text-[8px] bg-lolBlue/20 text-lolBlue px-1 rounded font-bold ml-1" title="Played 3+ games together"><i class="fa-solid fa-user-group text-[6px]"></i></span>';
-                if (isTopDmg) badges += '<span class="text-[8px] bg-orange-500/20 text-orange-400 px-1 rounded font-bold ml-1" title="Most Damage">🔥</span>';
-                if (isSecondDmg && !isTopDmg) badges += '<span class="text-[8px] bg-orange-500/10 text-orange-400/70 px-1 rounded font-bold ml-1" title="2nd Damage">🔸</span>';
-                if (isLowDeaths) badges += '<span class="text-[8px] bg-green-500/20 text-green-400 px-1 rounded font-bold ml-1" title="Lowest Deaths">🛡️</span>';
+                if (isMe) badges += '<span class="text-[7px] bg-lolPurple/40 text-lolPurple px-1.5 py-0.5 rounded font-bold">YOU</span>';
+                if (isFriend && !isMe) badges += '<span class="text-[7px] bg-lolBlue/20 text-lolBlue px-1 py-0.5 rounded font-bold" title="Played 3+ games together"><i class="fa-solid fa-user-group text-[6px]"></i></span>';
+                if (isTopDmg) badges += '<span class="text-[7px] bg-orange-500/25 text-orange-400 px-1 py-0.5 rounded font-bold" title="Most Damage">🔥</span>';
+                if (isSecondDmg && !isTopDmg) badges += '<span class="text-[7px] bg-orange-500/15 text-orange-400/70 px-1 py-0.5 rounded font-bold" title="2nd Damage">🔸</span>';
+                if (isLowDeaths) badges += '<span class="text-[7px] bg-green-500/20 text-green-400 px-1 py-0.5 rounded font-bold" title="Fewest Deaths">🛡️</span>';
+                if (isBestKDA && !isTopDmg && !isLowDeaths) badges += '<span class="text-[7px] bg-lolGold/20 text-lolGold px-1 py-0.5 rounded font-bold" title="Best KDA">⭐</span>';
 
                 // KDA color
                 let kdaColor = 'text-slate-400';
@@ -1619,33 +1867,80 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Damage styling
                 let dmgClass = 'text-slate-400';
                 if (isTopDmg) dmgClass = 'text-orange-400 font-bold';
-                else if (isSecondDmg) dmgClass = 'text-orange-400/70';
+                else if (isSecondDmg) dmgClass = 'text-orange-400/80';
+
+                // Items HTML
+                let itemsHtml = '<div class="flex gap-0.5 mt-1.5">';
+                for (let i = 0; i < 6; i++) {
+                    const itemId = tm['item' + i];
+                    if (itemId) {
+                        itemsHtml += '<img src="https://ddragon.leagueoflegends.com/cdn/' + ddragonVer + '/img/item/' + itemId + '.png" class="w-5 h-5 rounded border border-white/10">';
+                    } else {
+                        itemsHtml += '<div class="w-5 h-5 rounded bg-black/40 border border-white/[0.05]"></div>';
+                    }
+                }
+                const trinket = tm.item6;
+                if (trinket) {
+                    itemsHtml += '<img src="https://ddragon.leagueoflegends.com/cdn/' + ddragonVer + '/img/item/' + trinket + '.png" class="w-4 h-4 rounded-full border border-white/10 ml-0.5 opacity-70">';
+                }
+                itemsHtml += '</div>';
 
                 row.innerHTML = `
                     <div class="flex items-center gap-2 min-w-0 flex-1">
-                        <img src="https://ddragon.leagueoflegends.com/cdn/${ddragonVer}/img/champion/${tm.championName}.png" class="w-7 h-7 rounded-lg border ${isMe ? 'border-lolPurple/50' : 'border-white/10'} shrink-0">
+                        <div class="relative shrink-0">
+                            <img src="https://ddragon.leagueoflegends.com/cdn/${ddragonVer}/img/champion/${tm.championName}.png" class="w-9 h-9 rounded-lg border-2 ${isMe ? 'border-lolPurple/60' : 'border-white/10'} shadow-sm">
+                            <div class="absolute -bottom-1 -right-1 bg-dark text-white text-[7px] font-bold w-4 h-4 flex items-center justify-center rounded border border-white/20">${tm.champLevel}</div>
+                        </div>
                         <div class="flex flex-col min-w-0">
-                            <div class="flex items-center gap-1">
-                                <span class="${isMe ? 'text-lolPurple font-bold' : 'text-slate-300'} truncate text-[11px]" title="${tmName}">${tmName}</span>
-                                ${badges}
+                            <div class="flex items-center gap-1 flex-wrap">
+                                <span class="${isMe ? 'text-lolPurple font-bold' : 'text-slate-200'} truncate text-[11px]" title="${tmName}">${tmName}</span>
+                                <div class="flex items-center gap-0.5">${badges}</div>
                             </div>
-                            <span class="text-[9px] text-muted">${tm.kills}/${tm.deaths}/${tm.assists}</span>
+                            <div class="flex items-center gap-2 text-[9px] text-muted">
+                                <span>${tm.kills}/${tm.deaths}/${tm.assists}</span>
+                                <span class="text-white/20">•</span>
+                                <span>${cs} CS</span>
+                            </div>
+                            ${itemsHtml}
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 shrink-0">
-                        <div class="w-14 text-center ${kdaColor} text-[11px]">${kda}</div>
+                    <div class="hidden sm:flex items-center gap-4 shrink-0">
+                        <div class="w-10 text-center ${kdaColor} text-[11px] font-semibold">${kda}</div>
                         <div class="w-12 text-center ${dmgClass} text-[10px]">${formatK(dmg)}</div>
+                        <div class="w-10 text-center text-lolGold text-[10px]">${formatK(gold)}</div>
                     </div>
                 `;
                 col.appendChild(row);
             });
+
+            // Team damage footer
+            const footer = document.createElement('div');
+            footer.className = 'mt-3 pt-2 border-t ' + (isAlly ? 'border-lolBlue/10' : 'border-lolRed/10') + ' flex items-center justify-between text-[8px] text-muted';
+            footer.innerHTML = `
+                <span><i class="fa-solid fa-fire text-orange-400 mr-1"></i>Total: ${formatK(stats.damage)}</span>
+                <span><i class="fa-solid fa-coins text-lolGold mr-1"></i>${formatK(stats.gold)}</span>
+            `;
+            col.appendChild(footer);
+
             return col;
         };
 
+        // Header
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between mb-4';
+        header.innerHTML = `
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-users text-lolPurple text-xs"></i>
+                <span class="text-[10px] font-bold text-muted uppercase tracking-widest">Match Overview</span>
+            </div>
+            <span class="text-[9px] text-muted">${allPlayers.length} players</span>
+        `;
+        detailsSection.appendChild(header);
+
         const grid = document.createElement('div');
-        grid.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
-        grid.appendChild(renderTeamList(allyTeam, "Ally Team", true));
-        grid.appendChild(renderTeamList(enemyTeam, "Enemy Team", false));
+        grid.className = "grid grid-cols-1 lg:grid-cols-2 gap-4";
+        grid.appendChild(renderTeamList(allyTeam, "Your Team", true, allyStats));
+        grid.appendChild(renderTeamList(enemyTeam, "Enemy Team", false, enemyStats));
         detailsSection.appendChild(grid);
         cardContainer.appendChild(detailsSection);
 
@@ -1836,7 +2131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const expandBtn = clone.querySelector('.expand-btn');
         if (expandBtn) {
             const detailsSection = document.createElement('div');
-            detailsSection.className = "hidden border-t border-white/5 bg-black/40 p-4 mt-2 backdrop-blur-sm rounded-b-xl";
+            detailsSection.className = "hidden border-t border-white/[0.06] bg-gradient-to-b from-black/60 to-black/40 p-5 mt-2 backdrop-blur-sm rounded-b-xl";
 
             // Build teams by placement
             const teams = {};
@@ -1849,27 +2144,93 @@ document.addEventListener('DOMContentLoaded', () => {
             // Sort teams by best placement
             const sortedTeams = Object.values(teams).sort((a, b) => a[0].placement - b[0].placement);
 
+            // Placement styling helper
+            const getPlacementStyle = (place) => {
+                if (place === 1) return { text: 'text-lolGold', bg: 'bg-gradient-to-br from-lolGold/20 to-yellow-900/10', border: 'border-lolGold/30', icon: '🏆' };
+                if (place === 2) return { text: 'text-slate-200', bg: 'bg-gradient-to-br from-slate-400/15 to-slate-800/10', border: 'border-slate-400/30', icon: '🥈' };
+                if (place === 3) return { text: 'text-amber-500', bg: 'bg-gradient-to-br from-amber-600/15 to-amber-900/10', border: 'border-amber-600/30', icon: '🥉' };
+                if (place === 4) return { text: 'text-teal-400', bg: 'bg-gradient-to-br from-teal-500/15 to-teal-900/10', border: 'border-teal-500/30', icon: '' };
+                return { text: 'text-red-400', bg: 'bg-red-500/5', border: 'border-red-500/20', icon: '' };
+            };
+
             detailsSection.innerHTML = `
-                <div class="text-[10px] font-bold text-muted uppercase tracking-widest mb-3">Match Results</div>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-lolGold text-xs"></i>
+                        <span class="text-[10px] font-bold text-muted uppercase tracking-widest">Arena Standings</span>
+                    </div>
+                    <span class="text-[9px] text-muted">${match.info.participants.length} players • ${sortedTeams.length} teams</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     ${sortedTeams.map(team => {
                 const teamPlacement = team[0].placement;
-                let teamColor = 'text-slate-400';
-                let bgColor = 'bg-white/5';
-                if (teamPlacement === 1) { teamColor = 'text-lolGold'; bgColor = 'bg-lolGold/10'; }
-                else if (teamPlacement === 2) { teamColor = 'text-slate-300'; bgColor = 'bg-white/10'; }
-                else if (teamPlacement === 3) { teamColor = 'text-amber-600'; bgColor = 'bg-amber-900/20'; }
-                else if (teamPlacement === 4) { teamColor = 'text-teal-400'; bgColor = 'bg-teal-900/20'; }
+                const style = getPlacementStyle(teamPlacement);
+                const teamKills = team.reduce((acc, t) => acc + t.kills, 0);
+                const teamDeaths = team.reduce((acc, t) => acc + t.deaths, 0);
+                const teamAssists = team.reduce((acc, t) => acc + t.assists, 0);
+                const teamDamage = team.reduce((acc, t) => acc + (t.totalDamageDealtToChampions || 0), 0);
 
                 return `
-                            <div class="${bgColor} rounded-lg p-2 border border-white/5">
-                                <div class="${teamColor} font-black text-sm mb-1">${teamPlacement}${getOrdinal(teamPlacement)}</div>
-                                ${team.map(t => `
-                                    <div class="flex items-center gap-1.5 mb-1">
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/${ddragonVer}/img/champion/${t.championName}.png" class="w-5 h-5 rounded border border-white/10">
-                                        <span class="text-[10px] ${t.puuid === myPuuid ? 'text-lolPurple font-bold' : 'text-slate-400'} truncate">${t.riotIdGameName || t.championName}</span>
+                            <div class="${style.bg} ${style.border} border rounded-xl p-3 transition-all hover:scale-[1.02] hover:border-white/20">
+                                <!-- Placement Header -->
+                                <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/[0.05]">
+                                    <div class="flex items-center gap-2">
+                                        <span class="${style.text} font-black text-lg">${style.icon || ''} ${teamPlacement}${getOrdinal(teamPlacement)}</span>
                                     </div>
-                                `).join('')}
+                                    <div class="text-[9px] text-muted">
+                                        <span class="text-white">${teamKills}</span>/<span class="text-red-400">${teamDeaths}</span>/<span class="text-slate-300">${teamAssists}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Players -->
+                                ${team.map(t => {
+                    const isMe = t.puuid === myPuuid;
+                    const playerKda = ((t.kills + t.assists) / Math.max(1, t.deaths)).toFixed(1);
+                    const playerDmg = formatK(t.totalDamageDealtToChampions || 0);
+                    const playerGold = formatK(t.goldEarned || 0);
+
+                    return `
+                                        <div class="mb-2 last:mb-0 ${isMe ? 'bg-lolPurple/10 -mx-2 px-2 py-1.5 rounded-lg border border-lolPurple/20' : ''}">
+                                            <!-- Player Row -->
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <img src="https://ddragon.leagueoflegends.com/cdn/${ddragonVer}/img/champion/${t.championName}.png" 
+                                                    class="w-7 h-7 rounded-lg border ${isMe ? 'border-lolPurple/50' : 'border-white/10'} shadow-sm">
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="${isMe ? 'text-lolPurple font-bold' : 'text-slate-300'} text-[11px] truncate">${t.riotIdGameName || t.championName}</div>
+                                                    <div class="text-[9px] text-muted">Lvl ${t.champLevel}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Stats Row -->
+                                            <div class="flex items-center gap-3 text-[9px] ml-9">
+                                                <span class="${parseFloat(playerKda) >= 3 ? 'text-lolGold' : 'text-slate-400'} font-semibold">${playerKda} KDA</span>
+                                                <span class="text-orange-400">${playerDmg} dmg</span>
+                                                <span class="text-lolGold">${playerGold}g</span>
+                                            </div>
+
+                                            <!-- Augments (if any) -->
+                                            ${t.playerAugment1 ? `
+                                                <div class="flex items-center gap-1 mt-1.5 ml-9">
+                                                    ${[1, 2, 3, 4].map(i => {
+                        const augId = t['playerAugment' + i];
+                        if (!augId) return '';
+                        const augData = augmentDataCache ? augmentDataCache[augId] : null;
+                        if (augData && augData.iconSmall) {
+                            const iconPath = augData.iconSmall.toLowerCase().replace('/lol-game-data/assets/', '');
+                            return '<img src="https://raw.communitydragon.org/latest/game/' + iconPath + '" class="w-5 h-5 rounded border border-lolGold/30 bg-lolGold/10" title="' + (augData.name || 'Augment') + '">';
+                        }
+                        return '<div class="w-5 h-5 rounded border border-lolGold/30 bg-lolGold/10 flex items-center justify-center text-[7px] text-lolGold font-bold">A</div>';
+                    }).join('')}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                }).join('')}
+
+                                <!-- Team Stats Footer -->
+                                <div class="mt-2 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[8px] text-muted">
+                                    <span><i class="fa-solid fa-fire text-orange-400 mr-1"></i>${formatK(teamDamage)} total</span>
+                                </div>
                             </div>
                         `;
             }).join('')}
