@@ -3553,11 +3553,45 @@
                 `;
                 steamUnlink?.classList.remove('hidden');
             } else {
-                steamEl.innerHTML = `<div class="flex items-center justify-between"><span class="text-sm text-zinc-400">Not connected</span><a href="/game-logger/settings" class="text-xs text-violet-400 hover:underline">Link Steam</a></div>`;
+                steamEl.innerHTML = `
+                    <div class="text-sm text-zinc-400 mb-3">Not connected</div>
+                    <div class="flex gap-2">
+                        <input type="text" id="steam-link-input" placeholder="Steam ID or profile URL" class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500/50">
+                        <button onclick="linkSteam()" class="bg-[#1b2838] hover:bg-[#2a475e] text-[#66c0f4] px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+                            <i class="fa-brands fa-steam"></i> Link
+                        </button>
+                    </div>
+                    <p class="text-xs text-zinc-600 mt-2">Paste your Steam profile URL or 17-digit Steam ID</p>
+                `;
                 steamUnlink?.classList.add('hidden');
             }
             document.getElementById('settings-modal').classList.remove('hidden');
         }
+
+        async function linkSteam() {
+            const steamId = document.getElementById('steam-link-input').value.trim();
+            if (!steamId) { toast('Please enter Steam ID or URL', 'error'); return; }
+
+            const res = await fetch(`${API}?action=link-steam`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steamId })
+            });
+            const data = await res.json();
+
+            if (data.error) {
+                toast(data.error, 'error');
+            } else {
+                toast('Steam linked! Syncing games...');
+                // Refresh user data
+                const me = await (await fetch(`${API}?action=me`, { credentials: 'include' })).json();
+                user = me.user;
+                render();
+                openSettingsModal();
+            }
+        }
+
         function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
         async function saveUsername() {
             const u = document.getElementById('set-username').value.trim().toLowerCase();
