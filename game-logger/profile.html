@@ -2859,7 +2859,8 @@
                     const ratingValues = Object.values(e.ratings || {}).filter(v => v > 0);
                     const avgRating = ratingValues.length ? (ratingValues.reduce((a, b) => a + b, 0) / ratingValues.length / 2).toFixed(1) : null;
 
-                    const editBtn = isOwner ? `<button onclick="event.stopPropagation();editJournalEntry(${e.realIdx})" class="opacity-0 group-hover:opacity-100 transition text-zinc-600 hover:text-violet-400 px-2"><i class="fa-solid fa-pencil text-xs"></i></button>` : '';
+                    const editBtn = isOwner ? `<button onclick="event.stopPropagation();editJournalEntry(${e.realIdx})" class="opacity-0 group-hover:opacity-100 transition text-zinc-600 hover:text-violet-400 px-2" title="Edit"><i class="fa-solid fa-pencil text-xs"></i></button>` : '';
+                    const deleteBtn = isOwner ? `<button onclick="event.stopPropagation();deleteJournalEntry(${e.realIdx})" class="opacity-0 group-hover:opacity-100 transition text-zinc-600 hover:text-red-400 px-2" title="Delete"><i class="fa-solid fa-trash text-xs"></i></button>` : '';
 
                     const gameLink = game ? `onclick="openGameModal('${game.steamAppId || game.id}')"` : '';
 
@@ -2890,7 +2891,7 @@
                             
                             ${avgRating ? `<div class="flex items-center gap-1 text-amber-400 w-12"><i class="fa-solid fa-star text-[10px]"></i><span class="text-sm font-medium">${avgRating}</span></div>` : '<div class="w-12"></div>'}
                             
-                            ${editBtn}
+                            ${editBtn}${deleteBtn}
                         </div>
                     </div>`;
                 });
@@ -3422,6 +3423,26 @@
                 toast('Updated');
             } else {
                 toast('Failed to update', 'error');
+            }
+        }
+
+        async function deleteJournalEntry(idx) {
+            if (!confirm('Delete this journal entry? This cannot be undone.')) return;
+
+            const res = await fetch(`${API}?action=delete-journal-entry`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ index: idx })
+            });
+
+            if ((await res.json()).success) {
+                user.journalEntries.splice(idx, 1);
+                renderJournal();
+                render();
+                toast('Entry deleted');
+            } else {
+                toast('Failed to delete', 'error');
             }
         }
 

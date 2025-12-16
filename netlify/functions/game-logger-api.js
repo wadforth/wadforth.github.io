@@ -699,6 +699,39 @@ exports.handler = async (event, context) => {
             };
         }
 
+        // === DELETE JOURNAL ENTRY ===
+        if (action === 'delete-journal-entry' && event.httpMethod === 'POST') {
+            const body = JSON.parse(event.body || '{}');
+            const { index } = body;
+
+            if (typeof index !== 'number') {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'Index required' })
+                };
+            }
+
+            user.journalEntries = user.journalEntries || [];
+
+            if (index >= 0 && index < user.journalEntries.length) {
+                user.journalEntries.splice(index, 1);
+                await store.setJSON(`user_${user.discordId}`, user);
+
+                return {
+                    statusCode: 200,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ success: true })
+                };
+            }
+
+            return {
+                statusCode: 400,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ error: 'Invalid entry index' })
+            };
+        }
+
         // === BULK UPDATE GAMES ===
         if (action === 'bulk-update' && event.httpMethod === 'POST') {
             const body = JSON.parse(event.body || '{}');
