@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Game Logger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-light: #a78bfa;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --dark: #0f0f14;
+            --darker: #0a0a0e;
+            --card: #16161d;
+            --card-hover: #1e1e28;
+        }
+
+        * {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(180deg, var(--darker) 0%, var(--dark) 50%, var(--darker) 100%);
+            min-height: 100vh;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(139, 92, 246, 0.15);
+            box-shadow: 0 10px 40px -15px rgba(139, 92, 246, 0.2);
+        }
+
+        .stat-number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        input,
+        select,
+        textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="text-white p-6">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-4">
+                <a href="/game-logger/" class="text-2xl">🎮</a>
+                <div>
+                    <h1 class="text-2xl font-bold">Settings</h1>
+                    <p class="text-sm text-gray-400">Manage your account</p>
+                </div>
+            </div>
+            <a href="/game-logger/me" class="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back to Profile
+            </a>
+        </header>
+
+        <div id="loading" class="text-center py-16">
+            <div
+                class="w-10 h-10 rounded-full border-2 border-purple-500 border-t-transparent animate-spin mx-auto mb-4">
+            </div>
+            <p class="text-gray-400 text-sm">Loading...</p>
+        </div>
+
+        <div id="content" class="hidden space-y-6">
+            <!-- Account Info -->
+            <section class="card rounded-2xl p-6">
+                <h2 class="font-semibold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-user text-purple-400"></i>
+                    Account Information
+                </h2>
+                <div class="space-y-4 text-sm">
+                    <div class="flex justify-between items-center py-3 border-b border-white/5">
+                        <span class="text-gray-400">Discord ID</span>
+                        <span id="discord-id" class="font-mono text-gray-300">-</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-white/5">
+                        <span class="text-gray-400">Username</span>
+                        <span id="username" class="text-gray-300">-</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-white/5">
+                        <span class="text-gray-400">Steam Account</span>
+                        <span id="steam-name" class="text-gray-300">-</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3 border-b border-white/5">
+                        <span class="text-gray-400">Games Tracked</span>
+                        <span id="game-count" class="text-gray-300">-</span>
+                    </div>
+                    <div class="flex justify-between items-center py-3">
+                        <span class="text-gray-400">Total Playtime</span>
+                        <span id="playtime" class="text-gray-300">-</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hidden Games -->
+            <section class="card rounded-2xl p-6">
+                <h2 class="font-semibold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-eye-slash text-gray-400"></i>
+                    Hidden Games
+                </h2>
+                <p class="text-sm text-gray-400 mb-4">Hidden games are excluded from your stats and won't appear in your
+                    library.</p>
+                <div id="hidden-games" class="space-y-2 max-h-64 overflow-y-auto"></div>
+                <p id="no-hidden" class="text-sm text-gray-500 py-4 text-center hidden">No hidden games</p>
+            </section>
+
+            <!-- Export Data -->
+            <section class="card rounded-2xl p-6">
+                <h2 class="font-semibold mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-download text-blue-400"></i>
+                    Export Data
+                </h2>
+                <p class="text-sm text-gray-400 mb-4">Download a complete backup of your profile, games, and activity
+                    history.</p>
+                <a href="/.netlify/functions/game-logger-api?action=export"
+                    class="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 px-5 py-3 rounded-xl text-sm font-medium transition">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                    Download JSON
+                </a>
+            </section>
+
+            <!-- Danger Zone -->
+            <section class="card rounded-2xl p-6 border-red-500/20">
+                <h2 class="font-semibold mb-4 flex items-center gap-2 text-red-400">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Danger Zone
+                </h2>
+
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                        <div>
+                            <div class="font-medium text-sm">Change Steam Account</div>
+                            <div class="text-xs text-gray-400 mt-1">Unlinks current Steam and deletes all game data. Can
+                                re-link a new account.</div>
+                        </div>
+                        <button onclick="changeSteam()"
+                            class="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 px-5 py-2.5 rounded-xl text-sm font-medium transition">
+                            Change
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                        <div>
+                            <div class="font-medium text-sm">Delete Everything</div>
+                            <div class="text-xs text-gray-400 mt-1">Permanently delete your profile, games, ratings, and
+                                all activity. Cannot be undone!</div>
+                        </div>
+                        <button onclick="wipeData()"
+                            class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-5 py-2.5 rounded-xl text-sm font-medium transition">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-sm" onclick="closeConfirm()"></div>
+        <div class="relative z-10 max-w-md mx-auto mt-32 bg-gray-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h3 id="confirm-title" class="text-xl font-bold mb-2"></h3>
+            <p id="confirm-message" class="text-sm text-gray-400 mb-6"></p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeConfirm()"
+                    class="px-5 py-2.5 rounded-xl text-sm bg-white/5 hover:bg-white/10 transition">Cancel</button>
+                <button id="confirm-btn" class="px-5 py-2.5 rounded-xl text-sm font-medium transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"
+        class="fixed bottom-6 right-6 hidden bg-gray-900 border border-white/10 rounded-xl px-5 py-3 text-sm shadow-2xl z-50 backdrop-blur-xl">
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/game-logger-api';
+        let user = null;
+        let confirmAction = null;
+
+        async function init() {
+            try {
+                const res = await fetch(`${API}?action=me`, { credentials: 'include' });
+                const data = await res.json();
+                if (!data.user) { window.location.href = '/game-logger/'; return; }
+                user = data.user;
+                render();
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+            } catch (e) {
+                window.location.href = '/game-logger/';
+            }
+        }
+
+        function render() {
+            document.getElementById('discord-id').textContent = user.discordId;
+            document.getElementById('username').textContent = user.username || 'Not set';
+            document.getElementById('steam-name').textContent = user.steam?.personaName || 'Not linked';
+
+            const visibleGames = (user.games || []).filter(g => !g.hidden);
+            document.getElementById('game-count').textContent = visibleGames.length + ' games';
+            document.getElementById('playtime').textContent = Math.round(visibleGames.reduce((s, g) => s + (g.playtimeMinutes || 0), 0) / 60).toLocaleString() + ' hours';
+
+            const hidden = (user.games || []).filter(g => g.hidden);
+            if (hidden.length) {
+                document.getElementById('no-hidden').classList.add('hidden');
+                document.getElementById('hidden-games').classList.remove('hidden');
+                document.getElementById('hidden-games').innerHTML = hidden.map(g => `
+            <div class="flex items-center justify-between p-3 bg-white/5 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <img src="${g.icon}" class="w-10 h-10 rounded-lg" onerror="this.style.display='none'">
+                    <div>
+                        <div class="font-medium text-sm">${g.name}</div>
+                        <div class="text-xs text-gray-500">${Math.round(g.playtimeMinutes / 60)}h played</div>
+                    </div>
+                </div>
+                <button onclick="unhideGame(${g.steamAppId})" class="text-xs bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 px-3 py-1.5 rounded-lg transition">
+                    Unhide
+                </button>
+            </div>
+        `).join('');
+            } else {
+                document.getElementById('no-hidden').classList.remove('hidden');
+                document.getElementById('hidden-games').classList.add('hidden');
+            }
+        }
+
+        async function unhideGame(id) {
+            await fetch(`${API}?action=toggle-hidden`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steamAppId: id, hidden: false })
+            });
+            const i = user.games.findIndex(g => g.steamAppId === id);
+            if (i !== -1) user.games[i].hidden = false;
+            render();
+            toast('Game unhidden');
+        }
+
+        function changeSteam() {
+            confirmAction = 'change-steam';
+            document.getElementById('confirm-title').textContent = 'Change Steam Account?';
+            document.getElementById('confirm-message').textContent = 'This will unlink your current Steam account and delete all your games, ratings, and activity history. You can link a new Steam account afterward.';
+            document.getElementById('confirm-btn').textContent = 'Change Steam';
+            document.getElementById('confirm-btn').className = 'px-5 py-2.5 rounded-xl text-sm font-medium bg-orange-500 hover:bg-orange-600 transition';
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function wipeData() {
+            confirmAction = 'wipe-data';
+            document.getElementById('confirm-title').textContent = 'Delete Everything?';
+            document.getElementById('confirm-message').textContent = 'This will permanently delete your entire profile including all games, ratings, favorites, and activity history. This action cannot be undone!';
+            document.getElementById('confirm-btn').textContent = 'Delete Everything';
+            document.getElementById('confirm-btn').className = 'px-5 py-2.5 rounded-xl text-sm font-medium bg-red-500 hover:bg-red-600 transition';
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            confirmAction = null;
+        }
+
+        document.getElementById('confirm-btn').onclick = async function () {
+            if (confirmAction === 'change-steam') {
+                await fetch(`${API}?action=change-steam`, { method: 'POST', credentials: 'include' });
+                toast('Steam account unlinked');
+                setTimeout(() => window.location.href = '/game-logger/me', 1000);
+            } else if (confirmAction === 'wipe-data') {
+                const res = await fetch(`${API}?action=wipe-data`, { method: 'POST', credentials: 'include' });
+                const data = await res.json();
+                if (data.success) window.location.href = data.redirect || '/game-logger/';
+            }
+            closeConfirm();
+        };
+
+        function toast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-xmark text-red-400' : 'fa-check text-green-400'} mr-2"></i>${msg}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

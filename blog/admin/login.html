@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { bg: '#0a0a0a', card: '#141414', border: '#252525', muted: '#666' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-btn {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            transition: all 0.3s;
+        }
+
+        .gradient-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .gradient-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+        }
+
+        .login-card {
+            background: linear-gradient(180deg, #141414 0%, #0f0f0f 100%);
+            border: 1px solid #252525;
+        }
+
+        .input-field {
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center text-white p-6">
+    <!-- Background Effects -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="w-full max-w-sm relative z-10">
+        <!-- Logo -->
+        <div class="mb-10 text-center">
+            <a href="../" class="text-2xl font-bold">
+                kieran<span class="gradient-text">/admin</span>
+            </a>
+        </div>
+
+        <!-- Login Card -->
+        <div class="login-card rounded-2xl p-8">
+            <div class="mb-8 text-center">
+                <h1 class="text-xl font-semibold mb-2">Welcome back</h1>
+                <p class="text-sm text-dark-muted">Enter your password to continue</p>
+            </div>
+
+            <form id="form" class="space-y-5">
+                <div>
+                    <label
+                        class="block text-xs uppercase tracking-wider text-dark-muted mb-2 font-medium">Password</label>
+                    <div class="relative">
+                        <input type="password" id="password"
+                            class="input-field w-full bg-dark-bg border border-dark-border rounded-xl px-4 py-3.5 text-white text-sm placeholder-dark-muted focus:outline-none"
+                            placeholder="••••••••" autofocus>
+                        <button type="button" onclick="toggle()"
+                            class="absolute right-4 top-1/2 -translate-y-1/2 text-dark-muted hover:text-white transition-colors">
+                            <i id="eye" class="fa-solid fa-eye text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="error"
+                    class="hidden p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs text-center">
+                    Invalid password
+                </div>
+
+                <button type="submit" id="btn"
+                    class="gradient-btn w-full text-white font-semibold py-3.5 rounded-xl text-sm">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-8 pt-6 border-t border-dark-border text-center">
+                <a href="../"
+                    class="text-sm text-dark-muted hover:text-white transition-colors inline-flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                    Back to blog
+                </a>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <p class="text-center text-xs text-dark-muted mt-8">
+            Protected area · Admin only
+        </p>
+    </div>
+
+    <script>
+        if (sessionStorage.getItem('blog_admin_token')) window.location.href = './';
+
+        document.getElementById('form').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn');
+            const err = document.getElementById('error');
+            err.classList.add('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+
+            try {
+                const res = await fetch('/.netlify/functions/blog-auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: document.getElementById('password').value })
+                });
+                const data = await res.json();
+                if (data.success && data.token) {
+                    sessionStorage.setItem('blog_admin_token', data.token);
+                    window.location.href = './';
+                } else throw new Error();
+            } catch {
+                err.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        };
+
+        function toggle() {
+            const p = document.getElementById('password');
+            const i = document.getElementById('eye');
+            p.type = p.type === 'password' ? 'text' : 'password';
+            i.classList.toggle('fa-eye');
+            i.classList.toggle('fa-eye-slash');
+        }
+    </script>
+</body>
+
+</html>

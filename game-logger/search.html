@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Games | Game Logger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #0a0a0f;
+            min-height: 100vh;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .search-card {
+            background: #14141b;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-card:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .platform-badge {
+            font-size: 9px;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .platform-pc {
+            background: #1b2838;
+            color: #66c0f4;
+        }
+
+        .platform-playstation {
+            background: #003791;
+            color: white;
+        }
+
+        .platform-xbox {
+            background: #107c10;
+            color: white;
+        }
+
+        .platform-nintendo {
+            background: #e60012;
+            color: white;
+        }
+
+        .platform-ios {
+            background: #333;
+            color: white;
+        }
+
+        .platform-android {
+            background: #3ddc84;
+            color: white;
+        }
+    </style>
+</head>
+
+<body class="text-white">
+    <header class="sticky top-0 bg-[#0a0a0f]/95 backdrop-blur-xl border-b border-white/5 z-40">
+        <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/game-logger/" class="text-xl">🎮</a>
+                <span class="text-gray-500">/</span>
+                <span class="font-semibold gradient-text">Search Games</span>
+            </div>
+            <a href="/game-logger/me" class="text-sm text-gray-400 hover:text-white"><i
+                    class="fa-solid fa-arrow-left mr-2"></i>Library</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-12">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold mb-3">Find Any Game</h1>
+            <p class="text-gray-400">Search 500,000+ games across all platforms</p>
+        </div>
+
+        <div class="relative max-w-2xl mx-auto mb-8">
+            <i class="fa-solid fa-search absolute left-5 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="search-input" placeholder="Search for a game..."
+                class="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-lg focus:outline-none focus:border-purple-500/50">
+        </div>
+
+        <div class="flex justify-center gap-2 mb-8">
+            <button onclick="filterPlatform('all')" class="platform-tab active px-4 py-2 rounded-lg text-sm"
+                id="pt-all">All</button>
+            <button onclick="filterPlatform('pc')" class="platform-tab px-4 py-2 rounded-lg text-sm text-gray-400"
+                id="pt-pc"><i class="fa-brands fa-steam mr-1"></i>PC</button>
+            <button onclick="filterPlatform('playstation')"
+                class="platform-tab px-4 py-2 rounded-lg text-sm text-gray-400" id="pt-playstation"><i
+                    class="fa-brands fa-playstation mr-1"></i>PlayStation</button>
+            <button onclick="filterPlatform('xbox')" class="platform-tab px-4 py-2 rounded-lg text-sm text-gray-400"
+                id="pt-xbox"><i class="fa-brands fa-xbox mr-1"></i>Xbox</button>
+            <button onclick="filterPlatform('nintendo')" class="platform-tab px-4 py-2 rounded-lg text-sm text-gray-400"
+                id="pt-nintendo">🎮 Nintendo</button>
+        </div>
+        <style>
+            .platform-tab {
+                transition: all .2s
+            }
+
+            .platform-tab:hover {
+                background: rgba(139, 92, 246, .1);
+                color: white
+            }
+
+            .platform-tab.active {
+                background: rgba(139, 92, 246, .15);
+                color: white
+            }
+        </style>
+
+        <div id="results" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+
+        <div id="loading" class="hidden text-center py-12">
+            <div
+                class="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3">
+            </div>
+            <p class="text-gray-400 text-sm">Searching...</p>
+        </div>
+
+        <div id="no-results" class="hidden text-center py-16 opacity-50">
+            <div class="text-5xl mb-4">🔍</div>
+            <p class="text-gray-400">No games found</p>
+        </div>
+
+        <div id="start" class="text-center py-16 opacity-50">
+            <div class="text-5xl mb-4">🎮</div>
+            <p class="text-gray-400">Start typing to search</p>
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="https://rawg.io" target="_blank" class="text-xs text-gray-500 hover:text-gray-400">Powered by
+                RAWG</a>
+        </div>
+    </main>
+
+    <!-- Game Detail Modal -->
+    <div id="modal" class="fixed inset-0 z-50 hidden overflow-y-auto" onclick="if(event.target===this)closeModal()">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm"></div>
+        <div
+            class="relative z-10 max-w-lg mx-auto my-8 bg-[#1a1a24] border border-white/10 rounded-2xl overflow-hidden">
+            <div class="relative h-44">
+                <img id="m-bg" src="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#1a1a24] to-transparent"></div>
+                <button onclick="closeModal()"
+                    class="absolute top-3 right-3 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 -mt-12 relative">
+                <h2 id="m-title" class="text-xl font-bold mb-2"></h2>
+                <div id="m-platforms" class="flex flex-wrap gap-1 mb-4"></div>
+                <div id="m-meta" class="text-sm text-gray-400 mb-4"></div>
+                <p id="m-desc" class="text-sm text-gray-300 leading-relaxed mb-6 max-h-32 overflow-y-auto"></p>
+
+                <div id="m-owned" class="hidden mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+                    <div class="flex items-center gap-2 text-green-400 text-sm"><i
+                            class="fa-solid fa-check-circle"></i>In Your Library</div>
+                </div>
+
+                <div id="m-add-section" class="hidden space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block text-xs text-gray-500 mb-1">Platform</label>
+                            <select id="m-platform"
+                                class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm">
+                                <option value="pc">PC</option>
+                                <option value="playstation">PlayStation</option>
+                                <option value="xbox">Xbox</option>
+                                <option value="nintendo">Nintendo</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-xs text-gray-500 mb-1">Status</label>
+                            <select id="m-status"
+                                class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm">
+                                <option value="backlog">Backlog</option>
+                                <option value="played">Played</option>
+                                <option value="finished">Finished</option>
+                                <option value="perfected">100%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div><label class="block text-xs text-gray-500 mb-1">Hours Played</label><input type="number"
+                            id="m-hours" value="0"
+                            class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"></div>
+                    <button onclick="addGame()"
+                        class="w-full bg-purple-500 hover:bg-purple-600 py-2.5 rounded-xl text-sm font-medium">Add to
+                        Library</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"
+        class="fixed bottom-4 right-4 hidden bg-[#1a1a24] border border-white/10 rounded-lg px-4 py-2.5 text-sm z-50">
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/game-logger-api';
+        const RAWG_KEY = ''; // Add your key if you have one, or use the proxy
+        let searchTimeout = null;
+        let user = null;
+        let currentGame = null;
+        let platformFilter = 'all';
+
+        const PLATFORM_MAP = {
+            4: 'pc', 5: 'pc', 6: 'pc', // PC, macOS, Linux
+            187: 'playstation', 18: 'playstation', 16: 'playstation', 15: 'playstation', 27: 'playstation', // PS5,PS4,PS3,PS2,PSP
+            1: 'xbox', 186: 'xbox', 14: 'xbox', 80: 'xbox', // Xbox One, Xbox S/X, 360, OG Xbox
+            7: 'nintendo', 8: 'nintendo', 9: 'nintendo', 13: 'nintendo', 10: 'nintendo', 11: 'nintendo', 105: 'nintendo', 83: 'nintendo', // Switch, 3DS, Wii, etc.
+            21: 'android', 3: 'ios'
+        };
+
+        async function init() {
+            const res = await fetch(`${API}?action=me`, { credentials: 'include' });
+            const data = await res.json();
+            user = data.user;
+        }
+
+        document.getElementById('search-input').addEventListener('input', e => {
+            clearTimeout(searchTimeout);
+            const q = e.target.value.trim();
+            if (q.length < 2) {
+                document.getElementById('results').innerHTML = '';
+                document.getElementById('start').classList.remove('hidden');
+                document.getElementById('no-results').classList.add('hidden');
+                return;
+            }
+            document.getElementById('start').classList.add('hidden');
+            searchTimeout = setTimeout(() => search(q), 400);
+        });
+
+        function filterPlatform(p) {
+            platformFilter = p;
+            document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`pt-${p}`).classList.add('active');
+            const q = document.getElementById('search-input').value.trim();
+            if (q.length >= 2) search(q);
+        }
+
+        async function search(query) {
+            const results = document.getElementById('results');
+            const loading = document.getElementById('loading');
+            const noResults = document.getElementById('no-results');
+
+            results.innerHTML = ''; loading.classList.remove('hidden'); noResults.classList.add('hidden');
+
+            try {
+                // Use our proxy API to avoid CORS and key exposure
+                const res = await fetch(`${API}?action=search-games&query=${encodeURIComponent(query)}&platform=${platformFilter}`, { credentials: 'include' });
+                const data = await res.json();
+                loading.classList.add('hidden');
+
+                if (!data.games?.length) { noResults.classList.remove('hidden'); return; }
+
+                results.innerHTML = data.games.map(g => {
+                    const owned = user?.games?.find(ug => ug.name.toLowerCase() === g.name.toLowerCase());
+                    const platforms = g.platforms || [];
+                    const platformBadges = platforms.slice(0, 3).map(p => {
+                        const type = PLATFORM_MAP[p.platform?.id] || 'pc';
+                        return `<span class="platform-badge platform-${type}">${p.platform?.name?.split(' ')[0] || '?'}</span>`;
+                    }).join('');
+                    return `
+                <div class="search-card overflow-hidden cursor-pointer" onclick='openGame(${JSON.stringify(g).replace(/'/g, "&#39;")})'>
+                    <div class="h-28 relative">
+                        <img src="${g.background_image || ''}" class="w-full h-full object-cover" onerror="this.src=''">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#14141b] to-transparent"></div>
+                        ${owned ? '<div class="absolute top-2 right-2 bg-green-500/80 text-xs px-2 py-0.5 rounded-full">Owned</div>' : ''}
+                    </div>
+                    <div class="p-3">
+                        <div class="font-medium text-sm truncate mb-2">${g.name}</div>
+                        <div class="flex flex-wrap gap-1">${platformBadges}</div>
+                        <div class="text-xs text-gray-500 mt-2">${g.released || 'TBA'} · ⭐${g.rating?.toFixed(1) || '-'}</div>
+                    </div>
+                </div>
+            `;
+                }).join('');
+            } catch (e) {
+                loading.classList.add('hidden');
+                console.error(e);
+            }
+        }
+
+        function openGame(g) {
+            currentGame = g;
+            document.getElementById('m-bg').src = g.background_image || '';
+            document.getElementById('m-title').textContent = g.name;
+            document.getElementById('m-desc').textContent = g.description_raw || 'No description available.';
+
+            const platforms = (g.platforms || []).map(p => {
+                const type = PLATFORM_MAP[p.platform?.id] || 'pc';
+                return `<span class="platform-badge platform-${type}">${p.platform?.name || '?'}</span>`;
+            }).join('');
+            document.getElementById('m-platforms').innerHTML = platforms;
+
+            const meta = [];
+            if (g.released) meta.push(g.released);
+            if (g.rating) meta.push(`⭐ ${g.rating.toFixed(1)}/5`);
+            if (g.metacritic) meta.push(`Metacritic: ${g.metacritic}`);
+            document.getElementById('m-meta').textContent = meta.join(' · ');
+
+            const owned = user?.games?.find(ug => ug.name.toLowerCase() === g.name.toLowerCase());
+            document.getElementById('m-owned').classList.toggle('hidden', !owned);
+            document.getElementById('m-add-section').classList.toggle('hidden', !!owned || !user);
+
+            // Pre-select platform based on game's platforms
+            const firstPlat = g.platforms?.[0]?.platform?.id;
+            const platType = PLATFORM_MAP[firstPlat] || 'pc';
+            document.getElementById('m-platform').value = ['pc', 'playstation', 'xbox', 'nintendo'].includes(platType) ? platType : 'pc';
+
+            document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.body.style.overflow = '';
+            currentGame = null;
+        }
+
+        async function addGame() {
+            if (!currentGame) return;
+            const platform = document.getElementById('m-platform').value;
+            const status = document.getElementById('m-status').value;
+            const hours = parseInt(document.getElementById('m-hours').value) || 0;
+
+            const res = await fetch(`${API}?action=add-manual-game`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: currentGame.name,
+                    platform,
+                    status,
+                    playtimeMinutes: hours * 60,
+                    imageUrl: currentGame.background_image
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                if (user) user.games = user.games || [];
+                if (user) user.games.push(data.game);
+                closeModal();
+                toast('Added to library!');
+                // Refresh search to show "Owned" badge
+                const q = document.getElementById('search-input').value.trim();
+                if (q.length >= 2) search(q);
+            } else {
+                toast(data.error || 'Failed', 'error');
+            }
+        }
+
+        function toast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-xmark text-red-400' : 'fa-check text-green-400'} mr-1"></i>${msg}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 2500);
+        }
+
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+        init();
+    </script>
+</body>
+
+</html>

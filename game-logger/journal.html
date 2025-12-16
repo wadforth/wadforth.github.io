@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal | Game Logger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #0d0d15 50%, #0a0a0a 100%);
+            min-height: 100vh;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #6366f1, #a855f7, #ec4899, transparent);
+            border-radius: 1px;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .timeline-dot.play {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+        }
+
+        .timeline-dot.achievement {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .timeline-dot.session {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+
+        .timeline-dot.note {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .timeline-dot.manual {
+            background: linear-gradient(135deg, #ec4899, #db2777);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 20px;
+        }
+
+        .timeline-card {
+            background: rgba(20, 20, 25, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px;
+            transition: all 0.3s;
+        }
+
+        .timeline-card:hover {
+            border-color: rgba(168, 85, 247, 0.3);
+            transform: translateX(4px);
+        }
+
+        .date-marker {
+            position: relative;
+            padding: 12px 0 12px 32px;
+        }
+
+        .date-marker::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 50%;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 16px;
+        }
+    </style>
+</head>
+
+<body class="text-white">
+    <div id="loading" class="fixed inset-0 bg-black flex items-center justify-center z-50">
+        <div class="w-14 h-14 rounded-full border-2 border-purple-500 border-t-transparent animate-spin"></div>
+    </div>
+
+    <div id="content" class="hidden">
+        <header class="sticky top-0 bg-black/80 backdrop-blur-xl border-b border-white/5 z-40">
+            <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="/game-logger/" class="text-2xl">🎮</a>
+                    <span class="text-gray-500">/</span>
+                    <span class="font-semibold gradient-text">Journal</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="openAddEntry()" id="add-entry-btn"
+                        class="hidden bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-xl text-sm font-medium transition">
+                        <i class="fa-solid fa-plus mr-2"></i>Add Entry
+                    </button>
+                    <a href="/game-logger/me" class="text-sm text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-arrow-left mr-2"></i>Library
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <section class="bg-gradient-to-r from-purple-500/5 via-indigo-500/5 to-cyan-500/5 border-b border-white/5">
+            <div class="max-w-4xl mx-auto px-6 py-6">
+                <div class="flex items-center gap-6">
+                    <img id="avatar" src="" class="w-14 h-14 rounded-xl border-2 border-white/10">
+                    <div class="flex-1">
+                        <h1 id="name" class="text-xl font-bold"></h1>
+                        <p class="text-gray-400 text-sm">Gaming Journal</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="stat-box px-5 py-3 text-center">
+                            <div id="stat-entries" class="text-2xl font-bold text-purple-400">0</div>
+                            <div class="text-xs text-gray-400">Entries</div>
+                        </div>
+                        <div class="stat-box px-5 py-3 text-center">
+                            <div id="stat-hours" class="text-2xl font-bold text-green-400">0</div>
+                            <div class="text-xs text-gray-400">Hours Logged</div>
+                        </div>
+                        <div class="stat-box px-5 py-3 text-center">
+                            <div id="stat-achievements" class="text-2xl font-bold text-yellow-400">0</div>
+                            <div class="text-xs text-gray-400">Unlocked</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <main class="max-w-4xl mx-auto px-6 py-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-book text-purple-400"></i>
+                    Activity Timeline
+                </h2>
+                <select id="filter" onchange="renderTimeline()"
+                    class="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm">
+                    <option value="all">All Activity</option>
+                    <option value="playtime">Game Sessions</option>
+                    <option value="achievement">Achievements</option>
+                    <option value="note">Notes</option>
+                </select>
+            </div>
+
+            <div id="timeline" class="timeline"></div>
+
+            <div id="empty" class="hidden text-center py-20">
+                <div class="text-6xl mb-6 opacity-20">📖</div>
+                <h3 class="text-xl font-semibold mb-2">No Activity Yet</h3>
+                <p class="text-gray-400 mb-6">Your gaming journal will start recording after your first Steam sync!</p>
+                <a href="/game-logger/me"
+                    class="inline-flex items-center gap-2 bg-purple-500 hover:bg-purple-600 px-6 py-3 rounded-xl font-medium transition">
+                    <i class="fa-brands fa-steam"></i> Go Sync Steam
+                </a>
+            </div>
+
+            <div id="load-more" class="hidden text-center py-8">
+                <button onclick="loadMore()"
+                    class="bg-white/5 hover:bg-white/10 border border-white/10 px-8 py-3 rounded-xl text-sm transition">Load
+                    More</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Entry Modal -->
+    <div id="add-entry-modal" class="fixed inset-0 z-50 hidden" onclick="if(event.target===this)closeAddEntry()">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-md"></div>
+        <div class="relative z-10 max-w-lg mx-auto mt-20 bg-[#1a1a2e] border border-white/10 rounded-2xl p-6">
+            <h3 class="text-lg font-bold mb-4">Add Journal Entry</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Game (optional)</label>
+                    <select id="ae-game" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                        <option value="">Select a game...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Note</label>
+                    <textarea id="ae-note" rows="3" placeholder="What did you do? How was it?"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Hours played (optional)</label>
+                    <input type="number" id="ae-hours" placeholder="0"
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3">
+                </div>
+                <button onclick="submitEntry()"
+                    class="w-full bg-purple-500 hover:bg-purple-600 py-3 rounded-xl font-medium">Add Entry</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast"
+        class="fixed bottom-6 right-6 hidden bg-[#1a1a2e] border border-white/10 rounded-xl px-5 py-3 text-sm shadow-2xl z-50">
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/game-logger-api';
+        let user = null;
+        let activity = [];
+        let showing = 30;
+
+        async function init() {
+            try {
+                const res = await fetch(`${API}?action=me`, { credentials: 'include' });
+                const data = await res.json();
+                if (!data.user) { location.href = '/game-logger/'; return; }
+                user = data.user;
+                activity = (user.activityLog || []).slice().reverse();
+                render();
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('content').classList.remove('hidden');
+            } catch (e) {
+                location.href = '/game-logger/';
+            }
+        }
+
+        function render() {
+            document.getElementById('avatar').src = user.avatar;
+            document.getElementById('name').textContent = user.displayName;
+            document.getElementById('add-entry-btn').classList.remove('hidden');
+
+            // Populate game select
+            const select = document.getElementById('ae-game');
+            select.innerHTML = '<option value="">Select a game...</option>' + (user.games || []).filter(g => !g.hidden).map(g => `<option value="${g.steamAppId || g.id}">${g.name}</option>`).join('');
+
+            // Stats
+            const playEntries = activity.filter(a => a.type === 'playtime' || a.type === 'session');
+            const achEntries = activity.filter(a => a.type === 'achievement');
+            const totalMinutes = activity.filter(a => a.delta).reduce((s, a) => s + (a.delta || 0), 0);
+            const totalAch = achEntries.reduce((s, a) => s + (a.count || 0), 0);
+
+            document.getElementById('stat-entries').textContent = activity.length;
+            document.getElementById('stat-hours').textContent = Math.round(totalMinutes / 60);
+            document.getElementById('stat-achievements').textContent = totalAch;
+
+            renderTimeline();
+        }
+
+        function renderTimeline() {
+            const filter = document.getElementById('filter').value;
+            let filtered = activity;
+            if (filter === 'playtime') filtered = activity.filter(a => a.type === 'playtime' || a.type === 'session');
+            else if (filter !== 'all') filtered = activity.filter(a => a.type === filter);
+
+            const timeline = document.getElementById('timeline');
+            const empty = document.getElementById('empty');
+            const loadMoreBtn = document.getElementById('load-more');
+
+            if (!filtered.length) {
+                timeline.innerHTML = '';
+                empty.classList.remove('hidden');
+                loadMoreBtn.classList.add('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            loadMoreBtn.classList.toggle('hidden', filtered.length <= showing);
+
+            const toShow = filtered.slice(0, showing);
+
+            const grouped = {};
+            toShow.forEach(a => {
+                const date = a.date || 'Unknown';
+                if (!grouped[date]) grouped[date] = [];
+                grouped[date].push(a);
+            });
+
+            let html = '';
+            Object.entries(grouped).forEach(([date, items]) => {
+                const d = new Date(date);
+                const today = new Date().toISOString().split('T')[0];
+                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+                const label = date === today ? 'Today' : date === yesterday ? 'Yesterday' : d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+                html += `<div class="date-marker"><span class="font-semibold text-white">${label}</span></div>`;
+
+                items.forEach(a => {
+                    const time = a.timestamp ? new Date(a.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+                    const game = user.games?.find(g => g.steamAppId === a.steamAppId || g.id === a.steamAppId);
+                    const icon = game?.icon || `https://cdn.cloudflare.steamstatic.com/steam/apps/${a.steamAppId}/capsule_sm_120.jpg`;
+
+                    if (a.type === 'playtime') {
+                        const hours = Math.round(a.delta / 60 * 10) / 10;
+                        const total = Math.round(a.total / 60);
+                        const initial = a.isInitial ? '<span class="text-xs text-purple-400 ml-2">(First sync)</span>' : '';
+                        html += `
+                    <div class="timeline-item">
+                        <div class="timeline-dot play"><i class="fa-solid fa-gamepad text-white"></i></div>
+                        <div class="timeline-card">
+                            <div class="flex items-center gap-4">
+                                <img src="${icon}" class="w-12 h-12 rounded-lg object-cover" onerror="this.style.display='none'">
+                                <div class="flex-1">
+                                    <div class="font-semibold">${a.game}${initial}</div>
+                                    <div class="text-sm text-gray-400">Played for <span class="text-green-400 font-medium">${hours} hours</span> · Total: ${total}h</div>
+                                </div>
+                                <div class="text-xs text-gray-500">${time}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                    } else if (a.type === 'session') {
+                        const hours = Math.round(a.recentMinutes / 60 * 10) / 10;
+                        html += `
+                    <div class="timeline-item">
+                        <div class="timeline-dot session"><i class="fa-solid fa-play text-white"></i></div>
+                        <div class="timeline-card">
+                            <div class="flex items-center gap-4">
+                                <img src="${icon}" class="w-12 h-12 rounded-lg object-cover" onerror="this.style.display='none'">
+                                <div class="flex-1">
+                                    <div class="font-semibold">${a.game}</div>
+                                    <div class="text-sm text-gray-400">Recently played · <span class="text-blue-400">${hours}h in last 2 weeks</span></div>
+                                </div>
+                                <div class="text-xs text-gray-500">${time}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                    } else if (a.type === 'achievement') {
+                        html += `
+                    <div class="timeline-item">
+                        <div class="timeline-dot achievement"><i class="fa-solid fa-trophy text-white"></i></div>
+                        <div class="timeline-card">
+                            <div class="flex items-center gap-4">
+                                <img src="${icon}" class="w-12 h-12 rounded-lg object-cover" onerror="this.style.display='none'">
+                                <div class="flex-1">
+                                    <div class="font-semibold">${a.game}</div>
+                                    <div class="text-sm text-gray-400">Unlocked <span class="text-yellow-400 font-medium">${a.count} achievement${a.count > 1 ? 's' : ''}</span> · Now at ${a.percent}%</div>
+                                </div>
+                                <div class="text-xs text-gray-500">${time}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                    } else if (a.type === 'note') {
+                        html += `
+                    <div class="timeline-item">
+                        <div class="timeline-dot note"><i class="fa-solid fa-pen text-white"></i></div>
+                        <div class="timeline-card">
+                            <div class="flex items-center gap-4">
+                                ${a.steamAppId ? `<img src="${icon}" class="w-12 h-12 rounded-lg object-cover" onerror="this.style.display='none'">` : '<div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center"><i class="fa-solid fa-book text-purple-400"></i></div>'}
+                                <div class="flex-1">
+                                    <div class="font-semibold">${a.game || 'Personal Note'}</div>
+                                    <div class="text-sm text-gray-300">${a.note || ''}</div>
+                                    ${a.playtimeAdded ? `<div class="text-xs text-gray-500 mt-1">+${Math.round(a.playtimeAdded / 60)}h added</div>` : ''}
+                                </div>
+                                <div class="text-xs text-gray-500">${time}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                    } else if (a.type === 'manual_add') {
+                        html += `
+                    <div class="timeline-item">
+                        <div class="timeline-dot manual"><i class="fa-solid fa-plus text-white"></i></div>
+                        <div class="timeline-card">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-lg bg-pink-500/20 flex items-center justify-center"><i class="fa-solid fa-gamepad text-pink-400"></i></div>
+                                <div class="flex-1">
+                                    <div class="font-semibold">Added ${a.game}</div>
+                                    <div class="text-sm text-gray-400">Manual game added to library</div>
+                                </div>
+                                <div class="text-xs text-gray-500">${time}</div>
+                            </div>
+                        </div>
+                    </div>`;
+                    }
+                });
+            });
+
+            timeline.innerHTML = html;
+        }
+
+        function loadMore() { showing += 30; renderTimeline(); }
+
+        function openAddEntry() { document.getElementById('add-entry-modal').classList.remove('hidden'); }
+        function closeAddEntry() { document.getElementById('add-entry-modal').classList.add('hidden'); }
+
+        async function submitEntry() {
+            const note = document.getElementById('ae-note').value.trim();
+            const gameId = document.getElementById('ae-game').value || null;
+            const hours = parseInt(document.getElementById('ae-hours').value) || 0;
+
+            if (!note) { toast('Note required', 'error'); return; }
+
+            const res = await fetch(`${API}?action=add-journal-entry`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ gameId, type: 'note', note, playtimeMinutes: hours * 60 })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                activity.unshift({
+                    date: new Date().toISOString().split('T')[0],
+                    timestamp: new Date().toISOString(),
+                    type: 'note',
+                    steamAppId: gameId,
+                    game: user.games?.find(g => (g.steamAppId == gameId || g.id == gameId))?.name || 'Personal Note',
+                    note,
+                    playtimeAdded: hours * 60 || null
+                });
+                closeAddEntry();
+                renderTimeline();
+                toast('Entry added!');
+                document.getElementById('ae-note').value = '';
+                document.getElementById('ae-hours').value = '';
+            } else { toast(data.error || 'Failed', 'error'); }
+        }
+
+        function toast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-xmark text-red-400' : 'fa-check text-green-400'} mr-2"></i>${msg}`;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

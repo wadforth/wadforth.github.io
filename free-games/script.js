@@ -571,6 +571,361 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ===== DISCORD WEBHOOK INTEGRATION =====
+    const DISCORD_API = '/.netlify/functions/discord-webhooks';
+
+    // Discord Modal Elements
+    const discordModal = document.getElementById('discord-modal');
+    const discordManageModal = document.getElementById('discord-manage-modal');
+    const discordSetupBtn = document.getElementById('discord-setup-btn');
+    const discordManageBtn = document.getElementById('discord-manage-btn');
+    const closeDiscord = document.getElementById('close-discord');
+    const closeDiscordManage = document.getElementById('close-discord-manage');
+    const discordBackdrop = document.getElementById('discord-backdrop');
+    const discordManageBackdrop = document.getElementById('discord-manage-backdrop');
+
+    // Setup view elements
+    const discordWebhookUrl = document.getElementById('discord-webhook-url');
+    const discordRegisterBtn = document.getElementById('discord-register-btn');
+    const discordError = document.getElementById('discord-error');
+    const discordSetupView = document.getElementById('discord-setup-view');
+    const discordSuccessView = document.getElementById('discord-success-view');
+    const discordSecretKey = document.getElementById('discord-secret-key');
+    const discordCopyKey = document.getElementById('discord-copy-key');
+    const discordDownloadKey = document.getElementById('discord-download-key');
+    const discordDone = document.getElementById('discord-done');
+
+    // Manage view elements
+    const discordManageKey = document.getElementById('discord-manage-key');
+    const discordManageError = document.getElementById('discord-manage-error');
+    const discordManageSuccess = document.getElementById('discord-manage-success');
+    const discordWebhookInfo = document.getElementById('discord-webhook-info');
+    const discordInfoCreated = document.getElementById('discord-info-created');
+    const discordInfoLast = document.getElementById('discord-info-last');
+    const discordTestWebhook = document.getElementById('discord-test-webhook');
+    const discordDeleteWebhook = document.getElementById('discord-delete-webhook');
+
+    let currentSecretKey = '';
+
+    // Open Discord Setup Modal
+    discordSetupBtn?.addEventListener('click', () => {
+        notifModal.classList.add('hidden');
+        discordModal.classList.remove('hidden');
+        discordSetupView.classList.remove('hidden');
+        discordSuccessView.classList.add('hidden');
+        discordWebhookUrl.value = '';
+        discordError.classList.add('hidden');
+    });
+
+    // Open Discord Manage Modal
+    discordManageBtn?.addEventListener('click', () => {
+        notifModal.classList.add('hidden');
+        discordManageModal.classList.remove('hidden');
+        discordManageKey.value = '';
+        discordManageError.classList.add('hidden');
+        discordManageSuccess.classList.add('hidden');
+        discordWebhookInfo.classList.add('hidden');
+    });
+
+    // Close modals
+    closeDiscord?.addEventListener('click', () => discordModal.classList.add('hidden'));
+    closeDiscordManage?.addEventListener('click', () => discordManageModal.classList.add('hidden'));
+    discordBackdrop?.addEventListener('click', () => discordModal.classList.add('hidden'));
+    discordManageBackdrop?.addEventListener('click', () => discordManageModal.classList.add('hidden'));
+
+    // Register webhook
+    discordRegisterBtn?.addEventListener('click', async () => {
+        const url = discordWebhookUrl.value.trim();
+
+        if (!url) {
+            discordError.textContent = 'Please enter a webhook URL';
+            discordError.classList.remove('hidden');
+            return;
+        }
+
+        if (!url.includes('discord.com/api/webhooks/')) {
+            discordError.textContent = 'Invalid Discord webhook URL';
+            discordError.classList.remove('hidden');
+            return;
+        }
+
+        discordError.classList.add('hidden');
+        discordRegisterBtn.disabled = true;
+        discordRegisterBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering...';
+
+        try {
+            const res = await fetch(`${DISCORD_API}?action=register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ webhookUrl: url })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                currentSecretKey = data.secretKey;
+                discordSecretKey.textContent = data.secretKey;
+                discordSetupView.classList.add('hidden');
+                discordSuccessView.classList.remove('hidden');
+            } else {
+                throw new Error(data.error || 'Registration failed');
+            }
+        } catch (e) {
+            discordError.textContent = e.message || 'Failed to register webhook';
+            discordError.classList.remove('hidden');
+        } finally {
+            discordRegisterBtn.disabled = false;
+            discordRegisterBtn.innerHTML = '<i class="fa-solid fa-check"></i> Register Webhook';
+        }
+    });
+
+    // Copy key to clipboard
+    discordCopyKey?.addEventListener('click', () => {
+        navigator.clipboard.writeText(currentSecretKey).then(() => {
+            discordCopyKey.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+            setTimeout(() => {
+                discordCopyKey.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Key';
+            }, 2000);
+        });
+    });
+
+    // Download key as file
+    discordDownloadKey?.addEventListener('click', () => {
+        const content = `Free Games Tracker - Discord Webhook Secret Key
+================================================
+
+Your Secret Key: ${currentSecretKey}
+
+Keep this key safe!
+You need it to manage or delete your webhook.
+
+Manage your webhook at: https://kierxn.netlify.app/free-games/
+
+Generated: ${new Date().toLocaleString()}
+`;
+
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'discord-webhook-key.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        discordDownloadKey.innerHTML = '<i class="fa-solid fa-check"></i> Downloaded!';
+        setTimeout(() => {
+            discordDownloadKey.innerHTML = '<i class="fa-solid fa-download"></i> Download';
+        }, 2000);
+    });
+
+    // Done button
+    discordDone?.addEventListener('click', () => {
+        discordModal.classList.add('hidden');
+    });
+
+    // Check webhook status when key is entered
+    discordManageKey?.addEventListener('input', async () => {
+        const key = discordManageKey.value.trim();
+        if (key.length < 20) {
+            discordWebhookInfo.classList.add('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch(`${DISCORD_API}?action=status&key=${encodeURIComponent(key)}`);
+            const data = await res.json();
+
+            if (data.found) {
+                discordWebhookInfo.classList.remove('hidden');
+                discordManageError.classList.add('hidden');
+                discordInfoCreated.textContent = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : '-';
+                discordInfoLast.textContent = data.lastPosted ? new Date(data.lastPosted).toLocaleDateString() : 'Never';
+
+                // Update pause/resume button state
+                const pauseBtn = document.getElementById('discord-pause-btn');
+                const statusDot = document.getElementById('discord-status-dot');
+                const statusText = document.getElementById('discord-status-text');
+
+                if (data.paused) {
+                    pauseBtn.innerHTML = '<i class="fa-solid fa-play mr-1"></i> Resume';
+                    pauseBtn.className = 'text-xs px-3 py-1 rounded bg-accent/10 text-accent hover:bg-accent/20 border border-accent/20';
+                    statusDot.className = 'w-2 h-2 rounded-full bg-yellow-500';
+                    statusText.textContent = 'Paused';
+                } else {
+                    pauseBtn.innerHTML = '<i class="fa-solid fa-pause mr-1"></i> Pause';
+                    pauseBtn.className = 'text-xs px-3 py-1 rounded bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20';
+                    statusDot.className = 'w-2 h-2 rounded-full bg-accent animate-pulse';
+                    statusText.textContent = 'Active';
+                }
+
+                // Update platform checkboxes
+                const platforms = data.platforms || ['epic', 'steam', 'gog', 'ubisoft'];
+                document.getElementById('plat-epic').checked = platforms.includes('epic');
+                document.getElementById('plat-steam').checked = platforms.includes('steam');
+                document.getElementById('plat-gog').checked = platforms.includes('gog');
+                document.getElementById('plat-ubisoft').checked = platforms.includes('ubisoft');
+            } else {
+                discordWebhookInfo.classList.add('hidden');
+            }
+        } catch (e) {
+            // Silently fail for status check
+        }
+    });
+
+    // Pause/Resume toggle
+    document.getElementById('discord-pause-btn')?.addEventListener('click', async () => {
+        const key = discordManageKey.value.trim();
+        if (!key) return;
+
+        const pauseBtn = document.getElementById('discord-pause-btn');
+        const isPaused = pauseBtn.textContent.includes('Resume');
+        const action = isPaused ? 'resume' : 'pause';
+
+        pauseBtn.disabled = true;
+        pauseBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            const res = await fetch(`${DISCORD_API}?action=${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secretKey: key })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Trigger re-check to update UI
+                discordManageKey.dispatchEvent(new Event('input'));
+                discordManageSuccess.textContent = `Notifications ${action}d!`;
+                discordManageSuccess.classList.remove('hidden');
+            }
+        } catch (e) {
+            discordManageError.textContent = 'Failed to update';
+            discordManageError.classList.remove('hidden');
+        }
+
+        pauseBtn.disabled = false;
+    });
+
+    // Save platform settings
+    document.getElementById('discord-save-settings')?.addEventListener('click', async () => {
+        const key = discordManageKey.value.trim();
+        if (!key) return;
+
+        const platforms = [];
+        if (document.getElementById('plat-epic').checked) platforms.push('epic');
+        if (document.getElementById('plat-steam').checked) platforms.push('steam');
+        if (document.getElementById('plat-gog').checked) platforms.push('gog');
+        if (document.getElementById('plat-ubisoft').checked) platforms.push('ubisoft');
+
+        const btn = document.getElementById('discord-save-settings');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        try {
+            const res = await fetch(`${DISCORD_API}?action=update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secretKey: key, platforms })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                discordManageSuccess.textContent = 'Settings saved!';
+                discordManageSuccess.classList.remove('hidden');
+            }
+        } catch (e) {
+            discordManageError.textContent = 'Failed to save';
+            discordManageError.classList.remove('hidden');
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Save Settings';
+    });
+
+    // Test webhook
+    discordTestWebhook?.addEventListener('click', async () => {
+        const key = discordManageKey.value.trim();
+
+        if (!key) {
+            discordManageError.textContent = 'Enter your secret key first';
+            discordManageError.classList.remove('hidden');
+            return;
+        }
+
+        discordManageError.classList.add('hidden');
+        discordManageSuccess.classList.add('hidden');
+        discordTestWebhook.disabled = true;
+        discordTestWebhook.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            const res = await fetch(`${DISCORD_API}?action=test`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secretKey: key })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                discordManageSuccess.textContent = 'Test sent with latest game!';
+                discordManageSuccess.classList.remove('hidden');
+            } else {
+                throw new Error(data.error || 'Test failed');
+            }
+        } catch (e) {
+            discordManageError.textContent = e.message || 'Failed to send test';
+            discordManageError.classList.remove('hidden');
+        } finally {
+            discordTestWebhook.disabled = false;
+            discordTestWebhook.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Test';
+        }
+    });
+
+    // Delete webhook
+    discordDeleteWebhook?.addEventListener('click', async () => {
+        const key = discordManageKey.value.trim();
+
+        if (!key) {
+            discordManageError.textContent = 'Enter your secret key first';
+            discordManageError.classList.remove('hidden');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to delete this webhook? You will stop receiving notifications.')) {
+            return;
+        }
+
+        discordManageError.classList.add('hidden');
+        discordManageSuccess.classList.add('hidden');
+        discordDeleteWebhook.disabled = true;
+        discordDeleteWebhook.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            const res = await fetch(`${DISCORD_API}?action=delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ secretKey: key })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                discordManageSuccess.textContent = 'Webhook deleted!';
+                discordManageSuccess.classList.remove('hidden');
+                discordWebhookInfo.classList.add('hidden');
+                discordManageKey.value = '';
+            } else {
+                throw new Error(data.error || 'Delete failed');
+            }
+        } catch (e) {
+            discordManageError.textContent = e.message || 'Failed to delete webhook';
+            discordManageError.classList.remove('hidden');
+        } finally {
+            discordDeleteWebhook.disabled = false;
+            discordDeleteWebhook.innerHTML = '<i class="fa-solid fa-trash"></i> Delete';
+        }
+    });
+
     function getMockData() {
         return [
             { id: 3399, title: "STALCRAFT: X (Mock)", worth: "N/A", image: "https://www.gamerpower.com/offers/1/6939a240ed23a.jpg", description: "Mock Data: 3rd Anniversary DLC pack.", published_date: new Date().toISOString(), type: "DLC", platforms: "PC, Steam", open_giveaway_url: "#", instructions: "1. Install Base Game.\n2. Claim DLC." },
@@ -579,3 +934,4 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
     }
 });
+

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { bg: '#0a0a0a', card: '#141414', border: '#252525', muted: '#666' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+
+    <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-btn {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+        }
+
+        .gradient-btn:hover {
+            opacity: 0.9;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        /* Quill Styling */
+        .ql-toolbar {
+            background: #141414;
+            border: 1px solid #252525 !important;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .ql-toolbar .ql-stroke {
+            stroke: #666;
+        }
+
+        .ql-toolbar .ql-fill {
+            fill: #666;
+        }
+
+        .ql-toolbar .ql-picker-label {
+            color: #666;
+        }
+
+        .ql-toolbar button:hover .ql-stroke,
+        .ql-toolbar .ql-picker-label:hover {
+            stroke: #fff;
+            color: #fff;
+        }
+
+        .ql-container {
+            background: #0a0a0a;
+            border: 1px solid #252525 !important;
+            border-top: none !important;
+            border-radius: 0 0 8px 8px;
+            min-height: 400px;
+        }
+
+        .ql-editor {
+            color: #ccc;
+            font-size: 15px;
+            line-height: 1.8;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .ql-editor.ql-blank::before {
+            color: #444;
+            font-style: normal;
+        }
+
+        .ql-snow .ql-picker-options {
+            background: #141414;
+            border-color: #252525;
+        }
+
+        /* Tags */
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 10px 14px;
+            background: #0a0a0a;
+            border: 1px solid #252525;
+            border-radius: 8px;
+        }
+
+        .tag-input input {
+            flex: 1;
+            min-width: 80px;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 13px;
+        }
+
+        .tag-badge {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+            color: #a78bfa;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Post rows */
+        .post-row {
+            border-bottom: 1px solid #1a1a1a;
+            transition: all 0.2s;
+        }
+
+        .post-row:last-child {
+            border-bottom: none;
+        }
+
+        .post-row:hover {
+            background: #181818;
+        }
+
+        /* Tabs */
+        .tab-btn {
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: #a855f7;
+            border-color: #a855f7;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        /* Autosave indicator */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .autosave-pulse {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen text-white">
+    <!-- Header -->
+    <header class="sticky top-0 z-50 bg-dark-bg/95 backdrop-blur-sm border-b border-dark-border">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <span class="font-bold text-lg">
+                kieran<span class="gradient-text">/admin</span>
+            </span>
+            <div class="flex items-center gap-6 text-sm">
+                <span id="autosave-status" class="hidden text-xs text-dark-muted">
+                    <i class="fa-solid fa-cloud text-green-400 mr-1"></i>Saved
+                </span>
+                <a href="../" target="_blank"
+                    class="text-dark-muted hover:text-white transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-external-link text-xs"></i>View Blog
+                </a>
+                <button onclick="logout()" class="text-red-400/70 hover:text-red-400 transition-colors">
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Dashboard -->
+        <div id="dashboard">
+            <!-- Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+                <div class="stat-card rounded-xl p-5">
+                    <div class="text-dark-muted text-xs uppercase tracking-wider mb-1">Total Posts</div>
+                    <div class="text-3xl font-bold" id="stat-total">-</div>
+                </div>
+                <div class="stat-card rounded-xl p-5">
+                    <div class="text-dark-muted text-xs uppercase tracking-wider mb-1">Published</div>
+                    <div class="text-3xl font-bold text-green-400" id="stat-published">-</div>
+                </div>
+                <div class="stat-card rounded-xl p-5">
+                    <div class="text-dark-muted text-xs uppercase tracking-wider mb-1">Drafts</div>
+                    <div class="text-3xl font-bold text-yellow-400" id="stat-drafts">-</div>
+                </div>
+                <div class="stat-card rounded-xl p-5">
+                    <div class="text-dark-muted text-xs uppercase tracking-wider mb-1">Scheduled</div>
+                    <div class="text-3xl font-bold text-purple-400" id="stat-scheduled">-</div>
+                </div>
+            </div>
+
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-2xl font-bold">Posts</h1>
+                <button onclick="showEditor()"
+                    class="gradient-btn text-white font-semibold py-2.5 px-5 rounded-xl text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i> New Post
+                </button>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="flex gap-1 mb-6 border-b border-dark-border">
+                <button onclick="filterTab('all')"
+                    class="tab-btn px-4 py-2 text-sm border-b-2 border-transparent text-dark-muted hover:text-white active"
+                    id="tab-all">All</button>
+                <button onclick="filterTab('published')"
+                    class="tab-btn px-4 py-2 text-sm border-b-2 border-transparent text-dark-muted hover:text-white"
+                    id="tab-published">Published</button>
+                <button onclick="filterTab('draft')"
+                    class="tab-btn px-4 py-2 text-sm border-b-2 border-transparent text-dark-muted hover:text-white"
+                    id="tab-draft">Drafts</button>
+                <button onclick="filterTab('scheduled')"
+                    class="tab-btn px-4 py-2 text-sm border-b-2 border-transparent text-dark-muted hover:text-white"
+                    id="tab-scheduled">Scheduled</button>
+            </div>
+
+            <!-- Posts List -->
+            <div id="list" class="bg-dark-card border border-dark-border rounded-xl overflow-hidden">
+                <div class="py-16 text-center text-dark-muted text-sm">
+                    <i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Loading...
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor -->
+        <div id="editor-view" class="hidden">
+            <!-- Editor Header -->
+            <div class="flex items-center justify-between mb-8">
+                <button onclick="showDashboard()"
+                    class="text-dark-muted hover:text-white text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Back to posts
+                </button>
+                <div class="flex items-center gap-3">
+                    <button onclick="togglePreview()"
+                        class="bg-dark-card border border-dark-border text-white py-2 px-4 rounded-lg text-sm hover:bg-dark-border transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-eye"></i> Preview
+                    </button>
+                    <button onclick="saveDraft()"
+                        class="bg-dark-card border border-dark-border text-white py-2 px-4 rounded-lg text-sm hover:bg-dark-border transition-colors">
+                        Save Draft
+                    </button>
+                    <button onclick="publish()"
+                        class="gradient-btn text-white font-semibold py-2 px-5 rounded-lg text-sm">
+                        Publish
+                    </button>
+                </div>
+            </div>
+
+            <!-- Editor Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Main Editor -->
+                <div class="lg:col-span-2 space-y-6">
+                    <input type="text" id="title"
+                        class="w-full bg-transparent text-3xl font-bold placeholder-dark-muted/50 focus:outline-none"
+                        placeholder="Post title..." oninput="triggerAutosave()">
+
+                    <div>
+                        <label
+                            class="block text-xs text-dark-muted uppercase tracking-wider mb-2 font-medium">Excerpt</label>
+                        <textarea id="excerpt" rows="2"
+                            class="w-full bg-dark-card border border-dark-border rounded-xl px-4 py-3 text-sm placeholder-dark-muted/50 focus:outline-none resize-none focus:border-purple-500/50"
+                            placeholder="Brief description for previews..." oninput="triggerAutosave()"></textarea>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs text-dark-muted uppercase tracking-wider font-medium">Content</label>
+                            <div class="flex gap-2">
+                                <button onclick="setEditorMode('rich')" id="mode-rich"
+                                    class="text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400">Rich
+                                    Text</button>
+                                <button onclick="setEditorMode('markdown')" id="mode-markdown"
+                                    class="text-xs px-2 py-1 rounded text-dark-muted hover:text-white">Markdown</button>
+                            </div>
+                        </div>
+                        <div id="quill-container">
+                            <div id="quill"></div>
+                        </div>
+                        <textarea id="markdown-editor"
+                            class="hidden w-full bg-dark-bg border border-dark-border rounded-xl px-4 py-4 text-sm font-mono focus:outline-none resize-none h-96 focus:border-purple-500/50"
+                            placeholder="Write in markdown..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="space-y-5">
+                    <!-- Settings Card -->
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-5 space-y-5">
+                        <div>
+                            <label
+                                class="block text-xs text-dark-muted uppercase tracking-wider mb-2 font-medium">Author</label>
+                            <input type="text" id="author" value="Kieran"
+                                class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500/50">
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-xs text-dark-muted uppercase tracking-wider mb-2 font-medium">Tags</label>
+                            <div id="tags-box" class="tag-input">
+                                <input type="text" id="tag-in" placeholder="Add tag..." onkeydown="addTag(event)">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-dark-muted uppercase tracking-wider mb-2 font-medium">Read
+                                Time (min)</label>
+                            <input type="number" id="time" value="5" min="1"
+                                class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500/50">
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-xs text-dark-muted uppercase tracking-wider mb-2 font-medium">Featured
+                                Image</label>
+                            <input type="url" id="image"
+                                class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-purple-500/50"
+                                placeholder="https://...">
+                            <div id="image-preview" class="mt-2 hidden">
+                                <img src="" class="w-full h-32 object-cover rounded-lg" id="preview-img">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Card -->
+                    <div class="bg-dark-card border border-dark-border rounded-xl p-5">
+                        <label class="flex items-center gap-3 cursor-pointer mb-4">
+                            <input type="checkbox" id="schedule-toggle" class="accent-purple-500"
+                                onchange="toggleSchedule()">
+                            <span class="text-sm">Schedule for later</span>
+                        </label>
+                        <div id="schedule-options" class="hidden space-y-3">
+                            <div>
+                                <label class="block text-xs text-dark-muted mb-1">Date</label>
+                                <input type="date" id="schedule-date"
+                                    class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-dark-muted mb-1">Time</label>
+                                <input type="time" id="schedule-time"
+                                    class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-sm focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div id="preview-modal" class="fixed inset-0 z-50 hidden">
+            <div class="absolute inset-0 bg-black/90" onclick="togglePreview()"></div>
+            <div
+                class="relative z-10 max-w-3xl mx-auto mt-12 mb-12 max-h-[calc(100vh-6rem)] overflow-y-auto bg-dark-card rounded-xl border border-dark-border">
+                <div
+                    class="sticky top-0 bg-dark-card border-b border-dark-border px-6 py-4 flex items-center justify-between rounded-t-xl">
+                    <span class="text-sm text-dark-muted">Preview</span>
+                    <button onclick="togglePreview()" class="text-dark-muted hover:text-white">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="p-8">
+                    <h1 id="preview-title" class="text-3xl font-bold mb-4"></h1>
+                    <div id="preview-content" class="prose prose-invert"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Delete Modal -->
+    <div id="del-modal" class="fixed inset-0 z-50 hidden bg-black/90 flex items-center justify-center p-4">
+        <div class="bg-dark-card border border-dark-border rounded-xl p-6 max-w-sm w-full text-center">
+            <i class="fa-solid fa-triangle-exclamation text-yellow-500 text-3xl mb-4"></i>
+            <p class="mb-6">Delete this post permanently?</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeDel()"
+                    class="bg-dark-border text-white py-2.5 px-5 rounded-lg text-sm hover:bg-dark-muted/30">Cancel</button>
+                <button onclick="confirmDel()"
+                    class="bg-red-500 text-white py-2.5 px-5 rounded-lg text-sm hover:bg-red-600">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 hidden bg-dark-card border border-dark-border rounded-xl px-5 py-3 text-sm shadow-2xl flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-check text-green-400"></i>
+        <span id="toast-text"></span>
+    </div>
+
+    <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        const API = '/.netlify/functions/blog-api';
+        const token = sessionStorage.getItem('blog_admin_token');
+        if (!token) window.location.href = './login.html';
+
+        let quill, tags = [], editId = null, delId = null, posts = [];
+        let currentFilter = 'all';
+        let editorMode = 'rich';
+        let autosaveTimeout = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            quill = new Quill('#quill', {
+                theme: 'snow',
+                placeholder: 'Write your post...',
+                modules: {
+                    toolbar: [
+                        [{ header: [1, 2, 3, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        ['blockquote', 'code-block'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['link', 'image'],
+                        ['clean']
+                    ]
+                }
+            });
+
+            quill.on('text-change', triggerAutosave);
+
+            // Image preview
+            document.getElementById('image').addEventListener('input', (e) => {
+                const url = e.target.value;
+                const preview = document.getElementById('image-preview');
+                const img = document.getElementById('preview-img');
+                if (url) {
+                    img.src = url;
+                    preview.classList.remove('hidden');
+                } else {
+                    preview.classList.add('hidden');
+                }
+            });
+
+            load();
+        });
+
+        async function load() {
+            const list = document.getElementById('list');
+            try {
+                const res = await fetch(`${API}?action=list`, { headers: { Authorization: `Bearer ${token}` } });
+                posts = (await res.json()).posts || [];
+
+                // Update stats
+                document.getElementById('stat-total').textContent = posts.length;
+                document.getElementById('stat-published').textContent = posts.filter(p => p.status === 'published').length;
+                document.getElementById('stat-drafts').textContent = posts.filter(p => p.status === 'draft').length;
+                document.getElementById('stat-scheduled').textContent = posts.filter(p => p.status === 'scheduled').length;
+
+                renderList();
+            } catch {
+                list.innerHTML = '<div class="py-16 text-center text-red-400 text-sm">Failed to load</div>';
+            }
+        }
+
+        function filterTab(tab) {
+            currentFilter = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            renderList();
+        }
+
+        function renderList() {
+            const list = document.getElementById('list');
+            let filtered = currentFilter === 'all' ? posts : posts.filter(p => p.status === currentFilter);
+
+            if (!filtered.length) {
+                list.innerHTML = '<div class="py-16 text-center text-dark-muted text-sm">No posts</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(p => `
+                <div class="post-row px-5 py-4 flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-3 mb-1">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${p.status === 'published' ? 'bg-green-500/10 text-green-400' :
+                    p.status === 'scheduled' ? 'bg-purple-500/10 text-purple-400' :
+                        'bg-yellow-500/10 text-yellow-400'
+                }">${p.status === 'published' ? 'Live' : p.status === 'scheduled' ? 'Scheduled' : 'Draft'}</span>
+                            <span class="text-xs text-dark-muted">${fmt(p.publishedAt || p.createdAt)}</span>
+                        </div>
+                        <div class="font-medium truncate">${p.title || 'Untitled'}</div>
+                        ${p.excerpt ? `<div class="text-sm text-dark-muted truncate mt-1">${p.excerpt}</div>` : ''}
+                    </div>
+                    <div class="flex gap-1 ml-4">
+                        <button onclick="edit('${p.id}')" class="text-dark-muted hover:text-white p-2 rounded hover:bg-dark-border transition-colors" title="Edit">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="showDel('${p.id}')" class="text-dark-muted hover:text-red-400 p-2 rounded hover:bg-red-500/10 transition-colors" title="Delete">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showEditor(p = null) {
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('editor-view').classList.remove('hidden');
+            editId = p?.id || null;
+            document.getElementById('title').value = p?.title || '';
+            document.getElementById('excerpt').value = p?.excerpt || '';
+            document.getElementById('author').value = p?.author || 'Kieran';
+            document.getElementById('time').value = p?.readingTime || 5;
+            document.getElementById('image').value = p?.featuredImage || '';
+            quill.root.innerHTML = p?.content || '';
+            tags = p?.tags || [];
+            renderTags();
+
+            // Reset schedule
+            document.getElementById('schedule-toggle').checked = false;
+            document.getElementById('schedule-options').classList.add('hidden');
+
+            // Image preview
+            const imageUrl = p?.featuredImage || '';
+            const preview = document.getElementById('image-preview');
+            const img = document.getElementById('preview-img');
+            if (imageUrl) {
+                img.src = imageUrl;
+                preview.classList.remove('hidden');
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('editor-view').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            editId = null;
+        }
+
+        async function edit(id) {
+            try {
+                const res = await fetch(`${API}?action=get&id=${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                showEditor(await res.json());
+            } catch { showEditor(posts.find(p => p.id === id)); }
+        }
+
+        // Editor mode toggle
+        function setEditorMode(mode) {
+            editorMode = mode;
+            document.getElementById('mode-rich').className = mode === 'rich' ? 'text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400' : 'text-xs px-2 py-1 rounded text-dark-muted hover:text-white';
+            document.getElementById('mode-markdown').className = mode === 'markdown' ? 'text-xs px-2 py-1 rounded bg-purple-500/20 text-purple-400' : 'text-xs px-2 py-1 rounded text-dark-muted hover:text-white';
+
+            if (mode === 'markdown') {
+                document.getElementById('quill-container').classList.add('hidden');
+                document.getElementById('markdown-editor').classList.remove('hidden');
+            } else {
+                document.getElementById('quill-container').classList.remove('hidden');
+                document.getElementById('markdown-editor').classList.add('hidden');
+            }
+        }
+
+        // Schedule toggle
+        function toggleSchedule() {
+            const checked = document.getElementById('schedule-toggle').checked;
+            document.getElementById('schedule-options').classList.toggle('hidden', !checked);
+        }
+
+        // Autosave
+        function triggerAutosave() {
+            clearTimeout(autosaveTimeout);
+            const status = document.getElementById('autosave-status');
+            status.innerHTML = '<i class="fa-solid fa-circle autosave-pulse text-yellow-400 mr-1"></i>Saving...';
+            status.classList.remove('hidden');
+
+            autosaveTimeout = setTimeout(async () => {
+                if (document.getElementById('title').value.trim()) {
+                    await save('draft', true);
+                    status.innerHTML = '<i class="fa-solid fa-cloud text-green-400 mr-1"></i>Saved';
+                }
+            }, 2000);
+        }
+
+        // Preview
+        function togglePreview() {
+            const modal = document.getElementById('preview-modal');
+            modal.classList.toggle('hidden');
+
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('preview-title').textContent = document.getElementById('title').value || 'Untitled';
+
+                let content = '';
+                if (editorMode === 'markdown') {
+                    content = marked.parse(document.getElementById('markdown-editor').value);
+                } else {
+                    content = quill.root.innerHTML;
+                }
+                document.getElementById('preview-content').innerHTML = content;
+            }
+        }
+
+        async function saveDraft() { await save('draft'); }
+        async function publish() {
+            const isScheduled = document.getElementById('schedule-toggle').checked;
+            await save(isScheduled ? 'scheduled' : 'published');
+        }
+
+        async function save(status, silent = false) {
+            const title = document.getElementById('title').value.trim();
+            if (!title) { if (!silent) toast('Add a title', 'warning'); return; }
+
+            let content = '';
+            if (editorMode === 'markdown') {
+                content = marked.parse(document.getElementById('markdown-editor').value);
+            } else {
+                content = quill.root.innerHTML;
+            }
+
+            const scheduledAt = document.getElementById('schedule-toggle').checked
+                ? new Date(`${document.getElementById('schedule-date').value}T${document.getElementById('schedule-time').value}`).toISOString()
+                : null;
+
+            try {
+                const url = editId ? `${API}?action=update&id=${editId}` : `${API}?action=create`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({
+                        title,
+                        excerpt: document.getElementById('excerpt').value.trim(),
+                        author: document.getElementById('author').value.trim(),
+                        readingTime: parseInt(document.getElementById('time').value) || 5,
+                        featuredImage: document.getElementById('image').value.trim(),
+                        content,
+                        tags,
+                        status,
+                        scheduledAt
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (data.id) editId = data.id;
+                    if (!silent) {
+                        toast(status === 'published' ? 'Published!' : status === 'scheduled' ? 'Scheduled!' : 'Saved');
+                        showDashboard();
+                        load();
+                    }
+                }
+            } catch { if (!silent) toast('Error saving', 'error'); }
+        }
+
+        function addTag(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                const t = e.target.value.trim().toLowerCase().replace(',', '');
+                if (t && !tags.includes(t)) { tags.push(t); renderTags(); }
+                e.target.value = '';
+            }
+        }
+
+        function renderTags() {
+            const box = document.getElementById('tags-box');
+            const inp = document.getElementById('tag-in');
+            box.querySelectorAll('.tag-badge').forEach(el => el.remove());
+            tags.forEach((t, i) => {
+                const b = document.createElement('span');
+                b.className = 'tag-badge';
+                b.innerHTML = `${t}<button onclick="rmTag(${i})" class="opacity-60 hover:opacity-100 ml-1">×</button>`;
+                box.insertBefore(b, inp);
+            });
+        }
+
+        function rmTag(i) { tags.splice(i, 1); renderTags(); }
+
+        function showDel(id) { delId = id; document.getElementById('del-modal').classList.remove('hidden'); }
+        function closeDel() { delId = null; document.getElementById('del-modal').classList.add('hidden'); }
+
+        async function confirmDel() {
+            if (!delId) return;
+            try {
+                await fetch(`${API}?action=delete&id=${delId}`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+                toast('Deleted');
+                load();
+            } catch { toast('Error', 'error'); }
+            closeDel();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('blog_admin_token');
+            window.location.href = './login.html';
+        }
+
+        function toast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const text = document.getElementById('toast-text');
+
+            text.textContent = msg;
+            icon.className = type === 'error' ? 'fa-solid fa-xmark text-red-400' :
+                type === 'warning' ? 'fa-solid fa-exclamation text-yellow-400' :
+                    'fa-solid fa-check text-green-400';
+
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+
+        function fmt(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | Kieran Wadforth</title>
+    <meta name="description" content="Thoughts, tutorials, and updates on development and technology">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: { bg: '#0a0a0a', card: '#141414', border: '#252525', muted: '#666' },
+                        light: { bg: '#fafafa', card: '#fff', border: '#e5e5e5', muted: '#888' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Reading Progress Bar */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+            z-index: 100;
+            transition: width 0.1s;
+        }
+
+        /* Gradient Accents */
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-border {
+            border-image: linear-gradient(135deg, #6366f1, #a855f7) 1;
+        }
+
+        /* Featured Card */
+        .featured-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        /* Category Pill */
+        .category-pill {
+            transition: all 0.2s;
+        }
+
+        .category-pill:hover {
+            transform: translateY(-1px);
+        }
+
+        .category-pill.active {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            color: white;
+            border-color: transparent;
+        }
+
+        /* Post Card */
+        .post-card {
+            transition: all 0.3s;
+        }
+
+        .post-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Modal */
+        .modal {
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-box {
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* TOC */
+        .toc-link {
+            transition: all 0.2s;
+        }
+
+        .toc-link:hover,
+        .toc-link.active {
+            color: #a855f7;
+            padding-left: 8px;
+        }
+
+        /* Blog Content */
+        .blog-content {
+            color: #ccc;
+            line-height: 1.9;
+        }
+
+        .blog-content h1,
+        .blog-content h2,
+        .blog-content h3 {
+            color: #fff;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            scroll-margin-top: 80px;
+        }
+
+        .blog-content h1 {
+            font-size: 1.75rem;
+        }
+
+        .blog-content h2 {
+            font-size: 1.4rem;
+        }
+
+        .blog-content h3 {
+            font-size: 1.15rem;
+        }
+
+        .blog-content p {
+            margin-bottom: 1.25rem;
+        }
+
+        .blog-content a {
+            color: #a855f7;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .blog-content code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875em;
+            background: #1f1f1f;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .blog-content pre {
+            background: #0d0d0d;
+            padding: 1.25rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            border: 1px solid #252525;
+        }
+
+        .blog-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .blog-content blockquote {
+            border-left: 3px solid #6366f1;
+            padding-left: 1.25rem;
+            margin: 1.5rem 0;
+            color: #999;
+            font-style: italic;
+        }
+
+        .blog-content ul,
+        .blog-content ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .blog-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .blog-content img {
+            max-width: 100%;
+            border-radius: 12px;
+            margin: 2rem 0;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        /* Light mode overrides */
+        .light .blog-content {
+            color: #444;
+        }
+
+        .light .blog-content h1,
+        .light .blog-content h2,
+        .light .blog-content h3 {
+            color: #111;
+        }
+
+        .light .blog-content code {
+            background: #f0f0f0;
+        }
+
+        .light .blog-content pre {
+            background: #f8f8f8;
+            border-color: #e5e5e5;
+        }
+
+        .light ::-webkit-scrollbar-track {
+            background: #fafafa;
+        }
+
+        .light ::-webkit-scrollbar-thumb {
+            background: #ccc;
+        }
+    </style>
+</head>
+
+<body class="dark min-h-screen bg-dark-bg text-white font-sans transition-colors duration-300">
+    <!-- Progress Bar -->
+    <div id="progress-bar" class="hidden" style="width: 0%"></div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 backdrop-blur-xl bg-dark-bg/80 border-b border-dark-border transition-colors">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="../" class="text-xl font-bold tracking-tight hover:opacity-70 transition-opacity">
+                kieran<span class="gradient-text">/blog</span>
+            </a>
+            <div class="flex items-center gap-5">
+                <!-- Search -->
+                <button onclick="toggleSearch()" class="text-dark-muted hover:text-white transition-colors">
+                    <i class="fa-solid fa-search"></i>
+                </button>
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="text-dark-muted hover:text-white transition-colors">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+                <a href="../" class="text-sm text-dark-muted hover:text-white transition-colors">Home</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Modal -->
+    <div id="search-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleSearch()"></div>
+        <div class="relative max-w-2xl mx-auto mt-24 px-6">
+            <div class="bg-dark-card border border-dark-border rounded-xl p-4 shadow-2xl modal-box">
+                <div class="flex items-center gap-3 mb-4">
+                    <i class="fa-solid fa-search text-dark-muted"></i>
+                    <input type="text" id="search-input"
+                        class="flex-1 bg-transparent text-lg focus:outline-none placeholder-dark-muted"
+                        placeholder="Search posts..." oninput="filterPosts()">
+                    <kbd class="text-xs bg-dark-border px-2 py-1 rounded text-dark-muted">ESC</kbd>
+                </div>
+                <div id="search-results" class="max-h-80 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <main class="max-w-6xl mx-auto px-6 py-12">
+        <!-- Hero -->
+        <div class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+                <span class="gradient-text">Blog</span>
+            </h1>
+            <p class="text-lg text-dark-muted max-w-xl">
+                Thoughts on development, technology, and building things that matter.
+            </p>
+        </div>
+
+        <!-- Categories -->
+        <div class="flex flex-wrap gap-2 mb-10" id="categories">
+            <button class="category-pill active px-4 py-1.5 rounded-full text-sm border border-dark-border bg-dark-card"
+                onclick="filterCategory('all')">
+                All Posts
+            </button>
+            <!-- Dynamic categories inserted here -->
+        </div>
+
+        <!-- Featured Post -->
+        <div id="featured-post" class="hidden mb-12">
+            <!-- Featured post inserted here -->
+        </div>
+
+        <!-- Posts Grid -->
+        <div id="posts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full py-16 text-center text-dark-muted">
+                <i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Loading...
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden py-20 text-center">
+            <i class="fa-solid fa-file-lines text-4xl text-dark-muted mb-4"></i>
+            <p class="text-dark-muted">No posts found</p>
+        </div>
+    </main>
+
+    <!-- Post Modal -->
+    <div id="modal" class="fixed inset-0 z-50 hidden">
+        <div class="modal absolute inset-0 bg-black/95" onclick="closeModal()"></div>
+        <div class="modal-box relative z-10 max-w-4xl mx-auto mt-8 mb-8 max-h-[calc(100vh-4rem)] overflow-hidden flex">
+            <!-- Main Content -->
+            <div class="flex-1 overflow-y-auto bg-dark-card rounded-xl border border-dark-border" id="modal-scroll">
+                <!-- Header -->
+                <div
+                    class="sticky top-0 bg-dark-card/95 backdrop-blur-sm border-b border-dark-border px-8 py-5 flex items-center justify-between z-10">
+                    <div class="flex items-center gap-4">
+                        <button onclick="closeModal()" class="text-dark-muted hover:text-white transition-colors">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
+                        <div id="modal-meta" class="text-sm text-dark-muted font-mono"></div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!-- Share Buttons -->
+                        <button onclick="shareTwitter()" class="text-dark-muted hover:text-[#1DA1F2] transition-colors"
+                            title="Share on Twitter">
+                            <i class="fa-brands fa-twitter"></i>
+                        </button>
+                        <button onclick="shareFacebook()" class="text-dark-muted hover:text-[#4267B2] transition-colors"
+                            title="Share on Facebook">
+                            <i class="fa-brands fa-facebook"></i>
+                        </button>
+                        <button onclick="copyLink()" class="text-dark-muted hover:text-white transition-colors"
+                            title="Copy Link">
+                            <i class="fa-solid fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Body -->
+                <div class="px-8 py-10">
+                    <div id="modal-tags" class="flex flex-wrap gap-2 mb-4"></div>
+                    <h1 id="modal-title" class="text-3xl md:text-4xl font-bold mb-6"></h1>
+                    <div id="modal-content" class="blog-content"></div>
+
+                    <!-- Related Posts -->
+                    <div id="related-posts" class="mt-16 pt-8 border-t border-dark-border hidden">
+                        <h3 class="text-lg font-semibold mb-6">Related Posts</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="related-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOC Sidebar -->
+            <div id="toc-sidebar" class="hidden lg:block w-56 pl-6 pt-20 shrink-0">
+                <div class="sticky top-20">
+                    <h4 class="text-xs uppercase tracking-wider text-dark-muted font-semibold mb-4">Contents</h4>
+                    <nav id="toc-list" class="space-y-2 text-sm text-dark-muted"></nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-dark-border py-8 mt-16 transition-colors">
+        <div class="max-w-6xl mx-auto px-6 flex items-center justify-between text-sm text-dark-muted">
+            <span>© 2025 Kieran Wadforth</span>
+            <span class="opacity-20 cursor-default" ondblclick="window.location.href='admin/login.html'">•</span>
+        </div>
+    </footer>
+
+    <script>
+        const API = '/.netlify/functions/blog-api';
+        let posts = [];
+        let currentPost = null;
+        let currentCategory = 'all';
+        let searchQuery = '';
+
+        // Theme
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            document.body.classList.toggle('light');
+            const icon = document.getElementById('theme-icon');
+            if (document.body.classList.contains('light')) {
+                icon.className = 'fa-solid fa-sun';
+                document.body.style.background = '#fafafa';
+                document.body.style.color = '#111';
+            } else {
+                icon.className = 'fa-solid fa-moon';
+                document.body.style.background = '#0a0a0a';
+                document.body.style.color = '#fff';
+            }
+            localStorage.setItem('blog-theme', document.body.classList.contains('light') ? 'light' : 'dark');
+        }
+
+        // Init theme
+        if (localStorage.getItem('blog-theme') === 'light') toggleTheme();
+
+        // Search
+        function toggleSearch() {
+            const modal = document.getElementById('search-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('search-input').focus();
+                renderSearchResults();
+            }
+        }
+
+        function filterPosts() {
+            searchQuery = document.getElementById('search-input').value.toLowerCase();
+            renderSearchResults();
+        }
+
+        function renderSearchResults() {
+            const container = document.getElementById('search-results');
+            const filtered = posts.filter(p =>
+                p.title.toLowerCase().includes(searchQuery) ||
+                (p.excerpt || '').toLowerCase().includes(searchQuery) ||
+                (p.tags || []).some(t => t.toLowerCase().includes(searchQuery))
+            );
+
+            if (!filtered.length) {
+                container.innerHTML = '<p class="text-center text-dark-muted py-8">No results</p>';
+                return;
+            }
+
+            container.innerHTML = filtered.slice(0, 6).map(p => `
+                <div class="p-3 hover:bg-dark-border/50 rounded-lg cursor-pointer transition-colors" onclick="openPost('${p.id}'); toggleSearch();">
+                    <div class="font-medium text-sm mb-1">${p.title}</div>
+                    <div class="text-xs text-dark-muted line-clamp-1">${p.excerpt || ''}</div>
+                </div>
+            `).join('');
+        }
+
+        // Secret admin access
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'A') window.location.href = 'admin/login.html';
+            if (e.key === 'Escape') {
+                closeModal();
+                if (!document.getElementById('search-modal').classList.contains('hidden')) toggleSearch();
+            }
+            if ((e.key === '/' || e.key === 'k') && e.ctrlKey) {
+                e.preventDefault();
+                toggleSearch();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', load);
+
+        async function load() {
+            try {
+                const res = await fetch(`${API}?action=list`);
+                const data = await res.json();
+                posts = (data.posts || []).filter(p => p.status === 'published');
+
+                if (!posts.length) {
+                    document.getElementById('posts-container').innerHTML = '';
+                    document.getElementById('empty-state').classList.remove('hidden');
+                    return;
+                }
+
+                // Build categories
+                const allTags = [...new Set(posts.flatMap(p => p.tags || []))];
+                const catContainer = document.getElementById('categories');
+                allTags.slice(0, 6).forEach(tag => {
+                    const btn = document.createElement('button');
+                    btn.className = 'category-pill px-4 py-1.5 rounded-full text-sm border border-dark-border bg-dark-card text-dark-muted hover:text-white';
+                    btn.textContent = tag;
+                    btn.onclick = () => filterCategory(tag);
+                    catContainer.appendChild(btn);
+                });
+
+                renderPosts();
+            } catch (e) {
+                document.getElementById('posts-container').innerHTML = '<p class="col-span-full text-red-400 text-sm py-12 text-center">Failed to load posts</p>';
+            }
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.category-pill').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === cat.toLowerCase() || (cat === 'all' && btn.textContent === 'All Posts'));
+            });
+            renderPosts();
+        }
+
+        function renderPosts() {
+            const container = document.getElementById('posts-container');
+            const featured = document.getElementById('featured-post');
+
+            let filtered = currentCategory === 'all'
+                ? posts
+                : posts.filter(p => (p.tags || []).includes(currentCategory));
+
+            if (searchQuery) {
+                filtered = filtered.filter(p =>
+                    p.title.toLowerCase().includes(searchQuery) ||
+                    (p.excerpt || '').toLowerCase().includes(searchQuery)
+                );
+            }
+
+            if (!filtered.length) {
+                container.innerHTML = '';
+                document.getElementById('empty-state').classList.remove('hidden');
+                featured.classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('empty-state').classList.add('hidden');
+
+            // Featured post (first one)
+            const featuredPost = filtered[0];
+            featured.classList.remove('hidden');
+            featured.innerHTML = `
+                <div class="featured-card rounded-2xl p-8 cursor-pointer post-card" onclick="openPost('${featuredPost.id}')">
+                    <div class="flex flex-col md:flex-row gap-8">
+                        ${featuredPost.featuredImage ? `
+                            <div class="md:w-1/2">
+                                <img src="${featuredPost.featuredImage}" class="w-full h-48 md:h-64 object-cover rounded-xl" alt="">
+                            </div>
+                        ` : ''}
+                        <div class="${featuredPost.featuredImage ? 'md:w-1/2' : 'w-full'} flex flex-col justify-center">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-purple-400">Featured</span>
+                                <span class="text-xs text-dark-muted font-mono">${formatDate(featuredPost.publishedAt)}</span>
+                            </div>
+                            <h2 class="text-2xl md:text-3xl font-bold mb-3 hover:text-purple-400 transition-colors">${featuredPost.title}</h2>
+                            <p class="text-dark-muted mb-4 line-clamp-2">${featuredPost.excerpt || ''}</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${(featuredPost.tags || []).slice(0, 3).map(t => `<span class="text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Rest of posts
+            const restPosts = filtered.slice(1);
+            container.innerHTML = restPosts.map(p => `
+                <div class="post-card bg-dark-card border border-dark-border rounded-xl overflow-hidden cursor-pointer" onclick="openPost('${p.id}')">
+                    ${p.featuredImage ? `<img src="${p.featuredImage}" class="w-full h-40 object-cover" alt="">` : '<div class="h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>'}
+                    <div class="p-5">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-xs text-dark-muted font-mono">${formatDate(p.publishedAt)}</span>
+                            <span class="text-dark-muted">·</span>
+                            <span class="text-xs text-dark-muted">${p.readingTime || 5} min</span>
+                        </div>
+                        <h3 class="font-semibold mb-2 line-clamp-2 hover:text-purple-400 transition-colors">${p.title}</h3>
+                        <p class="text-sm text-dark-muted line-clamp-2 mb-3">${p.excerpt || ''}</p>
+                        <div class="flex flex-wrap gap-1">
+                            ${(p.tags || []).slice(0, 2).map(t => `<span class="text-xs px-2 py-0.5 rounded bg-dark-border text-dark-muted">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function openPost(id) {
+            let post = posts.find(p => p.id === id);
+            if (!post?.content) {
+                try {
+                    const res = await fetch(`${API}?action=get&id=${id}`);
+                    post = await res.json();
+                } catch { return; }
+            }
+            if (!post) return;
+            currentPost = post;
+
+            document.getElementById('modal-title').textContent = post.title;
+            document.getElementById('modal-content').innerHTML = post.content;
+            document.getElementById('modal-meta').textContent = `${formatDate(post.publishedAt)} · ${post.author || 'Kieran'} · ${post.readingTime || 5} min read`;
+            document.getElementById('modal-tags').innerHTML = (post.tags || []).map(t => `<span class="text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">${t}</span>`).join('');
+
+            // Build TOC
+            buildTOC();
+
+            // Related posts
+            showRelated(post);
+
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('progress-bar').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            // Progress bar
+            const scrollEl = document.getElementById('modal-scroll');
+            scrollEl.scrollTop = 0;
+            scrollEl.onscroll = updateProgress;
+        }
+
+        function buildTOC() {
+            const content = document.getElementById('modal-content');
+            const headings = content.querySelectorAll('h1, h2, h3');
+            const tocList = document.getElementById('toc-list');
+            const tocSidebar = document.getElementById('toc-sidebar');
+
+            if (headings.length < 3) {
+                tocSidebar.classList.add('lg:hidden');
+                return;
+            }
+
+            tocSidebar.classList.remove('lg:hidden');
+            tocList.innerHTML = '';
+
+            headings.forEach((h, i) => {
+                h.id = `heading-${i}`;
+                const link = document.createElement('a');
+                link.href = `#heading-${i}`;
+                link.className = `toc-link block ${h.tagName === 'H3' ? 'pl-3 text-xs' : ''}`;
+                link.textContent = h.textContent;
+                link.onclick = (e) => {
+                    e.preventDefault();
+                    h.scrollIntoView({ behavior: 'smooth' });
+                };
+                tocList.appendChild(link);
+            });
+        }
+
+        function showRelated(post) {
+            const related = posts
+                .filter(p => p.id !== post.id && (p.tags || []).some(t => (post.tags || []).includes(t)))
+                .slice(0, 2);
+
+            const container = document.getElementById('related-posts');
+            const list = document.getElementById('related-list');
+
+            if (!related.length) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            list.innerHTML = related.map(p => `
+                <div class="p-4 bg-dark-border/30 rounded-lg cursor-pointer hover:bg-dark-border/50 transition-colors" onclick="closeModal(); setTimeout(() => openPost('${p.id}'), 100)">
+                    <div class="text-xs text-dark-muted mb-1">${formatDate(p.publishedAt)}</div>
+                    <div class="font-medium text-sm">${p.title}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateProgress() {
+            const scrollEl = document.getElementById('modal-scroll');
+            const progress = (scrollEl.scrollTop / (scrollEl.scrollHeight - scrollEl.clientHeight)) * 100;
+            document.getElementById('progress-bar').style.width = `${Math.min(progress, 100)}%`;
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.getElementById('progress-bar').classList.add('hidden');
+            document.body.style.overflow = '';
+            currentPost = null;
+        }
+
+        // Share functions
+        function shareTwitter() {
+            if (!currentPost) return;
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(currentPost.title)}&url=${encodeURIComponent(window.location.origin + '/blog/')}`, '_blank');
+        }
+
+        function shareFacebook() {
+            if (!currentPost) return;
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.origin + '/blog/')}`, '_blank');
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.origin + '/blog/');
+            // Could add toast notification here
+        }
+
+        function formatDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+    </script>
+</body>
+
+</html>

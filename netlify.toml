@@ -3,3 +3,39 @@
 
 [functions]
   node_bundler = "esbuild"
+
+# Scheduled function for hourly Steam sync
+[functions."game-logger-sync"]
+  schedule = "@hourly"
+
+# Scheduled function for weekly wishlist sync
+[functions."game-logger-wishlist-sync"]
+  schedule = "@weekly"
+
+# Game Logger redirects - exclude static files
+[[redirects]]
+  from = "/game-logger/settings"
+  to = "/game-logger/settings.html"
+  status = 200
+
+[[redirects]]
+  from = "/game-logger/journal"
+  to = "/game-logger/journal.html"
+  status = 200
+
+[[redirects]]
+  from = "/game-logger/search"
+  to = "/game-logger/search.html"
+  status = 200
+
+[[redirects]]
+  from = "/game-logger/:username"
+  to = "/game-logger/profile.html"
+  status = 200
+  conditions = {Language = ["en"]}
+
+[[redirects]]
+  from = "/game-logger/:username"
+  to = "/game-logger/profile.html"
+  status = 200
+

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Details | GameLogger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #0c0c10;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(to bottom, transparent 0%, #0c0c10 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .rating-star {
+            color: #3f3f46;
+            cursor: pointer;
+            font-size: 20px;
+            transition: color 0.15s;
+        }
+
+        .rating-star.active {
+            color: #fbbf24;
+        }
+
+        .rating-star.half {
+            color: #fbbf24;
+        }
+
+        .rating-star:hover {
+            color: #fcd34d;
+        }
+
+        .status-btn {
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+        }
+
+        .status-btn.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(236, 72, 153, 0.3) 100%);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        .tag-badge {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+
+        .platform-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .category-rating {
+            display: flex;
+            gap: 2px;
+        }
+
+        .category-rating .cat-star {
+            font-size: 14px;
+            color: #3f3f46;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+
+        .category-rating .cat-star.active {
+            color: #fbbf24;
+        }
+
+        .category-rating .cat-star.half {
+            color: #fbbf24;
+        }
+
+        .journal-entry-item {
+            border-left: 3px solid #8b5cf6;
+        }
+
+        .screenshot-thumb {
+            transition: transform 0.2s;
+        }
+
+        .screenshot-thumb:hover {
+            transform: scale(1.05);
+        }
+
+        select,
+        input,
+        textarea {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #fff;
+            padding: 8px 12px;
+        }
+
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading -->
+    <div id="loading" class="fixed inset-0 bg-[#0c0c10] flex items-center justify-center z-50">
+        <div class="text-center">
+            <i class="fa-solid fa-gamepad text-4xl text-violet-500 animate-pulse mb-4"></i>
+            <p class="text-zinc-500">Loading game...</p>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error" class="hidden fixed inset-0 bg-[#0c0c10] flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="text-6xl mb-4">👾</div>
+            <h2 class="text-xl font-bold mb-2">Game Not Found</h2>
+            <p class="text-zinc-500 mb-4">This game doesn't exist in your library.</p>
+            <a href="profile.html" class="text-violet-400 hover:text-violet-300">← Back to Library</a>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div id="hero-section" class="relative h-80 overflow-hidden">
+        <img id="hero-bg" src="" class="w-full h-full object-cover absolute inset-0">
+        <div class="hero-gradient absolute inset-0"></div>
+
+        <!-- Back Button -->
+        <a href="profile.html"
+            class="absolute top-6 left-6 z-10 flex items-center gap-2 text-zinc-400 hover:text-white transition">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Library</span>
+        </a>
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-6 -mt-40 relative z-10 pb-20">
+        <div class="grid grid-cols-12 gap-8">
+
+            <!-- Left Column - Cover & Actions -->
+            <div class="col-span-3">
+                <div class="glass-card rounded-xl overflow-hidden mb-4">
+                    <img id="cover-img" src="" class="w-full aspect-[3/4] object-cover">
+                </div>
+
+                <!-- Your Rating -->
+                <div class="glass-card rounded-xl p-4 mb-4">
+                    <label class="text-xs text-zinc-500 uppercase mb-2 block">Your Rating</label>
+                    <div id="overall-rating" class="flex items-center justify-center gap-2 mb-2">
+                        <div id="rating-stars" class="flex gap-1"></div>
+                    </div>
+                    <div id="rating-value" class="text-center text-amber-400 font-bold text-lg"></div>
+                    <div id="rating-label" class="text-center text-xs text-zinc-500"></div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="glass-card rounded-xl p-4 space-y-2">
+                    <button onclick="openJournalModal()"
+                        class="w-full px-4 py-2.5 rounded-lg bg-violet-500/20 text-violet-400 hover:bg-violet-500/30 text-sm font-medium transition">
+                        <i class="fa-solid fa-book mr-2"></i>Log Entry
+                    </button>
+                    <button onclick="toggleFavorite()" id="fav-btn"
+                        class="w-full px-4 py-2.5 rounded-lg bg-white/5 text-zinc-400 hover:bg-white/10 text-sm font-medium transition">
+                        <i class="fa-solid fa-heart mr-2"></i>Favorite
+                    </button>
+                    <button onclick="toggleHidden()"
+                        class="w-full px-4 py-2.5 rounded-lg bg-white/5 text-zinc-400 hover:bg-white/10 text-sm font-medium transition">
+                        <i class="fa-solid fa-eye-slash mr-2"></i>Hide
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column - Details -->
+            <div class="col-span-9">
+                <!-- Title & Meta -->
+                <div class="mb-6">
+                    <h1 id="game-title" class="text-4xl font-bold mb-2"></h1>
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-zinc-400">
+                        <span id="developer"><i class="fa-solid fa-code mr-1"></i></span>
+                        <span id="release-date"><i class="fa-solid fa-calendar mr-1"></i></span>
+                        <span id="metacritic" class="hidden px-2 py-0.5 rounded text-xs font-medium"></span>
+                    </div>
+                </div>
+
+                <!-- Status Buttons -->
+                <div class="flex flex-wrap gap-2 mb-6" id="status-buttons"></div>
+
+                <!-- Your Stats -->
+                <div class="glass-card rounded-xl p-5 mb-6">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-4">Your Stats</h3>
+                    <div class="grid grid-cols-5 gap-4">
+                        <div class="text-center">
+                            <div id="stat-playtime" class="text-2xl font-bold text-violet-400">0</div>
+                            <div class="text-xs text-zinc-500">Hours</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-completion" class="text-2xl font-bold text-amber-400">—</div>
+                            <div class="text-xs text-zinc-500">Completion</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-sessions" class="text-2xl font-bold text-green-400">0</div>
+                            <div class="text-xs text-zinc-500">Sessions</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-added" class="text-2xl font-bold text-blue-400">—</div>
+                            <div class="text-xs text-zinc-500">Added</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="stat-last-played" class="text-2xl font-bold text-pink-400">—</div>
+                            <div class="text-xs text-zinc-500">Last Played</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Ratings -->
+                <div class="glass-card rounded-xl p-5 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold uppercase text-zinc-500">Category Ratings</h3>
+                        <button onclick="clearCategoryRatings()"
+                            class="text-xs text-zinc-500 hover:text-zinc-300">Clear</button>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4" id="category-ratings">
+                        <div>
+                            <label class="text-xs text-zinc-400 mb-1 block">Story</label>
+                            <div class="category-rating" data-cat="story"></div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-zinc-400 mb-1 block">Gameplay</label>
+                            <div class="category-rating" data-cat="gameplay"></div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-zinc-400 mb-1 block">Graphics</label>
+                            <div class="category-rating" data-cat="graphics"></div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-zinc-400 mb-1 block">Audio</label>
+                            <div class="category-rating" data-cat="audio"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="glass-card rounded-xl p-5 mb-6" id="description-section">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-3">About</h3>
+                    <p id="game-description" class="text-sm text-zinc-300 leading-relaxed"></p>
+                </div>
+
+                <!-- Tags & Genres -->
+                <div class="glass-card rounded-xl p-5 mb-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-3">Genres</h3>
+                            <div id="genres" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-3">Tags</h3>
+                            <div id="tags" class="flex flex-wrap gap-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game Info Grid -->
+                <div class="glass-card rounded-xl p-5 mb-6" id="info-section">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-4">Game Info</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <div class="text-xs text-zinc-500 mb-1">Publisher</div>
+                            <div id="publisher" class="text-sm font-medium">—</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-500 mb-1">ESRB Rating</div>
+                            <div id="esrb" class="text-sm font-medium">—</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-500 mb-1">Avg. Playtime</div>
+                            <div id="avg-playtime" class="text-sm font-medium">—</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-zinc-500 mb-1">Website</div>
+                            <div id="website" class="text-sm font-medium truncate">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RAWG Community Rating -->
+                <div class="glass-card rounded-xl p-5 mb-6" id="community-section">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-4">Community Rating</h3>
+                    <div class="flex items-center gap-6">
+                        <div class="text-center">
+                            <div id="rawg-rating" class="text-3xl font-bold text-violet-400">—</div>
+                            <div class="text-xs text-zinc-500">RAWG Score</div>
+                        </div>
+                        <div class="flex-1">
+                            <div id="rating-breakdown" class="space-y-1"></div>
+                        </div>
+                        <div class="text-center">
+                            <div id="rawg-votes" class="text-lg font-bold text-zinc-400">—</div>
+                            <div class="text-xs text-zinc-500">Reviews</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Steam Info (if Steam game) -->
+                <div class="glass-card rounded-xl p-5 mb-6 hidden" id="steam-section">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-4">Steam Info</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div id="steam-review" class="text-lg font-bold text-green-400">—</div>
+                            <div class="text-xs text-zinc-500">Reviews</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="steam-players" class="text-lg font-bold text-blue-400">—</div>
+                            <div class="text-xs text-zinc-500">Owners</div>
+                        </div>
+                        <div class="text-center">
+                            <a id="steam-link" href="#" target="_blank"
+                                class="text-lg font-bold text-violet-400 hover:text-violet-300">
+                                <i class="fa-brands fa-steam"></i> Store
+                            </a>
+                            <div class="text-xs text-zinc-500">View on Steam</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Platforms -->
+                <div class="glass-card rounded-xl p-5 mb-6">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-3">Platforms You Own</h3>
+                    <div id="platforms" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Personal Notes -->
+                <div class="glass-card rounded-xl p-5 mb-6">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-3">Personal Notes</h3>
+                    <textarea id="notes" placeholder="Add your thoughts, tips, or memories about this game..."
+                        class="w-full h-24 text-sm resize-none" onblur="saveNotes()"></textarea>
+                </div>
+
+                <!-- Journal Entries for this game -->
+                <div class="glass-card rounded-xl p-5 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold uppercase text-zinc-500">Journal Entries</h3>
+                        <button onclick="openJournalModal()" class="text-xs text-violet-400 hover:text-violet-300">
+                            <i class="fa-solid fa-plus mr-1"></i>Add Entry
+                        </button>
+                    </div>
+                    <div id="journal-entries"></div>
+                </div>
+
+                <!-- Screenshots (from RAWG) -->
+                <div class="glass-card rounded-xl p-5" id="screenshots-section">
+                    <h3 class="text-sm font-semibold uppercase text-zinc-500 mb-3">Screenshots</h3>
+                    <div id="screenshots" class="grid grid-cols-4 gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const API = '/.netlify/functions/game-logger-api';
+        let user = null;
+        let game = null;
+        let isOwner = false;
+        let categoryRatings = { story: 0, gameplay: 0, graphics: 0, audio: 0 };
+
+        const STATUSES = { backlog: '📋 Backlog', played: '🎮 Played', playing: '▶️ Playing', finished: '✅ Finished', perfected: '🏆 100%', endless: '♾️ Endless', on_hold: '⏸️ On Hold', dropped: '❌ Dropped' };
+        const RATING_LABELS = { 10: 'Masterpiece', 9: 'Excellent', 8: 'Great', 7: 'Good', 6: 'Decent', 5: 'Average', 4: 'Below Avg', 3: 'Poor', 2: 'Bad', 1: 'Terrible' };
+
+        async function init() {
+            const params = new URLSearchParams(location.search);
+            const gameId = params.get('id');
+
+            if (!gameId) {
+                showError();
+                return;
+            }
+
+            try {
+                const me = await (await fetch(`${API}?action=me`, { credentials: 'include' })).json();
+                if (!me.user) {
+                    location.href = '/game-logger/';
+                    return;
+                }
+
+                user = me.user;
+                isOwner = true;
+
+                // Find the game
+                game = (user.games || []).find(g => g.steamAppId == gameId || g.id == gameId);
+
+                if (!game) {
+                    showError();
+                    return;
+                }
+
+                // Fetch additional RAWG data if available
+                await fetchRAWGData();
+
+                renderGame();
+                document.getElementById('loading').classList.add('hidden');
+
+            } catch (e) {
+                console.error(e);
+                showError();
+            }
+        }
+
+        async function fetchRAWGData() {
+            if (!game.name) return;
+
+            try {
+                const res = await fetch(`${API}?action=search-games&query=${encodeURIComponent(game.name)}`);
+                const data = await res.json();
+                if (data.games && data.games.length > 0) {
+                    const rawg = data.games.find(g => g.name.toLowerCase() === game.name.toLowerCase()) || data.games[0];
+                    game.rawgData = rawg;
+
+                    // Fetch detailed game info including screenshots
+                    if (rawg.id) {
+                        const detailRes = await fetch(`${API}?action=rawg-details&id=${rawg.id}`);
+                        const detailData = await detailRes.json();
+                        if (detailData.game) {
+                            game.rawgDetails = detailData.game;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.log('Could not fetch RAWG data');
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+        }
+
+        function renderGame() {
+            // Hero & Cover
+            const headerImg = game.headerImg || game.rawgData?.background_image || '';
+            document.getElementById('hero-bg').src = headerImg;
+            document.getElementById('cover-img').src = game.icon || headerImg;
+
+            // Title & Meta
+            document.getElementById('game-title').textContent = game.name;
+
+            const rawg = game.rawgData || {};
+            const details = game.rawgDetails || {};
+
+            document.getElementById('developer').innerHTML = `<i class="fa-solid fa-code mr-1"></i>${details.developers?.[0]?.name || rawg.developers?.[0]?.name || 'Unknown Developer'}`;
+            document.getElementById('release-date').innerHTML = `<i class="fa-solid fa-calendar mr-1"></i>${rawg.released || 'Unknown'}`;
+
+            if (rawg.metacritic) {
+                const mc = document.getElementById('metacritic');
+                mc.classList.remove('hidden');
+                mc.textContent = `MC ${rawg.metacritic}`;
+                mc.className = `px-2 py-0.5 rounded text-xs font-medium ${rawg.metacritic >= 75 ? 'bg-green-500/20 text-green-400' : rawg.metacritic >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}`;
+            }
+
+            // Status buttons
+            renderStatusButtons();
+
+            // Your Stats
+            document.getElementById('stat-playtime').textContent = Math.round((game.playtimeMinutes || 0) / 60);
+            document.getElementById('stat-completion').textContent = game.achievements?.percent ? `${game.achievements.percent}%` : '—';
+
+            const journalEntries = (user.journalEntries || []).filter(e => e.gameId == game.steamAppId || e.gameId == game.id);
+            document.getElementById('stat-sessions').textContent = journalEntries.length;
+
+            document.getElementById('stat-added').textContent = game.addedAt ? new Date(game.addedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+            document.getElementById('stat-last-played').textContent = game.lastPlayed ? new Date(game.lastPlayed).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+
+            // Category Ratings
+            categoryRatings = game.categoryRatings || { story: 0, gameplay: 0, graphics: 0, audio: 0 };
+            renderCategoryRatings();
+            updateOverallRating();
+
+            // Favorite button
+            updateFavoriteButton();
+
+            // Description
+            const description = details.description_raw || rawg.description_raw || '';
+            if (description) {
+                document.getElementById('game-description').textContent = description.slice(0, 500) + (description.length > 500 ? '...' : '');
+            } else {
+                document.getElementById('description-section').classList.add('hidden');
+            }
+
+            // Genres
+            const genres = rawg.genres || [];
+            document.getElementById('genres').innerHTML = genres.map(g =>
+                `<span class="tag-badge px-2 py-1 rounded text-xs">${g.name}</span>`
+            ).join('') || '<span class="text-zinc-500 text-sm">No genres</span>';
+
+            // Tags from RAWG
+            const tags = rawg.tags || [];
+            document.getElementById('tags').innerHTML = tags.slice(0, 10).map(t =>
+                `<span class="platform-badge px-2 py-1 rounded text-xs text-zinc-400">${t.name}</span>`
+            ).join('') || '<span class="text-zinc-500 text-sm">No tags</span>';
+
+            // Game Info section
+            document.getElementById('publisher').textContent = details.publishers?.[0]?.name || rawg.publishers?.[0]?.name || '—';
+
+            const esrb = details.esrb_rating || rawg.esrb_rating;
+            document.getElementById('esrb').textContent = esrb?.name || '—';
+
+            const avgPlaytime = details.playtime || rawg.playtime;
+            document.getElementById('avg-playtime').textContent = avgPlaytime ? `${avgPlaytime}h` : '—';
+
+            const website = details.website || rawg.website;
+            if (website) {
+                document.getElementById('website').innerHTML = `<a href="${website}" target="_blank" class="text-violet-400 hover:text-violet-300">${new URL(website).hostname}</a>`;
+            }
+
+            // Community Rating section
+            if (rawg.rating) {
+                document.getElementById('rawg-rating').textContent = rawg.rating.toFixed(1);
+                document.getElementById('rawg-votes').textContent = (rawg.ratings_count || 0).toLocaleString();
+
+                // Rating breakdown bars
+                const ratings = rawg.ratings || [];
+                const maxCount = Math.max(...ratings.map(r => r.count), 1);
+                document.getElementById('rating-breakdown').innerHTML = ratings.map(r => {
+                    const pct = Math.round((r.count / maxCount) * 100);
+                    const colors = { exceptional: 'bg-green-500', recommended: 'bg-blue-500', meh: 'bg-yellow-500', skip: 'bg-red-500' };
+                    return `<div class="flex items-center gap-2 text-xs">
+                        <span class="w-20 text-zinc-500 capitalize">${r.title}</span>
+                        <div class="flex-1 h-2 bg-white/5 rounded overflow-hidden">
+                            <div class="${colors[r.title] || 'bg-violet-500'} h-full rounded" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="text-zinc-400 w-12 text-right">${r.count}</span>
+                    </div>`;
+                }).join('');
+            }
+
+            // Steam section
+            if (game.steamAppId) {
+                document.getElementById('steam-section').classList.remove('hidden');
+                document.getElementById('steam-link').href = `https://store.steampowered.com/app/${game.steamAppId}`;
+
+                // Show achievements if available
+                if (game.achievements) {
+                    document.getElementById('steam-review').textContent = `${game.achievements.percent}%`;
+                }
+            }
+
+            // Platforms
+            renderPlatforms();
+
+            // Notes
+            document.getElementById('notes').value = game.notes || '';
+
+            // Journal Entries
+            renderJournalEntries(journalEntries);
+
+            // Screenshots
+            renderScreenshots();
+        }
+
+        function renderStatusButtons() {
+            document.getElementById('status-buttons').innerHTML = Object.entries(STATUSES).map(([key, label]) =>
+                `<button onclick="setStatus('${key}')" class="status-btn px-4 py-2 rounded-lg text-sm border border-transparent ${game.status === key ? 'active' : 'hover:bg-white/10'}">${label}</button>`
+            ).join('');
+        }
+
+        function renderCategoryRatings() {
+            document.querySelectorAll('.category-rating').forEach(container => {
+                const cat = container.dataset.cat;
+                const rating = categoryRatings[cat] || 0;
+
+                let html = '';
+                for (let star = 1; star <= 5; star++) {
+                    const halfValue = star * 2 - 1;
+                    const fullValue = star * 2;
+                    let starClass = 'cat-star';
+                    if (rating >= fullValue) starClass += ' active';
+                    else if (rating >= halfValue) starClass += ' half';
+
+                    html += `<span class="${starClass}" onclick="setCategoryRating('${cat}', event, ${star})">★</span>`;
+                }
+                container.innerHTML = html;
+            });
+        }
+
+        function setCategoryRating(cat, event, star) {
+            const rect = event.target.getBoundingClientRect();
+            const isHalf = (event.clientX - rect.left) < (rect.width / 2);
+            const value = isHalf ? (star * 2 - 1) : (star * 2);
+
+            categoryRatings[cat] = value;
+            renderCategoryRatings();
+            updateOverallRating();
+            saveCategoryRatings();
+        }
+
+        function updateOverallRating() {
+            const values = Object.values(categoryRatings).filter(v => v > 0);
+
+            if (values.length === 0) {
+                document.getElementById('rating-stars').innerHTML = '<span class="text-zinc-500">Not rated</span>';
+                document.getElementById('rating-value').textContent = '';
+                document.getElementById('rating-label').textContent = '';
+                return;
+            }
+
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const rounded = Math.round(avg);
+            const displayVal = (avg / 2).toFixed(1);
+
+            // Render stars
+            const fullStars = Math.floor(rounded / 2);
+            const hasHalf = rounded % 2 === 1;
+
+            let starsHtml = '';
+            for (let i = 0; i < 5; i++) {
+                if (i < fullStars) starsHtml += '<i class="fa-solid fa-star text-amber-400 text-xl"></i>';
+                else if (i === fullStars && hasHalf) starsHtml += '<i class="fa-solid fa-star-half-stroke text-amber-400 text-xl"></i>';
+                else starsHtml += '<i class="fa-regular fa-star text-zinc-600 text-xl"></i>';
+            }
+
+            document.getElementById('rating-stars').innerHTML = starsHtml;
+            document.getElementById('rating-value').textContent = `${displayVal} / 5`;
+            document.getElementById('rating-label').textContent = RATING_LABELS[rounded] || '';
+        }
+
+        function clearCategoryRatings() {
+            categoryRatings = { story: 0, gameplay: 0, graphics: 0, audio: 0 };
+            renderCategoryRatings();
+            updateOverallRating();
+            saveCategoryRatings();
+        }
+
+        async function saveCategoryRatings() {
+            const enabledCats = Object.keys(categoryRatings).filter(k => categoryRatings[k] > 0);
+            const overall = enabledCats.length > 0
+                ? Math.round(enabledCats.reduce((sum, cat) => sum + categoryRatings[cat], 0) / enabledCats.length)
+                : 0;
+
+            game.categoryRatings = { ...categoryRatings };
+            game.rating = overall;
+
+            await fetch(`${API}?action=update-game`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    steamAppId: game.steamAppId || game.id,
+                    categoryRatings: game.categoryRatings,
+                    rating: overall
+                })
+            });
+        }
+
+        function renderPlatforms() {
+            const PLATFORM_ICONS = {
+                steam: '<i class="fa-brands fa-steam"></i>',
+                playstation: '<i class="fa-brands fa-playstation"></i>',
+                xbox: '<i class="fa-brands fa-xbox"></i>',
+                nintendo: '<i class="fa-solid fa-n"></i>',
+                pc: '<i class="fa-solid fa-desktop"></i>',
+                mobile: '<i class="fa-solid fa-mobile"></i>'
+            };
+
+            const platforms = game.platforms || [];
+            document.getElementById('platforms').innerHTML = platforms.length ? platforms.map(p =>
+                `<span class="platform-badge px-3 py-1.5 rounded-lg text-sm flex items-center gap-2">${PLATFORM_ICONS[p.toLowerCase()] || '🎮'} ${p}</span>`
+            ).join('') : '<span class="text-zinc-500 text-sm">No platforms selected</span>';
+        }
+
+        function renderJournalEntries(entries) {
+            if (!entries.length) {
+                document.getElementById('journal-entries').innerHTML = '<p class="text-zinc-500 text-sm">No journal entries for this game yet.</p>';
+                return;
+            }
+
+            document.getElementById('journal-entries').innerHTML = entries.reverse().map(e => {
+                const date = e.date || (e.endTime ? new Date(e.endTime).toISOString().split('T')[0] : '');
+                const displayDate = date ? new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                const duration = e.sessionMinutes ? `${Math.floor(e.sessionMinutes / 60)}h ${e.sessionMinutes % 60}m` : '';
+
+                return `<div class="journal-entry-item bg-white/5 rounded-lg p-3 mb-2 pl-4">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs text-zinc-500">${displayDate}${duration ? ` · ${duration}` : ''}</span>
+                        <span class="text-xs px-2 py-0.5 rounded bg-white/5 text-zinc-400">${STATUSES[e.sessionStatus] || e.sessionStatus}</span>
+                    </div>
+                    ${e.thoughts ? `<p class="text-sm text-zinc-300">${e.thoughts}</p>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        function renderScreenshots() {
+            const rawg = game.rawgData || {};
+            const screenshots = rawg.short_screenshots || [];
+
+            if (!screenshots.length) {
+                document.getElementById('screenshots-section').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('screenshots').innerHTML = screenshots.slice(0, 8).map(s =>
+                `<img src="${s.image}" class="screenshot-thumb rounded-lg object-cover aspect-video cursor-pointer" onclick="window.open('${s.image}', '_blank')">`
+            ).join('');
+        }
+
+        async function setStatus(status) {
+            game.status = status;
+            renderStatusButtons();
+
+            await fetch(`${API}?action=update-game`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steamAppId: game.steamAppId || game.id, status })
+            });
+        }
+
+        async function toggleFavorite() {
+            game.favorite = !game.favorite;
+            updateFavoriteButton();
+
+            await fetch(`${API}?action=update-game`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steamAppId: game.steamAppId || game.id, favorite: game.favorite })
+            });
+        }
+
+        function updateFavoriteButton() {
+            const btn = document.getElementById('fav-btn');
+            if (game.favorite) {
+                btn.classList.remove('bg-white/5', 'text-zinc-400');
+                btn.classList.add('bg-pink-500/20', 'text-pink-400');
+                btn.innerHTML = '<i class="fa-solid fa-heart mr-2"></i>Favorited';
+            } else {
+                btn.classList.add('bg-white/5', 'text-zinc-400');
+                btn.classList.remove('bg-pink-500/20', 'text-pink-400');
+                btn.innerHTML = '<i class="fa-regular fa-heart mr-2"></i>Favorite';
+            }
+        }
+
+        async function toggleHidden() {
+            if (!confirm('Hide this game from your library?')) return;
+
+            game.hidden = true;
+            await fetch(`${API}?action=update-game`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steamAppId: game.steamAppId || game.id, hidden: true })
+            });
+
+            location.href = 'profile.html';
+        }
+
+        async function saveNotes() {
+            const notes = document.getElementById('notes').value;
+            game.notes = notes;
+
+            await fetch(`${API}?action=update-game`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steamAppId: game.steamAppId || game.id, notes })
+            });
+        }
+
+        function openJournalModal() {
+            // Redirect to profile with journal entry modal open
+            location.href = `profile.html?journal=${game.steamAppId || game.id}`;
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

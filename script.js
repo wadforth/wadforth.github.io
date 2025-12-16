@@ -369,5 +369,323 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Fetch and display recent blog posts
+    const recentPostsContainer = document.getElementById('recent-posts');
+    if (recentPostsContainer) {
+        fetch('/.netlify/functions/blog-api?action=list')
+            .then(res => res.json())
+            .then(data => {
+                const posts = (data.posts || [])
+                    .filter(p => p.status === 'published')
+                    .slice(0, 3);
+
+                if (!posts.length) {
+                    recentPostsContainer.innerHTML = '<p class="col-span-full text-center text-slate-500 text-sm py-4">No posts yet</p>';
+                    return;
+                }
+
+                recentPostsContainer.innerHTML = posts.map(p => `
+                    <a href="blog/" class="block p-4 bg-white/5 rounded-xl hover:bg-white/10 transition-all group">
+                        <div class="text-xs text-purple-400 mb-2 font-mono">${new Date(p.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                        <div class="font-medium text-white group-hover:text-purple-400 transition-colors text-sm line-clamp-2">${p.title}</div>
+                        <div class="text-xs text-slate-500 mt-1">${p.readingTime || 5} min read</div>
+                    </a>
+                `).join('');
+            })
+            .catch(() => {
+                recentPostsContainer.innerHTML = '<p class="col-span-full text-center text-slate-500 text-sm py-4">Could not load posts</p>';
+            });
+    }
+
+    // Load announcements on page load
+    loadPublicAnnouncements();
 });
 
+// ====== ANNOUNCEMENT & ADMIN SYSTEM ======
+const ANNOUNCEMENTS_API = '/.netlify/functions/announcements-api';
+let adminToken = sessionStorage.getItem('portfolio_admin_token');
+let currentAnnouncements = [];
+
+// Announcement type styles
+const ANNOUNCEMENT_STYLES = {
+    info: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', icon: 'fa-circle-info' },
+    success: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400', icon: 'fa-check-circle' },
+    warning: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400', icon: 'fa-triangle-exclamation' },
+    alert: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', icon: 'fa-circle-exclamation' }
+};
+
+// Secret keyboard shortcut to open admin
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        openAdminModal();
+    }
+});
+
+// Load public announcements
+async function loadPublicAnnouncements() {
+    const container = document.getElementById('announcements-container');
+    if (!container) return;
+
+    try {
+        const res = await fetch(`${ANNOUNCEMENTS_API}?action=list`);
+        const data = await res.json();
+        const announcements = data.announcements || [];
+
+        // Get dismissed announcements from localStorage
+        const dismissed = JSON.parse(localStorage.getItem('dismissed_announcements') || '[]');
+        const visible = announcements.filter(a => !dismissed.includes(a.id));
+
+        if (!visible.length) {
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = visible.map(a => {
+            const style = ANNOUNCEMENT_STYLES[a.type] || ANNOUNCEMENT_STYLES.info;
+            return `
+                <div class="announcement-banner ${style.bg} border-b ${style.border} py-3 px-4" data-id="${a.id}">
+                    <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 flex-1">
+                            <i class="fa-solid ${style.icon} ${style.text}"></i>
+                            <span class="text-sm text-white">${a.message}</span>
+                            ${a.link ? `<a href="${a.link}" class="${style.text} text-sm font-medium hover:underline ml-2" target="_blank">${a.linkText || 'Learn more'} →</a>` : ''}
+                        </div>
+                        ${a.dismissible ? `
+                            <button onclick="dismissAnnouncement('${a.id}')" class="text-slate-500 hover:text-white text-sm p-1">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Failed to load announcements:', e);
+    }
+}
+
+// Dismiss announcement
+function dismissAnnouncement(id) {
+    const dismissed = JSON.parse(localStorage.getItem('dismissed_announcements') || '[]');
+    dismissed.push(id);
+    localStorage.setItem('dismissed_announcements', JSON.stringify(dismissed));
+
+    const banner = document.querySelector(`[data-id="${id}"]`);
+    if (banner) {
+        banner.style.opacity = '0';
+        setTimeout(() => banner.remove(), 200);
+    }
+}
+
+// Open admin modal
+function openAdminModal() {
+    document.getElementById('admin-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    if (adminToken) {
+        showAdminDashboard();
+    } else {
+        document.getElementById('admin-login-view').classList.remove('hidden');
+        document.getElementById('admin-dashboard-view').classList.add('hidden');
+        document.getElementById('admin-password').focus();
+    }
+}
+
+// Close admin modal
+function closeAdminModal() {
+    document.getElementById('admin-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+// Admin login form
+document.getElementById('admin-login-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('admin-password').value;
+    const errorEl = document.getElementById('admin-login-error');
+
+    try {
+        const res = await fetch('/.netlify/functions/blog-auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+
+        if (data.success && data.token) {
+            adminToken = data.token;
+            sessionStorage.setItem('portfolio_admin_token', adminToken);
+            showAdminDashboard();
+        } else {
+            errorEl.textContent = 'Invalid password';
+            errorEl.classList.remove('hidden');
+        }
+    } catch {
+        errorEl.textContent = 'Login failed';
+        errorEl.classList.remove('hidden');
+    }
+});
+
+// Show admin dashboard
+function showAdminDashboard() {
+    document.getElementById('admin-login-view').classList.add('hidden');
+    document.getElementById('admin-dashboard-view').classList.remove('hidden');
+    loadAdminAnnouncements();
+}
+
+// Load announcements for admin
+async function loadAdminAnnouncements() {
+    const list = document.getElementById('announcements-list');
+
+    try {
+        const res = await fetch(`${ANNOUNCEMENTS_API}?action=list`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+        });
+        const data = await res.json();
+        currentAnnouncements = data.announcements || [];
+
+        if (!currentAnnouncements.length) {
+            list.innerHTML = '<div class="text-center text-slate-500 text-sm py-8">No announcements yet</div>';
+            return;
+        }
+
+        list.innerHTML = currentAnnouncements.map(a => {
+            const style = ANNOUNCEMENT_STYLES[a.type] || ANNOUNCEMENT_STYLES.info;
+            return `
+                <div class="p-4 bg-dark rounded-xl border border-white/10 ${!a.active ? 'opacity-50' : ''}">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fa-solid ${style.icon} ${style.text}"></i>
+                                <span class="text-xs uppercase tracking-wider ${a.active ? 'text-accent' : 'text-slate-500'}">${a.active ? 'Active' : 'Inactive'}</span>
+                                <span class="text-xs text-slate-600">${a.type}</span>
+                            </div>
+                            <p class="text-sm text-white">${a.message}</p>
+                            ${a.link ? `<p class="text-xs text-slate-500 mt-1">${a.link}</p>` : ''}
+                        </div>
+                        <div class="flex gap-2 shrink-0">
+                            <button onclick="toggleAnnouncement('${a.id}', ${!a.active})" class="p-2 hover:bg-white/10 rounded-lg transition-colors ${a.active ? 'text-yellow-500' : 'text-green-500'}" title="${a.active ? 'Deactivate' : 'Activate'}">
+                                <i class="fa-solid ${a.active ? 'fa-pause' : 'fa-play'} text-xs"></i>
+                            </button>
+                            <button onclick="editAnnouncement('${a.id}')" class="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400" title="Edit">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteAnnouncement('${a.id}')" class="p-2 hover:bg-red-500/20 rounded-lg transition-colors text-red-400" title="Delete">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch {
+        list.innerHTML = '<div class="text-center text-red-400 text-sm py-8">Failed to load</div>';
+    }
+}
+
+// Show create announcement form
+function showCreateAnnouncement() {
+    document.getElementById('panel-announcements').classList.add('hidden');
+    document.getElementById('announcement-form-view').classList.remove('hidden');
+    document.getElementById('form-title').textContent = 'New Announcement';
+    document.getElementById('announcement-id').value = '';
+    document.getElementById('announcement-message').value = '';
+    document.getElementById('announcement-type').value = 'info';
+    document.getElementById('announcement-dismissible').value = 'true';
+    document.getElementById('announcement-link').value = '';
+    document.getElementById('announcement-link-text').value = '';
+}
+
+// Edit announcement
+function editAnnouncement(id) {
+    const ann = currentAnnouncements.find(a => a.id === id);
+    if (!ann) return;
+
+    document.getElementById('panel-announcements').classList.add('hidden');
+    document.getElementById('announcement-form-view').classList.remove('hidden');
+    document.getElementById('form-title').textContent = 'Edit Announcement';
+    document.getElementById('announcement-id').value = ann.id;
+    document.getElementById('announcement-message').value = ann.message;
+    document.getElementById('announcement-type').value = ann.type;
+    document.getElementById('announcement-dismissible').value = String(ann.dismissible);
+    document.getElementById('announcement-link').value = ann.link || '';
+    document.getElementById('announcement-link-text').value = ann.linkText || '';
+}
+
+// Hide form
+function hideAnnouncementForm() {
+    document.getElementById('announcement-form-view').classList.add('hidden');
+    document.getElementById('panel-announcements').classList.remove('hidden');
+}
+
+// Save announcement (create or update)
+document.getElementById('announcement-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById('announcement-id').value;
+    const action = id ? 'update' : 'create';
+    const payload = {
+        message: document.getElementById('announcement-message').value,
+        type: document.getElementById('announcement-type').value,
+        dismissible: document.getElementById('announcement-dismissible').value === 'true',
+        link: document.getElementById('announcement-link').value || null,
+        linkText: document.getElementById('announcement-link-text').value || null
+    };
+
+    if (id) payload.id = id;
+
+    try {
+        const res = await fetch(`${ANNOUNCEMENTS_API}?action=${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            hideAnnouncementForm();
+            loadAdminAnnouncements();
+            loadPublicAnnouncements();
+        }
+    } catch (e) {
+        console.error('Save failed:', e);
+    }
+});
+
+// Toggle announcement active state
+async function toggleAnnouncement(id, active) {
+    try {
+        await fetch(`${ANNOUNCEMENTS_API}?action=update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+            body: JSON.stringify({ id, active })
+        });
+        loadAdminAnnouncements();
+        loadPublicAnnouncements();
+    } catch (e) {
+        console.error('Toggle failed:', e);
+    }
+}
+
+// Delete announcement
+async function deleteAnnouncement(id) {
+    if (!confirm('Delete this announcement?')) return;
+
+    try {
+        await fetch(`${ANNOUNCEMENTS_API}?action=delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+            body: JSON.stringify({ id })
+        });
+        loadAdminAnnouncements();
+        loadPublicAnnouncements();
+    } catch (e) {
+        console.error('Delete failed:', e);
+    }
+}
+
+// Close modal on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAdminModal();
+});

@@ -314,6 +314,135 @@
 
 <body class="bg-dark text-slate-200 font-sans antialiased selection:bg-accent selection:text-black aurora-bg">
 
+    <!-- Announcement Banners -->
+    <div id="announcements-container" class="fixed top-0 left-0 right-0 z-[100]"></div>
+
+    <!-- Admin Portal Modal -->
+    <div id="admin-modal" class="fixed inset-0 z-[200] hidden">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-sm" onclick="closeAdminModal()"></div>
+        <div class="relative z-10 max-w-2xl mx-auto mt-12 mb-12 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <div class="bg-[#141414] border border-white/10 rounded-2xl shadow-2xl">
+                <!-- Header -->
+                <div
+                    class="sticky top-0 bg-[#141414] border-b border-white/10 px-6 py-4 flex items-center justify-between rounded-t-2xl z-10">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-shield-halved text-accent"></i>
+                        <span class="font-bold">Admin Portal</span>
+                    </div>
+                    <button onclick="closeAdminModal()" class="text-slate-500 hover:text-white transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Login View -->
+                <div id="admin-login-view" class="p-8">
+                    <div class="text-center mb-6">
+                        <h3 class="text-lg font-semibold mb-2">Authentication Required</h3>
+                        <p class="text-sm text-slate-500">Enter admin password to continue</p>
+                    </div>
+                    <form id="admin-login-form" class="space-y-4">
+                        <div class="relative">
+                            <input type="password" id="admin-password"
+                                class="w-full bg-dark border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-accent/50"
+                                placeholder="Password" autofocus>
+                        </div>
+                        <div id="admin-login-error" class="hidden text-red-400 text-sm text-center"></div>
+                        <button type="submit"
+                            class="w-full py-3 bg-accent text-dark font-bold rounded-xl hover:bg-white transition-colors">
+                            Login
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Admin Dashboard View -->
+                <div id="admin-dashboard-view" class="hidden">
+                    <!-- Tabs -->
+                    <div class="border-b border-white/10 px-6 flex gap-4">
+                        <button onclick="adminTab('announcements')" id="tab-announcements"
+                            class="admin-tab py-3 text-sm font-medium border-b-2 border-accent text-white">
+                            Announcements
+                        </button>
+                    </div>
+
+                    <!-- Announcements Panel -->
+                    <div id="panel-announcements" class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h4 class="font-semibold">Site Announcements</h4>
+                            <button onclick="showCreateAnnouncement()"
+                                class="px-4 py-2 bg-accent text-dark font-medium rounded-lg text-sm hover:bg-white transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> New
+                            </button>
+                        </div>
+                        <div id="announcements-list" class="space-y-3">
+                            <div class="text-center text-slate-500 text-sm py-8">
+                                <i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Loading...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Create/Edit Form -->
+                    <div id="announcement-form-view" class="hidden p-6">
+                        <button onclick="hideAnnouncementForm()"
+                            class="text-slate-500 hover:text-white text-sm mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <h4 class="font-semibold mb-4" id="form-title">New Announcement</h4>
+                        <form id="announcement-form" class="space-y-4">
+                            <input type="hidden" id="announcement-id">
+                            <div>
+                                <label
+                                    class="block text-xs text-slate-500 uppercase tracking-wider mb-2">Message</label>
+                                <textarea id="announcement-message" rows="3"
+                                    class="w-full bg-dark border border-white/10 rounded-lg px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent/50 resize-none"
+                                    placeholder="Enter announcement message..."></textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label
+                                        class="block text-xs text-slate-500 uppercase tracking-wider mb-2">Type</label>
+                                    <select id="announcement-type"
+                                        class="w-full bg-dark border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none">
+                                        <option value="info">ℹ️ Info (Blue)</option>
+                                        <option value="success">✅ Success (Green)</option>
+                                        <option value="warning">⚠️ Warning (Yellow)</option>
+                                        <option value="alert">🚨 Alert (Red)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs text-slate-500 uppercase tracking-wider mb-2">Dismissible</label>
+                                    <select id="announcement-dismissible"
+                                        class="w-full bg-dark border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none">
+                                        <option value="true">Yes</option>
+                                        <option value="false">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 uppercase tracking-wider mb-2">Link URL
+                                    (optional)</label>
+                                <input type="url" id="announcement-link"
+                                    class="w-full bg-dark border border-white/10 rounded-lg px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent/50"
+                                    placeholder="https://...">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 uppercase tracking-wider mb-2">Link Text
+                                    (optional)</label>
+                                <input type="text" id="announcement-link-text"
+                                    class="w-full bg-dark border border-white/10 rounded-lg px-4 py-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-accent/50"
+                                    placeholder="Learn more">
+                            </div>
+                            <button type="submit"
+                                class="w-full py-3 bg-accent text-dark font-bold rounded-xl hover:bg-white transition-colors">
+                                Save Announcement
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Background Mesh Removed (Replaced with Aurora) -->
 
     <div class="max-w-7xl mx-auto min-h-screen lg:flex">
@@ -413,6 +542,7 @@
                 <ul class="nav-glass flex gap-1 p-1.5 rounded-2xl inline-flex shadow-xl">
                     <li><a href="#about" class="nav-link">Terminal</a></li>
                     <li><a href="#projects" class="nav-link">Projects</a></li>
+                    <li><a href="#blog" class="nav-link">Blog</a></li>
                     <li><a href="#contact" class="nav-link">Contact</a></li>
                 </ul>
             </nav>
@@ -453,6 +583,13 @@
                                     class="mobile-nav-link flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
                                     <i class="fa-solid fa-folder-open text-accent w-6"></i>
                                     <span>Projects</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#blog"
+                                    class="mobile-nav-link flex items-center gap-3 text-lg py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
+                                    <i class="fa-solid fa-feather-pointed text-purple-400 w-6"></i>
+                                    <span>Blog</span>
                                 </a>
                             </li>
                             <li>
@@ -744,6 +881,50 @@
                                 </div>
                             </div>
                         </a>
+                    </div>
+                </section>
+
+                <!-- Blog Section -->
+                <section id="blog" class="scroll-mt-32 print:hidden">
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="text-accent font-mono text-sm">03.</span>
+                        <h2 class="text-2xl font-bold text-white">Latest Posts</h2>
+                        <div class="h-px bg-white/10 flex-1"></div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-8 relative overflow-hidden group">
+                        <!-- Gradient accent -->
+                        <div
+                            class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+                        </div>
+
+                        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <i class="fa-solid fa-feather-pointed text-purple-400 text-xl"></i>
+                                    <h3 class="text-lg font-semibold text-white">Thoughts & Tutorials</h3>
+                                </div>
+                                <p class="text-slate-400 text-sm leading-relaxed max-w-lg">
+                                    Writing about development, security, technology, and building things that matter.
+                                    Tips, tutorials, and insights from real projects.
+                                </p>
+                            </div>
+
+                            <a href="blog/"
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-xl hover:opacity-90 transition-all transform hover:scale-105 shadow-xl shadow-purple-500/20">
+                                <i class="fa-solid fa-arrow-right"></i>
+                                Read Blog
+                            </a>
+                        </div>
+
+                        <!-- Recent posts preview -->
+                        <div class="mt-8 pt-6 border-t border-white/10">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="recent-posts">
+                                <div class="text-center text-slate-500 text-sm py-4 col-span-full">
+                                    <i class="fa-solid fa-circle-notch fa-spin mr-2"></i>Loading posts...
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
