@@ -465,7 +465,10 @@ exports.handler = async (event, context) => {
                         completedAt: existing.completedAt || null,
                         platforms: existing.platforms || [],
                         priority: existing.priority || null,
-                        hidden: false
+                        hidden: false,
+                        // Sync tracking
+                        newlySynced: isNewGame,
+                        lastSyncAt: new Date().toISOString()
                     };
                 });
 
@@ -749,6 +752,72 @@ exports.handler = async (event, context) => {
             };
         }
 
+        // === DELETE JOURNAL MONTH ===
+        if (action === 'delete-journal-month' && event.httpMethod === 'POST') {
+            const body = JSON.parse(event.body || '{}');
+            const { monthKey } = body; // Format: "2024-12"
+
+            if (!monthKey || !/^\d{4}-\d{2}$/.test(monthKey)) {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'Invalid month format. Use YYYY-MM.' })
+                };
+            }
+
+            const originalCount = (user.journalEntries || []).length;
+
+            // Filter out entries that DON'T match this month (keep the rest)
+            user.journalEntries = (user.journalEntries || []).filter(entry => {
+                const dateStr = entry.date || (entry.endTime ? new Date(entry.endTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                const date = new Date(dateStr);
+                const entryMonthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                return entryMonthKey !== monthKey;
+            });
+
+            const deleted = originalCount - user.journalEntries.length;
+            await store.setJSON(`user_${user.discordId}`, user);
+
+            return {
+                statusCode: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ success: true, deleted })
+            };
+        }
+
+        // === DELETE JOURNAL ENTRIES BULK ===
+        if (action === 'delete-journal-entries-bulk' && event.httpMethod === 'POST') {
+            const body = JSON.parse(event.body || '{}');
+            const { indices } = body;
+
+            if (!Array.isArray(indices) || !indices.length) {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'indices array required' })
+                };
+            }
+
+            // Sort descending so we can delete from end to start without shifting issues
+            const sortedIndices = [...indices].sort((a, b) => b - a);
+
+            let deleted = 0;
+            sortedIndices.forEach(idx => {
+                if (idx >= 0 && idx < (user.journalEntries || []).length) {
+                    user.journalEntries.splice(idx, 1);
+                    deleted++;
+                }
+            });
+
+            await store.setJSON(`user_${user.discordId}`, user);
+
+            return {
+                statusCode: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ success: true, deleted })
+            };
+        }
+
         // === BULK UPDATE GAMES ===
         if (action === 'bulk-update' && event.httpMethod === 'POST') {
             const body = JSON.parse(event.body || '{}');
@@ -777,6 +846,377 @@ exports.handler = async (event, context) => {
                 statusCode: 200,
                 headers: CORS_HEADERS,
                 body: JSON.stringify({ success: true, updated })
+            };
+        }
+
+        // === LINK RIOT ACCOUNT ===
+        if (action === 'link-riot-account' && event.httpMethod === 'POST') {
+            const body = JSON.parse(event.body || '{}');
+            const { riotId, region } = body;
+
+            if (!riotId || !region) {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'riotId (Name#Tag) and region required' })
+                };
+            }
+
+            // Parse Name#Tag
+            if (!riotId.includes('#')) {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'Invalid format. Use Name#Tag' })
+                };
+            }
+
+            const [gameName, tagLine] = riotId.split('#');
+
+            // Use riot-proxy to validate account
+            const RIOT_PROXY = '/.netlify/functions/riot-proxy';
+            const routingRegion = ['na1', 'br1', 'la1', 'la2', 'oc1'].includes(region) ? 'americas'
+                : ['euw1', 'eun1', 'tr1', 'ru'].includes(region) ? 'europe'
+                    : ['kr', 'jp1'].includes(region) ? 'asia' : 'sea';
+
+            try {
+                // Fetch account PUUID using Riot API (via proxy)
+                const accountRes = await fetch(`https://kierxn.netlify.app${RIOT_PROXY}?endpoint=account-by-riot-id&region=${routingRegion}&gameName=${encodeURIComponent(gameName)}&tagLine=${encodeURIComponent(tagLine)}`);
+
+                if (!accountRes.ok) {
+                    return {
+                        statusCode: 404,
+                        headers: CORS_HEADERS,
+                        body: JSON.stringify({ error: 'Riot account not found. Check Name#Tag and region.' })
+                    };
+                }
+
+                const accountData = await accountRes.json();
+                const puuid = accountData.puuid;
+
+                // Fetch summoner data for level and icon
+                const summRes = await fetch(`https://kierxn.netlify.app${RIOT_PROXY}?endpoint=summoner-by-puuid&region=${region}&puuid=${puuid}`);
+                let summonerData = null;
+                if (summRes.ok) {
+                    summonerData = await summRes.json();
+                }
+
+                // Fetch rank data
+                let rankData = null;
+                if (summonerData?.id) {
+                    const rankRes = await fetch(`https://kierxn.netlify.app${RIOT_PROXY}?endpoint=league-entries&region=${region}&summonerId=${summonerData.id}`);
+                    if (rankRes.ok) {
+                        const ranks = await rankRes.json();
+                        // Get Solo/Duo rank preferably
+                        rankData = ranks.find(r => r.queueType === 'RANKED_SOLO_5x5') || ranks[0] || null;
+                    }
+                }
+
+                // Save to user
+                user.riotAccount = {
+                    gameName: accountData.gameName,
+                    tagLine: accountData.tagLine,
+                    region: region,
+                    puuid: puuid,
+                    summonerId: summonerData?.id || null,
+                    summonerLevel: summonerData?.summonerLevel || null,
+                    profileIconId: summonerData?.profileIconId || null,
+                    rank: rankData ? {
+                        tier: rankData.tier,
+                        division: rankData.rank,
+                        lp: rankData.leaguePoints,
+                        wins: rankData.wins,
+                        losses: rankData.losses
+                    } : null,
+                    linkedAt: new Date().toISOString()
+                };
+
+                // Add LoL as a game in library if not exists
+                const lolGame = user.games?.find(g => g.id === 'lol_riot_account');
+                if (!lolGame) {
+                    user.games = user.games || [];
+                    user.games.unshift({
+                        id: 'lol_riot_account',
+                        steamAppId: null,
+                        name: 'League of Legends',
+                        icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/6.png',
+                        headerImg: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Jinx_0.jpg',
+                        playtimeMinutes: 0,
+                        lastPlayed: null,
+                        status: 'endless',
+                        platforms: ['pc'],
+                        isLolIntegration: true
+                    });
+                }
+
+                await store.setJSON(`user_${user.discordId}`, user);
+
+                return {
+                    statusCode: 200,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ success: true, riotAccount: user.riotAccount })
+                };
+
+            } catch (e) {
+                console.error('Riot link error:', e);
+                return {
+                    statusCode: 500,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'Failed to verify Riot account: ' + e.message })
+                };
+            }
+        }
+
+        // === UNLINK RIOT ACCOUNT ===
+        if (action === 'unlink-riot-account' && event.httpMethod === 'POST') {
+            // Remove Riot account data but keep journal entries
+            delete user.riotAccount;
+
+            // Remove LoL game from library
+            user.games = (user.games || []).filter(g => g.id !== 'lol_riot_account');
+
+            await store.setJSON(`user_${user.discordId}`, user);
+
+            return {
+                statusCode: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ success: true })
+            };
+        }
+
+        // === SYNC LOL MATCHES ===
+        if (action === 'sync-lol-matches' && event.httpMethod === 'POST') {
+            if (!user.riotAccount) {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'No Riot account linked' })
+                };
+            }
+
+            const { puuid, region } = user.riotAccount;
+            const RIOT_PROXY = '/.netlify/functions/riot-proxy';
+            const routingRegion = ['na1', 'br1', 'la1', 'la2', 'oc1'].includes(region) ? 'americas'
+                : ['euw1', 'eun1', 'tr1', 'ru'].includes(region) ? 'europe'
+                    : ['kr', 'jp1'].includes(region) ? 'asia' : 'sea';
+
+            try {
+                // Fetch recent match IDs
+                const matchListRes = await fetch(`https://kierxn.netlify.app${RIOT_PROXY}?endpoint=match-list&region=${routingRegion}&puuid=${puuid}&count=20`);
+                if (!matchListRes.ok) throw new Error('Failed to fetch match list');
+
+                const matchIds = await matchListRes.json();
+                if (!Array.isArray(matchIds) || !matchIds.length) {
+                    return {
+                        statusCode: 200,
+                        headers: CORS_HEADERS,
+                        body: JSON.stringify({ success: true, entriesCreated: 0, message: 'No recent matches' })
+                    };
+                }
+
+                // Fetch match details in batches
+                const matches = [];
+                for (let i = 0; i < Math.min(matchIds.length, 20); i += 5) {
+                    const batch = matchIds.slice(i, i + 5);
+                    const promises = batch.map(id =>
+                        fetch(`https://kierxn.netlify.app${RIOT_PROXY}?endpoint=match-details&region=${routingRegion}&matchId=${id}`)
+                            .then(r => r.ok ? r.json() : null)
+                            .catch(() => null)
+                    );
+                    const results = await Promise.all(promises);
+                    matches.push(...results.filter(m => m && m.info));
+
+                    // Small delay between batches
+                    if (i + 5 < matchIds.length) {
+                        await new Promise(r => setTimeout(r, 300));
+                    }
+                }
+
+                // Group matches by date
+                const matchesByDate = {};
+                matches.forEach(m => {
+                    const participant = m.info.participants.find(p => p.puuid === puuid);
+                    if (!participant) return;
+
+                    const date = new Date(m.info.gameEndTimestamp).toISOString().split('T')[0];
+                    if (!matchesByDate[date]) {
+                        matchesByDate[date] = {
+                            matchCount: 0,
+                            wins: 0,
+                            losses: 0,
+                            kills: 0,
+                            deaths: 0,
+                            assists: 0,
+                            totalMinutes: 0,
+                            champions: new Set(),
+                            gameModes: new Set(),
+                            arenaPlacements: [] // Track Arena placements specifically
+                        };
+                    }
+
+                    const d = matchesByDate[date];
+                    d.matchCount++;
+
+                    // Check if Arena match - use placement for W/L
+                    const isArena = m.info.gameMode === 'CHERRY' || m.info.queueId === 1700 || m.info.queueId === 1710;
+                    if (isArena && participant.placement) {
+                        const placement = participant.placement;
+                        d.arenaPlacements.push(placement);
+                        // 1st, 2nd, 3rd = win, 4th+ = loss
+                        if (placement <= 3) {
+                            d.wins++;
+                        } else {
+                            d.losses++;
+                        }
+                    } else {
+                        // Regular match - use win property
+                        d.wins += participant.win ? 1 : 0;
+                        d.losses += participant.win ? 0 : 1;
+                    }
+
+                    d.kills += participant.kills;
+                    d.deaths += participant.deaths;
+                    d.assists += participant.assists;
+                    d.totalMinutes += Math.round(m.info.gameDuration / 60);
+                    d.champions.add(participant.championName);
+
+                    // Game mode mapping
+                    const queueId = m.info.queueId;
+                    if (queueId === 420) d.gameModes.add('Ranked Solo');
+                    else if (queueId === 440) d.gameModes.add('Ranked Flex');
+                    else if (queueId === 450) d.gameModes.add('ARAM');
+                    else if (isArena) d.gameModes.add('Arena');
+                    else d.gameModes.add('Normal');
+                });
+
+                // Create journal entries for each day
+                user.journalEntries = user.journalEntries || [];
+                let entriesCreated = 0;
+                let totalMinutes = 0;
+
+                Object.entries(matchesByDate).forEach(([date, data]) => {
+                    const entryId = `lol_auto_${date}`;
+
+                    // Skip if entry already exists for this date
+                    const existingIdx = user.journalEntries.findIndex(e => e.id === entryId);
+                    if (existingIdx !== -1) {
+                        // Update existing entry
+                        user.journalEntries[existingIdx] = {
+                            ...user.journalEntries[existingIdx],
+                            sessionMinutes: data.totalMinutes,
+                            lolData: {
+                                matchCount: data.matchCount,
+                                wins: data.wins,
+                                losses: data.losses,
+                                kills: data.kills,
+                                deaths: data.deaths,
+                                assists: data.assists,
+                                kda: data.deaths > 0 ? ((data.kills + data.assists) / data.deaths).toFixed(2) : (data.kills + data.assists).toFixed(2),
+                                champions: Array.from(data.champions),
+                                gameModes: Array.from(data.gameModes),
+                                arenaPlacements: data.arenaPlacements || []
+                            }
+                        };
+                    } else {
+                        // Create new entry
+                        user.journalEntries.push({
+                            id: entryId,
+                            gameId: 'lol_riot_account',
+                            date: date,
+                            sessionMinutes: data.totalMinutes,
+                            autoGenerated: true,
+                            lolData: {
+                                matchCount: data.matchCount,
+                                wins: data.wins,
+                                losses: data.losses,
+                                kills: data.kills,
+                                deaths: data.deaths,
+                                assists: data.assists,
+                                kda: data.deaths > 0 ? ((data.kills + data.assists) / data.deaths).toFixed(2) : (data.kills + data.assists).toFixed(2),
+                                champions: Array.from(data.champions),
+                                gameModes: Array.from(data.gameModes),
+                                arenaPlacements: data.arenaPlacements || []
+                            },
+                            sessionStatus: 'playing'
+                        });
+                        entriesCreated++;
+                    }
+                    totalMinutes += data.totalMinutes;
+                });
+
+                // Update LoL game playtime
+                const lolGame = user.games?.find(g => g.id === 'lol_riot_account');
+                if (lolGame) {
+                    lolGame.playtimeMinutes = (lolGame.playtimeMinutes || 0) + totalMinutes;
+                    lolGame.lastPlayed = Object.keys(matchesByDate).sort().pop() + 'T12:00:00Z';
+                }
+
+                // Update last sync time
+                user.riotAccount.lastSyncAt = new Date().toISOString();
+
+                await store.setJSON(`user_${user.discordId}`, user);
+
+                return {
+                    statusCode: 200,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({
+                        success: true,
+                        entriesCreated,
+                        matchesSynced: matches.length,
+                        riotAccount: user.riotAccount
+                    })
+                };
+
+            } catch (e) {
+                console.error('LoL sync error:', e);
+                return {
+                    statusCode: 500,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'Failed to sync matches: ' + e.message })
+                };
+            }
+        }
+
+        // === ADD MANUAL GAME (from search) ===
+        if (action === 'add-manual-game' && event.httpMethod === 'POST') {
+            const body = JSON.parse(event.body || '{}');
+            const { name, platform, status, playtimeMinutes, imageUrl } = body;
+
+            if (!name) {
+                return {
+                    statusCode: 400,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ error: 'Game name required' })
+                };
+            }
+
+            // Generate unique ID for manual games
+            const gameId = `manual_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            const newGame = {
+                id: gameId,
+                name,
+                status: status || 'backlog',
+                playtimeMinutes: playtimeMinutes || 0,
+                platforms: platform ? [platform] : ['pc'],
+                headerImg: imageUrl || '',
+                icon: imageUrl || '',
+                favorite: false,
+                hidden: false,
+                rating: null,
+                notes: '',
+                addedAt: new Date().toISOString()
+            };
+
+            user.games = user.games || [];
+            user.games.push(newGame);
+
+            await store.setJSON(`user_${user.discordId}`, user);
+
+            return {
+                statusCode: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ success: true, game: newGame })
             };
         }
 

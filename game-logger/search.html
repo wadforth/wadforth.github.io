@@ -29,12 +29,26 @@
             background: #14141b;
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 16px;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
         .search-card:hover {
             border-color: rgba(139, 92, 246, 0.4);
-            transform: translateY(-2px);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-card-image {
+            position: relative;
+        }
+
+        .search-card-image::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(20, 20, 27, 1) 0%, transparent 100%);
         }
 
         .platform-badge {
@@ -174,8 +188,23 @@
                 <p id="m-desc" class="text-sm text-gray-300 leading-relaxed mb-6 max-h-32 overflow-y-auto"></p>
 
                 <div id="m-owned" class="hidden mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
-                    <div class="flex items-center gap-2 text-green-400 text-sm"><i
-                            class="fa-solid fa-check-circle"></i>In Your Library</div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-green-400 text-sm"><i
+                                class="fa-solid fa-check-circle"></i>In Your Library</div>
+                        <a id="m-game-link" href="#"
+                            class="text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1">
+                            View Game Page <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Link to game page for non-owned games -->
+                <div id="m-view-page" class="mb-4">
+                    <a id="m-game-link-alt" href="#"
+                        class="text-sm text-purple-400 hover:text-purple-300 flex items-center gap-2 justify-center p-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 transition">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        View Game Page
+                    </a>
                 </div>
 
                 <div id="m-add-section" class="hidden space-y-3">
@@ -321,6 +350,13 @@
             const owned = user?.games?.find(ug => ug.name.toLowerCase() === g.name.toLowerCase());
             document.getElementById('m-owned').classList.toggle('hidden', !owned);
             document.getElementById('m-add-section').classList.toggle('hidden', !!owned || !user);
+
+            // Set game page links - show for all games
+            const gameId = owned ? (owned.steamAppId || owned.id) : `rawg_${g.id}`;
+            const gamePageUrl = `/game-logger/game.html?id=${gameId}`;
+            document.getElementById('m-game-link').href = gamePageUrl;
+            document.getElementById('m-game-link-alt').href = gamePageUrl;
+            document.getElementById('m-view-page').classList.remove('hidden'); // Always show
 
             // Pre-select platform based on game's platforms
             const firstPlat = g.platforms?.[0]?.platform?.id;

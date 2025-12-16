@@ -401,24 +401,35 @@
 
             try {
                 const me = await (await fetch(`${API}?action=me`, { credentials: 'include' })).json();
-                if (!me.user) {
-                    location.href = '/game-logger/';
-                    return;
+                if (me.user) {
+                    user = me.user;
+                    isOwner = true;
                 }
 
-                user = me.user;
-                isOwner = true;
+                // Check if this is a RAWG ID (not in library)
+                if (gameId.startsWith('rawg_')) {
+                    const rawgId = gameId.replace('rawg_', '');
+                    await fetchRAWGGameById(rawgId);
+                    if (!game) {
+                        showError();
+                        return;
+                    }
+                } else {
+                    // Find the game in user's library
+                    if (!user) {
+                        location.href = '/game-logger/';
+                        return;
+                    }
+                    game = (user.games || []).find(g => g.steamAppId == gameId || g.id == gameId);
 
-                // Find the game
-                game = (user.games || []).find(g => g.steamAppId == gameId || g.id == gameId);
+                    if (!game) {
+                        showError();
+                        return;
+                    }
 
-                if (!game) {
-                    showError();
-                    return;
+                    // Fetch additional RAWG data if available
+                    await fetchRAWGData();
                 }
-
-                // Fetch additional RAWG data if available
-                await fetchRAWGData();
 
                 renderGame();
                 document.getElementById('loading').classList.add('hidden');
@@ -426,6 +437,30 @@
             } catch (e) {
                 console.error(e);
                 showError();
+            }
+        }
+
+        async function fetchRAWGGameById(rawgId) {
+            try {
+                const res = await fetch(`/.netlify/functions/rawg-proxy?endpoint=game&id=${rawgId}`);
+                const data = await res.json();
+
+                if (data && data.name) {
+                    // Create a game object from RAWG data
+                    game = {
+                        id: `rawg_${rawgId}`,
+                        name: data.name,
+                        headerImg: data.background_image,
+                        icon: data.background_image,
+                        rawgData: data,
+                        rawgDetails: data,
+                        playtimeMinutes: 0,
+                        status: null,
+                        isFromRAWG: true // Flag to indicate this is not in user's library
+                    };
+                }
+            } catch (e) {
+                console.error('Could not fetch RAWG game:', e);
             }
         }
 

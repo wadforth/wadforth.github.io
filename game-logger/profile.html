@@ -342,8 +342,8 @@
         }
 
         .fav-card {
-            width: 140px;
-            height: 80px;
+            width: 160px;
+            height: 100px;
             border-radius: 12px;
             overflow: hidden;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -458,6 +458,81 @@
             border: 1px solid rgba(245, 158, 11, 0.2);
         }
 
+        /* Multi-Select Game Styles */
+        .game-row.selected,
+        .game-card.selected {
+            background: rgba(139, 92, 246, 0.15) !important;
+            border: 2px solid var(--primary) !important;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .game-select-checkbox {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: all 0.15s ease;
+        }
+
+        body.multiselect-active .game-select-checkbox {
+            display: flex;
+        }
+
+        .game-select-checkbox.checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .game-select-checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .game-card {
+            position: relative;
+        }
+
+        /* Newly synced game highlight */
+        .newly-synced-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            z-index: 10;
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-green {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 8px 4px rgba(16, 185, 129, 0.2);
+            }
+        }
+
+        .game-row.newly-synced {
+            border-left: 3px solid #10b981 !important;
+        }
+
         .tab-btn {
             padding: 10px 20px;
             font-weight: 600;
@@ -491,6 +566,23 @@
         .filter-pill.active {
             background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.15));
             color: white;
+        }
+
+        .lb-tab {
+            background: rgba(255, 255, 255, 0.03);
+            color: #71717a;
+            border: 1px solid transparent;
+        }
+
+        .lb-tab:hover {
+            background: rgba(251, 191, 36, 0.1);
+            color: #fbbf24;
+        }
+
+        .lb-tab.active {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.15));
+            color: #fbbf24;
+            border-color: rgba(251, 191, 36, 0.3);
         }
 
         .modal-overlay {
@@ -1192,14 +1284,37 @@
         </div>
 
         <div class="p-5 border-b border-white/5">
-            <div class="gradient-border inline-block mb-3">
-                <img id="avatar" src="" class="w-14 h-14 rounded-[14px]">
+            <!-- Avatar & Streak Row -->
+            <div class="flex items-start gap-3 mb-3">
+                <div class="gradient-border inline-block flex-shrink-0">
+                    <img id="avatar" src="" class="w-14 h-14 rounded-[14px]">
+                </div>
+                <!-- Streak & Activity -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <div id="display-name" class="font-semibold truncate"></div>
+                        <div id="admin-badge"
+                            class="hidden px-1.5 py-0.5 text-[9px] font-bold uppercase bg-gradient-to-r from-amber-500 to-orange-500 text-black rounded">
+                            Owner</div>
+                    </div>
+                    <div id="steam-info" class="text-xs text-zinc-500 mt-0.5 truncate"></div>
+                    <!-- Streak Badge -->
+                    <div class="flex items-center gap-2 mt-2">
+                        <div id="streak-badge"
+                            class="flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
+                            <span class="text-sm">🔥</span>
+                            <span id="streak-count" class="text-xs font-bold text-orange-400">0</span>
+                            <span class="text-[9px] text-orange-400/70">day</span>
+                        </div>
+                        <!-- Activity Dots (last 7 days) -->
+                        <div id="activity-dots" class="flex gap-0.5" title="Last 7 days activity">
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div id="display-name" class="font-semibold"></div>
-            <div id="steam-info" class="text-xs text-zinc-500 mt-1"></div>
 
-            <!-- Level/XP Section (under avatar) -->
-            <div class="mt-3" id="level-section">
+            <!-- Level/XP Section -->
+            <div id="level-section">
                 <div class="flex items-center justify-between mb-1.5">
                     <div class="flex items-center gap-2">
                         <span class="level-badge" id="level-badge">LVL 1</span>
@@ -1213,26 +1328,45 @@
             </div>
         </div>
 
-        <!-- Stats (simple, no cards) -->
-        <div class="px-5 py-3 grid grid-cols-4 gap-1 text-center border-b border-white/5">
+        <!-- Stats Row 1 -->
+        <div class="px-5 py-2 grid grid-cols-4 gap-1 text-center border-b border-white/5">
             <div>
                 <div id="stat-games" class="text-lg font-bold text-white">0</div>
-                <div class="text-[9px] text-zinc-500 uppercase">Games</div>
+                <div class="text-[8px] text-zinc-500 uppercase">Games</div>
             </div>
             <div>
                 <div id="stat-hours" class="text-lg font-bold text-white">0</div>
-                <div class="text-[9px] text-zinc-500 uppercase">Hours</div>
+                <div class="text-[8px] text-zinc-500 uppercase">Hours</div>
             </div>
             <div>
                 <div id="stat-perfected" class="text-lg font-bold text-amber-400">0</div>
-                <div class="text-[9px] text-zinc-500 uppercase">100%</div>
+                <div class="text-[8px] text-zinc-500 uppercase">100%</div>
             </div>
             <div>
                 <div id="stat-entries" class="text-lg font-bold text-violet-400">0</div>
-                <div class="text-[9px] text-zinc-500 uppercase">Entries</div>
+                <div class="text-[8px] text-zinc-500 uppercase">Entries</div>
             </div>
         </div>
 
+        <!-- Stats Row 2 -->
+        <div class="px-5 py-2 grid grid-cols-4 gap-1 text-center border-b border-white/5">
+            <div>
+                <div id="stat-this-year" class="text-lg font-bold text-green-400">0</div>
+                <div class="text-[8px] text-zinc-500 uppercase">Year</div>
+            </div>
+            <div>
+                <div id="stat-backlog" class="text-lg font-bold text-blue-400">0</div>
+                <div class="text-[8px] text-zinc-500 uppercase">Backlog</div>
+            </div>
+            <div>
+                <div id="stat-wishlist" class="text-lg font-bold text-pink-400">0</div>
+                <div class="text-[8px] text-zinc-500 uppercase">Wishlist</div>
+            </div>
+            <div>
+                <div id="stat-masterpieces" class="text-lg font-bold text-amber-400">0</div>
+                <div class="text-[8px] text-zinc-500 uppercase">Best</div>
+            </div>
+        </div>
 
 
         <nav class="flex-1 p-3 space-y-1 overflow-y-auto min-h-0">
@@ -1244,28 +1378,18 @@
                     class="fa-solid fa-folder w-4"></i>Collections</button>
             <button onclick="switchView('wishlist')" class="nav-link w-full wiggle-hover" id="nav-wishlist"><i
                     class="fa-solid fa-heart w-4"></i>Wishlist</button>
+            <button onclick="switchView('leaderboard')" class="nav-link w-full wiggle-hover" id="nav-leaderboard"><i
+                    class="fa-solid fa-trophy w-4"></i>Leaderboard</button>
+            <button onclick="switchView('discover')" class="nav-link w-full wiggle-hover" id="nav-discover"><i
+                    class="fa-solid fa-compass w-4"></i>Discover</button>
+            <button onclick="switchView('news')" class="nav-link w-full wiggle-hover" id="nav-news"><i
+                    class="fa-solid fa-newspaper w-4"></i>News</button>
             <button onclick="openSearchModal()" class="nav-link w-full wiggle-hover"><i
                     class="fa-solid fa-search w-4"></i>Search
                 Games</button>
             <button onclick="openSettingsModal()" id="settings-btn" class="nav-link w-full wiggle-hover hidden"><i
                     class="fa-solid fa-gear w-4"></i>Settings</button>
         </nav>
-
-        <div class="p-3 border-t border-white/5 space-y-2" id="owner-actions">
-            <button onclick="syncSteam()" id="sync-btn"
-                class="w-full bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#3d6b8c] py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition">
-                <i class="fa-brands fa-steam"></i> Sync Games
-            </button>
-            <button onclick="syncSteamWishlist()" id="sync-wishlist-btn"
-                class="w-full bg-gradient-to-r from-pink-600/20 to-violet-600/20 hover:from-pink-600/30 hover:to-violet-600/30 border border-pink-500/20 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition text-pink-300">
-                <i class="fa-solid fa-heart"></i> Sync Wishlist
-            </button>
-            <!-- Sync Indicator -->
-            <div id="sync-indicator" class="text-center text-[10px] text-zinc-500 mt-2 hidden">
-                <div id="last-sync">Synced: --</div>
-                <div id="next-sync" class="text-violet-400/60">Next: --</div>
-            </div>
-        </div>
 
         <div class="p-3 border-t border-white/5 text-center">
             <div id="nav-auth" class="text-xs"></div>
@@ -1277,44 +1401,27 @@
         <!-- Header with Favorites -->
         <header class="sticky top-0 bg-[#0c0c10]/90 backdrop-blur-xl z-30 border-b border-white/5">
             <div class="px-8 pt-6 pb-4">
-                <!-- Favorites Section -->
-                <div class="mb-4">
-                    <div class="flex items-center gap-3 mb-3">
-                        <span class="text-lg">❤️</span>
-                        <span class="text-sm font-semibold text-pink-400">Favorite Games</span>
+                <!-- Library Header Content - Only visible on Library tab -->
+                <!-- Library Header Content - Only visible on Library tab -->
+                <div id="library-header-content">
+                    <!-- Favorites Section -->
+                    <div class="mb-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-lg">❤️</span>
+                            <span class="text-sm font-semibold text-pink-400">Favorite Games</span>
+                        </div>
+                        <div id="favorites-row" class="flex gap-2 overflow-x-auto"></div>
                     </div>
-                    <div id="favorites-row" class="flex gap-3"></div>
-                </div>
 
-                <!-- Quick Stats - Centered -->
-                <div class="flex justify-center gap-8 mb-4">
-                    <div class="text-center">
-                        <div id="stat-this-year" class="text-2xl font-bold text-green-400">0</div>
-                        <div class="text-[10px] text-zinc-500 uppercase tracking-wider">This Year</div>
-                    </div>
-                    <div class="text-center">
-                        <div id="stat-backlog" class="text-2xl font-bold text-blue-400">0</div>
-                        <div class="text-[10px] text-zinc-500 uppercase tracking-wider">Backlog</div>
-                    </div>
-                    <div class="text-center">
-                        <div id="stat-wishlist" class="text-2xl font-bold text-pink-400">0</div>
-                        <div class="text-[10px] text-zinc-500 uppercase tracking-wider">Wishlist</div>
-                    </div>
-                    <div class="text-center">
-                        <div id="stat-masterpieces" class="text-2xl font-bold text-amber-400">0</div>
-                        <div class="text-[10px] text-zinc-500 uppercase tracking-wider">Masterpieces</div>
+                    <!-- Recent Activity Section -->
+                    <div class="mb-4" id="recent-activity-section">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fa-solid fa-clock-rotate-left text-zinc-500"></i>
+                            <span class="text-xs font-semibold text-zinc-400 uppercase">Recent Activity</span>
+                        </div>
+                        <div class="flex gap-3 overflow-x-auto pb-2" id="recent-activity-row"></div>
                     </div>
                 </div>
-
-                <!-- Recent Activity Section -->
-                <div class="mb-6" id="recent-activity-section">
-                    <div class="flex items-center gap-2 mb-3">
-                        <i class="fa-solid fa-clock-rotate-left text-zinc-500"></i>
-                        <span class="text-xs font-semibold text-zinc-400 uppercase">Recent Activity</span>
-                    </div>
-                    <div class="flex gap-3 overflow-x-auto pb-2" id="recent-activity-row"></div>
-                </div>
-
 
                 <!-- Tabs -->
                 <div class="flex items-center justify-between">
@@ -1437,6 +1544,45 @@
 
         <!-- Journal View -->
         <section id="view-journal" class="hidden px-8 py-6">
+            <!-- Journal Stats Header -->
+            <div id="journal-stats" class="hidden flex items-center gap-6 mb-6 pb-4 border-b border-white/5">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-clock text-violet-400"></i>
+                    <span class="text-sm text-zinc-400">Total Logged:</span>
+                    <span id="journal-total-hours" class="font-bold text-white">0h</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-book text-cyan-400"></i>
+                    <span class="text-sm text-zinc-400">Entries:</span>
+                    <span id="journal-entry-count" class="font-bold text-white">0</span>
+                </div>
+                <!-- Journal Multi-Select Toggle -->
+                <div class="ml-auto flex items-center gap-2" id="journal-owner-controls">
+                    <button onclick="toggleJournalMultiSelect()" id="journal-multiselect-toggle"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 transition">
+                        <i class="fa-regular fa-square-check"></i>
+                        <span>Multi-Select</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Journal Multi-Select Bar -->
+            <div id="journal-multiselect-bar"
+                class="hidden mb-4 p-3 bg-violet-500/10 border border-violet-500/30 rounded-xl flex items-center gap-4">
+                <span class="text-sm"><span id="journal-selected-count" class="font-bold text-violet-400">0</span>
+                    entries selected</span>
+                <div class="flex-1"></div>
+                <button onclick="deleteSelectedJournalEntries()"
+                    class="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs transition">
+                    <i class="fa-solid fa-trash mr-1"></i>Delete Selected
+                </button>
+                <div class="h-4 w-px bg-white/10"></div>
+                <button onclick="selectAllJournalEntries()"
+                    class="text-xs text-zinc-400 hover:text-white transition">Select All</button>
+                <button onclick="clearJournalSelection()"
+                    class="text-xs text-zinc-400 hover:text-white transition">Clear</button>
+            </div>
+
             <div id="journal-list"></div>
             <div id="no-entries" class="hidden text-center py-20 text-zinc-500">
                 <div class="text-5xl mb-4 opacity-30">📓</div>
@@ -1475,6 +1621,153 @@
                 <button onclick="openCollectionModal()" class="btn-glow px-6 py-2.5 rounded-xl text-sm font-medium">
                     <i class="fa-solid fa-plus mr-2"></i>Create First Collection
                 </button>
+            </div>
+        </section>
+
+        <!-- Leaderboard View -->
+        <section id="view-leaderboard" class="hidden px-8 py-6">
+            <div class="max-w-4xl mx-auto">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <div
+                        class="inline-flex items-center gap-4 px-8 py-4 bg-gradient-to-r from-amber-500/20 via-yellow-400/10 to-amber-500/20 rounded-2xl border border-amber-500/30 shadow-lg shadow-amber-500/10">
+                        <div
+                            class="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-lg">
+                            <i class="fa-solid fa-crown text-2xl text-black"></i>
+                        </div>
+                        <div class="text-left">
+                            <h2 class="text-2xl font-bold text-white">Hall of Fame</h2>
+                            <p class="text-sm text-amber-300/70">Your personal gaming achievements</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Summary -->
+                <div id="leaderboard-stats" class="grid grid-cols-4 gap-4 mb-8">
+                    <div
+                        class="bg-gradient-to-br from-violet-500/10 to-violet-600/5 rounded-xl p-4 border border-violet-500/20 text-center">
+                        <div id="lb-total-hours" class="text-2xl font-bold text-violet-400">0</div>
+                        <div class="text-[10px] text-zinc-500 uppercase">Total Hours</div>
+                    </div>
+                    <div
+                        class="bg-gradient-to-br from-amber-500/10 to-amber-600/5 rounded-xl p-4 border border-amber-500/20 text-center">
+                        <div id="lb-avg-rating" class="text-2xl font-bold text-amber-400">—</div>
+                        <div class="text-[10px] text-zinc-500 uppercase">Avg Rating</div>
+                    </div>
+                    <div
+                        class="bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl p-4 border border-green-500/20 text-center">
+                        <div id="lb-completion" class="text-2xl font-bold text-green-400">0%</div>
+                        <div class="text-[10px] text-zinc-500 uppercase">Avg Completion</div>
+                    </div>
+                    <div
+                        class="bg-gradient-to-br from-pink-500/10 to-pink-600/5 rounded-xl p-4 border border-pink-500/20 text-center">
+                        <div id="lb-longest-session" class="text-2xl font-bold text-pink-400">—</div>
+                        <div class="text-[10px] text-zinc-500 uppercase">Most Played</div>
+                    </div>
+                </div>
+
+                <!-- Category Tabs -->
+                <div class="flex justify-center gap-2 mb-6">
+                    <button onclick="setLeaderboardMode('playtime')"
+                        class="lb-tab active px-4 py-2 rounded-lg text-sm font-medium transition" id="lb-tab-playtime">
+                        <i class="fa-solid fa-clock mr-2"></i>Playtime
+                    </button>
+                    <button onclick="setLeaderboardMode('rating')"
+                        class="lb-tab px-4 py-2 rounded-lg text-sm font-medium transition" id="lb-tab-rating">
+                        <i class="fa-solid fa-star mr-2"></i>Rating
+                    </button>
+                    <button onclick="setLeaderboardMode('achievements')"
+                        class="lb-tab px-4 py-2 rounded-lg text-sm font-medium transition" id="lb-tab-achievements">
+                        <i class="fa-solid fa-trophy mr-2"></i>Completion
+                    </button>
+                    <button onclick="setLeaderboardMode('recent')"
+                        class="lb-tab px-4 py-2 rounded-lg text-sm font-medium transition" id="lb-tab-recent">
+                        <i class="fa-solid fa-fire mr-2"></i>Hot Streak
+                    </button>
+                </div>
+
+                <!-- Podium (Top 3) -->
+                <div id="leaderboard-podium" class="flex justify-center items-end gap-4 mb-8">
+                    <!-- Will be rendered by JS -->
+                </div>
+
+                <!-- Remaining Rankings (4-10) -->
+                <div id="leaderboard-list" class="space-y-2"></div>
+
+                <div id="no-leaderboard" class="hidden text-center py-20 text-zinc-500">
+                    <div class="text-5xl mb-4 opacity-30">🏆</div>
+                    <p class="mb-4">No games in your library yet</p>
+                    <p class="text-sm">Sync your Steam library or add games to see your leaderboard!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Discover View -->
+        <section id="view-discover" class="hidden px-8 py-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-8">
+                    <div
+                        class="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-2xl border border-cyan-500/30">
+                        <i class="fa-solid fa-compass text-3xl text-cyan-400"></i>
+                        <div class="text-left">
+                            <h2 class="text-xl font-bold text-white">Discover Games</h2>
+                            <p class="text-xs text-cyan-300/70">Recommendations based on your library</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="discover-loading" class="hidden text-center py-10">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-cyan-400 mb-4"></i>
+                    <p class="text-zinc-500">Finding games for you...</p>
+                </div>
+
+                <div id="discover-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+
+                <div id="no-discover" class="hidden text-center py-20 text-zinc-500">
+                    <div class="text-5xl mb-4 opacity-30">🔍</div>
+                    <p class="mb-4">Add games to your library first</p>
+                    <p class="text-sm">We'll recommend similar games based on what you play!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- News View -->
+        <section id="view-news" class="hidden px-8 py-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex gap-8">
+                    <!-- News Feed -->
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-6">
+                            <i class="fa-solid fa-newspaper text-2xl text-violet-400"></i>
+                            <h2 class="text-xl font-bold">Gaming News</h2>
+                        </div>
+
+                        <div id="news-loading" class="hidden text-center py-10">
+                            <i class="fa-solid fa-spinner fa-spin text-2xl text-violet-400"></i>
+                        </div>
+
+                        <div id="news-feed" class="space-y-4"></div>
+
+                        <div id="no-news" class="hidden text-center py-20 text-zinc-500">
+                            <div class="text-5xl mb-4 opacity-30">📰</div>
+                            <p>No news available right now</p>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Releases Calendar -->
+                    <div class="w-[500px] flex-shrink-0">
+                        <div class="flex items-center gap-3 mb-6">
+                            <i class="fa-solid fa-calendar text-2xl text-emerald-400"></i>
+                            <h2 class="text-xl font-bold">Upcoming Releases</h2>
+                        </div>
+
+                        <div id="releases-list" class="space-y-3"></div>
+
+                        <div id="no-releases" class="hidden text-center py-10 text-zinc-500">
+                            <p class="text-sm">No upcoming releases</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -1768,35 +2061,89 @@
     <!-- Search Modal -->
     <div id="search-modal" class="fixed inset-0 z-50 hidden overflow-y-auto"
         onclick="if(event.target===this)closeSearchModal()">
-        <div class="modal-overlay absolute inset-0"></div>
-        <div class="relative z-10 max-w-2xl mx-auto mt-16 mb-16">
-            <div class="modal-card p-6">
-                <div class="flex items-center justify-between mb-5">
-                    <h3 class="text-lg font-bold gradient-text">Search Games</h3>
-                    <button onclick="closeSearchModal()" class="text-zinc-400 hover:text-white"><i
-                            class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="relative mb-4">
-                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"></i>
-                    <input type="text" id="search-query" placeholder="Search 500,000+ games..."
-                        class="w-full pl-11 py-3" oninput="debounceSearch()">
-                </div>
-                <div class="flex gap-2 mb-4">
-                    <button onclick="setPlatform('all')" class="filter-pill active" id="sp-all">All</button>
-                    <button onclick="setPlatform('pc')" class="filter-pill" id="sp-pc">PC</button>
-                    <button onclick="setPlatform('playstation')" class="filter-pill"
-                        id="sp-playstation">PlayStation</button>
-                    <button onclick="setPlatform('xbox')" class="filter-pill" id="sp-xbox">Xbox</button>
-                    <button onclick="setPlatform('nintendo')" class="filter-pill" id="sp-nintendo">Nintendo</button>
-                </div>
-                <div id="search-results" class="max-h-96 overflow-y-auto space-y-2"></div>
-                <div id="search-loading" class="hidden text-center py-8">
-                    <div
-                        class="w-6 h-6 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto">
+        <div class="modal-overlay fixed inset-0"></div>
+        <div class="relative z-10 max-w-2xl mx-auto mt-12 mb-12">
+            <div class="modal-card overflow-hidden">
+                <!-- Header -->
+                <div
+                    class="bg-gradient-to-r from-violet-600/20 via-pink-500/10 to-cyan-500/20 px-6 py-5 border-b border-white/5">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+                                <i class="fa-solid fa-magnifying-glass text-xl text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Discover Games</h3>
+                                <p class="text-xs text-zinc-400">Search 500,000+ games from RAWG</p>
+                            </div>
+                        </div>
+                        <button onclick="closeSearchModal()"
+                            class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition">
+                            <i class="fa-solid fa-xmark text-zinc-400"></i>
+                        </button>
                     </div>
                 </div>
-                <div id="search-empty" class="hidden text-center py-8 text-zinc-500">Start typing to search...</div>
-                <p class="text-xs text-zinc-600 mt-4 text-center">Powered by RAWG</p>
+
+                <div class="p-6">
+                    <!-- Search Input -->
+                    <div class="relative mb-5">
+                        <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-violet-400"></i>
+                        <input type="text" id="search-query" placeholder="Search for any game..."
+                            class="w-full pl-12 pr-4 py-4 bg-black/40 border border-white/10 rounded-xl text-base focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 transition"
+                            oninput="debounceSearch()">
+                    </div>
+
+                    <!-- Platform Filters -->
+                    <div class="flex flex-wrap gap-2 mb-5">
+                        <button onclick="setPlatform('all')" class="filter-pill active flex items-center gap-2"
+                            id="sp-all">
+                            <i class="fa-solid fa-globe text-xs"></i>All
+                        </button>
+                        <button onclick="setPlatform('pc')" class="filter-pill flex items-center gap-2" id="sp-pc">
+                            <i class="fa-brands fa-windows text-xs"></i>PC
+                        </button>
+                        <button onclick="setPlatform('playstation')" class="filter-pill flex items-center gap-2"
+                            id="sp-playstation">
+                            <i class="fa-brands fa-playstation text-xs"></i>PlayStation
+                        </button>
+                        <button onclick="setPlatform('xbox')" class="filter-pill flex items-center gap-2" id="sp-xbox">
+                            <i class="fa-brands fa-xbox text-xs"></i>Xbox
+                        </button>
+                        <button onclick="setPlatform('nintendo')" class="filter-pill flex items-center gap-2"
+                            id="sp-nintendo">
+                            <i class="fa-solid fa-n text-xs"></i>Nintendo
+                        </button>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="search-results" class="max-h-[400px] overflow-y-auto space-y-2 scrollbar-thin"></div>
+
+                    <!-- Loading State -->
+                    <div id="search-loading" class="hidden text-center py-10">
+                        <div
+                            class="w-10 h-10 border-3 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-3">
+                        </div>
+                        <p class="text-sm text-zinc-500">Searching games...</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="search-empty" class="hidden text-center py-10">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-pink-500/20 flex items-center justify-center mx-auto mb-3">
+                            <i class="fa-solid fa-gamepad text-2xl text-violet-400"></i>
+                        </div>
+                        <p class="text-sm text-zinc-400">Start typing to discover games...</p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-3 bg-black/20 border-t border-white/5 flex items-center justify-between">
+                    <p class="text-[10px] text-zinc-600 flex items-center gap-1">
+                        <i class="fa-solid fa-database"></i> Powered by RAWG
+                    </p>
+                    <p class="text-[10px] text-zinc-600">Click a game to add to your library</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1874,7 +2221,7 @@
     <!-- Settings Modal -->
     <div id="settings-modal" class="fixed inset-0 z-50 hidden overflow-y-auto"
         onclick="if(event.target===this)closeSettingsModal()">
-        <div class="modal-overlay absolute inset-0"></div>
+        <div class="modal-overlay fixed inset-0"></div>
         <div class="relative z-10 max-w-lg mx-auto mt-12 mb-12">
             <div class="modal-card overflow-hidden">
                 <div class="bg-gradient-to-r from-violet-600/20 to-pink-600/20 px-6 py-5 border-b border-white/5">
@@ -1929,6 +2276,108 @@
                                 class="w-full py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-unlink"></i> Unlink Steam Account
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- League of Legends / Riot Account -->
+                    <div class="bg-white/5 rounded-xl p-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-5 h-5 flex items-center justify-center text-[#c89b3c]">
+                                <i class="fa-solid fa-gamepad"></i>
+                            </div>
+                            <h4 class="font-medium text-sm">League of Legends</h4>
+                        </div>
+                        <div id="riot-status" class="space-y-3">
+                            <!-- Unlinked State -->
+                            <div id="riot-unlinked" class="space-y-3">
+                                <p class="text-xs text-zinc-500 mb-2">Link your Riot account to track LoL playtime and
+                                    auto-generate journal entries.</p>
+                                <div class="flex gap-2 mb-2">
+                                    <input type="text" id="riot-id-input" placeholder="Name#Tag"
+                                        class="flex-1 bg-black/30 rounded-lg px-3 py-2 text-sm border-none">
+                                    <select id="riot-region-select"
+                                        class="bg-black/30 rounded-lg px-2 text-sm border-none text-zinc-300">
+                                        <option value="euw1">EUW</option>
+                                        <option value="na1">NA</option>
+                                        <option value="kr">KR</option>
+                                        <option value="eun1">EUNE</option>
+                                        <option value="br1">BR</option>
+                                        <option value="jp1">JP</option>
+                                        <option value="la1">LAN</option>
+                                        <option value="la2">LAS</option>
+                                        <option value="oc1">OCE</option>
+                                        <option value="tr1">TR</option>
+                                        <option value="ru">RU</option>
+                                        <option value="ph2">PH</option>
+                                        <option value="sg2">SG</option>
+                                        <option value="th2">TH</option>
+                                        <option value="tw2">TW</option>
+                                        <option value="vn2">VN</option>
+                                    </select>
+                                </div>
+                                <button onclick="linkRiotAccount()" id="riot-link-btn"
+                                    class="w-full py-2.5 rounded-lg bg-gradient-to-r from-[#c89b3c] to-[#785a28] hover:from-[#d4af5c] hover:to-[#8b6914] text-white text-sm font-semibold flex items-center justify-center gap-2 transition">
+                                    <i class="fa-solid fa-link"></i> Link Riot Account
+                                </button>
+                            </div>
+                            <!-- Linked State -->
+                            <div id="riot-linked" class="hidden">
+                                <div class="flex items-center gap-3 p-3 bg-black/20 rounded-lg">
+                                    <img id="riot-profile-icon" src="" class="w-10 h-10 rounded-full bg-zinc-800"
+                                        alt="">
+                                    <div class="flex-1 min-w-0">
+                                        <div id="riot-linked-name" class="font-medium text-sm text-white truncate">
+                                        </div>
+                                        <div id="riot-linked-region" class="text-xs text-zinc-500"></div>
+                                    </div>
+                                    <div id="riot-rank-badge"
+                                        class="text-xs px-2 py-1 rounded bg-amber-500/20 text-amber-400"></div>
+                                </div>
+                                <button onclick="syncRiotMatches()" id="riot-sync-btn"
+                                    class="w-full mt-3 py-2 rounded-lg bg-[#c89b3c]/20 text-[#c89b3c] hover:bg-[#c89b3c]/30 text-sm flex items-center justify-center gap-2 transition">
+                                    <i class="fa-solid fa-rotate"></i> Sync Matches
+                                </button>
+                            </div>
+                        </div>
+                        <div id="riot-unlink" class="hidden mt-3 pt-3 border-t border-white/5">
+                            <button onclick="unlinkRiotAccount()"
+                                class="w-full py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-unlink"></i> Unlink Riot Account
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Manual Sync -->
+                    <div class="bg-white/5 rounded-xl p-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <i class="fa-solid fa-sync text-violet-400"></i>
+                            <h4 class="font-medium text-sm">Manual Sync</h4>
+                        </div>
+                        <p class="text-xs text-zinc-500 mb-3">Syncs happen automatically every hour. Use these buttons
+                            for immediate sync.</p>
+                        <div class="flex gap-2 mb-3">
+                            <button onclick="syncSteam()" id="sync-btn"
+                                class="flex-1 bg-gradient-to-r from-[#1b2838] to-[#2a475e] hover:from-[#2a475e] hover:to-[#3d6b8c] py-2 rounded-lg flex items-center justify-center gap-2 transition group border border-white/10 text-sm">
+                                <i class="fa-brands fa-steam text-[#66c0f4]"></i>
+                                <span>Steam</span>
+                            </button>
+                            <button onclick="syncSteamWishlist()" id="sync-wishlist-btn"
+                                class="flex-1 bg-gradient-to-r from-pink-600/20 to-violet-600/20 hover:from-pink-600/30 hover:to-violet-600/30 border border-pink-500/20 py-2 rounded-lg flex items-center justify-center gap-2 transition text-pink-300 text-sm">
+                                <i class="fa-solid fa-heart"></i>
+                                <span>Wishlist</span>
+                            </button>
+                        </div>
+                        <button onclick="syncRiotMatches()" id="sync-lol-btn"
+                            class="hidden w-full bg-gradient-to-r from-[#0a1428] to-[#091428] hover:from-[#0d1d3d] hover:to-[#0a1832] py-2 rounded-lg flex items-center justify-center gap-2 transition group border border-[#c89b3c]/30 text-sm mb-3">
+                            <svg class="w-4 h-4" viewBox="0 0 48 48" fill="none">
+                                <path d="M24 4L6 12v24l18 8 18-8V12L24 4z" fill="#c89b3c" />
+                                <path d="M24 8L10 14v20l14 6 14-6V14L24 8z" fill="#0a1428" />
+                                <path d="M24 12l-8 4v12l8 4 8-4V16l-8-4z" fill="#c89b3c" />
+                            </svg>
+                            <span class="text-[#c89b3c]">Sync League</span>
+                        </button>
+                        <div id="sync-indicator" class="text-center text-[10px] text-zinc-500 hidden">
+                            <div id="last-sync">Last sync: --</div>
                         </div>
                     </div>
 
@@ -2124,6 +2573,8 @@
     <script>
         const API = '/.netlify/functions/game-logger-api';
         const RATING_LABELS = ['', 'Poor', 'Below Avg', 'Average', 'Good', 'Excellent'];
+        const FALLBACK_HEADER = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="460" height="215"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1e1e28"/><stop offset="100%" style="stop-color:#2d2d3a"/></linearGradient></defs><rect fill="url(#g)" width="460" height="215"/><text x="230" y="125" fill="#4a4a5a" font-family="sans-serif" font-size="48" text-anchor="middle">?</text></svg>');
+        const FALLBACK_ICON = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1e1e28"/><stop offset="100%" style="stop-color:#2d2d3a"/></linearGradient></defs><rect fill="url(#g)" width="64" height="64" rx="8"/><text x="32" y="42" fill="#4a4a5a" font-family="sans-serif" font-size="28" text-anchor="middle">?</text></svg>');
         const STATUSES = { backlog: 'Backlog', played: 'Played', finished: 'Finished', perfected: '100%', endless: 'Endless', on_hold: 'On Hold', dropped: 'Dropped' };
         const STATUS_CLASS = { backlog: 'status-backlog', played: 'status-played', finished: 'status-finished', perfected: 'status-perfected', endless: 'status-endless', on_hold: 'status-on_hold', dropped: 'status-dropped' };
         const GAME_RATINGS = { 10: 'Masterpiece', 9: 'Incredible', 8: 'Amazing', 7: 'Great', 6: 'Good', 5: 'Decent', 4: 'Meh', 3: 'Bad', 2: 'Terrible', 1: 'Trash' };
@@ -2161,6 +2612,10 @@
             document.getElementById('display-name').textContent = user.displayName;
             document.getElementById('steam-info').innerHTML = user.steam ? `<a href="${user.steam.profileUrl}" target="_blank" class="hover:text-violet-400"><i class="fa-brands fa-steam mr-1"></i>${user.steam.personaName}</a>` : '';
 
+            // Show admin badge for kieran
+            const adminBadge = document.getElementById('admin-badge');
+            if (adminBadge && user.username === 'kieran') adminBadge.classList.remove('hidden');
+
             const games = (user.games || []).filter(g => !g.hidden);
             document.getElementById('stat-games').textContent = games.length;
             document.getElementById('stat-hours').textContent = Math.round(games.reduce((s, g) => s + (g.playtimeMinutes || 0), 0) / 60).toLocaleString();
@@ -2185,12 +2640,11 @@
             // Level/XP System
             renderLevelSystem(games);
 
-            if (isOwner) { document.getElementById('settings-btn').classList.remove('hidden'); document.getElementById('owner-actions').classList.remove('hidden'); }
-            else { document.getElementById('owner-actions').classList.add('hidden'); }
+            if (isOwner) { document.getElementById('settings-btn').classList.remove('hidden'); }
 
             document.getElementById('nav-auth').innerHTML = user ? `<a href="/.netlify/functions/game-logger-api?action=logout" class="text-zinc-500 hover:text-zinc-300">Logout</a>` : '';
 
-            renderFavorites(); renderClub(); renderRecentActivity(); renderGames(); renderJournal();
+            renderFavorites(); renderClub(); renderRecentActivity(); renderGames(); renderJournal(); renderStreak();
         }
 
         // === LEVEL/XP SYSTEM ===
@@ -2232,6 +2686,87 @@
             document.getElementById('rank-title').textContent = rank;
             document.getElementById('xp-display').textContent = `${xp.toLocaleString()} / ${nextLevelXP.toLocaleString()} XP`;
             document.getElementById('xp-bar-fill').style.width = `${progress}%`;
+        }
+
+        // === GAMING STREAK ===
+        function renderStreak() {
+            const entries = user.journalEntries || [];
+            const games = user.games || [];
+
+            // Get all activity dates (journal entries + lastPlayed dates)
+            const activityDates = new Set();
+
+            entries.forEach(e => {
+                if (e.date) activityDates.add(e.date);
+                if (e.createdAt) activityDates.add(e.createdAt.split('T')[0]);
+            });
+
+            games.forEach(g => {
+                if (g.lastPlayed) activityDates.add(new Date(g.lastPlayed).toISOString().split('T')[0]);
+            });
+
+            // Calculate streak (consecutive days from today going back)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let streak = 0;
+            let checkDate = new Date(today);
+
+            // Allow gap for today - check if played yesterday or today
+            const todayStr = today.toISOString().split('T')[0];
+            const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().split('T')[0];
+
+            if (!activityDates.has(todayStr) && !activityDates.has(yesterdayStr)) {
+                streak = 0;
+            } else {
+                // Count consecutive days
+                for (let i = 0; i < 365; i++) {
+                    const dateStr = checkDate.toISOString().split('T')[0];
+                    if (activityDates.has(dateStr)) {
+                        streak++;
+                        checkDate.setDate(checkDate.getDate() - 1);
+                    } else if (i === 0) {
+                        // Today has no activity, check if yesterday started streak
+                        checkDate.setDate(checkDate.getDate() - 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            // Update streak badge
+            const streakEl = document.getElementById('streak-count');
+            const streakBadge = document.getElementById('streak-badge');
+            if (streakEl) {
+                streakEl.textContent = streak;
+                streakEl.nextElementSibling.textContent = streak === 1 ? 'day' : 'days';
+            }
+
+            // Change badge color based on streak
+            if (streakBadge) {
+                if (streak >= 30) {
+                    streakBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r from-amber-500/30 to-orange-500/30 border border-amber-400/50';
+                } else if (streak >= 7) {
+                    streakBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-r from-orange-500/25 to-red-500/25 border border-orange-400/40';
+                } else if (streak === 0) {
+                    streakBadge.className = 'flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800/50 border border-zinc-700/50';
+                }
+            }
+
+            // Render activity dots (last 7 days)
+            const dotsContainer = document.getElementById('activity-dots');
+            if (dotsContainer) {
+                let dotsHtml = '';
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date(today.getTime() - i * 86400000);
+                    const dateStr = date.toISOString().split('T')[0];
+                    const hasActivity = activityDates.has(dateStr);
+                    const dayName = date.toLocaleDateString('en-GB', { weekday: 'short' });
+                    const isToday = i === 0;
+
+                    dotsHtml += `<div class="w-2 h-2 rounded-full ${hasActivity ? 'bg-green-400' : 'bg-zinc-700'} ${isToday ? 'ring-1 ring-white/30' : ''}" title="${dayName}"></div>`;
+                }
+                dotsContainer.innerHTML = dotsHtml;
+            }
         }
 
         // === TROPHY CABINET ===
@@ -2330,7 +2865,10 @@
             let html = '';
             for (let i = 0; i < 6; i++) {
                 const id = slots[i]; const g = id ? (user.games || []).find(x => (x.steamAppId == id || x.id == id) && !x.hidden) : null;
-                if (g) { html += `<div class="fav-card" onclick="${isOwner ? `openFavModal(${i})` : `openGameModal('${g.steamAppId || g.id}')`}"><img src="${g.headerImg}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div><div class="absolute bottom-2 left-2 right-2 text-xs font-medium truncate">${g.name}</div></div>`; }
+                if (g) {
+                    const img = g.headerImg || FALLBACK_HEADER;
+                    html += `<div class="fav-card" onclick="${isOwner ? `openFavModal(${i})` : `openGameModal('${g.steamAppId || g.id}')`}"><img src="${img}" class="w-full h-full object-cover" onerror="this.src='${FALLBACK_HEADER}'"><div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div><div class="absolute bottom-2 left-2 right-2 text-xs font-medium truncate">${g.name}</div></div>`;
+                }
                 else if (isOwner) { html += `<div class="fav-card empty flex items-center justify-center" onclick="openFavModal(${i})"><i class="fa-solid fa-plus text-pink-400/50"></i></div>`; }
             }
             document.getElementById('favorites-row').innerHTML = html;
@@ -2358,7 +2896,7 @@
             const entries = (user.journalEntries || []).slice().reverse();
             const recentGames = (user.games || []).filter(g => !g.hidden && g.lastPlayed)
                 .sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed))
-                .slice(0, 4);
+                .slice(0, 5);
 
             let html = '';
 
@@ -2367,32 +2905,47 @@
                 const e = entries[0];
                 const game = (user.games || []).find(g => g.steamAppId == e.gameId || g.id == e.gameId);
                 if (game) {
-                    const imgSrc = game.headerImg || game.icon || game.rawgData?.background_image || '';
-                    html += `<div class="flex-shrink-0 w-48 bg-violet-500/10 border border-violet-500/20 rounded-xl p-3 cursor-pointer hover:bg-violet-500/20 transition" onclick="openGameModal('${game.steamAppId || game.id}')">
-                        <div class="flex items-center gap-2 mb-2">
-                            <img src="${imgSrc}" class="w-10 h-10 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/40?text=?'">
+                    const imgSrc = game.headerImg || game.icon || FALLBACK_HEADER;
+                    const entryDate = e.date ? new Date(e.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+                    html += `<div class="flex-shrink-0 w-52 bg-gradient-to-br from-violet-500/15 to-pink-500/10 border border-violet-500/30 rounded-xl p-3 cursor-pointer hover:border-violet-400/50 transition" onclick="openGameModal('${game.steamAppId || game.id}')">
+                        <div class="flex items-center gap-1 mb-2">
+                            <i class="fa-solid fa-book text-violet-400 text-[10px]"></i>
+                            <span class="text-[9px] text-violet-400 font-medium uppercase">Latest Entry</span>
+                            ${entryDate ? `<span class="text-[9px] text-zinc-500 ml-auto">${entryDate}</span>` : ''}
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <img src="${imgSrc}" class="w-12 h-12 rounded-lg object-cover" onerror="this.src='${FALLBACK_ICON}'">
                             <div class="flex-1 min-w-0">
-                                <div class="text-xs font-medium truncate text-white">${game.name}</div>
-                                <div class="text-[10px] text-violet-400">Latest Journal</div>
+                                <div class="text-sm font-medium truncate text-white">${game.name}</div>
+                                ${e.thoughts ? `<p class="text-[10px] text-zinc-400 line-clamp-2 mt-0.5">${e.thoughts}</p>` : `<p class="text-[10px] text-zinc-500">No thoughts recorded</p>`}
                             </div>
                         </div>
-                        ${e.thoughts ? `<p class="text-[10px] text-zinc-400 line-clamp-2">${e.thoughts}</p>` : ''}
                     </div>`;
+
+                    // Add separator
+                    if (recentGames.length > 0) {
+                        html += `<div class="flex-shrink-0 flex items-center">
+                            <div class="w-px h-12 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+                        </div>`;
+                    }
                 }
             }
 
             // Recently played games
-            recentGames.forEach(g => {
+            recentGames.forEach((g, i) => {
                 const lastPlayed = new Date(g.lastPlayed);
                 const timeAgo = getTimeAgo(lastPlayed);
-                const imgSrc = g.headerImg || g.icon || g.rawgData?.background_image || '';
-                html += `<div class="flex-shrink-0 w-36 rounded-xl overflow-hidden cursor-pointer group" onclick="openGameModal('${g.steamAppId || g.id}')">
-                    <div class="relative h-20">
-                        <img src="${imgSrc}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='https://via.placeholder.com/144x80?text=No+Image'">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                const imgSrc = g.headerImg || g.icon || FALLBACK_HEADER;
+                html += `<div class="flex-shrink-0 w-40 rounded-xl overflow-hidden cursor-pointer group border border-white/5 hover:border-white/20 transition" onclick="openGameModal('${g.steamAppId || g.id}')">
+                    <div class="relative h-24">
+                        <img src="${imgSrc}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" onerror="this.src='${FALLBACK_HEADER}'">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
                         <div class="absolute bottom-2 left-2 right-2">
                             <div class="text-xs font-medium truncate text-white">${g.name}</div>
-                            <div class="text-[9px] text-zinc-400">${timeAgo}</div>
+                            <div class="flex items-center gap-1 text-[9px] text-zinc-400">
+                                <i class="fa-solid fa-clock text-[7px]"></i>
+                                ${timeAgo}
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -2429,10 +2982,17 @@
             document.getElementById('view-journal').classList.toggle('hidden', v !== 'journal');
             document.getElementById('view-wishlist').classList.toggle('hidden', v !== 'wishlist');
             document.getElementById('view-collections').classList.toggle('hidden', v !== 'collections');
+            document.getElementById('view-leaderboard').classList.toggle('hidden', v !== 'leaderboard');
+            document.getElementById('view-discover').classList.toggle('hidden', v !== 'discover');
+            document.getElementById('view-news').classList.toggle('hidden', v !== 'news');
             document.getElementById('library-controls').classList.toggle('hidden', v !== 'library');
             document.getElementById('journal-controls').classList.toggle('hidden', v !== 'journal');
+            document.getElementById('library-header-content').classList.toggle('hidden', v !== 'library');
             if (v === 'wishlist') renderWishlist();
             if (v === 'collections') renderCollections();
+            if (v === 'leaderboard') renderLeaderboard();
+            if (v === 'discover') renderDiscover();
+            if (v === 'news') renderNews();
         }
 
         function filterGames(f) { filter = f; document.querySelectorAll('[id^="f-"]').forEach(b => b.classList.remove('active')); document.getElementById(`f-${f}`).classList.add('active'); renderGames(); }
@@ -2485,7 +3045,17 @@
             document.getElementById('multiselect-toggle').classList.toggle('btn-glow', multiSelectMode);
             document.getElementById('multiselect-toggle').classList.toggle('bg-white/5', !multiSelectMode);
             document.getElementById('multiselect-bar').classList.toggle('hidden', !multiSelectMode);
+
+            // Toggle multiselect-active class on body for CSS-based checkbox visibility
+            document.body.classList.toggle('multiselect-active', multiSelectMode);
+
+            // Clear all selected states visually
+            document.querySelectorAll('.game-row.selected, .game-card.selected').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.game-select-checkbox.checked').forEach(el => el.classList.remove('checked'));
+
             updateSelectionCount();
+
+            // Re-render games so click handlers are updated for the new mode
             renderGames();
         }
 
@@ -2493,13 +3063,23 @@
             if (event) event.stopPropagation();
             if (!multiSelectMode) return;
 
-            if (selectedGames.has(id)) {
+            const isSelected = selectedGames.has(id);
+
+            if (isSelected) {
                 selectedGames.delete(id);
             } else {
                 selectedGames.add(id);
             }
+
+            // Direct DOM update - find the element and toggle classes
+            const gameEl = document.querySelector(`[data-game-id="${id}"]`);
+            if (gameEl) {
+                gameEl.classList.toggle('selected', !isSelected);
+                const checkbox = gameEl.querySelector('.game-select-checkbox');
+                if (checkbox) checkbox.classList.toggle('checked', !isSelected);
+            }
+
             updateSelectionCount();
-            renderGames();
         }
 
         function updateSelectionCount() {
@@ -2512,15 +3092,26 @@
 
         function selectAllGames() {
             const games = (user.games || []).filter(g => !g.hidden);
-            games.forEach(g => selectedGames.add(g.steamAppId || g.id));
+            games.forEach(g => {
+                const id = g.steamAppId || g.id;
+                selectedGames.add(id);
+                // Direct DOM update
+                const gameEl = document.querySelector(`[data-game-id="${id}"]`);
+                if (gameEl) {
+                    gameEl.classList.add('selected');
+                    const checkbox = gameEl.querySelector('.game-select-checkbox');
+                    if (checkbox) checkbox.classList.add('checked');
+                }
+            });
             updateSelectionCount();
-            renderGames();
         }
 
         function clearSelection() {
             selectedGames.clear();
+            // Direct DOM update - remove selected class from all games
+            document.querySelectorAll('.game-row.selected, .game-card.selected').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.game-select-checkbox.checked').forEach(el => el.classList.remove('checked'));
             updateSelectionCount();
-            renderGames();
         }
 
         async function bulkSetStatus(status) {
@@ -2592,10 +3183,178 @@
 
             if (libraryView === 'list') {
                 document.getElementById('games-list').classList.remove('hidden');
-                document.getElementById('games-list').innerHTML = games.map(g => renderListRow(g)).join('');
+
+                // Tier grouping for rating sort
+                if (sort === 'rating') {
+                    const tierGroups = { S: [], A: [], B: [], C: [], D: [], F: [], Unrated: [] };
+                    games.forEach(g => {
+                        const r = g.rating || 0;
+                        if (r >= 9) tierGroups.S.push(g);
+                        else if (r >= 7) tierGroups.A.push(g);
+                        else if (r >= 5) tierGroups.B.push(g);
+                        else if (r >= 3) tierGroups.C.push(g);
+                        else if (r >= 1) tierGroups.D.push(g);
+                        else tierGroups.Unrated.push(g);
+                    });
+
+                    const tierMeta = {
+                        S: { color: 'from-amber-400 to-yellow-500', label: 'S-Tier · Masterpiece' },
+                        A: { color: 'from-green-400 to-emerald-500', label: 'A-Tier · Amazing' },
+                        B: { color: 'from-blue-400 to-cyan-500', label: 'B-Tier · Good' },
+                        C: { color: 'from-zinc-400 to-zinc-500', label: 'C-Tier · Average' },
+                        D: { color: 'from-orange-400 to-red-500', label: 'D-Tier · Below Average' },
+                        F: { color: 'from-red-500 to-red-700', label: 'F-Tier · Bad' },
+                        Unrated: { color: 'from-zinc-600 to-zinc-700', label: 'Unrated' }
+                    };
+
+                    let html = '';
+                    ['S', 'A', 'B', 'C', 'D', 'F', 'Unrated'].forEach(tier => {
+                        if (tierGroups[tier].length > 0) {
+                            html += `<div class="mb-6">
+                                <div class="flex items-center gap-3 mb-3 sticky top-0 bg-[#0c0c10]/95 py-2 z-10">
+                                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br ${tierMeta[tier].color} flex items-center justify-center font-bold text-black text-sm">${tier === 'Unrated' ? '?' : tier}</div>
+                                    <span class="text-sm font-medium text-zinc-300">${tierMeta[tier].label}</span>
+                                    <span class="text-xs text-zinc-500">(${tierGroups[tier].length})</span>
+                                </div>
+                                ${tierGroups[tier].map(g => renderListRow(g)).join('')}
+                            </div>`;
+                        }
+                    });
+                    document.getElementById('games-list').innerHTML = html;
+                }
+                // Time grouping for recent sort
+                else if (sort === 'recent') {
+                    const now = Date.now();
+                    const day = 24 * 60 * 60 * 1000;
+                    const timeGroups = { today: [], week: [], twoWeeks: [], month: [], earlier: [] };
+
+                    games.forEach(g => {
+                        const played = g.lastPlayed ? new Date(g.lastPlayed).getTime() : 0;
+                        const ago = now - played;
+                        if (played === 0) timeGroups.earlier.push(g);
+                        else if (ago < day) timeGroups.today.push(g);
+                        else if (ago < 7 * day) timeGroups.week.push(g);
+                        else if (ago < 14 * day) timeGroups.twoWeeks.push(g);
+                        else if (ago < 30 * day) timeGroups.month.push(g);
+                        else timeGroups.earlier.push(g);
+                    });
+
+                    const timeMeta = {
+                        today: { icon: 'fa-clock', color: 'text-green-400', label: 'Today' },
+                        week: { icon: 'fa-calendar-day', color: 'text-blue-400', label: 'This Week' },
+                        twoWeeks: { icon: 'fa-calendar-week', color: 'text-violet-400', label: 'Last 2 Weeks' },
+                        month: { icon: 'fa-calendar', color: 'text-pink-400', label: 'This Month' },
+                        earlier: { icon: 'fa-clock-rotate-left', color: 'text-zinc-500', label: 'Earlier' }
+                    };
+
+                    let html = '';
+                    ['today', 'week', 'twoWeeks', 'month', 'earlier'].forEach(period => {
+                        if (timeGroups[period].length > 0) {
+                            html += `<div class="mb-6">
+                                <div class="flex items-center gap-2 mb-3 sticky top-0 bg-[#0c0c10]/95 py-2 z-10">
+                                    <i class="fa-solid ${timeMeta[period].icon} ${timeMeta[period].color}"></i>
+                                    <span class="text-sm font-medium text-zinc-300">${timeMeta[period].label}</span>
+                                    <span class="text-xs text-zinc-500">(${timeGroups[period].length})</span>
+                                </div>
+                                ${timeGroups[period].map(g => renderListRow(g)).join('')}
+                            </div>`;
+                        }
+                    });
+                    document.getElementById('games-list').innerHTML = html;
+                }
+                else {
+                    document.getElementById('games-list').innerHTML = games.map(g => renderListRow(g)).join('');
+                }
             } else if (libraryView === 'grid') {
                 document.getElementById('games-grid').classList.remove('hidden');
-                document.getElementById('games-grid').innerHTML = games.map(g => renderGridCard(g)).join('');
+
+                // Tier grouping for rating sort
+                if (sort === 'rating') {
+                    const tierGroups = { S: [], A: [], B: [], C: [], D: [], F: [], Unrated: [] };
+                    games.forEach(g => {
+                        const r = g.rating || 0;
+                        if (r >= 9) tierGroups.S.push(g);
+                        else if (r >= 7) tierGroups.A.push(g);
+                        else if (r >= 5) tierGroups.B.push(g);
+                        else if (r >= 3) tierGroups.C.push(g);
+                        else if (r >= 1) tierGroups.D.push(g);
+                        else tierGroups.Unrated.push(g);
+                    });
+
+                    const tierMeta = {
+                        S: { color: 'from-amber-400 to-yellow-500', label: 'S-Tier · Masterpiece' },
+                        A: { color: 'from-green-400 to-emerald-500', label: 'A-Tier · Amazing' },
+                        B: { color: 'from-blue-400 to-cyan-500', label: 'B-Tier · Good' },
+                        C: { color: 'from-zinc-400 to-zinc-500', label: 'C-Tier · Average' },
+                        D: { color: 'from-orange-400 to-red-500', label: 'D-Tier · Below Average' },
+                        F: { color: 'from-red-500 to-red-700', label: 'F-Tier · Bad' },
+                        Unrated: { color: 'from-zinc-600 to-zinc-700', label: 'Unrated' }
+                    };
+
+                    let html = '';
+                    ['S', 'A', 'B', 'C', 'D', 'F', 'Unrated'].forEach(tier => {
+                        if (tierGroups[tier].length > 0) {
+                            html += `<div class="mb-8">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br ${tierMeta[tier].color} flex items-center justify-center font-bold text-black text-lg shadow-lg">${tier === 'Unrated' ? '?' : tier}</div>
+                                    <div>
+                                        <span class="text-base font-semibold text-white">${tierMeta[tier].label}</span>
+                                        <span class="text-xs text-zinc-500 ml-2">${tierGroups[tier].length} games</span>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                    ${tierGroups[tier].map(g => renderGridCard(g)).join('')}
+                                </div>
+                            </div>`;
+                        }
+                    });
+                    document.getElementById('games-grid').innerHTML = html;
+                }
+                // Time grouping for recent sort
+                else if (sort === 'recent') {
+                    const now = Date.now();
+                    const day = 24 * 60 * 60 * 1000;
+                    const timeGroups = { today: [], week: [], twoWeeks: [], month: [], earlier: [] };
+
+                    games.forEach(g => {
+                        const played = g.lastPlayed ? new Date(g.lastPlayed).getTime() : 0;
+                        const ago = now - played;
+                        if (played === 0) timeGroups.earlier.push(g);
+                        else if (ago < day) timeGroups.today.push(g);
+                        else if (ago < 7 * day) timeGroups.week.push(g);
+                        else if (ago < 14 * day) timeGroups.twoWeeks.push(g);
+                        else if (ago < 30 * day) timeGroups.month.push(g);
+                        else timeGroups.earlier.push(g);
+                    });
+
+                    const timeMeta = {
+                        today: { icon: 'fa-clock', color: 'text-green-400', label: 'Today' },
+                        week: { icon: 'fa-calendar-day', color: 'text-blue-400', label: 'This Week' },
+                        twoWeeks: { icon: 'fa-calendar-week', color: 'text-violet-400', label: 'Last 2 Weeks' },
+                        month: { icon: 'fa-calendar', color: 'text-pink-400', label: 'This Month' },
+                        earlier: { icon: 'fa-clock-rotate-left', color: 'text-zinc-500', label: 'Earlier' }
+                    };
+
+                    let html = '';
+                    ['today', 'week', 'twoWeeks', 'month', 'earlier'].forEach(period => {
+                        if (timeGroups[period].length > 0) {
+                            html += `<div class="mb-8">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <i class="fa-solid ${timeMeta[period].icon} ${timeMeta[period].color} text-lg"></i>
+                                    <span class="text-base font-semibold text-white">${timeMeta[period].label}</span>
+                                    <span class="text-xs text-zinc-500">${timeGroups[period].length} games</span>
+                                </div>
+                                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                                    ${timeGroups[period].map(g => renderGridCard(g)).join('')}
+                                </div>
+                            </div>`;
+                        }
+                    });
+                    document.getElementById('games-grid').innerHTML = html;
+                }
+                else {
+                    document.getElementById('games-grid').innerHTML = games.map(g => renderGridCard(g)).join('');
+                }
             } else if (libraryView === 'grouped') {
                 document.getElementById('games-grouped').classList.remove('hidden');
                 renderGroupedView(games);
@@ -2661,9 +3420,9 @@
                 ? `onclick="toggleGameSelection('${gameId}', event)"`
                 : `onclick="openGameModal('${gameId}')"`;
 
-            return `<div class="game-row ${rowClass} ${isSelected ? 'bg-violet-500/10 border-violet-500/30' : ''}" ${clickHandler}>
+            return `<div class="game-row ${rowClass} ${isSelected ? 'selected' : ''}" data-game-id="${gameId}" ${clickHandler}>
                 ${checkbox}
-                <img src="${g.icon || g.headerImg}" class="w-10 h-10 rounded-lg object-cover" onerror="this.src='https://via.placeholder.com/40'">
+                <img src="${g.icon || g.headerImg || FALLBACK_ICON}" class="w-10 h-10 rounded-lg object-cover" onerror="this.src='${FALLBACK_ICON}'">
                 <div class="flex-1 min-w-0">
                     <div class="font-medium text-sm truncate">${g.name}</div>
                     <div class="text-xs text-zinc-500">${hours}h${g.lastPlayed ? ' · ' + new Date(g.lastPlayed).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</div>
@@ -2686,14 +3445,31 @@
             const achRing = g.achievements ? makeProgressRing(g.achievements.percent) : '';
             const platforms = makePlatformIcons(g.platforms);
             const recentBadge = recent.now ? '<span class="now-playing-badge absolute top-2 right-2">Now</span>' : '';
+            const gameId = g.steamAppId || g.id;
+            const isSelected = selectedGames.has(gameId);
+            const imgSrc = g.headerImg || g.icon || FALLBACK_HEADER;
 
-            return `<div class="game-card" onclick="openGameModal('${g.steamAppId || g.id}')">
-                <img src="${g.headerImg || g.icon}" class="game-card-img" onerror="this.src='https://via.placeholder.com/200x100'">
+            // Last played date
+            const lastPlayedStr = g.lastPlayed ? getTimeAgo(new Date(g.lastPlayed)) : '';
+
+            // Check if game was synced within last 24 hours
+            const isNewlySynced = g.newlySynced && g.lastSyncAt && (Date.now() - new Date(g.lastSyncAt).getTime()) < 24 * 60 * 60 * 1000;
+            const newlySyncedBadge = isNewlySynced ? '<span class="newly-synced-badge">NEW</span>' : '';
+
+            const clickHandler = multiSelectMode
+                ? `onclick="toggleGameSelection('${gameId}', event)"`
+                : `onclick="openGameModal('${gameId}')"`;
+
+            return `<div class="game-card ${isSelected ? 'selected' : ''}" data-game-id="${gameId}" ${clickHandler}>
+                <div class="game-select-checkbox ${isSelected ? 'checked' : ''}"></div>
+                ${newlySyncedBadge}
+                <img src="${imgSrc}" class="game-card-img" onerror="this.src='${FALLBACK_HEADER}'">
                 ${recentBadge}
                 <div class="game-card-body">
                     <div class="game-card-title">${g.name}</div>
                     <div class="game-card-meta">
                         <span>⏱️ ${hours}h</span>
+                        ${lastPlayedStr ? `<span class="text-zinc-500 text-[10px]"><i class="fa-regular fa-clock"></i> ${lastPlayedStr}</span>` : ''}
                         ${platforms}
                     </div>
                     <div class="game-card-footer">
@@ -2788,6 +3564,14 @@
 
         function renderJournal() {
             const entries = (user.journalEntries || []).slice().reverse();
+
+            // Calculate journal stats
+            const totalMinutes = entries.reduce((sum, e) => sum + (e.sessionMinutes || 0), 0);
+            const totalHours = Math.round(totalMinutes / 60);
+            document.getElementById('journal-total-hours').textContent = totalHours.toLocaleString() + 'h';
+            document.getElementById('journal-entry-count').textContent = entries.length;
+            document.getElementById('journal-stats').classList.toggle('hidden', entries.length === 0);
+
             if (!entries.length) {
                 document.getElementById('journal-list').innerHTML = '';
                 document.getElementById('no-entries').classList.remove('hidden');
@@ -2823,7 +3607,12 @@
                     <div class="flex items-center gap-3 mb-5 pb-3 border-b border-violet-500/20">
                         <div class="w-2 h-2 rounded-full bg-violet-500"></div>
                         <h3 class="text-lg font-bold text-white tracking-wide">${month.label}</h3>
-                        <span class="text-xs text-zinc-600 ml-auto">${month.entries.length} ${month.entries.length === 1 ? 'session' : 'sessions'}</span>
+                        <span class="text-xs text-zinc-600">${month.entries.length} ${month.entries.length === 1 ? 'session' : 'sessions'}</span>
+                        <div class="ml-auto flex items-center gap-2">
+                            ${isOwner ? `<button onclick="deleteMonth('${monthKey}', '${month.label}', ${month.entries.length})" class="opacity-50 hover:opacity-100 text-red-400 hover:text-red-300 text-xs transition" title="Delete all entries for ${month.label}">
+                                <i class="fa-solid fa-trash-can mr-1"></i>Delete Month
+                            </button>` : ''}
+                        </div>
                     </div>
                     <div class="space-y-1">`;
 
@@ -2883,7 +3672,31 @@
                                 <span class="font-medium text-white truncate">${game?.name || 'Unknown Game'}</span>
                                 ${isAuto ? '<span class="text-[9px] px-1.5 py-0.5 rounded-sm bg-cyan-500/10 text-cyan-500 font-medium">AUTO</span>' : ''}
                             </div>
-                            ${e.thoughts ? `<p class="text-xs text-zinc-500 truncate mt-0.5">${e.thoughts}</p>` : ''}
+                            ${e.lolData ? `
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="text-xs text-zinc-400">${e.lolData.matchCount} match${e.lolData.matchCount !== 1 ? 'es' : ''}</span>
+                                    <span class="text-xs">
+                                        <span class="text-green-400 font-medium">${e.lolData.wins}W</span>
+                                        <span class="text-zinc-600">/</span>
+                                        <span class="text-red-400 font-medium">${e.lolData.losses}L</span>
+                                    </span>
+                                    <span class="text-xs text-amber-400">
+                                        <span class="font-medium">${e.lolData.kda}</span> KDA
+                                    </span>
+                                    ${e.lolData.arenaPlacements?.length ? (() => {
+                                const p = e.lolData.arenaPlacements;
+                                const first = p.filter(x => x === 1).length;
+                                const second = p.filter(x => x === 2).length;
+                                const third = p.filter(x => x === 3).length;
+                                let badges = '';
+                                if (first) badges += `<span class="text-[10px]" title="1st Place">🥇${first > 1 ? first : ''}</span>`;
+                                if (second) badges += `<span class="text-[10px]" title="2nd Place">🥈${second > 1 ? second : ''}</span>`;
+                                if (third) badges += `<span class="text-[10px]" title="3rd Place">🥉${third > 1 ? third : ''}</span>`;
+                                return badges ? `<span class="flex items-center gap-0.5">${badges}</span>` : '';
+                            })() : ''}
+                                    ${e.lolData.gameModes?.length ? `<span class="text-[10px] text-zinc-500">${e.lolData.gameModes.join(', ')}</span>` : ''}
+                                </div>
+                            ` : (e.thoughts ? `<p class="text-xs text-zinc-500 truncate mt-0.5">${e.thoughts}</p>` : '')}
                         </div>
                         
                         <!-- Stats -->
@@ -3449,6 +4262,130 @@
             }
         }
 
+        async function deleteMonth(monthKey, monthLabel, entryCount) {
+            if (!confirm(`Delete all ${entryCount} journal entries for ${monthLabel}?\n\nThis cannot be undone.`)) return;
+
+            // Delete entries that match this month (from the current user.journalEntries)
+            const originalEntries = user.journalEntries || [];
+            const toDelete = [];
+
+            // Find indices to delete (loop backwards to avoid index shifting issues)
+            for (let i = originalEntries.length - 1; i >= 0; i--) {
+                const entry = originalEntries[i];
+                const dateStr = entry.date || (entry.endTime ? new Date(entry.endTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                const date = new Date(dateStr);
+                const entryMonthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+                if (entryMonthKey === monthKey) {
+                    toDelete.push(i);
+                }
+            }
+
+            const res = await fetch(`${API}?action=delete-journal-month`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ monthKey })
+            });
+
+            if ((await res.json()).success) {
+                // Remove entries from local state (in reverse order to preserve indices)
+                toDelete.forEach(idx => user.journalEntries.splice(idx, 1));
+                renderJournal();
+                render();
+                toast(`Deleted ${toDelete.length} entries from ${monthLabel}`);
+            } else {
+                toast('Failed to delete month', 'error');
+            }
+        }
+
+        // ========== JOURNAL MULTI-SELECT ==========
+        let journalMultiSelectMode = false;
+        let selectedJournalEntries = new Set();
+
+        function toggleJournalMultiSelect() {
+            journalMultiSelectMode = !journalMultiSelectMode;
+            selectedJournalEntries.clear();
+
+            document.getElementById('journal-multiselect-toggle').classList.toggle('bg-violet-500/20', journalMultiSelectMode);
+            document.getElementById('journal-multiselect-toggle').classList.toggle('bg-white/5', !journalMultiSelectMode);
+            document.getElementById('journal-multiselect-bar').classList.toggle('hidden', !journalMultiSelectMode);
+
+            updateJournalSelectionCount();
+            renderJournal();
+        }
+
+        function toggleJournalEntrySelection(idx, event) {
+            event.stopPropagation();
+
+            if (selectedJournalEntries.has(idx)) {
+                selectedJournalEntries.delete(idx);
+            } else {
+                selectedJournalEntries.add(idx);
+            }
+
+            // Update visual state
+            const entryEl = document.querySelector(`[data-journal-idx="${idx}"]`);
+            if (entryEl) {
+                entryEl.classList.toggle('bg-violet-500/10', selectedJournalEntries.has(idx));
+                entryEl.classList.toggle('border-l-2', selectedJournalEntries.has(idx));
+                entryEl.classList.toggle('border-violet-500', selectedJournalEntries.has(idx));
+                const checkbox = entryEl.querySelector('.journal-entry-checkbox');
+                if (checkbox) checkbox.classList.toggle('checked', selectedJournalEntries.has(idx));
+            }
+
+            updateJournalSelectionCount();
+        }
+
+        function selectAllJournalEntries() {
+            const entries = user.journalEntries || [];
+            entries.forEach((_, idx) => selectedJournalEntries.add(idx));
+            updateJournalSelectionCount();
+            renderJournal();
+        }
+
+        function clearJournalSelection() {
+            selectedJournalEntries.clear();
+            updateJournalSelectionCount();
+            renderJournal();
+        }
+
+        function updateJournalSelectionCount() {
+            document.getElementById('journal-selected-count').textContent = selectedJournalEntries.size;
+        }
+
+        async function deleteSelectedJournalEntries() {
+            if (!selectedJournalEntries.size) return;
+
+            if (!confirm(`Delete ${selectedJournalEntries.size} journal entries?\n\nThis cannot be undone.`)) return;
+
+            // Sort indices descending so we can delete from end to start without shifting issues
+            const indices = Array.from(selectedJournalEntries).sort((a, b) => b - a);
+
+            // Delete from server
+            const res = await fetch(`${API}?action=delete-journal-entries-bulk`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ indices })
+            });
+
+            if ((await res.json()).success) {
+                // Remove from local state
+                indices.forEach(idx => user.journalEntries.splice(idx, 1));
+                selectedJournalEntries.clear();
+                journalMultiSelectMode = false;
+                document.getElementById('journal-multiselect-bar').classList.add('hidden');
+                document.getElementById('journal-multiselect-toggle').classList.remove('bg-violet-500/20');
+                document.getElementById('journal-multiselect-toggle').classList.add('bg-white/5');
+                renderJournal();
+                render();
+                toast(`Deleted ${indices.length} entries`);
+            } else {
+                toast('Failed to delete entries', 'error');
+            }
+        }
+
         // Search Modal
         function openSearchModal() { document.getElementById('search-modal').classList.remove('hidden'); document.getElementById('search-query').focus(); document.getElementById('search-empty').classList.remove('hidden'); }
         function closeSearchModal() { document.getElementById('search-modal').classList.add('hidden'); }
@@ -3468,47 +4405,105 @@
                     const owned = user?.games?.find(ug => ug.name.toLowerCase() === g.name.toLowerCase());
                     const wishlisted = (user?.wishlist || []).find(w => w.id === g.id);
 
-                    // Status badges
-                    let statusBadge = '';
-                    if (owned) statusBadge = '<span class="text-xs px-2 py-1 rounded-full bg-green-500/10 text-green-400"><i class="fa-solid fa-check mr-1"></i>Owned</span>';
-                    else if (wishlisted) statusBadge = '<span class="text-xs px-2 py-1 rounded-full bg-pink-500/10 text-pink-400"><i class="fa-solid fa-heart mr-1"></i>Wishlisted</span>';
+                    // Platform icons
+                    const platforms = (g.platforms || g.parent_platforms || []).slice(0, 4).map(p => {
+                        const name = (p.platform?.name || p.name || '').toLowerCase();
+                        if (name.includes('pc') || name.includes('windows')) return '<i class="fa-brands fa-windows"></i>';
+                        if (name.includes('playstation')) return '<i class="fa-brands fa-playstation"></i>';
+                        if (name.includes('xbox')) return '<i class="fa-brands fa-xbox"></i>';
+                        if (name.includes('nintendo') || name.includes('switch')) return '<i class="fa-solid fa-n"></i>';
+                        if (name.includes('mac') || name.includes('apple')) return '<i class="fa-brands fa-apple"></i>';
+                        if (name.includes('linux')) return '<i class="fa-brands fa-linux"></i>';
+                        return '';
+                    }).filter(x => x).join('');
 
-                    // Genres
-                    const genres = (g.genres || []).slice(0, 3).map(gen => gen.name || gen).join(', ');
+                    // Genres as tags
+                    const genreTags = (g.genres || []).slice(0, 3).map(gen =>
+                        `<span class="px-2 py-0.5 rounded-full bg-white/5 text-[10px] text-zinc-400">${gen.name || gen}</span>`
+                    ).join('');
 
-                    // Metacritic badge
-                    const mcBadge = g.metacritic ? `<span class="text-xs px-1.5 py-0.5 rounded ${g.metacritic >= 75 ? 'bg-green-500/20 text-green-400' : g.metacritic >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'}">MC ${g.metacritic}</span>` : '';
+                    // Rating display
+                    const ratingDisplay = g.rating ? `
+                        <div class="flex items-center gap-1">
+                            <i class="fa-solid fa-star text-amber-400 text-xs"></i>
+                            <span class="text-sm font-semibold text-white">${g.rating.toFixed(1)}</span>
+                            <span class="text-[10px] text-zinc-500">/5</span>
+                        </div>` : '';
 
-                    // Action buttons - only show appropriate ones
+                    // Metacritic 
+                    const mcBadge = g.metacritic ? `
+                        <div class="flex items-center gap-1 px-2 py-1 rounded-lg ${g.metacritic >= 75 ? 'bg-green-500/20' : g.metacritic >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'}">
+                            <span class="text-[10px] ${g.metacritic >= 75 ? 'text-green-400' : g.metacritic >= 50 ? 'text-yellow-400' : 'text-red-400'} font-bold">${g.metacritic}</span>
+                        </div>` : '';
+
+                    // Status indicator
+                    let statusIndicator = '';
+                    if (owned) statusIndicator = '<div class="absolute top-3 right-3 px-2 py-1 rounded-lg bg-green-500/90 backdrop-blur text-[10px] font-bold text-white flex items-center gap-1"><i class="fa-solid fa-check"></i> In Library</div>';
+                    else if (wishlisted) statusIndicator = '<div class="absolute top-3 right-3 px-2 py-1 rounded-lg bg-pink-500/90 backdrop-blur text-[10px] font-bold text-white flex items-center gap-1"><i class="fa-solid fa-heart"></i> Wishlisted</div>';
+
+                    // Action buttons
                     const gameData = encodeURIComponent(JSON.stringify(g));
-                    let actions = '';
+                    const viewGameId = owned ? (owned.steamAppId || owned.id) : `rawg_${g.id}`;
+
+                    let primaryAction = '';
+                    let secondaryActions = '';
+
                     if (!owned) {
-                        actions += `<button onclick="event.stopPropagation();addGameFromSearch(decodeURIComponent('${gameData}'))" class="px-2 py-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded text-[10px] transition"><i class="fa-solid fa-plus mr-1"></i>Library</button>`;
-                    }
-                    if (!wishlisted && !owned) {
-                        actions += `<button onclick="event.stopPropagation();addToWishlistFromSearch(decodeURIComponent('${gameData}'))" class="px-2 py-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 rounded text-[10px] transition"><i class="fa-solid fa-heart mr-1"></i>Wishlist</button>`;
-                    }
-                    if (owned) {
-                        actions += `<button onclick="event.stopPropagation();quickJournalFromSearch('${owned.steamAppId || owned.id}')" class="px-2 py-1 bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 rounded text-[10px] transition"><i class="fa-solid fa-book mr-1"></i>Journal</button>`;
+                        primaryAction = `<button onclick="event.stopPropagation();addGameFromSearch(decodeURIComponent('${gameData}'))" class="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-400 hover:to-pink-400 text-white text-sm font-semibold transition flex items-center justify-center gap-2"><i class="fa-solid fa-plus"></i> Add to Library</button>`;
+                        if (!wishlisted) {
+                            secondaryActions += `<button onclick="event.stopPropagation();addToWishlistFromSearch(decodeURIComponent('${gameData}'))" class="flex-1 py-2.5 rounded-lg bg-white/5 hover:bg-pink-500/20 border border-white/10 hover:border-pink-500/30 text-zinc-300 hover:text-pink-400 text-sm font-medium transition flex items-center justify-center gap-2"><i class="fa-solid fa-heart"></i> Wishlist</button>`;
+                        }
+                    } else {
+                        primaryAction = `<button onclick="event.stopPropagation();quickJournalFromSearch('${owned.steamAppId || owned.id}')" class="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-400 hover:to-purple-400 text-white text-sm font-semibold transition flex items-center justify-center gap-2"><i class="fa-solid fa-book"></i> Log Session</button>`;
                     }
 
-                    return `<div class="p-3 rounded-lg hover:bg-white/5 border border-white/5 mb-2">
-                <div class="flex items-start gap-3">
-                    <img src="${g.background_image || ''}" class="w-20 h-14 rounded-lg object-cover bg-zinc-800 flex-shrink-0">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 mb-1">
-                            <div class="font-medium text-sm truncate">${g.name}</div>
-                            ${mcBadge}
+                    return `<div class="group relative rounded-2xl overflow-hidden bg-gradient-to-b from-zinc-800/50 to-zinc-900/80 border border-white/5 hover:border-violet-500/40 mb-4 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/20 hover:-translate-y-1">
+                        <!-- Header Image -->
+                        <div class="relative h-36 overflow-hidden">
+                            <img src="${g.background_image || FALLBACK_HEADER}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" onerror="this.src='${FALLBACK_HEADER}'">
+                            <div class="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/60 to-transparent"></div>
+                            ${statusIndicator}
+                            <!-- Platforms -->
+                            <div class="absolute bottom-3 left-3 flex items-center gap-2 text-zinc-400 text-sm">
+                                ${platforms}
+                            </div>
                         </div>
-                        <div class="text-xs text-zinc-500 mb-1">${g.released || 'TBA'} ${g.rating ? '· ⭐' + g.rating.toFixed(1) : ''}</div>
-                        ${genres ? `<div class="text-[10px] text-zinc-600 mb-2">${genres}</div>` : ''}
-                        <div class="flex items-center gap-2 flex-wrap">
-                            ${statusBadge}
-                            ${actions}
+                        
+                        <!-- Content -->
+                        <div class="p-4">
+                            <!-- Title & Scores -->
+                            <div class="flex items-start justify-between gap-3 mb-3">
+                                <h3 class="font-bold text-white text-base leading-tight group-hover:text-violet-400 transition line-clamp-2">${g.name}</h3>
+                                <div class="flex items-center gap-2 flex-shrink-0">
+                                    ${ratingDisplay}
+                                    ${mcBadge}
+                                </div>
+                            </div>
+                            
+                            <!-- Meta Info -->
+                            <div class="flex items-center gap-3 text-xs text-zinc-500 mb-3">
+                                <span><i class="fa-solid fa-calendar mr-1"></i>${g.released ? g.released.split('-')[0] : 'TBA'}</span>
+                                ${g.playtime ? `<span><i class="fa-solid fa-clock mr-1"></i>${g.playtime}h avg</span>` : ''}
+                                ${g.ratings_count ? `<span><i class="fa-solid fa-users mr-1"></i>${(g.ratings_count / 1000).toFixed(1)}k ratings</span>` : ''}
+                            </div>
+                            
+                            <!-- Genre Tags -->
+                            <div class="flex flex-wrap gap-1.5 mb-4">
+                                ${genreTags}
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="flex gap-2">
+                                ${primaryAction}
+                                ${secondaryActions}
+                            </div>
+                            
+                            <!-- View Page Link -->
+                            <a href="/game-logger/game.html?id=${viewGameId}" onclick="event.stopPropagation();" class="block text-center text-xs text-zinc-500 hover:text-violet-400 mt-3 transition">
+                                <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> View Full Game Page
+                            </a>
                         </div>
-                    </div>
-                </div>
-            </div>`;
+                    </div>`;
                 }).join('');
             } catch (e) { document.getElementById('search-loading').classList.add('hidden'); }
         }
@@ -3719,7 +4714,7 @@
                 }
 
                 return `<div class="group relative rounded-xl overflow-hidden cursor-pointer border border-white/5 hover:border-violet-500/30 transition" onclick="openWishlistItem(${JSON.stringify(g).replace(/"/g, '&quot;')})">
-                    <img src="${g.background_image || ''}" class="w-full h-32 object-cover">
+                    <img src="${g.background_image || FALLBACK_HEADER}" class="w-full h-32 object-cover" onerror="this.src='${FALLBACK_HEADER}'">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
                     ${priorityBadge}
                     ${notesBadge}
@@ -3735,6 +4730,357 @@
                 </div>`;
             }).join('');
         }
+
+        // Leaderboard
+        let leaderboardMode = 'playtime';
+
+        function setLeaderboardMode(mode) {
+            leaderboardMode = mode;
+            document.querySelectorAll('.lb-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(`lb-tab-${mode}`)?.classList.add('active');
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const games = (user.games || []).filter(g => !g.hidden);
+
+            if (!games.length) {
+                document.getElementById('leaderboard-list').innerHTML = '';
+                document.getElementById('leaderboard-podium').innerHTML = '';
+                document.getElementById('no-leaderboard').classList.remove('hidden');
+                document.getElementById('leaderboard-stats').classList.add('hidden');
+                return;
+            }
+            document.getElementById('no-leaderboard').classList.add('hidden');
+            document.getElementById('leaderboard-stats').classList.remove('hidden');
+
+            // Calculate stats
+            const totalHours = Math.round(games.reduce((s, g) => s + (g.playtimeMinutes || 0), 0) / 60);
+            const ratedGames = games.filter(g => g.rating);
+            const avgRating = ratedGames.length > 0 ? (ratedGames.reduce((s, g) => s + g.rating, 0) / ratedGames.length).toFixed(1) : '—';
+            const gamesWithAch = games.filter(g => g.achievements?.percent);
+            const avgCompletion = gamesWithAch.length > 0 ? Math.round(gamesWithAch.reduce((s, g) => s + g.achievements.percent, 0) / gamesWithAch.length) : 0;
+            const mostPlayed = games.sort((a, b) => (b.playtimeMinutes || 0) - (a.playtimeMinutes || 0))[0];
+
+            document.getElementById('lb-total-hours').textContent = totalHours.toLocaleString() + 'h';
+            document.getElementById('lb-avg-rating').textContent = avgRating;
+            document.getElementById('lb-completion').textContent = avgCompletion + '%';
+            document.getElementById('lb-longest-session').textContent = mostPlayed?.name?.substring(0, 15) + (mostPlayed?.name?.length > 15 ? '…' : '') || '—';
+
+            // Sort based on mode
+            let sorted;
+            let getValue;
+            let getLabel;
+
+            if (leaderboardMode === 'playtime') {
+                sorted = [...games].sort((a, b) => (b.playtimeMinutes || 0) - (a.playtimeMinutes || 0)).slice(0, 10);
+                getValue = g => Math.round((g.playtimeMinutes || 0) / 60) + 'h';
+                getLabel = g => g.lastPlayed ? new Date(g.lastPlayed).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Never';
+            } else if (leaderboardMode === 'rating') {
+                sorted = [...games].filter(g => g.rating).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 10);
+                getValue = g => g.rating + '/10';
+                getLabel = g => GAME_RATINGS[g.rating] || '';
+            } else if (leaderboardMode === 'achievements') {
+                sorted = [...games].filter(g => g.achievements?.percent).sort((a, b) => (b.achievements?.percent || 0) - (a.achievements?.percent || 0)).slice(0, 10);
+                getValue = g => Math.round(g.achievements?.percent || 0) + '%';
+                getLabel = g => (g.achievements?.earned || 0) + '/' + (g.achievements?.total || 0);
+            } else if (leaderboardMode === 'recent') {
+                sorted = [...games].filter(g => g.lastPlayed).sort((a, b) => new Date(b.lastPlayed) - new Date(a.lastPlayed)).slice(0, 10);
+                getValue = g => getTimeAgo(new Date(g.lastPlayed));
+                getLabel = g => Math.round((g.playtimeMinutes || 0) / 60) + 'h total';
+            }
+
+            if (!sorted || !sorted.length) {
+                document.getElementById('leaderboard-podium').innerHTML = '<p class="text-zinc-500 text-center py-8">No data for this category</p>';
+                document.getElementById('leaderboard-list').innerHTML = '';
+                return;
+            }
+
+            // Render podium (top 3)
+            const top3 = sorted.slice(0, 3);
+            const podiumOrder = [1, 0, 2]; // 2nd, 1st, 3rd
+            const podiumHeights = ['h-28', 'h-36', 'h-24'];
+            const podiumColors = ['from-zinc-400 to-zinc-500', 'from-amber-400 to-yellow-500', 'from-amber-600 to-amber-700'];
+            const medals = ['🥈', '🥇', '🥉'];
+
+            let podiumHtml = '';
+            podiumOrder.forEach((idx, pos) => {
+                if (idx < top3.length) {
+                    const g = top3[idx];
+                    const gameId = g.steamAppId || g.id;
+                    const imgSrc = g.headerImg || g.icon || FALLBACK_HEADER;
+                    podiumHtml += `
+                        <div class="flex flex-col items-center cursor-pointer group" onclick="openGameModal('${gameId}')">
+                            <div class="text-3xl mb-2">${medals[pos]}</div>
+                            <img src="${imgSrc}" class="w-24 h-24 rounded-xl object-cover ring-2 ring-amber-400/30 group-hover:ring-amber-400 transition mb-2" onerror="this.src='${FALLBACK_HEADER}'">
+                            <div class="text-sm font-medium text-white text-center truncate max-w-24 group-hover:text-amber-400 transition">${g.name}</div>
+                            <div class="text-lg font-bold text-amber-400">${getValue(g)}</div>
+                            <div class="w-20 ${podiumHeights[pos]} bg-gradient-to-t ${podiumColors[pos]} rounded-t-lg mt-2 flex items-center justify-center">
+                                <span class="text-2xl font-bold text-black/50">${idx + 1}</span>
+                            </div>
+                        </div>`;
+                }
+            });
+            document.getElementById('leaderboard-podium').innerHTML = podiumHtml;
+
+            // Render remaining (4-10)
+            const remaining = sorted.slice(3);
+            if (!remaining.length) {
+                document.getElementById('leaderboard-list').innerHTML = '';
+                return;
+            }
+
+            document.getElementById('leaderboard-list').innerHTML = remaining.map((g, idx) => {
+                const gameId = g.steamAppId || g.id;
+                const imgSrc = g.icon || g.headerImg || FALLBACK_ICON;
+                const rank = idx + 4;
+
+                return `<div class="flex items-center gap-4 p-3 rounded-xl border bg-white/[0.02] border-white/5 hover:bg-white/5 transition cursor-pointer group" onclick="openGameModal('${gameId}')">
+                    <div class="w-8 flex-shrink-0 text-center">
+                        <span class="text-lg font-bold text-zinc-600">${rank}</span>
+                    </div>
+                    <img src="${imgSrc}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" onerror="this.src='${FALLBACK_ICON}'">
+                    <div class="flex-1 min-w-0">
+                        <div class="font-medium text-white truncate group-hover:text-violet-400 transition">${g.name}</div>
+                        <div class="text-xs text-zinc-500">${getLabel(g)}</div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                        <div class="text-lg font-bold text-white">${getValue(g)}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Discover - Game recommendations based on library
+        const RAWG_PROXY = '/.netlify/functions/rawg-proxy';
+        let discoverCache = null;
+
+        async function renderDiscover() {
+            const games = (user.games || []).filter(g => !g.hidden && g.name);
+
+            if (!games.length) {
+                document.getElementById('discover-grid').innerHTML = '';
+                document.getElementById('no-discover').classList.remove('hidden');
+                document.getElementById('discover-loading').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('no-discover').classList.add('hidden');
+
+            // Use cache if available (5 min)
+            if (discoverCache && discoverCache.timestamp > Date.now() - 300000) {
+                displayDiscoverGames(discoverCache.games);
+                return;
+            }
+
+            document.getElementById('discover-loading').classList.remove('hidden');
+            document.getElementById('discover-grid').innerHTML = '';
+
+            try {
+                // Get top rated games first, then fall back to most played
+                // Calculate average rating from categoryRatings or use rating field
+                const getGameScore = (g) => {
+                    const catRatings = g.categoryRatings ? Object.values(g.categoryRatings).filter(v => v > 0) : [];
+                    const avgCatRating = catRatings.length > 0 ? catRatings.reduce((a, b) => a + b, 0) / catRatings.length : 0;
+                    const rating = avgCatRating || g.rating || 0;
+                    const playtime = (g.playtimeMinutes || 0) / 60; // hours
+                    // Weighted score: rating is primary (0-10), playtime adds bonus (up to 2 points for 100h+)
+                    return (rating * 10) + Math.min(playtime / 50, 2);
+                };
+
+                const topGames = games
+                    .filter(g => (g.categoryRatings && Object.values(g.categoryRatings).some(v => v > 0)) || g.rating || (g.playtimeMinutes || 0) > 300)
+                    .sort((a, b) => getGameScore(b) - getGameScore(a))
+                    .slice(0, 5);
+                const gameNames = topGames.map(g => g.name);
+
+                // Fetch similar games for each top game
+                const allRecommendations = [];
+                const ownedIds = new Set(games.map(g => g.rawgId || g.name.toLowerCase()));
+
+                for (const gameName of gameNames.slice(0, 3)) {
+                    try {
+                        // Use the existing search-games API endpoint (same as search modal)
+                        const searchRes = await fetch(`${API}?action=search-games&query=${encodeURIComponent(gameName)}`, { credentials: 'include' });
+                        const searchData = await searchRes.json();
+
+                        if (searchData.games?.length) {
+                            // Get similar games (skip the exact match)
+                            searchData.games.forEach(g => {
+                                if (g.name.toLowerCase() !== gameName.toLowerCase() &&
+                                    !ownedIds.has(g.name.toLowerCase()) &&
+                                    !allRecommendations.find(r => r.id === g.id)) {
+                                    allRecommendations.push({
+                                        ...g,
+                                        reason: gameName
+                                    });
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.log('Error fetching recommendations for', gameName);
+                    }
+                }
+
+                // Cache and display
+                discoverCache = { games: allRecommendations, timestamp: Date.now() };
+                displayDiscoverGames(allRecommendations);
+
+            } catch (e) {
+                console.error('Discover error:', e);
+                document.getElementById('discover-grid').innerHTML = '<p class="text-zinc-500 col-span-4 text-center py-10">Failed to load recommendations</p>';
+            } finally {
+                document.getElementById('discover-loading').classList.add('hidden');
+            }
+        }
+
+        function displayDiscoverGames(games) {
+            if (!games.length) {
+                document.getElementById('discover-grid').innerHTML = '<p class="text-zinc-500 col-span-4 text-center py-10">No recommendations found - try adding more games to your library!</p>';
+                return;
+            }
+
+            document.getElementById('discover-grid').innerHTML = games.slice(0, 12).map(g => `
+                <div class="group relative rounded-xl overflow-hidden cursor-pointer border border-white/5 hover:border-cyan-500/30 transition" onclick="openGamePreview(${JSON.stringify(g).replace(/"/g, '&quot;')})">
+                    <img src="${g.background_image || ''}" class="w-full h-32 object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                    <div class="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] bg-cyan-500/80 text-white">
+                        <i class="fa-solid fa-lightbulb mr-1"></i>Similar
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 p-3">
+                        <div class="font-medium text-sm truncate">${g.name}</div>
+                        <div class="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+                            ${g.metacritic ? `<span class="text-green-400">${g.metacritic}</span>` : ''}
+                            <span class="truncate text-[10px]">Like ${g.reason}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // News - Gaming news and upcoming releases
+        let newsCache = null;
+
+        async function renderNews() {
+            document.getElementById('news-loading').classList.remove('hidden');
+            document.getElementById('no-news').classList.add('hidden');
+
+            // Use cache if available (10 min)
+            if (newsCache && newsCache.timestamp > Date.now() - 600000) {
+                displayNews(newsCache.releases);
+                return;
+            }
+
+            try {
+                // Get upcoming releases from RAWG via proxy
+                const releasesRes = await fetch(`${RAWG_PROXY}?endpoint=upcoming&page_size=20`);
+                const releasesData = await releasesRes.json();
+
+                newsCache = { releases: releasesData.results || [], timestamp: Date.now() };
+                displayNews(releasesData.results || []);
+
+            } catch (e) {
+                console.error('News error:', e);
+                document.getElementById('no-news').classList.remove('hidden');
+            } finally {
+                document.getElementById('news-loading').classList.add('hidden');
+            }
+        }
+
+        function displayNews(releases) {
+            // Display upcoming releases in calendar
+            if (!releases.length) {
+                document.getElementById('no-releases').classList.remove('hidden');
+                document.getElementById('releases-list').innerHTML = '';
+            } else {
+                document.getElementById('no-releases').classList.add('hidden');
+
+                // Group by month
+                const byMonth = {};
+                releases.forEach(g => {
+                    if (g.released) {
+                        const month = new Date(g.released).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+                        if (!byMonth[month]) byMonth[month] = [];
+                        byMonth[month].push(g);
+                    }
+                });
+
+                document.getElementById('releases-list').innerHTML = Object.entries(byMonth).map(([month, games]) => `
+                    <div class="mb-6">
+                        <div class="flex items-center gap-2 mb-3">
+                            <i class="fa-solid fa-calendar-days text-emerald-400"></i>
+                            <span class="text-sm font-bold text-emerald-400">${month}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            ${games.slice(0, 4).map(g => {
+                    const releaseDate = new Date(g.released);
+                    const dayNum = releaseDate.getDate();
+                    const dayName = releaseDate.toLocaleDateString('en-GB', { weekday: 'short' });
+                    const genres = (g.genres || []).slice(0, 2).map(gen => gen.name).join(', ');
+                    const platforms = (g.parent_platforms || []).slice(0, 3).map(p => {
+                        const name = p.platform?.name?.toLowerCase() || '';
+                        if (name.includes('pc')) return '<i class="fa-brands fa-windows"></i>';
+                        if (name.includes('playstation')) return '<i class="fa-brands fa-playstation"></i>';
+                        if (name.includes('xbox')) return '<i class="fa-brands fa-xbox"></i>';
+                        if (name.includes('nintendo')) return '<i class="fa-solid fa-n"></i>';
+                        return '';
+                    }).filter(x => x).join(' ');
+
+                    return `
+                                    <div class="group relative rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-emerald-500/30 cursor-pointer transition-all hover:scale-[1.02]" onclick="openGamePreview(${JSON.stringify(g).replace(/"/g, '&quot;')})">
+                                        <div class="relative h-24">
+                                            <img src="${g.background_image || FALLBACK_HEADER}" class="w-full h-full object-cover" onerror="this.src='${FALLBACK_HEADER}'">
+                                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+                                            <div class="absolute top-2 left-2 flex items-center gap-1 px-2 py-1 bg-emerald-500/90 rounded-lg text-white">
+                                                <span class="text-lg font-bold">${dayNum}</span>
+                                                <span class="text-[10px] uppercase">${dayName}</span>
+                                            </div>
+                                            ${g.metacritic ? `<div class="absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${g.metacritic >= 75 ? 'bg-green-500' : g.metacritic >= 50 ? 'bg-yellow-500' : 'bg-red-500'} text-white">${g.metacritic}</div>` : ''}
+                                        </div>
+                                        <div class="p-2">
+                                            <div class="font-medium text-sm truncate group-hover:text-emerald-400">${g.name}</div>
+                                            <div class="flex items-center justify-between mt-1">
+                                                <span class="text-[10px] text-zinc-500 truncate">${genres || 'Game'}</span>
+                                                <span class="text-[10px] text-zinc-500 flex gap-1">${platforms}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                }).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Display featured releases as "news" cards
+            const featured = releases.filter(g => g.metacritic || g.ratings_count > 10).slice(0, 6);
+
+            if (!featured.length) {
+                document.getElementById('news-feed').innerHTML = `
+                    <div class="text-center py-10 text-zinc-500">
+                        <i class="fa-solid fa-rocket text-4xl mb-4 opacity-30"></i>
+                        <p>Check out the upcoming releases on the right!</p>
+                    </div>
+                `;
+            } else {
+                document.getElementById('news-feed').innerHTML = featured.map(g => `
+                    <div class="bg-white/5 rounded-xl overflow-hidden hover:bg-white/10 transition cursor-pointer group" onclick="openGamePreview(${JSON.stringify(g).replace(/"/g, '&quot;')})">
+                        <div class="relative h-40">
+                            <img src="${g.background_image || FALLBACK_HEADER}" class="w-full h-full object-cover" onerror="this.src='${FALLBACK_HEADER}'">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
+                            <div class="absolute bottom-0 left-0 right-0 p-4">
+                                <div class="text-lg font-bold group-hover:text-violet-400 transition">${g.name}</div>
+                                <div class="flex items-center gap-3 text-sm text-zinc-400 mt-1">
+                                    <span><i class="fa-solid fa-calendar mr-1"></i>${g.released || 'TBA'}</span>
+                                    ${g.metacritic ? `<span class="text-green-400"><i class="fa-solid fa-star mr-1"></i>${g.metacritic}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
         async function addToWishlist(g) {
             user.wishlist = user.wishlist || [];
             if (user.wishlist.find(w => w.id === g.id)) { toast('Already in wishlist'); return; }
@@ -3871,22 +5217,27 @@
                 const games = (c.gameIds || []).map(id => (user.games || []).find(g => g.steamAppId == id || g.id == id)).filter(Boolean);
                 const covers = games.slice(0, 4);
                 const colorClass = `bg-${c.color || 'violet'}-500`;
+                const isExpanded = expandedCollectionIdx === idx;
 
-                return `<div class="group relative rounded-xl overflow-hidden bg-white/5 hover:bg-white/10 transition cursor-pointer border border-white/5 hover:border-${c.color || 'violet'}-500/30" onclick="openCollectionDetail(${idx})">
-                    <div class="flex h-24">
-                        ${covers.length ? covers.map(g => `<div class="flex-1 h-full"><img src="${g.headerImg || g.icon}" class="w-full h-full object-cover"></div>`).join('') : `<div class="flex-1 h-full flex items-center justify-center text-zinc-600"><i class="fa-solid fa-folder text-3xl"></i></div>`}
-                    </div>
-                    <div class="p-4">
-                        <div class="flex items-center gap-2 mb-1">
-                            <div class="w-2 h-2 rounded-full ${colorClass}"></div>
-                            <span class="font-semibold">${c.name}</span>
+                return `<div class="collection-item">
+                    <div class="group relative rounded-xl overflow-hidden bg-white/5 hover:bg-white/10 transition cursor-pointer border ${isExpanded ? 'border-' + (c.color || 'violet') + '-500' : 'border-white/5'} hover:border-${c.color || 'violet'}-500/30" onclick="openCollectionDetail(${idx})">
+                        <div class="flex h-24">
+                            ${covers.length ? covers.map(g => `<div class="flex-1 h-full"><img src="${g.headerImg || g.icon}" class="w-full h-full object-cover"></div>`).join('') : `<div class="flex-1 h-full flex items-center justify-center text-zinc-600"><i class="fa-solid fa-folder text-3xl"></i></div>`}
                         </div>
-                        <div class="text-xs text-zinc-500">${games.length} games${c.description ? ' · ' + c.description.substring(0, 30) + (c.description.length > 30 ? '...' : '') : ''}</div>
+                        <div class="p-4">
+                            <div class="flex items-center gap-2 mb-1">
+                                <div class="w-2 h-2 rounded-full ${colorClass}"></div>
+                                <span class="font-semibold flex-1">${c.name}</span>
+                                <i class="fa-solid fa-chevron-${isExpanded ? 'up' : 'down'} text-xs text-zinc-500"></i>
+                            </div>
+                            <div class="text-xs text-zinc-500">${games.length} games${c.description ? ' · ' + c.description.substring(0, 30) + (c.description.length > 30 ? '...' : '') : ''}</div>
+                        </div>
+                        ${isOwner ? `<div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                            <button onclick="event.stopPropagation();editCollection(${idx})" class="w-7 h-7 rounded-full bg-black/60 text-zinc-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-pencil text-xs"></i></button>
+                            <button onclick="event.stopPropagation();deleteCollection(${idx})" class="w-7 h-7 rounded-full bg-black/60 text-red-400 hover:text-red-300 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>` : ''}
                     </div>
-                    ${isOwner ? `<div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                        <button onclick="event.stopPropagation();editCollection(${idx})" class="w-7 h-7 rounded-full bg-black/60 text-zinc-400 hover:text-white flex items-center justify-center"><i class="fa-solid fa-pencil text-xs"></i></button>
-                        <button onclick="event.stopPropagation();deleteCollection(${idx})" class="w-7 h-7 rounded-full bg-black/60 text-red-400 hover:text-red-300 flex items-center justify-center"><i class="fa-solid fa-trash text-xs"></i></button>
-                    </div>` : ''}
+                    ${isExpanded ? `<div class="mt-3 grid grid-cols-3 gap-2 pb-4">${renderCollectionGames(c)}</div>` : ''}
                 </div>`;
             }).join('');
         }
@@ -4009,19 +5360,42 @@
             toast('Collection deleted');
         }
 
+        let expandedCollectionIdx = null;
+
         function openCollectionDetail(idx) {
             const c = user.collections?.[idx];
             if (!c) return;
-            // For now, just filter library to show collection games
-            filter = 'all';
-            const gameIds = c.gameIds || [];
-            // Store collection filter and re-render
-            document.getElementById('search-input').value = '';
-            switchView('library');
-            // Custom filter - show only games in this collection
-            const collectionGames = (user.games || []).filter(g => gameIds.includes(String(g.steamAppId || g.id)));
-            // Update heading temporarily
-            toast(`Viewing ${c.name} (${collectionGames.length} games)`);
+
+            // Toggle expand/collapse
+            if (expandedCollectionIdx === idx) {
+                expandedCollectionIdx = null;
+            } else {
+                expandedCollectionIdx = idx;
+            }
+
+            // Re-render collections to show/hide expanded section
+            renderCollections();
+        }
+
+        function renderCollectionGames(collection) {
+            const gameIds = collection.gameIds || [];
+            const games = gameIds.map(id => (user.games || []).find(g => String(g.steamAppId) === id || String(g.id) === id)).filter(Boolean);
+
+            if (!games.length) {
+                return '<p class="text-zinc-500 text-sm py-4">No games in this collection</p>';
+            }
+
+            return games.map(g => {
+                const hours = Math.round((g.playtimeMinutes || 0) / 60);
+                const gameId = g.steamAppId || g.id;
+                return `<div class="bg-white/5 rounded-lg overflow-hidden hover:bg-white/10 transition cursor-pointer border border-white/5" onclick="openGameModal('${gameId}')">
+                    <img src="${g.headerImg || g.icon}" class="w-full h-20 object-cover" onerror="this.src='https://via.placeholder.com/200x80'">
+                    <div class="p-2">
+                        <div class="font-medium text-xs truncate">${g.name}</div>
+                        <div class="text-xs text-zinc-500">${hours}h</div>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         // Game Preview Modal
@@ -4168,21 +5542,12 @@
             const syncTime = user?.lastSync || user?.steam?.lastSync;
             if (!syncTime) return;
 
-            document.getElementById('sync-indicator').classList.remove('hidden');
+            document.getElementById('sync-indicator')?.classList.remove('hidden');
 
             const lastSyncTime = new Date(syncTime);
             const ago = formatTimeAgo(lastSyncTime);
-            document.getElementById('last-sync').textContent = `Synced: ${ago}`;
-
-            // Auto-sync runs hourly, calculate next sync
-            const nextSync = new Date(lastSyncTime.getTime() + 60 * 60 * 1000);
-            const remaining = nextSync - Date.now();
-            if (remaining > 0) {
-                const mins = Math.ceil(remaining / 60000);
-                document.getElementById('next-sync').textContent = `Next: ${mins}m`;
-            } else {
-                document.getElementById('next-sync').textContent = 'Next: Soon';
-            }
+            const lastSyncEl = document.getElementById('last-sync');
+            if (lastSyncEl) lastSyncEl.textContent = `Synced: ${ago}`;
         }
 
         function formatTimeAgo(date) {
@@ -4383,8 +5748,238 @@
         // Close context menu on click elsewhere
         document.addEventListener('click', () => closeContextMenu());
 
+        // Global keyboard shortcuts
+        document.addEventListener('keydown', e => {
+            // Don't trigger shortcuts when typing in inputs
+            if (e.target.matches('input, textarea, select')) return;
+
+            switch (e.key) {
+                case 'Escape':
+                    // Close any open modals
+                    closeGameModal();
+                    closeEntryModal();
+                    closeSearchModal();
+                    closeSettingsModal();
+                    closeContextMenu();
+                    break;
+                case '/':
+                    // Focus search input
+                    e.preventDefault();
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) searchInput.focus();
+                    break;
+                case 'm':
+                case 'M':
+                    // Toggle multi-select mode (library)
+                    if (document.getElementById('view-library')?.classList.contains('hidden') === false) {
+                        toggleMultiSelect();
+                    }
+                    break;
+                case '1':
+                    if (!e.ctrlKey && !e.metaKey) switchView('library');
+                    break;
+                case '2':
+                    if (!e.ctrlKey && !e.metaKey) switchView('journal');
+                    break;
+                case '3':
+                    if (!e.ctrlKey && !e.metaKey) switchView('wishlist');
+                    break;
+                case '4':
+                    if (!e.ctrlKey && !e.metaKey) switchView('collections');
+                    break;
+            }
+        });
+
+        // ========== RIOT / LEAGUE OF LEGENDS INTEGRATION ==========
+
+        async function linkRiotAccount() {
+            const riotId = document.getElementById('riot-id-input').value.trim();
+            const region = document.getElementById('riot-region-select').value;
+
+            if (!riotId || !riotId.includes('#')) {
+                toast('Please enter your Riot ID in Name#Tag format', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('riot-link-btn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Linking...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API}?action=link-riot-account`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ riotId, region })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    user.riotAccount = data.riotAccount;
+                    updateRiotUI();
+                    render();
+                    toast('Riot account linked! You can now sync LoL matches.', 'success');
+                } else {
+                    toast(data.error || 'Failed to link account', 'error');
+                }
+            } catch (e) {
+                toast('Error linking account: ' + e.message, 'error');
+            } finally {
+                btn.innerHTML = '<i class="fa-solid fa-link"></i> Link Riot Account';
+                btn.disabled = false;
+            }
+        }
+
+        async function unlinkRiotAccount() {
+            if (!confirm('Unlink your Riot account? This will remove LoL from your library but keep journal entries.')) return;
+
+            try {
+                const res = await fetch(`${API}?action=unlink-riot-account`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    delete user.riotAccount;
+                    user.games = (user.games || []).filter(g => g.id !== 'lol_riot_account');
+                    updateRiotUI();
+                    render();
+                    toast('Riot account unlinked');
+                } else {
+                    toast(data.error || 'Failed to unlink', 'error');
+                }
+            } catch (e) {
+                toast('Error unlinking: ' + e.message, 'error');
+            }
+        }
+
+        async function syncRiotMatches() {
+            if (!user.riotAccount) {
+                toast('No Riot account linked', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('sync-lol-btn');
+            const settingsBtn = document.getElementById('riot-sync-btn');
+
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+                btn.disabled = true;
+            }
+            if (settingsBtn) {
+                settingsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+                settingsBtn.disabled = true;
+            }
+
+            try {
+                const res = await fetch(`${API}?action=sync-lol-matches`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    // Refresh user data
+                    const meRes = await fetch(`${API}?action=me`, { credentials: 'include' });
+                    const meData = await meRes.json();
+                    if (meData.user) {
+                        user = meData.user;
+                    }
+
+                    updateRiotUI();
+                    render();
+                    renderJournal();
+
+                    toast(`Synced ${data.matchesSynced} matches, created ${data.entriesCreated} journal entries`, 'success');
+                } else {
+                    toast(data.error || 'Failed to sync matches', 'error');
+                }
+            } catch (e) {
+                toast('Error syncing: ' + e.message, 'error');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = '<img src="https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-parties/global/default/riot-fist-logo-secondary-white.png" class="w-3 h-3 object-contain opacity-80"> Sync LoL';
+                    btn.disabled = false;
+                }
+                if (settingsBtn) {
+                    settingsBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sync Matches';
+                    settingsBtn.disabled = false;
+                }
+            }
+        }
+
+        function updateRiotUI() {
+            const hasRiot = !!user.riotAccount;
+
+            // Update sidebar sync button visibility
+            const sidebarBtn = document.getElementById('sync-lol-btn');
+            if (sidebarBtn) {
+                sidebarBtn.classList.toggle('hidden', !hasRiot);
+            }
+
+            // Update settings modal
+            const unlinkedState = document.getElementById('riot-unlinked');
+            const linkedState = document.getElementById('riot-linked');
+            const unlinkSection = document.getElementById('riot-unlink');
+
+            if (unlinkedState) unlinkedState.classList.toggle('hidden', hasRiot);
+            if (linkedState) linkedState.classList.toggle('hidden', !hasRiot);
+            if (unlinkSection) unlinkSection.classList.toggle('hidden', !hasRiot);
+
+            if (hasRiot) {
+                const riot = user.riotAccount;
+                const iconId = riot.profileIconId || 29;
+
+                // Update linked account display
+                const iconEl = document.getElementById('riot-profile-icon');
+                const nameEl = document.getElementById('riot-linked-name');
+                const regionEl = document.getElementById('riot-linked-region');
+                const rankEl = document.getElementById('riot-rank-badge');
+
+                if (iconEl) iconEl.src = `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/${iconId}.png`;
+                if (nameEl) nameEl.textContent = `${riot.gameName}#${riot.tagLine}`;
+                if (regionEl) regionEl.textContent = riot.region.toUpperCase() + (riot.summonerLevel ? ` • Level ${riot.summonerLevel}` : '');
+
+                if (rankEl && riot.rank) {
+                    rankEl.textContent = `${riot.rank.tier} ${riot.rank.division}`;
+                    rankEl.classList.remove('hidden');
+                } else if (rankEl) {
+                    rankEl.textContent = 'Unranked';
+                }
+            }
+        }
+
+        // Call updateRiotUI on init
+        const originalRender = render;
+        const patchedRender = function () {
+            originalRender.apply(this, arguments);
+            if (isOwner && user.riotAccount) {
+                updateRiotUI();
+            }
+        };
+        // We'll call updateRiotUI after init instead of patching
+
         loadStickyPrefs();
         init();
+
+        // Initialize Riot UI after page loads
+        setTimeout(() => {
+            if (user && isOwner) {
+                updateRiotUI();
+            }
+        }, 500);
+
+        // Hourly LoL sync (like Steam sync)
+        setInterval(() => {
+            if (user && isOwner && user.riotAccount) {
+                console.log('Hourly LoL sync triggered...');
+                syncRiotMatches();
+            }
+        }, 60 * 60 * 1000); // Every hour
     </script>
 </body>
 
