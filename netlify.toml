@@ -84,6 +84,7 @@
   from = "/cinetrack/trakt-callback"
   to = "/cinetrack/trakt-callback.html"
   status = 200
+  force = true
 
 [[redirects]]
   from = "/cinetrack/profile"
