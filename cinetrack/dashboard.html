@@ -1,0 +1,2919 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Cinetrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="/cinetrack/manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        :root {
+            --bg: #09090b;
+            --bg-elevated: #18181b;
+            --bg-hover: #27272a;
+            --bg-subtle: #0f0f12;
+            --text: #fafafa;
+            --text-dim: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #f59e0b;
+            --accent-dim: rgba(245, 158, 11, 0.15);
+            --green: #10b981;
+            --gold: #fbbf24;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+            --orange: #fb923c;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.04);
+            --radius: 8px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(12, 12, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav a {
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .nav a:hover {
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        .nav a.active {
+            color: white;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .search-trigger:hover {
+            border-color: var(--text-muted);
+            color: var(--text-dim);
+        }
+
+        .search-trigger kbd {
+            padding: 0.15rem 0.4rem;
+            background: var(--bg);
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.35rem 0.75rem 0.35rem 0.35rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.15s;
+        }
+
+        .user-menu:hover {
+            border-color: var(--text-muted);
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+        }
+
+        .user-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Main */
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 2.5rem 4rem;
+        }
+
+        /* Welcome */
+        .welcome {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .welcome-text h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+        }
+
+        .welcome-text p {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+        }
+
+        .stats {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex-wrap: wrap;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.75rem 0;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0 1.25rem;
+            border-right: 1px solid var(--border);
+        }
+
+        .stat:last-of-type {
+            border-right: none;
+        }
+
+        .stat-icon {
+            font-size: 0.85rem;
+            opacity: 0.6;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Streak Badge */
+        .streak-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, var(--orange), var(--accent));
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .streak-badge i {
+            font-size: 1rem;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 2.5rem;
+            overflow: visible;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .section-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .section-link:hover {
+            color: white;
+        }
+
+        /* Scroll Arrows */
+        .scroll-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background: rgba(20, 20, 24, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .section:hover .scroll-arrow {
+            opacity: 1;
+        }
+
+        .scroll-arrow:hover {
+            background: var(--bg-hover);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .scroll-arrow.left {
+            left: 0;
+        }
+
+        .scroll-arrow.right {
+            right: 0;
+        }
+
+        .content-wrapper {
+            position: relative;
+        }
+
+        /* Grid Layouts */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2.5rem;
+        }
+
+        /* Up Next */
+        .up-next-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .up-next-grid.collapsed .up-next-card:nth-child(n+5) {
+            display: none;
+        }
+
+        .up-next-toggle {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem 1.25rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .up-next-toggle:hover {
+            background: var(--bg-hover);
+            color: white;
+        }
+
+        .up-next-card {
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .up-next-card:hover {
+            background: var(--bg-hover);
+        }
+
+        .up-next-main {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .up-next-poster {
+            width: 75px;
+            height: 112px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .up-next-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .up-next-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .up-next-show {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .up-next-badge {
+            padding: 0.12rem 0.35rem;
+            background: var(--green);
+            border-radius: 4px;
+            font-size: 0.55rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .up-next-episode {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .up-next-title {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .up-next-progress {
+            margin-top: auto;
+            padding-top: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--green);
+            border-radius: 2px;
+        }
+
+        .progress-text {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .up-next-meta {
+            display: flex;
+            gap: 0.75rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.4rem;
+        }
+
+        .up-next-actions {
+            display: flex;
+            border-top: 1px solid var(--border);
+        }
+
+        .up-next-action {
+            flex: 1;
+            padding: 0.55rem;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            transition: all 0.15s;
+        }
+
+        .up-next-action:hover {
+            background: var(--bg-hover);
+            color: white;
+        }
+
+        .up-next-action:not(:last-child) {
+            border-right: 1px solid var(--border);
+        }
+
+        .up-next-action.watch {
+            color: var(--green);
+        }
+
+        .up-next-action.watch:hover {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        /* Waiting State */
+        .up-next-card.waiting {
+            opacity: 0.75;
+        }
+
+        .waiting-badge {
+            background: rgba(234, 179, 8, 0.15) !important;
+            color: var(--gold) !important;
+        }
+
+        .waiting-badge i {
+            font-size: 0.6rem;
+        }
+
+        .waiting-text {
+            color: var(--gold);
+        }
+
+        /* Calendar Timeline */
+        .calendar-timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .calendar-timeline::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .calendar-month {
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-month-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.75rem;
+            margin-left: -2rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .calendar-month-label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            background: var(--bg);
+            border: 2px solid var(--purple);
+            border-radius: 50%;
+        }
+
+        .calendar-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.75rem;
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            margin-bottom: 0.5rem;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.15s;
+            position: relative;
+        }
+
+        .calendar-item::before {
+            content: '';
+            position: absolute;
+            left: -1.65rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: var(--purple);
+            border-radius: 50%;
+        }
+
+        .calendar-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .calendar-item.today::before {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        .calendar-item.movie::before {
+            background: var(--accent);
+        }
+
+        .calendar-poster {
+            width: 40px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+        .calendar-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .calendar-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .calendar-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .calendar-date {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .calendar-day {
+            font-size: 1.1rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .calendar-weekday {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Content Row */
+        .content-row {
+            display: flex;
+            gap: 0.875rem;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding-bottom: 0.75rem;
+            padding-left: 2.5rem;
+            padding-right: 2.5rem;
+            margin-left: -2.5rem;
+            margin-right: -2.5rem;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .content-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .poster {
+            flex-shrink: 0;
+            width: 130px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .poster:hover .poster-img {
+            transform: scale(1.03);
+        }
+
+        .poster-img-wrap {
+            position: relative;
+            aspect-ratio: 2/3;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .poster-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.25s;
+        }
+
+        .poster-rating {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.15rem 0.4rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 5px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .poster-rating i {
+            color: var(--gold);
+            font-size: 0.55rem;
+        }
+
+        .poster-title {
+            font-size: 0.8rem;
+            font-weight: 500;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            line-clamp: 1;
+            -webkit-box-orient: vertical;
+        }
+
+        .poster-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .poster-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .poster-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--accent));
+            transition: width 0.3s ease;
+        }
+
+        /* Quick Add */
+        .poster-quick-add {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .poster:hover .poster-quick-add {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .poster.watched {
+            opacity: 0.5;
+        }
+
+        .poster-watched {
+            position: absolute;
+            bottom: 6px;
+            left: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--green);
+            border-radius: 50%;
+            font-size: 0.65rem;
+        }
+
+        .poster-quick-add:hover {
+            transform: scale(1.1);
+        }
+
+        /* Recent & Watchlist */
+        .recent-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .recent-item {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid var(--border);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .recent-item:last-child {
+            border-bottom: none;
+        }
+
+        .recent-item:hover {
+            opacity: 0.8;
+        }
+
+        .recent-poster {
+            width: 34px;
+            height: 51px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        .recent-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .recent-title {
+            font-weight: 500;
+            font-size: 0.8rem;
+            margin-bottom: 0.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .recent-detail {
+            font-size: 0.7rem;
+            color: var(--green);
+        }
+
+        .recent-time {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .watchlist-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .watchlist-item {
+            width: 55px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .watchlist-thumb {
+            width: 100%;
+            aspect-ratio: 2/3;
+            border-radius: 5px;
+            object-fit: cover;
+            transition: transform 0.2s;
+            display: block;
+        }
+
+        .watchlist-item:hover .watchlist-thumb {
+            transform: scale(1.05);
+        }
+
+        .watchlist-title {
+            font-size: 0.6rem;
+            margin-top: 0.25rem;
+            color: var(--text-dim);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+
+        /* Favorites */
+        .favorites-row {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.25rem;
+            scrollbar-width: none;
+        }
+
+        .favorites-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .fav-item {
+            flex-shrink: 0;
+            width: 80px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .fav-poster {
+            width: 100%;
+            aspect-ratio: 2/3;
+            border-radius: 8px;
+            object-fit: cover;
+            margin-bottom: 0.35rem;
+        }
+
+        .fav-title {
+            font-size: 0.7rem;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* This Week Summary - Minimal */
+        .week-summary {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.875rem 1rem;
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            margin-bottom: 1.25rem;
+        }
+
+        .week-dots {
+            display: flex;
+            gap: 0.35rem;
+        }
+
+        .week-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.2s;
+        }
+
+        .week-dot.active {
+            background: var(--green);
+        }
+
+        .week-dot.today {
+            box-shadow: 0 0 0 2px var(--bg-elevated), 0 0 0 4px var(--accent);
+        }
+
+        .week-dot.active.today {
+            box-shadow: 0 0 0 2px var(--bg-elevated), 0 0 0 4px var(--green);
+        }
+
+        .week-text {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .week-text strong {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        /* Keyboard Hints */
+        .shortcuts-bar {
+            display: flex;
+            gap: 1.5rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .shortcut {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .shortcut kbd {
+            padding: 0.2rem 0.4rem;
+            background: var(--bg);
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 0.65rem;
+        }
+
+        /* Random Pick Button */
+        .shuffle-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .shuffle-btn:hover {
+            border-color: var(--purple);
+            color: white;
+        }
+
+        /* Today's Pick - Hero Banner */
+        .todays-pick {
+            position: relative;
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            min-height: 280px;
+            background: var(--bg-elevated);
+        }
+
+        .todays-pick-backdrop {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.4;
+        }
+
+        .todays-pick-gradient {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(12, 12, 15, 0.95) 0%, rgba(12, 12, 15, 0.7) 40%, transparent 100%),
+                linear-gradient(to top, rgba(12, 12, 15, 1) 0%, transparent 50%);
+        }
+
+        .todays-pick-content {
+            position: relative;
+            display: flex;
+            gap: 1.5rem;
+            padding: 1.75rem;
+            z-index: 2;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .todays-pick-poster {
+            width: 140px;
+            height: 210px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            flex-shrink: 0;
+        }
+
+        .todays-pick-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .todays-pick-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--purple);
+            font-weight: 600;
+        }
+
+        .todays-pick-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.75rem;
+            line-height: 1.2;
+        }
+
+        .todays-pick-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .todays-pick-meta .rating {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .todays-pick-overview {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            max-width: 500px;
+        }
+
+        .todays-pick-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .todays-pick-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .todays-pick-btn.primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .todays-pick-btn.primary:hover {
+            background: #f40612;
+            transform: translateY(-2px);
+        }
+
+        .todays-pick-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .todays-pick-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Empty */
+        .empty {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.4;
+        }
+
+        .empty h4 {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 0.2rem;
+        }
+
+        .empty p {
+            font-size: 0.75rem;
+        }
+
+        .btn-small {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.6rem;
+            padding: 0.45rem 0.9rem;
+            background: var(--accent);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 0.875rem 1.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 300;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            color: var(--green);
+        }
+
+        .toast-undo {
+            color: var(--accent);
+            cursor: pointer;
+            margin-left: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 380px;
+            padding: 1.5rem;
+        }
+
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        .modal-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        .modal-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-option:hover {
+            border-color: var(--green);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .modal-option i {
+            color: var(--green);
+        }
+
+        .modal-option span {
+            font-weight: 500;
+        }
+
+        .modal-date {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .modal-date label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .modal-date input {
+            width: 100%;
+            padding: 0.65rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .modal-date input:focus {
+            outline: none;
+            border-color: var(--green);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 0.65rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background: var(--bg);
+            color: var(--text-dim);
+        }
+
+        .modal-btn.confirm {
+            background: var(--green);
+            color: white;
+        }
+
+        /* Search Modal */
+        .search-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .search-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 500px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .search-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-input-wrap i {
+            color: var(--text-muted);
+        }
+
+        .search-input-wrap input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .search-results {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .search-result {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.7rem 1.25rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .search-result:hover {
+            background: var(--bg-hover);
+        }
+
+        .search-result img {
+            width: 32px;
+            height: 48px;
+            border-radius: 5px;
+            object-fit: cover;
+        }
+
+        .search-hint {
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1000px) {
+
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-timeline {
+                max-height: 400px;
+                overflow-y: auto;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 0 1.25rem;
+            }
+
+            .nav,
+            .search-trigger span {
+                display: none;
+            }
+
+            main {
+                padding: 1.25rem;
+            }
+
+            .welcome {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats {
+                gap: 1rem;
+            }
+
+            .stat {
+                text-align: left;
+            }
+
+            .up-next-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .poster {
+                width: 110px;
+            }
+
+            .week-summary {
+                gap: 0.25rem;
+            }
+        }
+
+        /* Mood Selector */
+        .mood-selector {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .mood-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mood-pill:hover {
+            border-color: var(--text-muted);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .mood-pill.active {
+            background: linear-gradient(135deg, var(--purple), var(--accent));
+            border-color: transparent;
+            color: white;
+        }
+
+        .mood-pill .mood-emoji {
+            font-size: 1rem;
+        }
+
+        /* Currently Airing */
+        .airing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .airing-card {
+            display: flex;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.15s;
+        }
+
+        .airing-card:hover {
+            border-color: var(--green);
+            background: var(--bg-hover);
+        }
+
+        .airing-poster {
+            width: 50px;
+            height: 75px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .airing-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .airing-show {
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 0.15rem;
+        }
+
+        .airing-episode {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .airing-time {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--green);
+            border-radius: 4px;
+            width: fit-content;
+        }
+
+        .airing-time.today {
+            background: rgba(234, 179, 8, 0.15);
+            color: var(--gold);
+        }
+
+        .airing-time.now {
+            background: rgba(229, 9, 20, 0.15);
+            color: var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a href="/cinetrack/" class="logo"><i class="fa-solid fa-clapperboard"></i>Cinetrack</a>
+            <nav class="nav">
+                <a href="/cinetrack/dashboard" class="active">Home</a>
+                <a href="/cinetrack/search">Discover</a>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <button class="search-trigger" id="search-trigger"><i
+                    class="fa-solid fa-search"></i><span>Search</span><kbd>⌘K</kbd></button>
+            <a href="#" class="user-menu" id="user-menu">
+                <img class="user-avatar" id="user-avatar" src="" alt="">
+                <span class="user-name" id="user-name">Profile</span>
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <section class="welcome">
+            <div class="welcome-text">
+                <h1 id="welcome-title">Welcome back</h1>
+                <p id="welcome-sub">Here's what's on your radar</p>
+            </div>
+            <div class="stats" id="stats">
+                <div class="stat">
+                    <i class="fa-solid fa-film stat-icon"></i>
+                    <span class="stat-value" id="stat-movies">0</span>
+                    <span class="stat-label">movies</span>
+                </div>
+                <div class="stat">
+                    <i class="fa-solid fa-tv stat-icon"></i>
+                    <span class="stat-value" id="stat-shows">0</span>
+                    <span class="stat-label">shows</span>
+                </div>
+                <div class="stat">
+                    <i class="fa-solid fa-list stat-icon"></i>
+                    <span class="stat-value" id="stat-episodes">0</span>
+                    <span class="stat-label">episodes</span>
+                </div>
+                <div class="stat">
+                    <i class="fa-solid fa-clock stat-icon" style="color:var(--accent);"></i>
+                    <span class="stat-value" id="stat-movie-hours">0h</span>
+                    <span class="stat-label">movie time</span>
+                </div>
+                <div class="stat">
+                    <i class="fa-solid fa-clock stat-icon" style="color:var(--green);"></i>
+                    <span class="stat-value" id="stat-show-hours">0h</span>
+                    <span class="stat-label">show time</span>
+                </div>
+                <div class="stat">
+                    <i class="fa-solid fa-star stat-icon"></i>
+                    <span class="stat-value" id="stat-avg-rating">-</span>
+                    <span class="stat-label">avg rating</span>
+                </div>
+                <div class="stat" id="stat-streak" style="display:none;">
+                    <i class="fa-solid fa-fire stat-icon" style="color:var(--orange);opacity:1;"></i>
+                    <span class="stat-value" id="stat-streak-value">0</span>
+                    <span class="stat-label">day streak</span>
+                </div>
+            </div>
+
+            <!-- Last 30 Days -->
+            <div id="last30days"
+                style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(0,0,0,0.2);border-radius:10px;display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;font-size:0.85rem;">
+            </div>
+        </section>
+
+        <!-- Up Next -->
+        <section class="section" id="up-next-section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-play"></i> Continue Watching</h2>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <a href="javascript:void(0)" class="section-link" id="view-hidden-btn"
+                        onclick="openHiddenShowsModal()" style="display:none;"><i class="fa-solid fa-eye-slash"></i>
+                        View Hidden</a>
+                    <button class="up-next-toggle" id="up-next-toggle" onclick="toggleUpNext()" style="display:none;">
+                        <i class="fa-solid fa-chevron-down"></i>
+                        <span>Show more</span>
+                    </button>
+                </div>
+            </div>
+            <div class="up-next-grid collapsed" id="up-next-grid"></div>
+        </section>
+
+        <!-- This Week + Recent + Watchlist -->
+        <section class="section grid-3">
+            <div>
+                <!-- Today's Pick - Hero Banner -->
+                <div class="todays-pick" id="todays-pick" style="display:none;">
+                    <div class="todays-pick-backdrop" id="todays-pick-backdrop"></div>
+                    <div class="todays-pick-gradient"></div>
+                    <div class="todays-pick-content">
+                        <img class="todays-pick-poster" id="todays-pick-poster" src="">
+                        <div class="todays-pick-info">
+                            <div class="todays-pick-label">✨ Today's Pick</div>
+                            <div class="todays-pick-title" id="todays-pick-title"></div>
+                            <div class="todays-pick-meta" id="todays-pick-meta"></div>
+                            <div class="todays-pick-overview" id="todays-pick-overview"></div>
+                            <div class="todays-pick-actions">
+                                <a id="todays-pick-link" class="todays-pick-btn primary" href="#">
+                                    <i class="fa-solid fa-info-circle"></i> View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- This Week Activity - Minimal -->
+                <div class="week-summary" id="week-summary"></div>
+
+                <!-- Recent Activity -->
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Recent Activity</h2>
+                </div>
+                <div class="recent-list" id="recent-list"></div>
+
+                <!-- Favorites -->
+                <div class="section-header" style="margin-top:1.5rem;" id="favorites-header">
+                    <h2 class="section-title"><i class="fa-solid fa-heart"></i> Favorites</h2>
+                </div>
+                <div class="favorites-row" id="favorites-row"></div>
+
+                <!-- Shortcuts -->
+                <div class="shortcuts-bar">
+                    <div class="shortcut"><kbd>⌘K</kbd> Search</div>
+                    <div class="shortcut"><kbd>?</kbd> Shortcuts</div>
+                </div>
+            </div>
+
+            <!-- Calendar Timeline -->
+            <div>
+                <div class="section-header">
+                    <h2 class="section-title"><i class="fa-solid fa-calendar"></i> Coming Up</h2>
+                </div>
+                <div class="calendar-timeline" id="calendar-timeline"></div>
+            </div>
+        </section>
+
+        <!-- Watchlist Full -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-bookmark"></i> Your Watchlist</h2>
+                <div style="display:flex;gap:0.5rem;">
+                    <button class="shuffle-btn" onclick="shuffleWatchlist()"><i class="fa-solid fa-shuffle"></i>
+                        Shuffle</button>
+                    <a href="/cinetrack/search" class="section-link">Add more</a>
+                </div>
+            </div>
+            <div class="watchlist-grid" id="watchlist-grid"></div>
+        </section>
+
+        <!-- Currently Airing -->
+        <section class="section" id="airing-section" style="display:none;">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-broadcast-tower"></i> Currently Airing</h2>
+            </div>
+            <div class="airing-grid" id="airing-grid"></div>
+        </section>
+
+        <!-- Trending -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-fire"></i> Trending</h2>
+                <a href="/cinetrack/search" class="section-link">See all</a>
+            </div>
+            <div class="content-wrapper">
+                <button class="scroll-arrow left" onclick="scrollRow('trending-row', -1)"><i
+                        class="fa-solid fa-chevron-left"></i></button>
+                <div class="content-row" id="trending-row"></div>
+                <button class="scroll-arrow right" onclick="scrollRow('trending-row', 1)"><i
+                        class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </section>
+
+        <!-- Mood-Based Recommendations -->
+        <section class="section">
+            <div class="section-header">
+                <h2 class="section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> What are you in the mood for?
+                </h2>
+            </div>
+            <div class="mood-selector" id="mood-selector">
+                <button class="mood-pill active" data-mood="all" onclick="setMood('all')">
+                    <span class="mood-emoji">✨</span> All
+                </button>
+                <button class="mood-pill" data-mood="drama" onclick="setMood('drama')">
+                    <span class="mood-emoji">🎭</span> Something Dramatic
+                </button>
+                <button class="mood-pill" data-mood="comedy" onclick="setMood('comedy')">
+                    <span class="mood-emoji">😂</span> Make Me Laugh
+                </button>
+                <button class="mood-pill" data-mood="horror" onclick="setMood('horror')">
+                    <span class="mood-emoji">😱</span> Scare Me
+                </button>
+                <button class="mood-pill" data-mood="thriller" onclick="setMood('thriller')">
+                    <span class="mood-emoji">🧠</span> Keep Me Guessing
+                </button>
+                <button class="mood-pill" data-mood="romance" onclick="setMood('romance')">
+                    <span class="mood-emoji">💕</span> Feel The Love
+                </button>
+                <button class="mood-pill" data-mood="action" onclick="setMood('action')">
+                    <span class="mood-emoji">💥</span> Action Packed
+                </button>
+                <button class="mood-pill" data-mood="scifi" onclick="setMood('scifi')">
+                    <span class="mood-emoji">🚀</span> Sci-Fi Adventure
+                </button>
+            </div>
+            <div class="content-wrapper">
+                <button class="scroll-arrow left" onclick="scrollRow('discover-row', -1)"><i
+                        class="fa-solid fa-chevron-left"></i></button>
+                <div class="content-row" id="discover-row"></div>
+                <button class="scroll-arrow right" onclick="scrollRow('discover-row', 1)"><i
+                        class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"><i class="fa-solid fa-check"></i><span id="toast-text">Marked as watched</span></div>
+
+    <!-- Watch Modal -->
+    <div class="modal-overlay" id="watch-modal">
+        <div class="modal">
+            <div class="modal-title" id="watch-modal-title">Mark as Watched</div>
+            <div class="modal-subtitle" id="watch-modal-subtitle">S1:E1</div>
+            <div class="modal-option" id="watch-now-btn"><i class="fa-solid fa-check"></i><span>Just finished</span>
+            </div>
+            <div class="modal-option" id="watch-release-btn" style="display:none;"><i
+                    class="fa-solid fa-calendar-day"></i><span id="watch-release-text">Watched on release date</span>
+            </div>
+            <div class="modal-date">
+                <label>Or pick a date:</label>
+                <input type="datetime-local" id="watch-date-input">
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="watch-cancel-btn">Cancel</button>
+                <button class="modal-btn confirm" id="watch-confirm-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="search-modal" id="search-modal">
+        <div class="search-box">
+            <div class="search-input-wrap">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="search-input" placeholder="Search movies & shows...">
+            </div>
+            <div class="search-results" id="search-results">
+                <div class="search-hint">Start typing...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Shows Modal -->
+    <div class="modal-overlay" id="hidden-shows-modal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-title"><i class="fa-solid fa-eye-slash"></i> Hidden Shows</div>
+            <div class="modal-subtitle">Shows hidden from Continue Watching</div>
+            <div id="hidden-shows-list" style="max-height:400px;overflow-y:auto;margin:1rem 0;"></div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeHiddenShowsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/cinetrack-api';
+        const IMG = 'https://image.tmdb.org/t/p';
+        let user = null;
+        let pendingWatch = null;
+        let showDetailsCache = {};
+        let episodeTitleCache = {};
+        let lastUnwatch = null;
+
+        // Toast
+        function showToast(text, undoFn = null) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerHTML = text + (undoFn ? '<span class="toast-undo" onclick="undoAction()">Undo</span>' : '');
+            toast.classList.add('show');
+            if (undoFn) lastUnwatch = undoFn;
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        window.undoAction = async function () {
+            if (lastUnwatch) { await lastUnwatch(); lastUnwatch = null; }
+            document.getElementById('toast').classList.remove('show');
+        };
+
+        // Scroll rows with arrows
+        function scrollRow(rowId, direction) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                const scrollAmount = 400;
+                row.scrollBy({ left: scrollAmount * direction, behavior: 'smooth' });
+            }
+        }
+
+        // Search
+        const searchModal = document.getElementById('search-modal');
+        const searchInput = document.getElementById('search-input');
+        document.getElementById('search-trigger').addEventListener('click', () => { searchModal.classList.add('active'); searchInput.focus(); });
+        searchModal.addEventListener('click', (e) => { if (e.target === searchModal) searchModal.classList.remove('active'); });
+
+        document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); searchModal.classList.add('active'); searchInput.focus(); }
+            if (e.key === 'Escape') { searchModal.classList.remove('active'); document.getElementById('watch-modal').classList.remove('active'); document.getElementById('hidden-shows-modal').classList.remove('active'); }
+        });
+
+        let searchTimeout;
+        searchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            const q = searchInput.value.trim();
+            if (!q) { document.getElementById('search-results').innerHTML = '<div class="search-hint">Start typing...</div>'; return; }
+            searchTimeout = setTimeout(() => doSearch(q), 250);
+        });
+
+        async function doSearch(query) {
+            try {
+                const res = await fetch(`${API}?action=search&query=${encodeURIComponent(query)}&type=multi`);
+                const data = await res.json();
+                if (!data.results?.length) { document.getElementById('search-results').innerHTML = '<div class="search-hint">No results</div>'; return; }
+                document.getElementById('search-results').innerHTML = data.results.slice(0, 6).map(item => {
+                    const isMovie = item.media_type === 'movie';
+                    const title = item.title || item.name;
+                    return `<a href="/cinetrack/${isMovie ? 'movie' : 'show'}/${item.id}" class="search-result">
+                        ${item.poster_path ? `<img src="${IMG}/w92${item.poster_path}">` : '<div style="width:32px;height:48px;background:var(--bg);border-radius:5px;"></div>'}
+                        <div><div style="font-weight:500;font-size:0.9rem;">${title}</div><div style="font-size:0.7rem;color:var(--text-muted);">${isMovie ? 'Movie' : 'TV'}</div></div>
+                    </a>`;
+                }).join('');
+            } catch (e) { document.getElementById('search-results').innerHTML = '<div class="search-hint">Error</div>'; }
+        }
+
+        // Watch Modal
+        const watchModal = document.getElementById('watch-modal');
+        document.getElementById('watch-cancel-btn').addEventListener('click', () => watchModal.classList.remove('active'));
+        document.getElementById('watch-now-btn').addEventListener('click', () => markWatched());
+        document.getElementById('watch-release-btn').addEventListener('click', () => {
+            if (pendingWatch?.airDate) markWatched(new Date(pendingWatch.airDate).toISOString());
+        });
+        document.getElementById('watch-confirm-btn').addEventListener('click', () => {
+            const dateInput = document.getElementById('watch-date-input').value;
+            if (dateInput) markWatched(new Date(dateInput).toISOString());
+        });
+
+        function openWatchModal(show) {
+            const nextS = show.lastEpisode?.season || 1;
+            const nextE = (show.lastEpisode?.episode || 0) + 1;
+            pendingWatch = { ...show, nextSeason: nextS, nextEpisode: nextE, airDate: null };
+            document.getElementById('watch-modal-title').textContent = show.title;
+            document.getElementById('watch-modal-subtitle').textContent = `S${nextS}:E${nextE}`;
+            document.getElementById('watch-date-input').value = new Date().toISOString().slice(0, 16);
+
+            // Reset release date button
+            const releaseBtn = document.getElementById('watch-release-btn');
+            releaseBtn.style.display = 'none';
+
+            // Fetch episode air date
+            fetchEpisodeAirDate(show.id, nextS, nextE).then(airDate => {
+                if (airDate) {
+                    pendingWatch.airDate = airDate;
+                    const formatted = new Date(airDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    document.getElementById('watch-release-text').textContent = `Watched on ${formatted}`;
+                    releaseBtn.style.display = 'flex';
+                }
+            });
+
+            watchModal.classList.add('active');
+        }
+
+        async function fetchEpisodeAirDate(showId, season, episode) {
+            try {
+                // Use TMDB API through our proxy to get episode details
+                const res = await fetch(`${API}?action=episode&showId=${showId}&season=${season}&episode=${episode}`);
+                const data = await res.json();
+                return data.air_date || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function markWatched(customDate = null) {
+            if (!pendingWatch) return;
+            const payload = {
+                showId: pendingWatch.id,
+                showTitle: pendingWatch.title,
+                showPoster: pendingWatch.poster,
+                seasonNumber: pendingWatch.nextSeason,
+                episodeNumber: pendingWatch.nextEpisode,
+                episodeTitle: ''
+            };
+            const action = customDate ? 'watch-episode-dated' : 'watch-episode';
+            if (customDate) payload.watchedAt = customDate;
+
+            try {
+                await fetch(`${API}?action=${action}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) });
+                watchModal.classList.remove('active');
+
+                const showId = pendingWatch.id;
+                showToast(`Marked S${pendingWatch.nextSeason}:E${pendingWatch.nextEpisode} as watched`, async () => {
+                    await fetch(`${API}?action=unwatch-episode`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ showId }) });
+                    loadUpNext();
+                    loadRecent();
+                });
+
+                // Refresh user data
+                const userRes = await fetch(`${API}?action=me`, { credentials: 'include' });
+                const userData = await userRes.json();
+                if (userData.user) user = userData.user;
+
+                loadUpNext();
+                loadRecent();
+                loadWeekSummary();
+                loadStats();
+            } catch (e) { console.error('Failed:', e); }
+        }
+
+        async function unwatchEpisode(showId) {
+            if (!confirm('Go back one episode?')) return;
+            try {
+                await fetch(`${API}?action=unwatch-episode`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ showId }) });
+                showToast('Unmarked episode');
+                loadUpNext();
+                loadRecent();
+            } catch (e) { }
+        }
+
+        async function hideShow(showId) {
+            try {
+                await fetch(`${API}?action=hide-show`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ showId }) });
+                showToast('Show hidden');
+                loadUpNext();
+            } catch (e) { }
+        }
+
+        // Quick add to watchlist
+        async function quickAdd(id, type, title, poster) {
+            try {
+                await fetch(`${API}?action=watchlist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id, type, title, poster, add: true }) });
+                showToast(`Added "${title}" to watchlist`);
+            } catch (e) { }
+        }
+
+        // Init
+        async function init() {
+            try {
+                const res = await fetch(`${API}?action=me`, { credentials: 'include' });
+                if (!res.ok) {
+                    console.error('Auth check failed with status:', res.status);
+                    // Only redirect on explicit 401/403, not other errors
+                    if (res.status === 401 || res.status === 403) {
+                        location.href = '/cinetrack/';
+                    }
+                    return;
+                }
+                const data = await res.json();
+                if (!data.user) {
+                    // Add a flag to prevent redirect loops
+                    if (!sessionStorage.getItem('auth_redirect')) {
+                        sessionStorage.setItem('auth_redirect', 'true');
+                        location.href = '/cinetrack/';
+                    }
+                    return;
+                }
+                sessionStorage.removeItem('auth_redirect');
+                user = data.user;
+
+                document.getElementById('user-name').textContent = user.username || user.displayName;
+                document.getElementById('user-avatar').src = user.avatar;
+                document.getElementById('user-menu').href = user.username ? `/cinetrack/${user.username}` : '#';
+
+                const hour = new Date().getHours();
+                document.getElementById('welcome-title').textContent = `${hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'}, ${user.username || 'there'}`;
+
+                loadStats();
+                loadStreak();
+                loadWeekSummary();
+                loadTodaysPick();
+                loadUpNext();
+                updateHiddenButton();
+                loadCalendar();
+                loadRecent();
+                loadFavorites();
+                loadWatchlist();
+                loadTrending();
+                loadDiscover();
+                loadCurrentlyAiring();
+
+                // Check Trakt connection status
+                checkTraktStatus();
+            } catch (e) {
+                console.error('Init error:', e);
+                // Don't redirect on network errors - just show error state
+            }
+        }
+
+        function loadStats() {
+            const s = user.stats || {};
+            const moviesWatched = s.moviesWatched || 0;
+            const episodesWatched = s.episodesWatched || 0;
+            const showCount = Object.keys(user.showProgress || {}).length;
+
+            // Calculate separate watch times
+            const movieHours = Math.round(moviesWatched * 2);
+            const showHours = Math.round(episodesWatched * 0.75);
+
+            // Calculate average rating
+            const ratings = user.ratings || [];
+            const avgRating = ratings.length
+                ? (ratings.reduce((a, r) => a + r.rating, 0) / ratings.length).toFixed(1)
+                : '-';
+
+            document.getElementById('stat-movies').textContent = moviesWatched;
+            document.getElementById('stat-shows').textContent = showCount;
+            document.getElementById('stat-episodes').textContent = episodesWatched;
+            document.getElementById('stat-movie-hours').textContent = movieHours + 'h';
+            document.getElementById('stat-show-hours').textContent = showHours + 'h';
+            document.getElementById('stat-avg-rating').textContent = avgRating;
+
+            // Last 30 Days stats
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const recentMovies = (user.watchedMovies || []).filter(m => {
+                const watchDate = Array.isArray(m.watchedAt) ? m.watchedAt[m.watchedAt.length - 1] : m.watchedAt;
+                return new Date(watchDate) >= thirtyDaysAgo;
+            }).length;
+            const recentEpisodes = (user.recentlyWatched || []).filter(r => r.type === 'episode' && new Date(r.watchedAt) >= thirtyDaysAgo).length;
+            const recentHours = Math.round(recentMovies * 2 + recentEpisodes * 0.75);
+
+            document.getElementById('last30days').innerHTML = `
+                <span style="color:var(--text-muted);"><i class="fa-solid fa-calendar-days" style="margin-right:0.4rem;"></i>Last 30 Days:</span>
+                <span style="font-weight:600;color:var(--accent);">${recentMovies} movies</span>
+                <span style="font-weight:600;color:var(--green);">${recentEpisodes} episodes</span>
+                <span style="font-weight:600;color:var(--purple);">${recentHours}h watched</span>
+            `;
+        }
+
+        function loadStreak() {
+            const recent = user.recentlyWatched || [];
+            if (!recent.length) return;
+
+            // Calculate streak (consecutive days)
+            const dates = new Set(recent.map(r => new Date(r.watchedAt).toDateString()));
+            let streak = 0;
+            let d = new Date();
+            while (dates.has(d.toDateString())) {
+                streak++;
+                d.setDate(d.getDate() - 1);
+            }
+
+            if (streak >= 2) {
+                document.getElementById('stat-streak-value').textContent = streak;
+                document.getElementById('stat-streak').style.display = 'flex';
+            }
+        }
+
+        function loadWeekSummary() {
+            const container = document.getElementById('week-summary');
+            const recent = user.recentlyWatched || [];
+            const today = new Date();
+
+            let totalThisWeek = 0;
+            let activeDays = 0;
+            const weekDots = [];
+
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toDateString();
+                const count = recent.filter(r => new Date(r.watchedAt).toDateString() === dateStr).length;
+                totalThisWeek += count;
+                if (count > 0) activeDays++;
+                weekDots.push({ count, isToday: i === 0 });
+            }
+
+            container.innerHTML = `
+                <div class="week-dots">
+                    ${weekDots.map(d => `<div class="week-dot ${d.count > 0 ? 'active' : ''} ${d.isToday ? 'today' : ''}" title="${d.count} watched"></div>`).join('')}
+                </div>
+                <div class="week-text"><strong>${totalThisWeek}</strong> watched this week • ${activeDays}/7 days active</div>
+            `;
+        }
+
+        async function loadUpNext() {
+            const container = document.getElementById('up-next-grid');
+            try {
+                const res = await fetch(`${API}?action=up-next`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (!data.shows?.length) { document.getElementById('up-next-section').style.display = 'none'; return; }
+                document.getElementById('up-next-section').style.display = 'block';
+
+                console.log('Up-next API returned:', data.shows.length, 'shows');
+
+                // Fetch details for more shows (up to 50) to find all incomplete ones
+                const showsWithDetails = await Promise.all(data.shows.slice(0, 50).map(async show => {
+                    let details = showDetailsCache[show.id];
+                    if (!details) {
+                        try { const r = await fetch(`${API}?action=show&id=${show.id}`); details = await r.json(); showDetailsCache[show.id] = details; } catch (e) { details = {}; }
+                    }
+                    return { ...show, details };
+                }));
+
+                // Filter out 100% completed shows AND shows with 0 watched episodes
+                const incompleteShows = showsWithDetails.filter(show => {
+                    const watched = show.watchedEpisodes?.length || 0;
+                    // Exclude shows with 0 watched episodes (user unwatched all)
+                    if (watched === 0) return false;
+                    let totalEps = 0;
+                    if (show.details?.seasons) {
+                        totalEps = show.details.seasons.reduce((sum, s) => sum + (s.season_number > 0 ? s.episode_count : 0), 0);
+                    }
+                    // Include if: no episode data (can't determine) OR watched less than total
+                    return totalEps === 0 || watched < totalEps;
+                });
+
+                console.log('Incomplete shows after filter:', incompleteShows.length);
+
+                if (!incompleteShows.length) { document.getElementById('up-next-section').style.display = 'none'; return; }
+
+                // Calculate metadata for each show (without setting innerHTML yet)
+                incompleteShows.forEach(show => {
+                    const watched = show.watchedEpisodes?.length || 0;
+                    let totalEps = 0, episodesLeft = 0, seasonsCount = 0;
+                    const seasons = show.details?.seasons?.filter(s => s.season_number > 0) || [];
+
+                    if (seasons.length) {
+                        seasonsCount = seasons.length;
+                        totalEps = seasons.reduce((sum, s) => sum + s.episode_count, 0);
+                        episodesLeft = Math.max(0, totalEps - watched);
+                    }
+
+                    // Calculate next episode properly with season boundaries
+                    let nextS = show.lastEpisode?.season || 1;
+                    let nextE = (show.lastEpisode?.episode || 0) + 1;
+
+                    // Check if we've finished the current season - need to move to next season
+                    const currentSeason = seasons.find(s => s.season_number === nextS);
+                    if (currentSeason && nextE > currentSeason.episode_count) {
+                        // Move to first episode of next season
+                        nextS++;
+                        nextE = 1;
+                    }
+
+                    const progress = totalEps > 0 ? Math.round((watched / totalEps) * 100) : 0;
+                    const timeLeft = episodesLeft > 0 ? `~${Math.round(episodesLeft * 45 / 60)}h` : '';
+
+                    // Check if user's next episode has aired yet
+                    const nextEpInfo = show.details?.next_episode_to_air;
+                    const lastEpInfo = show.details?.last_episode_to_air;
+
+                    // User is waiting only if: they've caught up to what's aired AND there's a future episode
+                    const userIsUpToDate = lastEpInfo &&
+                        (nextS > lastEpInfo.season_number ||
+                            (nextS === lastEpInfo.season_number && nextE > lastEpInfo.episode_number));
+                    const isWaiting = userIsUpToDate && nextEpInfo && new Date(nextEpInfo.air_date) > new Date();
+                    const waitingDate = isWaiting ? new Date(nextEpInfo.air_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+
+                    // Store data for rendering
+                    show._nextS = nextS;
+                    show._nextE = nextE;
+                    show._isWaiting = isWaiting;
+                    show._waitingDate = waitingDate;
+                    show._progress = progress;
+                    show._watched = watched;
+                    show._totalEps = totalEps;
+                    show._seasonsCount = seasonsCount;
+                    show._episodesLeft = episodesLeft;
+                    show._timeLeft = timeLeft;
+                });
+
+                // Fetch episode titles for all shows in parallel
+                await Promise.all(incompleteShows.map(async show => {
+                    if (!show._isWaiting) {
+                        const cacheKey = `${show.id}-S${show._nextS}E${show._nextE}`;
+                        if (!episodeTitleCache[cacheKey]) {
+                            try {
+                                const epRes = await fetch(`${API}?action=episode&showId=${show.id}&season=${show._nextS}&episode=${show._nextE}`);
+                                const epData = await epRes.json();
+                                episodeTitleCache[cacheKey] = epData.name || '';
+                            } catch (e) { episodeTitleCache[cacheKey] = ''; }
+                        }
+                        show._epTitle = episodeTitleCache[cacheKey];
+                    }
+                }));
+
+                container.innerHTML = incompleteShows.map(show => `
+                    <div class="up-next-card ${show._isWaiting ? 'waiting' : ''}">
+                        <a href="/cinetrack/show/${show.id}" class="up-next-main">
+                            ${show.poster ? `<img class="up-next-poster" src="${IMG}/w185${show.poster}">` : '<div class="up-next-poster" style="background:var(--bg);"></div>'}
+                            <div class="up-next-content">
+                                <div class="up-next-header"><span class="up-next-show">${show.title}</span>${show._isWaiting ? '<span class="up-next-badge waiting-badge"><i class="fa-solid fa-clock"></i> Waiting</span>' : '<span class="up-next-badge">Next</span>'}</div>
+                                <div class="up-next-episode">S${show._nextS}:E${show._nextE}</div>
+                                ${show._isWaiting ? `<div class="up-next-title waiting-text">Airs ${show._waitingDate}</div>` : `<div class="up-next-title">${show._epTitle || 'Continue'}</div>`}
+                                <div class="up-next-progress"><div class="progress-bar"><div class="progress-fill" style="width:${show._progress}%"></div></div><span class="progress-text">${show._watched}/${show._totalEps || '?'}</span></div>
+                                <div class="up-next-meta"><span>${show._seasonsCount}S</span><span>${show._episodesLeft} left</span>${show._timeLeft ? `<span>${show._timeLeft}</span>` : ''}</div>
+                            </div>
+                        </a>
+                        <div class="up-next-actions">
+                            ${show._isWaiting ? `<button class="up-next-action" disabled style="opacity:0.5;cursor:not-allowed;"><i class="fa-solid fa-clock"></i>${show._waitingDate}</button>` : `<button class="up-next-action watch" onclick="openWatchModal(${JSON.stringify({ id: show.id, title: show.title, poster: show.poster, lastEpisode: show.lastEpisode }).replace(/"/g, '&quot;')})"><i class="fa-solid fa-check"></i>Watched</button>`}
+                            <button class="up-next-action" onclick="unwatchEpisode(${show.id})"><i class="fa-solid fa-rotate-left"></i>Back</button>
+                            <button class="up-next-action" onclick="hideShow(${show.id})"><i class="fa-solid fa-eye-slash"></i>Hide</button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Show toggle if more than 4 items
+                const toggleBtn = document.getElementById('up-next-toggle');
+                if (incompleteShows.length > 4) {
+                    toggleBtn.style.display = 'flex';
+                } else {
+                    toggleBtn.style.display = 'none';
+                    container.classList.remove('collapsed');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function toggleUpNext() {
+            const grid = document.getElementById('up-next-grid');
+            const toggle = document.getElementById('up-next-toggle');
+            const isCollapsed = grid.classList.contains('collapsed');
+
+            if (isCollapsed) {
+                grid.classList.remove('collapsed');
+                toggle.innerHTML = '<i class="fa-solid fa-chevron-up"></i><span>Show less</span>';
+            } else {
+                grid.classList.add('collapsed');
+                toggle.innerHTML = '<i class="fa-solid fa-chevron-down"></i><span>Show more</span>';
+            }
+        }
+
+        async function loadCalendar() {
+            const container = document.getElementById('calendar-timeline');
+            const watchlist = user.watchlist || [];
+            const showProgress = user.showProgress || {};
+
+            // Combine watchlist and in-progress shows
+            const showIds = new Set();
+            const itemsToCheck = [];
+
+            // Add all in-progress shows first
+            for (const showId of Object.keys(showProgress)) {
+                showIds.add(showId);
+                const progress = showProgress[showId];
+                itemsToCheck.push({
+                    id: parseInt(showId),
+                    type: 'tv',
+                    title: progress.title || 'Unknown',
+                    poster: progress.poster,
+                    fromProgress: true
+                });
+            }
+
+            // Add watchlist items (movies and shows not already in progress)
+            for (const item of watchlist) {
+                if (!showIds.has(String(item.id))) {
+                    itemsToCheck.push(item);
+                }
+            }
+
+            if (!itemsToCheck.length) {
+                container.innerHTML = '<div class="empty"><i class="fa-solid fa-calendar-xmark"></i><h4>No upcoming</h4><p>Add shows to your watchlist</p></div>';
+                return;
+            }
+
+            const upcomingItems = [];
+            const today = new Date();
+
+            // Check more items to find all upcoming episodes
+            for (const item of itemsToCheck.slice(0, 75)) {
+                try {
+                    const isMovie = item.type === 'movie';
+                    const res = await fetch(`${API}?action=${isMovie ? 'movie' : 'show'}&id=${item.id}`);
+                    const details = await res.json();
+
+                    if (isMovie && details.release_date && new Date(details.release_date) > today) {
+                        upcomingItems.push({ ...item, date: details.release_date, isMovie: true, title: details.title || item.title });
+                    } else if (details.next_episode_to_air) {
+                        upcomingItems.push({
+                            ...item,
+                            date: details.next_episode_to_air.air_date,
+                            ep: `S${details.next_episode_to_air.season_number}E${details.next_episode_to_air.episode_number}`,
+                            title: details.name || item.title,
+                            poster: item.poster || details.poster_path
+                        });
+                    }
+                } catch (e) { }
+            }
+
+            if (!upcomingItems.length) { container.innerHTML = '<div class="empty"><i class="fa-solid fa-calendar-check"></i><h4>All caught up!</h4><p>No upcoming episodes</p></div>'; return; }
+
+            upcomingItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Group by month
+            const months = {};
+            upcomingItems.forEach(item => {
+                const d = new Date(item.date);
+                const key = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                if (!months[key]) months[key] = [];
+                months[key].push(item);
+            });
+
+            container.innerHTML = Object.entries(months).slice(0, 3).map(([month, items]) => `
+                <div class="calendar-month">
+                    <div class="calendar-month-label">${month}</div>
+                    ${items.slice(0, 5).map(item => {
+                const d = new Date(item.date);
+                const isToday = d.toDateString() === today.toDateString();
+                return `
+                            <a href="/cinetrack/${item.isMovie ? 'movie' : 'show'}/${item.id}" class="calendar-item ${isToday ? 'today' : ''} ${item.isMovie ? 'movie' : ''}">
+                                ${item.poster ? `<img class="calendar-poster" src="${IMG}/w92${item.poster}">` : '<div class="calendar-poster" style="background:var(--bg);"></div>'}
+                                <div class="calendar-content">
+                                    <div class="calendar-title">${item.title}</div>
+                                    <div class="calendar-meta">${item.ep || 'Movie'}</div>
+                                </div>
+                                <div class="calendar-date">
+                                    <div class="calendar-day">${d.getDate()}</div>
+                                    <div class="calendar-weekday">${d.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                                </div>
+                            </a>
+                        `;
+            }).join('')}
+                </div>
+            `).join('');
+        }
+
+        function loadRecent() {
+            const container = document.getElementById('recent-list');
+            const recent = user.recentlyWatched || [];
+            if (!recent.length) { container.innerHTML = '<div class="empty"><h4>No activity</h4></div>'; return; }
+            container.innerHTML = recent.slice(0, 5).map(item => `
+                <a href="/cinetrack/${item.type === 'movie' ? 'movie' : 'show'}/${item.id}" class="recent-item">
+                    ${item.poster ? `<img class="recent-poster" src="${IMG}/w92${item.poster}">` : '<div class="recent-poster" style="background:var(--bg-elevated);"></div>'}
+                    <div class="recent-content"><div class="recent-title">${item.title}</div><div class="recent-detail">${item.episode || 'Watched'}</div></div>
+                    <div class="recent-time">${timeAgo(new Date(item.watchedAt))}</div>
+                </a>
+            `).join('');
+        }
+
+        function loadFavorites() {
+            const container = document.getElementById('favorites-row');
+            const header = document.getElementById('favorites-header');
+            const favs = user.favorites || [];
+            if (!favs.length) { header.style.display = 'none'; container.style.display = 'none'; return; }
+            header.style.display = 'flex';
+            container.style.display = 'flex';
+            container.innerHTML = favs.slice(0, 8).map(item => `
+                <a href="/cinetrack/${item.type === 'movie' ? 'movie' : 'show'}/${item.id}" class="fav-item">
+                    ${item.poster ? `<img class="fav-poster" src="${IMG}/w185${item.poster}">` : '<div class="fav-poster" style="background:var(--bg-elevated);"></div>'}
+                    <div class="fav-title">${item.title}</div>
+                </a>
+            `).join('');
+        }
+
+        function loadWatchlist() {
+            const container = document.getElementById('watchlist-grid');
+            const list = user.watchlist || [];
+            if (!list.length) { container.innerHTML = '<div class="empty" style="width:100%;"><h4>Watchlist empty</h4><a href="/cinetrack/search" class="btn-small"><i class="fa-solid fa-plus"></i>Browse</a></div>'; return; }
+            container.innerHTML = list.slice(0, 14).map(item => item.poster ? `
+                <a href="/cinetrack/${item.type === 'movie' ? 'movie' : 'show'}/${item.id}" class="watchlist-item">
+                    <img class="watchlist-thumb" src="${IMG}/w185${item.poster}">
+                    <div class="watchlist-title">${item.title}</div>
+                </a>
+            ` : '').join('');
+        }
+
+        async function loadTrending() {
+            try {
+                const res = await fetch(`${API}?action=trending&type=all`);
+                const data = await res.json();
+                if (data.results) document.getElementById('trending-row').innerHTML = data.results.slice(0, 10).map(renderPoster).join('');
+            } catch (e) { }
+        }
+
+        // Mood to genre mapping (TMDB genre IDs)
+        const moodGenres = {
+            all: null,
+            drama: '18',
+            comedy: '35',
+            horror: '27',
+            thriller: '53',
+            romance: '10749',
+            action: '28',
+            scifi: '878'
+        };
+        let currentMood = 'all';
+
+        function setMood(mood) {
+            currentMood = mood;
+            // Update active pill
+            document.querySelectorAll('.mood-pill').forEach(p => {
+                p.classList.toggle('active', p.dataset.mood === mood);
+            });
+            // Reload recommendations with new mood
+            loadDiscover();
+        }
+
+        async function loadDiscover() {
+            try {
+                let url = `${API}?action=discover&type=movie&sort_by=popularity.desc`;
+                if (currentMood !== 'all' && moodGenres[currentMood]) {
+                    url += `&genre=${moodGenres[currentMood]}`;
+                }
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!data.results) return;
+                const watched = (user.watchedMovies || []).map(m => m.id);
+                const wl = (user.watchlist || []).map(w => w.id);
+                const filtered = data.results.filter(i => !watched.includes(i.id) && !wl.includes(i.id)).slice(0, 15);
+                // Add movie type since discover doesn't include it
+                document.getElementById('discover-row').innerHTML = filtered.map(i => ({ ...i, media_type: 'movie' })).map(renderPoster).join('');
+            } catch (e) { console.error('loadDiscover error:', e); }
+        }
+
+        async function loadCurrentlyAiring() {
+            const showProgress = user.showProgress || {};
+            const showIds = Object.keys(showProgress);
+            if (!showIds.length) return;
+
+            const now = new Date();
+            const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            const airingEpisodes = [];
+
+            // Fetch next episode for each show (limit to 10 for performance)
+            const showsToCheck = showIds.slice(0, 10);
+
+            for (const showId of showsToCheck) {
+                try {
+                    const res = await fetch(`${API}?action=show&id=${showId}`);
+                    const show = await res.json();
+                    if (!show.next_episode_to_air) continue;
+
+                    const nextEp = show.next_episode_to_air;
+                    const airDate = new Date(nextEp.air_date);
+
+                    // Only show episodes airing within next 7 days
+                    if (airDate >= now && airDate <= weekFromNow) {
+                        airingEpisodes.push({
+                            showId,
+                            showName: show.name,
+                            poster: show.poster_path,
+                            season: nextEp.season_number,
+                            episode: nextEp.episode_number,
+                            episodeName: nextEp.name,
+                            airDate
+                        });
+                    }
+                } catch (e) { }
+            }
+
+            // Sort by air date
+            airingEpisodes.sort((a, b) => a.airDate - b.airDate);
+
+            // Show section if there are airing episodes
+            const section = document.getElementById('airing-section');
+            const grid = document.getElementById('airing-grid');
+
+            if (!airingEpisodes.length) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            grid.innerHTML = airingEpisodes.map(ep => {
+                const isToday = ep.airDate.toDateString() === now.toDateString();
+                const isTomorrow = ep.airDate.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
+                const daysUntil = Math.ceil((ep.airDate - now) / (24 * 60 * 60 * 1000));
+
+                let timeClass = '';
+                let timeText = '';
+                if (isToday) {
+                    timeClass = 'today';
+                    timeText = '<i class="fa-solid fa-clock"></i> Today';
+                } else if (isTomorrow) {
+                    timeClass = '';
+                    timeText = '<i class="fa-solid fa-calendar"></i> Tomorrow';
+                } else {
+                    timeClass = '';
+                    timeText = `<i class="fa-solid fa-calendar"></i> In ${daysUntil} days`;
+                }
+
+                return `
+                    <a href="/cinetrack/show/${ep.showId}" class="airing-card">
+                        ${ep.poster ? `<img class="airing-poster" src="${IMG}/w92${ep.poster}" loading="lazy">` : '<div class="airing-poster"></div>'}
+                        <div class="airing-info">
+                            <div class="airing-show">${ep.showName}</div>
+                            <div class="airing-episode">S${ep.season}E${ep.episode} · ${ep.episodeName || 'TBA'}</div>
+                            <div class="airing-time ${timeClass}">${timeText}</div>
+                        </div>
+                    </a>
+                `;
+            }).join('');
+        }
+
+        function renderPoster(item) {
+            const isMovie = item.media_type === 'movie';
+            const title = item.title || item.name;
+            const year = (item.release_date || item.first_air_date || '').split('-')[0];
+
+            // Check if watched
+            const isWatched = isMovie
+                ? user?.watchedMovies?.some(m => m.id == item.id)
+                : user?.showProgress?.[item.id]?.watchedEpisodes?.length > 0;
+
+            // Calculate progress for TV shows
+            let progressHtml = '';
+            if (!isMovie && user?.showProgress?.[item.id]) {
+                const progress = user.showProgress[item.id];
+                const watchedCount = progress.watchedEpisodes?.length || 0;
+                const totalEpisodes = item.number_of_episodes || progress.totalEpisodes || 0;
+                if (totalEpisodes > 0) {
+                    const percent = Math.min(100, Math.round((watchedCount / totalEpisodes) * 100));
+                    progressHtml = `<div class="poster-progress"><div class="poster-progress-fill" style="width:${percent}%"></div></div>`;
+                }
+            }
+
+            return `
+                <a href="/cinetrack/${isMovie ? 'movie' : 'show'}/${item.id}" class="poster ${isWatched ? 'watched' : ''}">
+                    <div class="poster-img-wrap">
+                        ${item.poster_path ? `<img class="poster-img" src="${IMG}/w342${item.poster_path}" loading="lazy">` : ''}
+                        <span class="poster-rating"><i class="fa-solid fa-star"></i>${item.vote_average?.toFixed(1) || '-'}</span>
+                        ${isWatched ? '<span class="poster-watched"><i class="fa-solid fa-check"></i></span>' : ''}
+                        ${progressHtml}
+                        <button class="poster-quick-add" onclick="event.preventDefault();quickAdd(${item.id},'${isMovie ? 'movie' : 'tv'}','${title.replace(/'/g, "\\'")}','${item.poster_path}')"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div class="poster-title">${title}</div>
+                    <div class="poster-meta">${year} • ${isMovie ? 'Movie' : 'TV'}</div>
+                </a>
+            `;
+        }
+
+        function timeAgo(date) {
+            const s = Math.floor((Date.now() - date) / 1000);
+            if (s < 60) return 'Now';
+            if (s < 3600) return `${Math.floor(s / 60)}m`;
+            if (s < 86400) return `${Math.floor(s / 3600)}h`;
+            if (s < 604800) return `${Math.floor(s / 86400)}d`;
+            return `${Math.floor(s / 604800)}w`;
+        }
+
+        // Today's Pick - random item from watchlist or recommendations
+        async function loadTodaysPick() {
+            const watchlist = user.watchlist || [];
+            const container = document.getElementById('todays-pick');
+
+            if (!watchlist.length) {
+                // Try to get from trending if no watchlist
+                try {
+                    const res = await fetch(`${API}?action=trending&type=all&window=day`);
+                    const data = await res.json();
+                    if (data.results?.length) {
+                        // Pick based on day of year for consistency
+                        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+                        const pick = data.results[dayOfYear % data.results.length];
+                        displayTodaysPick(pick);
+                    }
+                } catch (e) { }
+                return;
+            }
+
+            // Pick based on day of year for consistency
+            const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+            const pick = watchlist[dayOfYear % watchlist.length];
+            displayTodaysPick(pick);
+        }
+
+        async function displayTodaysPick(item) {
+            if (!item) return;
+            const container = document.getElementById('todays-pick');
+            const isMovie = item.media_type === 'movie' || item.type === 'movie';
+            const itemId = item.id;
+
+            // Basic setup first
+            document.getElementById('todays-pick-link').href = `/cinetrack/${isMovie ? 'movie' : 'show'}/${itemId}`;
+            document.getElementById('todays-pick-poster').src = `${IMG}/w342${item.poster_path || item.poster}`;
+            document.getElementById('todays-pick-title').textContent = item.title || item.name;
+            container.style.display = 'block';
+
+            // Fetch full details for backdrop, rating, overview, etc.
+            try {
+                const res = await fetch(`${API}?action=${isMovie ? 'movie' : 'show'}&id=${itemId}`);
+                const details = await res.json();
+
+                // Set backdrop
+                if (details.backdrop_path) {
+                    document.getElementById('todays-pick-backdrop').style.backgroundImage =
+                        `url('${IMG}/w1280${details.backdrop_path}')`;
+                }
+
+                // Set meta info (rating, year, runtime/seasons, genres)
+                const year = (details.release_date || details.first_air_date || '').split('-')[0];
+                const runtime = isMovie ? (details.runtime ? `${Math.floor(details.runtime / 60)}h ${details.runtime % 60}m` : '')
+                    : (details.number_of_seasons ? `${details.number_of_seasons} Season${details.number_of_seasons > 1 ? 's' : ''}` : '');
+                const genres = (details.genres || []).slice(0, 3).map(g => g.name).join(', ');
+                const rating = details.vote_average ? details.vote_average.toFixed(1) : '';
+
+                let metaHTML = '';
+                if (rating) metaHTML += `<span class="rating"><i class="fa-solid fa-star"></i> ${rating}</span>`;
+                if (year) metaHTML += `<span>${year}</span>`;
+                if (runtime) metaHTML += `<span>${runtime}</span>`;
+                if (genres) metaHTML += `<span>${genres}</span>`;
+                document.getElementById('todays-pick-meta').innerHTML = metaHTML;
+
+                // Set overview
+                if (details.overview) {
+                    document.getElementById('todays-pick-overview').textContent = details.overview;
+                }
+            } catch (e) {
+                // Basic fallback if details fetch fails
+                document.getElementById('todays-pick-meta').textContent = isMovie ? 'Movie' : 'TV Show';
+            }
+        }
+
+        // Shuffle watchlist display
+        let shuffledWatchlist = null;
+        function shuffleWatchlist() {
+            const container = document.getElementById('watchlist-grid');
+            const list = user.watchlist || [];
+            if (!list.length) return;
+
+            // Fisher-Yates shuffle
+            shuffledWatchlist = [...list];
+            for (let i = shuffledWatchlist.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledWatchlist[i], shuffledWatchlist[j]] = [shuffledWatchlist[j], shuffledWatchlist[i]];
+            }
+
+            container.innerHTML = shuffledWatchlist.slice(0, 14).map(item =>
+                item.poster ? `
+                    <a href="/cinetrack/${item.type === 'movie' ? 'movie' : 'show'}/${item.id}" class="watchlist-item">
+                        <img class="watchlist-thumb" src="${IMG}/w185${item.poster}">
+                        <div class="watchlist-title">${item.title}</div>
+                    </a>
+                ` : ''
+            ).join('');
+
+            showToast('Watchlist shuffled!');
+        }
+
+        // Extra keyboard shortcut
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '?' && !e.target.matches('input, textarea')) {
+                showToast('<kbd>⌘K</kbd> Search &nbsp; <kbd>Esc</kbd> Close');
+            }
+        });
+
+        // Hide show from Up Next
+        async function hideShow(showId) {
+            await fetch(`${API}?action=hide-show`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ showId })
+            });
+            // Update local state
+            user.hiddenShows = user.hiddenShows || [];
+            if (!user.hiddenShows.includes(String(showId))) {
+                user.hiddenShows.push(String(showId));
+            }
+            showToast('Show hidden from Up Next');
+            loadUpNext();
+            updateHiddenButton();
+        }
+
+        function updateHiddenButton() {
+            const btn = document.getElementById('view-hidden-btn');
+            if (user.hiddenShows?.length > 0) {
+                btn.style.display = 'flex';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        async function openHiddenShowsModal() {
+            const modal = document.getElementById('hidden-shows-modal');
+            const list = document.getElementById('hidden-shows-list');
+            list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Loading...</div>';
+            modal.classList.add('active');
+
+            try {
+                const res = await fetch(`${API}?action=hidden-shows`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (!data.shows?.length) {
+                    list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">No hidden shows</div>';
+                    return;
+                }
+
+                // Deduplicate shows by ID
+                const seen = new Set();
+                const uniqueShows = data.shows.filter(show => {
+                    if (seen.has(show.id)) return false;
+                    seen.add(show.id);
+                    return true;
+                });
+
+                list.innerHTML = uniqueShows.map(show => `
+                    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:var(--bg);border-radius:8px;margin-bottom:0.5rem;">
+                        ${show.poster ? `<img src="${IMG}/w92${show.poster}" style="width:45px;height:68px;border-radius:6px;object-fit:cover;">` : '<div style="width:45px;height:68px;background:var(--bg-elevated);border-radius:6px;"></div>'}
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${show.title}</div>
+                            <div style="font-size:0.8rem;color:var(--text-muted);">${show.watchedEpisodes?.length || 0} episodes watched</div>
+                        </div>
+                        <button onclick="unhideShow('${show.id}')" style="background:var(--accent);color:#fff;border:none;padding:0.5rem 0.75rem;border-radius:6px;cursor:pointer;font-size:0.8rem;">
+                            <i class="fa-solid fa-eye"></i> Restore
+                        </button>
+                    </div>
+                `).join('');
+            } catch (e) {
+                list.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);">Failed to load</div>';
+            }
+        }
+
+        function closeHiddenShowsModal() {
+            document.getElementById('hidden-shows-modal').classList.remove('active');
+        }
+
+        async function unhideShow(showId) {
+            await fetch(`${API}?action=unhide-show`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ showId })
+            });
+            // Update local state
+            user.hiddenShows = (user.hiddenShows || []).filter(id => id !== String(showId));
+            showToast('Show restored to Continue Watching');
+            openHiddenShowsModal(); // Refresh the modal
+            loadUpNext();
+            updateHiddenButton();
+        }
+
+        // Check Trakt connection status
+        async function checkTraktStatus() {
+            try {
+                const res = await fetch(`${API}?action=trakt-status`, { credentials: 'include' });
+                const data = await res.json();
+
+                // If user was connected but token expired
+                if (data.wasConnected && !data.connected) {
+                    showTraktBanner('Your Trakt connection has expired. <a href="/cinetrack/profile.html#settings">Reconnect</a>');
+                }
+            } catch (e) {
+                console.log('Trakt status check failed:', e);
+            }
+        }
+
+        function showTraktBanner(message) {
+            // Don't show if already dismissed in this session
+            if (sessionStorage.getItem('trakt_banner_dismissed')) return;
+
+            const banner = document.createElement('div');
+            banner.id = 'trakt-banner';
+            banner.innerHTML = `
+                <div style="background:linear-gradient(135deg,rgba(237,28,36,0.15),rgba(139,92,246,0.1));border:1px solid rgba(237,28,36,0.3);border-radius:10px;padding:0.75rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;">
+                    <span style="color:var(--text);font-size:0.85rem;">
+                        <i class="fa-brands fa-trakt" style="color:#ed1c24;margin-right:0.5rem;"></i>
+                        ${message}
+                    </span>
+                    <button onclick="dismissTraktBanner()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0.25rem;">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+            `;
+            const main = document.querySelector('main');
+            if (main) main.insertBefore(banner, main.firstChild);
+        }
+
+        function dismissTraktBanner() {
+            sessionStorage.setItem('trakt_banner_dismissed', 'true');
+            const banner = document.getElementById('trakt-banner');
+            if (banner) banner.remove();
+        }
+
+        init();
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/cinetrack/sw.js').catch(() => { });
+        }
+    </script>
+</body>
+
+</html>

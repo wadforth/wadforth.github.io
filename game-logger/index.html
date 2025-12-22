@@ -241,7 +241,7 @@
                 <span class="text-2xl">🎮</span>
                 <span class="text-lg font-bold gradient-text">GameLogger</span>
             </a>
-            <div id="nav-auth"></div>
+            <div id="nav-auth"><i class="fa-solid fa-spinner fa-spin text-zinc-500 text-sm"></i></div>
         </div>
     </nav>
 
@@ -390,10 +390,38 @@
     <script>
         const API = '/.netlify/functions/game-logger-api';
 
-        // Check for errors
+        // Simple toast function for landing page
+        function showToast(message, type = 'error') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl text-sm font-medium shadow-lg transition-all duration-300 ${type === 'error' ? 'bg-red-500/90 text-white' :
+                    type === 'success' ? 'bg-green-500/90 text-white' :
+                        'bg-zinc-800 text-white'
+                }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Check for auth errors in URL
         const params = new URLSearchParams(location.search);
         if (params.get('error')) {
-            console.error('Auth error:', params.get('error'));
+            const error = params.get('error');
+            console.error('Auth error:', error);
+            showToast('Login failed: ' + error);
+            // Clean URL
+            history.replaceState({}, '', location.pathname);
+        }
+
+        // Show login button (used on error or when not logged in)
+        function showLoginButton() {
+            document.getElementById('nav-auth').innerHTML = `
+                <a href="/.netlify/functions/discord-oauth" class="text-sm text-zinc-400 hover:text-white transition">
+                    <i class="fa-brands fa-discord mr-1"></i> Login
+                </a>
+            `;
         }
 
         // Check login status
@@ -422,9 +450,15 @@
                     Go to Profile
                 </a>
             `;
+                } else {
+                    // Not logged in - show login button
+                    showLoginButton();
                 }
             })
-            .catch(() => { });
+            .catch((err) => {
+                console.error('API error:', err);
+                showLoginButton();
+            });
     </script>
 </body>
 

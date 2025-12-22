@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Person - Cinetrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="/cinetrack/manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --bg: #09090b;
+            --bg-elevated: #18181b;
+            --bg-hover: #27272a;
+            --bg-subtle: #0f0f12;
+            --text: #fafafa;
+            --text-dim: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #f59e0b;
+            --accent-dim: rgba(245, 158, 11, 0.15);
+            --green: #10b981;
+            --gold: #fbbf24;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.04);
+            --radius: 8px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(12, 12, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav a {
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .nav a:hover {
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .back-btn:hover {
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        /* Profile */
+        .profile-header {
+            padding: 6rem 2.5rem 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .profile-content {
+            display: flex;
+            gap: 2.5rem;
+            align-items: flex-start;
+        }
+
+        .profile-photo-wrap {
+            flex-shrink: 0;
+            width: 220px;
+        }
+
+        .profile-photo {
+            width: 100%;
+            aspect-ratio: 2/3;
+            border-radius: var(--radius);
+            object-fit: cover;
+            background: var(--bg-elevated);
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .profile-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .profile-bio {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-dim);
+            max-width: 700px;
+        }
+
+        .profile-bio.collapsed {
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .bio-toggle {
+            background: none;
+            border: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Stats - Inline style */
+        .stats-row {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 0;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .stat-card {
+            text-align: left;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-card.movies .stat-value {
+            color: var(--accent);
+        }
+
+        .stat-card.tv .stat-value {
+            color: var(--blue);
+        }
+
+        .stat-card.completion .stat-value {
+            color: var(--green);
+        }
+
+        /* Content */
+        .content {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 3rem 3rem 5rem;
+        }
+
+        .section {
+            margin-bottom: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .section-title i {
+            display: none;
+        }
+
+        .section-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        /* Credits Grid */
+        .credits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 1rem;
+        }
+
+        .credit-card {
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+
+        .credit-card:hover .credit-poster {
+            transform: scale(1.03);
+        }
+
+        .credit-card.watched {
+            opacity: 0.5;
+        }
+
+        .credit-poster-wrap {
+            position: relative;
+            aspect-ratio: 2/3;
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+            background: var(--bg-elevated);
+        }
+
+        .credit-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.25s;
+        }
+
+        .credit-year {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            padding: 0.15rem 0.4rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .credit-rating {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.15rem 0.4rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .credit-rating i {
+            color: var(--gold);
+            font-size: 0.55rem;
+        }
+
+        .watched-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.2rem 0.5rem;
+            background: var(--green);
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .credit-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .credit-character {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Section Separator */
+        .section-separator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 2rem 0;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .section-separator::before,
+        .section-separator::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            color: var(--text-muted);
+            padding-top: 64px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 0 1.25rem;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            .profile-header {
+                padding: 5rem 1.25rem 2rem;
+            }
+
+            .profile-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .profile-photo-wrap {
+                width: 150px;
+            }
+
+            .profile-name {
+                font-size: 1.75rem;
+            }
+
+            .profile-meta {
+                justify-content: center;
+            }
+
+            .content {
+                padding: 0 1.25rem 3rem;
+            }
+
+            .stats-row {
+                justify-content: center;
+            }
+
+            .credits-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a href="/cinetrack/" class="logo"><i class="fa-solid fa-clapperboard"></i>Cinetrack</a>
+            <nav class="nav">
+                <a href="/cinetrack/dashboard">Home</a>
+                <a href="/cinetrack/search">Discover</a>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <a href="javascript:history.back()" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        </div>
+    </header>
+
+    <div id="content">
+        <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i>&nbsp;&nbsp;Loading...</div>
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/cinetrack-api';
+        const IMG = 'https://image.tmdb.org/t/p';
+        let personData = null;
+        let currentUser = null;
+
+        const personId = location.pathname.split('/').filter(Boolean).pop();
+
+        async function loadPerson() {
+            try {
+                const [authRes, personRes] = await Promise.all([
+                    fetch(`${API}?action=me`, { credentials: 'include' }),
+                    fetch(`${API}?action=person&id=${personId}`)
+                ]);
+
+                currentUser = (await authRes.json()).user;
+                personData = await personRes.json();
+
+                if (personData.status_code) {
+                    document.getElementById('content').innerHTML = `<div class="loading"><i class="fa-solid fa-exclamation-triangle"></i>&nbsp;&nbsp;Person not found</div>`;
+                    return;
+                }
+
+                document.title = `${personData.name} - Cinetrack`;
+                renderPerson();
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content').innerHTML = `<div class="loading"><i class="fa-solid fa-exclamation-triangle"></i>&nbsp;&nbsp;Failed to load</div>`;
+            }
+        }
+
+        function isMovieWatched(movieId) {
+            return currentUser?.watchedMovies?.some(m => m.id == movieId);
+        }
+
+        function isShowWatched(showId) {
+            // Consider a show "watched" if user has any progress on it
+            return currentUser?.showProgress?.[showId]?.watchedEpisodes?.length > 0;
+        }
+
+        function renderPerson() {
+            const p = personData;
+            const birthYear = p.birthday ? new Date(p.birthday).getFullYear() : '';
+            const deathYear = p.deathday ? new Date(p.deathday).getFullYear() : '';
+            const age = p.birthday && !p.deathday ? new Date().getFullYear() - birthYear : '';
+
+            // Separate and dedupe credits
+            const movieCredits = (p.combined_credits?.cast || [])
+                .filter(c => c.media_type === 'movie')
+                .reduce((acc, c) => { if (!acc.find(x => x.id === c.id)) acc.push(c); return acc; }, [])
+                .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+
+            const tvCredits = (p.combined_credits?.cast || [])
+                .filter(c => c.media_type === 'tv')
+                .reduce((acc, c) => { if (!acc.find(x => x.id === c.id)) acc.push(c); return acc; }, [])
+                .sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+
+            // Calculate completion
+            const watchedMovies = movieCredits.filter(c => isMovieWatched(c.id)).length;
+            const watchedShows = tvCredits.filter(c => isShowWatched(c.id)).length;
+            const totalCredits = movieCredits.length + tvCredits.length;
+            const watchedTotal = watchedMovies + watchedShows;
+            const completionPercent = totalCredits > 0 ? Math.round((watchedTotal / totalCredits) * 100) : 0;
+
+            document.getElementById('content').innerHTML = `
+                <section class="profile-header">
+                    <div class="profile-content">
+                        <div class="profile-photo-wrap">
+                            ${p.profile_path ? `<img class="profile-photo" src="${IMG}/w500${p.profile_path}" alt="">` : '<div class="profile-photo" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-user" style="color:var(--text-muted);font-size:3rem;"></i></div>'}
+                        </div>
+                        <div class="profile-info">
+                            <h1 class="profile-name">${p.name}</h1>
+                            <div class="profile-meta">
+                                ${p.known_for_department ? `<span><i class="fa-solid fa-star"></i> ${p.known_for_department}</span>` : ''}
+                                ${birthYear ? `<span><i class="fa-solid fa-cake-candles"></i> Born ${birthYear}${age ? ` (${age} years old)` : ''}</span>` : ''}
+                                ${deathYear ? `<span><i class="fa-solid fa-cross"></i> Died ${deathYear}</span>` : ''}
+                                ${p.place_of_birth ? `<span><i class="fa-solid fa-location-dot"></i> ${p.place_of_birth}</span>` : ''}
+                            </div>
+                            ${p.biography ? `
+                            <p class="profile-bio collapsed" id="bio">${p.biography}</p>
+                            <button class="bio-toggle" onclick="toggleBio()">Read more</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </section>
+
+                <div class="content">
+                    <div class="stats-row">
+                        <div class="stat-card movies">
+                            <div class="stat-value">${movieCredits.length}</div>
+                            <div class="stat-label">Movies</div>
+                        </div>
+                        <div class="stat-card tv">
+                            <div class="stat-value">${tvCredits.length}</div>
+                            <div class="stat-label">TV Shows</div>
+                        </div>
+                        ${currentUser ? `
+                        <div class="stat-card completion">
+                            <div class="stat-value">${completionPercent}%</div>
+                            <div class="stat-label">Watched (${watchedTotal}/${totalCredits})</div>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    ${movieCredits.length ? `
+                    <section class="section">
+                        <div class="section-header">
+                            <h2 class="section-title"><i class="fa-solid fa-film"></i> Movies <span class="section-count">${watchedMovies}/${movieCredits.length} watched</span></h2>
+                        </div>
+                        <div class="credits-grid">
+                            ${renderCredits(movieCredits, 'movie')}
+                        </div>
+                    </section>
+                    ` : ''}
+
+                    ${tvCredits.length ? `
+                    <section class="section">
+                        <div class="section-header">
+                            <h2 class="section-title"><i class="fa-solid fa-tv"></i> TV Shows <span class="section-count">${watchedShows}/${tvCredits.length} watched</span></h2>
+                        </div>
+                        <div class="credits-grid">
+                            ${renderCredits(tvCredits, 'tv')}
+                        </div>
+                    </section>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function renderCredits(credits, type) {
+            if (!credits.length) return '<p style="color:var(--text-muted);text-align:center;padding:2rem;">No credits found</p>';
+
+            return credits.map(c => {
+                const title = c.title || c.name;
+                const year = (c.release_date || c.first_air_date)?.split('-')[0] || '';
+                const rating = c.vote_average?.toFixed(1);
+                const url = type === 'movie' ? `/cinetrack/movie/${c.id}` : `/cinetrack/show/${c.id}`;
+                const isWatched = type === 'movie' ? isMovieWatched(c.id) : isShowWatched(c.id);
+
+                return `
+                    <a href="${url}" class="credit-card ${isWatched ? 'watched' : ''}">
+                        <div class="credit-poster-wrap">
+                            ${c.poster_path ? `<img class="credit-poster" src="${IMG}/w342${c.poster_path}">` : '<div class="credit-poster" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-film" style="color:var(--text-muted);"></i></div>'}
+                            ${year ? `<span class="credit-year">${year}</span>` : ''}
+                            ${rating ? `<span class="credit-rating"><i class="fa-solid fa-star"></i>${rating}</span>` : ''}
+                            ${isWatched ? '<span class="watched-badge"><i class="fa-solid fa-check"></i> Watched</span>' : ''}
+                        </div>
+                        <div class="credit-title">${title}</div>
+                        ${c.character ? `<div class="credit-character">${c.character}</div>` : ''}
+                    </a>
+                `;
+            }).join('');
+        }
+
+        function toggleBio() {
+            const bio = document.getElementById('bio');
+            const btn = document.querySelector('.bio-toggle');
+            bio.classList.toggle('collapsed');
+            btn.textContent = bio.classList.contains('collapsed') ? 'Read more' : 'Show less';
+        }
+
+        loadPerson();
+    </script>
+</body>
+
+</html>

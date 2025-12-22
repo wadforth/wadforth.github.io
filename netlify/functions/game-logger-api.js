@@ -588,7 +588,7 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const gameIndex = user.games?.findIndex(g => g.steamAppId == id || g.id == id);
+            const gameIndex = user.games?.findIndex(g => String(g.steamAppId) === String(id) || String(g.id) === String(id));
             if (gameIndex === -1) {
                 return {
                     statusCode: 404,
@@ -606,6 +606,7 @@ exports.handler = async (event, context) => {
             if (body.priority !== undefined) user.games[gameIndex].priority = body.priority;
             if (body.categoryRatings !== undefined) user.games[gameIndex].categoryRatings = body.categoryRatings;
             if (body.categoryEnabled !== undefined) user.games[gameIndex].categoryEnabled = body.categoryEnabled;
+            if (body.hidden !== undefined) user.games[gameIndex].hidden = body.hidden;
 
             await store.setJSON(`user_${user.discordId}`, user);
 
@@ -818,37 +819,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // === BULK UPDATE GAMES ===
-        if (action === 'bulk-update' && event.httpMethod === 'POST') {
-            const body = JSON.parse(event.body || '{}');
-            const { steamAppIds, status } = body;
-
-            if (!steamAppIds?.length || !status) {
-                return {
-                    statusCode: 400,
-                    headers: CORS_HEADERS,
-                    body: JSON.stringify({ error: 'steamAppIds array and status required' })
-                };
-            }
-
-            const idSet = new Set(steamAppIds);
-            let updated = 0;
-            user.games.forEach(g => {
-                if (idSet.has(g.steamAppId)) {
-                    g.status = status;
-                    updated++;
-                }
-            });
-
-            await store.setJSON(`user_${user.discordId}`, user);
-
-            return {
-                statusCode: 200,
-                headers: CORS_HEADERS,
-                body: JSON.stringify({ success: true, updated })
-            };
-        }
-
         // === LINK RIOT ACCOUNT ===
         if (action === 'link-riot-account' && event.httpMethod === 'POST') {
             const body = JSON.parse(event.body || '{}');
@@ -912,7 +882,16 @@ exports.handler = async (event, context) => {
                     }
                 }
 
-                // Save to user
+                // Save to user - fetch latest DDragon version for icon URL
+                let ddVersion = '15.1.1'; // fallback
+                try {
+                    const versionRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+                    const versions = await versionRes.json();
+                    if (versions && versions[0]) ddVersion = versions[0];
+                } catch (e) { /* use fallback */ }
+
+                const profileIconUrl = `https://ddragon.leagueoflegends.com/cdn/${ddVersion}/img/profileicon/${summonerData?.profileIconId || 29}.png`;
+
                 user.riotAccount = {
                     gameName: accountData.gameName,
                     tagLine: accountData.tagLine,
@@ -921,6 +900,7 @@ exports.handler = async (event, context) => {
                     summonerId: summonerData?.id || null,
                     summonerLevel: summonerData?.summonerLevel || null,
                     profileIconId: summonerData?.profileIconId || null,
+                    profileIconUrl: profileIconUrl,
                     rank: rankData ? {
                         tier: rankData.tier,
                         division: rankData.rank,
@@ -939,7 +919,7 @@ exports.handler = async (event, context) => {
                         id: 'lol_riot_account',
                         steamAppId: null,
                         name: 'League of Legends',
-                        icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/6.png',
+                        icon: `https://ddragon.leagueoflegends.com/cdn/${ddVersion}/img/profileicon/6.png`,
                         headerImg: 'https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Jinx_0.jpg',
                         playtimeMinutes: 0,
                         lastPlayed: null,
@@ -1816,7 +1796,7 @@ exports.handler = async (event, context) => {
             if (!user) return { statusCode: 401, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Not logged in' }) };
 
             const { id, wishlistPriority, wishlistNotes } = JSON.parse(event.body || '{}');
-            const idx = (user.wishlist || []).findIndex(g => g.id == id);
+            const idx = (user.wishlist || []).findIndex(g => String(g.id) === String(id));
 
             if (idx > -1) {
                 if (wishlistPriority !== undefined) user.wishlist[idx].wishlistPriority = wishlistPriority;
@@ -1834,6 +1814,29 @@ exports.handler = async (event, context) => {
 
             user.wishlist = [];
             await store.setJSON(`user_${user.discordId}`, user);
+            return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true }) };
+        }
+
+        // === ADD RELEASE NOTIFICATION ===
+        if (action === 'add-release-notification' && event.httpMethod === 'POST') {
+            const body = JSON.parse(event.body || '{}');
+            user.releaseNotifications = user.releaseNotifications || [];
+
+            // Check if already exists
+            if (!user.releaseNotifications.some(n => n.id === body.id)) {
+                user.releaseNotifications.push(body);
+                await store.setJSON(`user_${user.discordId}`, user);
+            }
+
+            return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true }) };
+        }
+
+        // === REMOVE RELEASE NOTIFICATION ===
+        if (action === 'remove-release-notification' && event.httpMethod === 'POST') {
+            const { id } = JSON.parse(event.body || '{}');
+            user.releaseNotifications = (user.releaseNotifications || []).filter(n => n.id !== id);
+            await store.setJSON(`user_${user.discordId}`, user);
+
             return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true }) };
         }
 
@@ -2045,6 +2048,52 @@ exports.handler = async (event, context) => {
             await store.setJSON(`user_${user.discordId}`, user);
 
             return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ success: true }) };
+        }
+
+        // === LIST MEMBERS ===
+        if (action === 'list-members') {
+            try {
+                // List all user keys from the store
+                const { blobs } = await store.list({ prefix: 'user_' });
+                const members = [];
+
+                for (const blob of blobs.slice(0, 100)) { // Limit to 100 to avoid timeout
+                    try {
+                        const userData = await store.get(blob.key, { type: 'json' });
+                        if (userData && userData.username) {
+                            const games = (userData.games || []).filter(g => !g.hidden);
+                            const ratedGames = games.filter(g => g.rating && g.rating > 0);
+                            const avgRating = ratedGames.length > 0
+                                ? (ratedGames.reduce((sum, g) => sum + g.rating, 0) / ratedGames.length).toFixed(1)
+                                : null;
+
+                            members.push({
+                                username: userData.username,
+                                avatar: userData.discordAvatar || null,
+                                discordId: userData.discordId || null,
+                                gameCount: games.length,
+                                totalPlaytime: games.reduce((acc, g) => acc + (g.playtimeMinutes || 0), 0),
+                                avgRating: avgRating,
+                                perfectedCount: games.filter(g => g.status === 'perfected').length,
+                                completedCount: games.filter(g => g.status === 'completed' || g.status === 'perfected').length,
+                                joinedAt: userData.joinedAt || null
+                            });
+                        }
+                    } catch (e) { /* ignore individual fetch errors */ }
+                }
+
+                // Sort by total playtime (most active first)
+                members.sort((a, b) => b.totalPlaytime - a.totalPlaytime);
+
+                return {
+                    statusCode: 200,
+                    headers: CORS_HEADERS,
+                    body: JSON.stringify({ members })
+                };
+            } catch (e) {
+                console.error('List members error:', e);
+                return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: 'Failed to list members' }) };
+            }
         }
 
         return {

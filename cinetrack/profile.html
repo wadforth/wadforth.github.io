@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Cinetrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="/cinetrack/manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --bg: #09090b;
+            --bg-elevated: #18181b;
+            --bg-hover: #27272a;
+            --bg-subtle: #0f0f12;
+            --text: #fafafa;
+            --text-dim: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #f59e0b;
+            --accent-dim: rgba(245, 158, 11, 0.15);
+            --green: #10b981;
+            --gold: #fbbf24;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+            --pink: #f472b6;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.04);
+            --radius: 8px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(12, 12, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--accent);
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav a {
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-radius: 8px;
+        }
+
+        .nav a:hover {
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .profile-banner {
+            position: relative;
+            margin: -2rem -2rem 0;
+            padding: 2.5rem 2rem;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .profile-header {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        .avatar-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .avatar {
+            width: 88px;
+            height: 88px;
+            border-radius: 16px;
+            object-fit: cover;
+            border: 3px solid var(--border);
+        }
+
+        .level-badge {
+            position: absolute;
+            bottom: -6px;
+            right: -6px;
+            background: var(--purple);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            border: 2px solid var(--bg);
+        }
+
+        .profile-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .profile-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+        }
+
+        .profile-meta {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 0;
+            flex-wrap: wrap;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            background: var(--bg);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            padding: 0.75rem 1rem;
+            border-right: 1px solid var(--border);
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .stat-item:last-child {
+            border-right: none;
+        }
+
+        .stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .stats-divider {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                gap: 1.25rem;
+            }
+
+            .stat-value {
+                font-size: 1.25rem;
+            }
+
+            .stats-divider {
+                display: none;
+            }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .tab:hover {
+            color: var(--text-dim);
+            background: var(--bg-hover);
+        }
+
+        .tab.active {
+            color: var(--text);
+            background: var(--bg-elevated);
+        }
+
+        .tab i {
+            margin-right: 0.35rem;
+            font-size: 0.75rem;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .section-title i {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            color: var(--text-muted);
+        }
+
+        .content-row {
+            display: flex;
+            gap: 0.75rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+            scrollbar-width: none;
+        }
+
+        .content-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .content-wrapper {
+            position: relative;
+        }
+
+        .scroll-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .scroll-arrow:hover {
+            background: var(--bg-elevated);
+            color: white;
+            border-color: var(--text-muted);
+        }
+
+        .scroll-arrow.left {
+            left: -12px;
+        }
+
+        .scroll-arrow.right {
+            right: -12px;
+        }
+
+        .poster {
+            flex-shrink: 0;
+            width: 110px;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s;
+        }
+
+        .poster:hover {
+            transform: translateY(-4px);
+        }
+
+        .poster:hover .poster-img {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .poster-wrap {
+            position: relative;
+            aspect-ratio: 2/3;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+        }
+
+        .poster-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.25s;
+        }
+
+        .poster-rating {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.15rem 0.35rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 5px;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        .poster-rating i {
+            color: var(--gold);
+            font-size: 0.5rem;
+        }
+
+        .poster-title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--text-dim);
+        }
+
+        .episode-card {
+            flex-shrink: 0;
+            width: 180px;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.2s;
+        }
+
+        .episode-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .episode-wrap {
+            position: relative;
+            aspect-ratio: 16/9;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+        }
+
+        .episode-card:hover .episode-wrap {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .episode-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.25s;
+        }
+
+        .episode-badge {
+            position: absolute;
+            bottom: 6px;
+            left: 6px;
+            padding: 0.2rem 0.4rem;
+            background: rgba(0, 0, 0, 0.9);
+            border-radius: 5px;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        .episode-title {
+            font-size: 0.7rem;
+            font-weight: 500;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--text-dim);
+        }
+
+        .episode-meta {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            margin-top: 0.15rem;
+        }
+
+        .genre-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+            max-width: 600px;
+        }
+
+        .genre-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0.75rem;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .genre-name {
+            font-size: 0.75rem;
+            font-weight: 500;
+            min-width: 80px;
+            color: var(--text);
+        }
+
+        .genre-bar {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .genre-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .genre-count {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            min-width: 24px;
+            text-align: right;
+        }
+
+        .rating-group {
+            margin-bottom: 2rem;
+        }
+
+        .rating-group-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rating-group-score {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--gold);
+        }
+
+        .rating-group-count {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .wl-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .wl-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .wl-stat-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .wl-stat-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .wl-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 1rem;
+        }
+
+        .wl-grid .poster {
+            width: 100%;
+        }
+
+        .list-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.15s;
+        }
+
+        .list-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--purple);
+            transform: translateX(4px);
+        }
+
+        .list-item-poster {
+            width: 55px;
+            aspect-ratio: 2/3;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .list-item-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .list-item-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .list-item-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .list-item-meta i {
+            font-size: 0.65rem;
+            margin-right: 0.2rem;
+        }
+
+        .list-item-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .list-item-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .list-item-rating i {
+            color: var(--gold);
+            font-size: 0.7rem;
+        }
+
+        .list-item-added {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .list-item-remove {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.15s;
+        }
+
+        .list-item-remove:hover {
+            color: var(--accent);
+            background: rgba(229, 9, 20, 0.1);
+        }
+
+        .type-badge {
+            font-size: 0.5rem;
+            padding: 0.1rem 0.25rem;
+            border-radius: 3px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .type-badge.movie {
+            background: var(--accent);
+        }
+
+        .type-badge.tv {
+            background: var(--blue);
+        }
+
+        .controls {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .control-input {
+            flex: 1;
+            min-width: 140px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.45rem 0.7rem;
+            color: var(--text);
+            font-size: 0.8rem;
+        }
+
+        .control-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .control-select {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.45rem 0.7rem;
+            color: var(--text);
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .timeline-month {
+            margin-bottom: 2rem;
+        }
+
+        .timeline-month-header {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 8px;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeline-month-count {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+        }
+
+        .timeline-items-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .timeline-items-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem;
+            align-items: center;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .timeline-item:hover {
+            border-color: var(--purple);
+            transform: translateX(4px);
+            background: var(--bg-hover);
+        }
+
+        .timeline-date {
+            min-width: 60px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.1rem;
+        }
+
+        .timeline-date-day {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .timeline-date-month {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-poster {
+            width: 45px;
+            aspect-ratio: 2/3;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .timeline-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .timeline-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .timeline-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .timeline-detail {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .timeline-badge {
+            font-size: 0.6rem;
+            font-weight: 600;
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-badge.movie {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--blue);
+        }
+
+        .timeline-badge.episode {
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--purple);
+        }
+
+        .timeline-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            font-size: 0.7rem;
+            color: var(--gold);
+        }
+
+        .timeline-rating i {
+            font-size: 0.6rem;
+        }
+
+        .setting-section {
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .setting-section h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .setting-label {
+            font-size: 0.8rem;
+            min-width: 100px;
+            color: var(--text-dim);
+        }
+
+        .setting-input {
+            flex: 1;
+            max-width: 300px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            color: var(--text);
+            font-size: 0.85rem;
+        }
+
+        .setting-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+        }
+
+        .setting-btn.primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .setting-btn.primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .setting-btn.danger {
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        .setting-btn.danger:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .setting-btn.secondary {
+            background: var(--bg-hover);
+            color: var(--text-dim);
+        }
+
+        .import-section {
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .import-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .import-title i {
+            color: var(--purple);
+        }
+
+        .import-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .import-row {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .import-file {
+            flex: 1;
+        }
+
+        .import-file input {
+            display: none;
+        }
+
+        .import-file label {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            background: var(--bg-hover);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--text-dim);
+            transition: all 0.15s;
+        }
+
+        .import-file label:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .import-status {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .import-progress {
+            width: 100%;
+            height: 4px;
+            background: var(--bg);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .import-progress-bar {
+            height: 100%;
+            background: var(--green);
+            transition: width 0.3s;
+        }
+
+        .empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+            color: var(--text-muted);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            padding: 1.5rem;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            justify-content: flex-end;
+        }
+
+        .duplicate-compare {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .duplicate-item {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .duplicate-item:hover {
+            border-color: var(--accent);
+        }
+
+        .duplicate-item.selected {
+            border-color: var(--green);
+        }
+
+        .duplicate-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .duplicate-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .duplicate-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 800px) {
+            .topbar {
+                padding: 0 1.25rem;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            main {
+                padding: 1.5rem;
+            }
+
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .stats-inline {
+                justify-content: center;
+            }
+
+            .tabs {
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+            .duplicate-compare {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a href="/cinetrack/" class="logo"><i class="fa-solid fa-clapperboard"></i>Cinetrack</a>
+            <nav class="nav"><a href="/cinetrack/dashboard">Home</a><a href="/cinetrack/search">Discover</a></nav>
+        </div>
+    </header>
+    <div id="content">
+        <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i>&nbsp;&nbsp;Loading...</div>
+    </div>
+
+    <div class="modal-overlay" id="duplicateModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">Duplicate Found</h2><button class="modal-close"
+                    onclick="closeDuplicateModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" id="duplicateBody"></div>
+            <div class="modal-actions">
+                <button class="setting-btn secondary" onclick="closeDuplicateModal()">Skip</button>
+                <button class="setting-btn primary" onclick="resolveDuplicate()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/cinetrack-api';
+        const IMG = 'https://image.tmdb.org/t/p';
+        const username = location.pathname.split('/').filter(Boolean).pop();
+        let profileData = null, moviesData = [], showsData = [], historyData = [], currentUser = null, isOwnProfile = false;
+        let currentTab = 'profile', pendingDuplicates = [], currentDuplicateType = '';
+
+        const genreColors = { 'Action': '#ef4444', 'Adventure': '#f97316', 'Animation': '#8b5cf6', 'Comedy': '#eab308', 'Crime': '#64748b', 'Documentary': '#06b6d4', 'Drama': '#3b82f6', 'Family': '#ec4899', 'Fantasy': '#a855f7', 'Horror': '#dc2626', 'Romance': '#f43f5e', 'Science Fiction': '#22d3ee', 'Thriller': '#ef4444' };
+
+        async function init() {
+            const [profileRes, moviesRes, showsRes, meRes] = await Promise.all([
+                fetch(`${API}?action=profile&username=${username}`, { credentials: 'include' }),
+                fetch(`${API}?action=watched-movies&username=${username}`),
+                fetch(`${API}?action=watched-shows&username=${username}`),
+                fetch(`${API}?action=me`, { credentials: 'include' })
+            ]);
+
+            profileData = await profileRes.json();
+            if (profileData.error) { document.getElementById('content').innerHTML = '<div class="loading">User not found</div>'; return; }
+
+            moviesData = (await moviesRes.json()).movies || [];
+            showsData = (await showsRes.json()).shows || [];
+            currentUser = (await meRes.json()).user;
+            isOwnProfile = currentUser?.username?.toLowerCase() === username.toLowerCase();
+
+            document.title = `${profileData.username} - Cinetrack`;
+            render();
+
+            // Auto-fetch missing posters in background for own profile
+            if (isOwnProfile) {
+                fetchMissingPostersBackground();
+            }
+        }
+
+        // Poster loading progress UI
+        let posterProgress = { total: 0, fetched: 0, remaining: 0 };
+        function showPosterProgress() {
+            let toast = document.getElementById('posterProgressToast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'posterProgressToast';
+                toast.style.cssText = `
+                    position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+                    background: linear-gradient(135deg, #1a1a2e, #16213e); 
+                    border: 1px solid rgba(168,85,247,0.3);
+                    border-radius: 12px; padding: 16px 20px; min-width: 280px;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                    font-family: 'Inter', sans-serif;
+                `;
+                document.body.appendChild(toast);
+            }
+
+            const percent = posterProgress.total > 0
+                ? Math.round((posterProgress.fetched / posterProgress.total) * 100)
+                : 0;
+
+            toast.innerHTML = `
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                    <i class="fa-solid fa-image" style="color:var(--purple);font-size:1.2rem;"></i>
+                    <span style="font-weight:600;color:#fff;">Loading Posters</span>
+                </div>
+                <div style="background:rgba(255,255,255,0.1);border-radius:8px;height:8px;overflow:hidden;margin-bottom:8px;">
+                    <div style="background:linear-gradient(90deg,var(--purple),var(--accent));height:100%;width:${percent}%;transition:width 0.3s;"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:rgba(255,255,255,0.6);">
+                    <span>${posterProgress.fetched} fetched</span>
+                    <span>${posterProgress.remaining} remaining</span>
+                </div>
+            `;
+        }
+
+        function hidePosterProgress() {
+            const toast = document.getElementById('posterProgressToast');
+            if (toast) {
+                toast.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <i class="fa-solid fa-check-circle" style="color:var(--green);font-size:1.2rem;"></i>
+                        <span style="font-weight:600;color:#fff;">All posters loaded!</span>
+                    </div>
+                `;
+                setTimeout(() => toast.remove(), 2000);
+            }
+        }
+
+        // Fetch missing posters in background (will loop until all are fetched)
+        let postersFetching = false;
+        async function fetchMissingPostersBackground() {
+            if (postersFetching) return;
+            postersFetching = true;
+            try {
+                const res = await fetch(`${API}?action=fetch-missing-posters`, { method: 'POST', credentials: 'include' });
+                const data = await res.json();
+
+                const totalRemaining = (data.remaining?.movies || 0) + (data.remaining?.shows || 0) +
+                    (data.remaining?.ratings || 0) + (data.remaining?.watchlist || 0);
+
+                // Update progress
+                posterProgress.fetched += data.postersAdded || 0;
+                posterProgress.remaining = totalRemaining;
+                if (posterProgress.total === 0) posterProgress.total = posterProgress.fetched + totalRemaining;
+
+                if (data.postersAdded > 0 || totalRemaining > 0) {
+                    showPosterProgress();
+                }
+
+                if (data.postersAdded > 0) {
+                    // Reload profile data to get updated posters
+                    const profileRes = await fetch(`${API}?action=profile&username=${username}`, { credentials: 'include' });
+                    profileData = await profileRes.json();
+                    const moviesRes = await fetch(`${API}?action=watched-movies&username=${username}`);
+                    moviesData = (await moviesRes.json()).movies || [];
+                    render();
+                }
+
+                if (totalRemaining > 0) {
+                    postersFetching = false;
+                    setTimeout(fetchMissingPostersBackground, 500); // Fetch more after 0.5s
+                } else if (posterProgress.fetched > 0) {
+                    hidePosterProgress();
+                }
+            } catch (e) { console.log('Background poster fetch failed:', e); }
+            postersFetching = false;
+        }
+
+        function render() {
+            const stats = profileData.stats || {};
+            const memberSince = profileData.joinedAt ? new Date(profileData.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '';
+
+            // Separate hours for movies and shows
+            const movieHours = Math.round((stats.moviesWatched || 0) * 2);
+            const showHours = Math.round((stats.episodesWatched || 0) * 0.75);
+            const totalHours = movieHours + showHours;
+
+            // Last 30 days stats - use moviesData which is loaded separately
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const recentMovies = (moviesData || []).filter(m => {
+                const watchDate = Array.isArray(m.watchedAt) ? m.watchedAt[m.watchedAt.length - 1] : m.watchedAt;
+                return new Date(watchDate) >= thirtyDaysAgo;
+            }).length;
+            const recentEpisodes = (profileData.recentlyWatched || []).filter(r => r.type === 'episode' && new Date(r.watchedAt) >= thirtyDaysAgo).length;
+            const recentTotal = recentMovies + recentEpisodes;
+
+            // 2026 Year in Review stats (only track watches in 2026)
+            const is2026 = new Date().getFullYear() >= 2026;
+            const year2026Start = new Date('2026-01-01');
+            const movies2026 = is2026 ? (moviesData || []).filter(m => {
+                const watchDate = Array.isArray(m.watchedAt) ? m.watchedAt[m.watchedAt.length - 1] : m.watchedAt;
+                return new Date(watchDate) >= year2026Start;
+            }).length : 0;
+            const episodes2026 = is2026 ? (profileData.recentlyWatched || []).filter(r => r.type === 'episode' && new Date(r.watchedAt) >= year2026Start).length : 0;
+
+            const ratingsCount = (profileData.ratings || []).length;
+            const avgRating = ratingsCount ? ((profileData.ratings || []).reduce((a, r) => a + r.rating, 0) / ratingsCount).toFixed(1) : '-';
+            const perfect10s = (profileData.ratings || []).filter(r => r.rating === 10).length;
+            const favoritesCount = (profileData.favorites || []).length;
+            const watchlistCount = (profileData.watchlist || []).length;
+
+            // Calculate "level" based on total content watched
+            const totalWatched = (stats.moviesWatched || 0) + (stats.episodesWatched || 0);
+            const level = totalWatched < 10 ? 1 : totalWatched < 50 ? 2 : totalWatched < 100 ? 3 : totalWatched < 250 ? 4 : totalWatched < 500 ? 5 : 6;
+
+            // 2026 Year in Review HTML (hidden until 2026)
+            const yearInReview2026 = is2026 ? `
+                <div class="stats-section" style="margin-top:1.5rem;padding:1.25rem;background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(229,9,20,0.1));border:1px solid rgba(168,85,247,0.2);border-radius:12px;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
+                        <i class="fa-solid fa-calendar-star" style="color:var(--purple);"></i>
+                        <span style="font-weight:600;font-size:0.9rem;">2026 Year in Review</span>
+                    </div>
+                    <div style="display:flex;gap:1.5rem;">
+                        <div><span style="font-size:1.5rem;font-weight:700;color:var(--accent);">${movies2026}</span> <span style="font-size:0.75rem;color:var(--text-muted);">Movies</span></div>
+                        <div><span style="font-size:1.5rem;font-weight:700;color:var(--green);">${episodes2026}</span> <span style="font-size:0.75rem;color:var(--text-muted);">Episodes</span></div>
+                    </div>
+                </div>
+            ` : '';
+
+            document.getElementById('content').innerHTML = `
+        <main>
+            <div class="profile-banner">
+                <div class="profile-header">
+                    <div class="avatar-wrap">
+                        <img class="avatar" src="${profileData.avatar}" alt="">
+                        <span class="level-badge">LVL ${level}</span>
+                    </div>
+                    <div class="profile-info">
+                        <h1 class="profile-name">${profileData.displayName || profileData.username}</h1>
+                        <p class="profile-meta">@${profileData.username}${memberSince ? ` · Joined ${memberSince}` : ''}</p>
+                        <div class="stats-row">
+                            <div class="stat-item">
+                                <span class="stat-value">${stats.moviesWatched || 0}</span>
+                                <span class="stat-label">Movies</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${stats.showsWatched || 0}</span>
+                                <span class="stat-label">Shows</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${stats.episodesWatched || 0}</span>
+                                <span class="stat-label">Episodes</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${movieHours}h</span>
+                                <span class="stat-label">Movie Time</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${showHours}h</span>
+                                <span class="stat-label">Show Time</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">${avgRating}</span>
+                                <span class="stat-label">Avg Rating</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Last 30 Days -->
+                        <div style="margin-top:1rem;display:flex;align-items:center;gap:1.5rem;font-size:0.8rem;color:var(--text-muted);">
+                            <span><i class="fa-solid fa-calendar-days" style="margin-right:0.3rem;opacity:0.7;"></i>Last 30 days:</span>
+                            <span><strong style="color:var(--text)">${recentMovies}</strong> movies</span>
+                            <span><strong style="color:var(--text)">${recentEpisodes}</strong> episodes</span>
+                            <span><strong style="color:var(--text)">${Math.round(recentMovies * 2 + recentEpisodes * 0.75)}h</strong> watched</span>
+                        </div>
+                        
+                        ${yearInReview2026}
+                    </div>
+                </div>
+            </div>
+            <div class="tabs">
+                <div class="tab ${currentTab === 'profile' ? 'active' : ''}" onclick="switchTab('profile')"><i class="fa-solid fa-user"></i>Profile</div>
+                <div class="tab ${currentTab === 'ratings' ? 'active' : ''}" onclick="switchTab('ratings')"><i class="fa-solid fa-star"></i>Ratings</div>
+                <div class="tab ${currentTab === 'watchlist' ? 'active' : ''}" onclick="switchTab('watchlist')"><i class="fa-solid fa-bookmark"></i>Watchlist</div>
+                <div class="tab ${currentTab === 'history' ? 'active' : ''}" onclick="switchTab('history')"><i class="fa-solid fa-clock-rotate-left"></i>History</div>
+                ${isOwnProfile ? '<div class="tab ' + (currentTab === 'settings' ? 'active' : '') + '" onclick="switchTab(\'settings\')"><i class="fa-solid fa-gear"></i>Settings</div>' : ''}
+            </div>
+            <div id="tabContent"></div>
+        </main>
+    `;
+            renderTabContent();
+        }
+
+        function switchTab(tab) { currentTab = tab; render(); if (tab === 'history' && !historyData.length) loadHistory(); }
+
+        async function loadHistory() {
+            const res = await fetch(`${API}?action=history&username=${username}`);
+            historyData = (await res.json()).history || [];
+            renderTabContent();
+        }
+
+        function renderTabContent() {
+            const container = document.getElementById('tabContent');
+            if (currentTab === 'profile') renderProfileTab(container);
+            else if (currentTab === 'ratings') renderRatingsTab(container);
+            else if (currentTab === 'watchlist') renderWatchlistTab(container);
+            else if (currentTab === 'history') renderHistoryTab(container);
+            else if (currentTab === 'settings') renderSettingsTab(container);
+        }
+
+        function renderProfileTab(c) {
+            const ratings = profileData.ratings || [];
+            // Use watchedMovies (from imports) sorted by date, or fall back to recentlyWatched
+            const allWatchedMovies = [...(moviesData || [])].sort((a, b) => new Date(b.watchedAt || 0) - new Date(a.watchedAt || 0));
+            const recentMovies = allWatchedMovies.slice(0, 8);
+            const recentEps = (profileData.recentlyWatched || []).filter(w => w.type === 'episode').slice(0, 6);
+            const highestRated = [...ratings].sort((a, b) => b.rating - a.rating).slice(0, 8);
+            const favorites = (profileData.favorites || []).slice(0, 8);
+            const watchlist = (profileData.watchlist || []).slice(0, 12);
+
+            const genreCounts = {};
+            moviesData.forEach(m => (m.genres || []).forEach(g => genreCounts[g] = (genreCounts[g] || 0) + 1));
+            const topGenres = Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const maxGenre = topGenres[0]?.[1] || 1;
+
+            const avgRating = ratings.length ? (ratings.reduce((a, r) => a + r.rating, 0) / ratings.length).toFixed(1) : '-';
+
+            c.innerHTML = `
+        ${recentMovies.length ? `<div class="section"><div class="section-header"><h2 class="section-title"><i class="fa-solid fa-film"></i>Recently Watched Movies</h2></div><div class="content-row">${recentMovies.map(m => {
+                const userRating = ratings.find(r => r.id === m.id && r.type === 'movie')?.rating;
+                return posterCard(m, 'movie', userRating, m.watchedAt);
+            }).join('')}</div></div>` : ''}
+        ${recentEps.length ? `<div class="section"><div class="section-header"><h2 class="section-title"><i class="fa-solid fa-tv"></i>Recently Watched Episodes</h2></div><div class="content-row">${recentEps.map(e => episodeCard(e)).join('')}</div></div>` : ''}
+        ${highestRated.length ? `<div class="section"><div class="section-header"><h2 class="section-title"><i class="fa-solid fa-trophy"></i>Highest Rated</h2><span style="font-size:0.7rem;color:var(--text-muted)">Avg: <span style="color:var(--gold)">${avgRating}</span></span></div><div class="content-row">${highestRated.map(r => posterCard(r, r.type, r.rating)).join('')}</div></div>` : ''}
+        ${topGenres.length ? `<div class="section"><div class="section-header"><h2 class="section-title"><i class="fa-solid fa-masks-theater"></i>Top Genres</h2></div><div class="genre-list">${topGenres.map(([n, c]) => `<div class="genre-item"><span class="genre-name">${n}</span><div class="genre-bar"><div class="genre-fill" style="width:${(c / maxGenre) * 100}%;background:${genreColors[n] || 'var(--accent)'}"></div></div><span class="genre-count">${c}</span></div>`).join('')}</div></div>` : ''}
+        ${favorites.length ? `<div class="section"><div class="section-header"><h2 class="section-title"><i class="fa-solid fa-heart"></i>Favorites</h2></div><div class="content-row">${favorites.map(f => posterCard(f, f.type)).join('')}</div></div>` : ''}
+        ${watchlist.length ? `<div class="section"><div class="section-header"><h2 class="section-title"><i class="fa-solid fa-bookmark"></i>Watchlist</h2><span style="font-size:0.7rem;color:var(--text-muted);cursor:pointer" onclick="switchTab('watchlist')">View all →</span></div><div class="content-row">${watchlist.map(w => posterCard(w, w.type)).join('')}</div></div>` : ''}
+    `;
+        }
+
+        function renderRatingsTab(c) {
+            const ratings = profileData.ratings || [];
+            const grouped = {};
+            for (let i = 10; i >= 1; i--) grouped[i] = ratings.filter(r => r.rating === i);
+
+            let html = '';
+            for (let i = 10; i >= 1; i--) {
+                if (!grouped[i].length) continue;
+                html += `<div class="rating-group">
+                    <div class="rating-group-header">
+                        <span class="rating-group-score">${i}</span>
+                        <span class="rating-group-count">${grouped[i].length} titles</span>
+                    </div>
+                    <div class="content-wrapper">
+                        <button class="scroll-arrow left" onclick="scrollRow(this.parentElement.querySelector('.content-row'), -1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <div class="content-row">${grouped[i].map(r => posterCard(r, r.type, r.rating)).join('')}</div>
+                        <button class="scroll-arrow right" onclick="scrollRow(this.parentElement.querySelector('.content-row'), 1)"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>`;
+            }
+            c.innerHTML = html || '<div class="empty">No ratings yet</div>';
+        }
+
+        function scrollRow(row, direction) {
+            if (!row) return;
+            const scrollAmount = row.clientWidth * 0.8;
+            row.scrollBy({ left: scrollAmount * direction, behavior: 'smooth' });
+        }
+
+        // Fetch missing posters for watchlist in background
+        let watchlistPostersFetched = false;
+        async function fetchMissingWatchlistPosters() {
+            if (watchlistPostersFetched) return;
+            const watchlist = profileData.watchlist || [];
+            const missingCount = watchlist.filter(w => !w.poster).length;
+            if (missingCount === 0) return;
+
+            watchlistPostersFetched = true;
+            try {
+                const res = await fetch(`${API}?action=fetch-missing-posters`, { method: 'POST', credentials: 'include' });
+                const data = await res.json();
+                if (data.postersAdded > 0) {
+                    // Reload profile data to get updated posters
+                    const profileRes = await fetch(`${API}?action=profile&username=${username}`);
+                    const newData = await profileRes.json();
+                    profileData.watchlist = newData.watchlist || profileData.watchlist;
+                    filterWatchlist(); // Refresh display
+                }
+            } catch (e) { console.log('Failed to fetch missing posters:', e); }
+        }
+
+        function renderWatchlistTab(c) {
+            const watchlist = profileData.watchlist || [];
+            const movieCount = watchlist.filter(w => w.type === 'movie').length;
+            const showCount = watchlist.filter(w => w.type !== 'movie').length;
+            const avgRating = watchlist.length && watchlist.filter(w => w.tmdbRating).length
+                ? (watchlist.filter(w => w.tmdbRating).reduce((a, w) => a + w.tmdbRating, 0) / watchlist.filter(w => w.tmdbRating).length).toFixed(1)
+                : '-';
+
+            // Fetch missing posters in background
+            fetchMissingWatchlistPosters();
+
+            c.innerHTML = `
+        <div class="wl-stats">
+            <div class="wl-stat">
+                <span class="wl-stat-value">${watchlist.length}</span>
+                <span class="wl-stat-label">Total</span>
+            </div>
+            <div class="wl-stat">
+                <span class="wl-stat-value" style="color:var(--accent)">${movieCount}</span>
+                <span class="wl-stat-label">Movies</span>
+            </div>
+            <div class="wl-stat">
+                <span class="wl-stat-value" style="color:var(--blue)">${showCount}</span>
+                <span class="wl-stat-label">Shows</span>
+            </div>
+            <div class="wl-stat">
+                <span class="wl-stat-value" style="color:var(--gold)">${avgRating}</span>
+                <span class="wl-stat-label">Avg TMDB</span>
+            </div>
+        </div>
+        <div class="controls" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;margin-bottom:1rem;">
+            <input type="text" class="control-input" id="wlSearch" placeholder="Search watchlist..." oninput="filterWatchlist()">
+            <select class="control-select" id="wlType" onchange="filterWatchlist()"><option value="all">All Types</option><option value="movie">Movies Only</option><option value="tv">TV Shows Only</option></select>
+            <select class="control-select" id="wlSort" onchange="filterWatchlist()"><option value="added">Recently Added</option><option value="title">Title A-Z</option><option value="year">Newest First</option><option value="rating">Highest Rated</option></select>
+            <button class="btn-random" onclick="randomPickFromWatchlist()" style="padding:0.5rem 1rem;background:linear-gradient(135deg,var(--purple),var(--accent));border:none;border-radius:8px;color:white;font-size:0.8rem;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:0.4rem;"><i class="fa-solid fa-shuffle"></i> Random Pick</button>
+        </div>
+        <div id="wlRandomPick" style="display:none;margin-bottom:1rem;padding:1rem;background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(229,9,20,0.15));border:1px solid var(--purple);border-radius:12px;"></div>
+        <div id="wlList"></div>
+    `;
+            filterWatchlist();
+        }
+
+        function filterWatchlist() {
+            let items = [...(profileData.watchlist || [])];
+            const search = document.getElementById('wlSearch')?.value?.toLowerCase() || '';
+            const type = document.getElementById('wlType')?.value || 'all';
+            const sort = document.getElementById('wlSort')?.value || 'added';
+
+            if (search) items = items.filter(w => w.title?.toLowerCase().includes(search));
+            if (type !== 'all') items = items.filter(w => w.type === type || (type === 'tv' && w.type === 'show'));
+
+            if (sort === 'title') items.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+            else if (sort === 'year') items.sort((a, b) => (b.year || 0) - (a.year || 0));
+            else if (sort === 'rating') items.sort((a, b) => (b.tmdbRating || 0) - (a.tmdbRating || 0));
+            else items.sort((a, b) => new Date(b.addedAt || 0) - new Date(a.addedAt || 0));
+
+            document.getElementById('wlList').innerHTML = items.length ? items.map(w => listItem(w)).join('') : '<div class="empty">No items found</div>';
+        }
+
+        function renderHistoryTab(c) {
+            if (!historyData.length) { c.innerHTML = '<div class="empty">Loading history...</div>'; return; }
+
+            const months = {};
+            historyData.forEach(h => {
+                const d = new Date(h.date);
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                if (!months[key]) months[key] = { label, items: [] };
+                months[key].items.push(h);
+            });
+
+            // Get user's ratings for display
+            const ratings = profileData.ratings || [];
+            const getRating = (id, type) => {
+                const r = ratings.find(r => r.id == id && (r.type === type || (type === 'episode' && r.type === 'show')));
+                return r?.rating;
+            };
+
+            c.innerHTML = Object.entries(months).sort((a, b) => b[0].localeCompare(a[0])).map(([_, m]) => `
+        <div class="timeline-month">
+            <div class="timeline-month-header">
+                <span>${m.label}</span>
+                <span class="timeline-month-count">${m.items.length} ${m.items.length === 1 ? 'item' : 'items'}</span>
+            </div>
+            <div class="timeline-items-grid">
+            ${m.items.map(h => {
+                const d = new Date(h.date);
+                const isMovie = h.type === 'movie';
+                const link = isMovie ? `/cinetrack/movie/${h.id}` : `/cinetrack/show/${h.showId || h.id}`;
+                const rating = isMovie ? getRating(h.id, 'movie') : null;
+                const playCount = h.playCount || 1;
+
+                return `<a href="${link}" class="timeline-item">
+                    <div class="timeline-date">
+                        <span class="timeline-date-day">${d.getDate()}</span>
+                        <span class="timeline-date-month">${d.toLocaleDateString('en-US', { month: 'short' })}</span>
+                    </div>
+                    ${h.poster ? `<img class="timeline-poster" src="${IMG}/w92${h.poster}" loading="lazy">` : '<div class="timeline-poster" style="background:var(--bg-elevated)"></div>'}
+                    <div class="timeline-info">
+                        <div class="timeline-title">${h.title}</div>
+                        <div class="timeline-meta">
+                            <span class="timeline-badge ${isMovie ? 'movie' : 'episode'}">${isMovie ? 'Movie' : 'Episode'}</span>
+                            ${playCount > 1 ? `<span class="timeline-badge" style="background:var(--gold);color:#000;">x${playCount}</span>` : ''}
+                            ${!isMovie && h.episode ? `<span class="timeline-detail">${h.episode}</span>` : ''}
+                            ${rating ? `<span class="timeline-rating"><i class="fa-solid fa-star"></i> ${rating}</span>` : ''}
+                        </div>
+                    </div>
+                </a>`;
+            }).join('')}
+            </div>
+        </div>
+    `).join('') || '<div class="empty">No history</div>';
+        }
+
+        function renderSettingsTab(c) {
+            c.innerHTML = `
+        <div class="setting-section">
+            <h3>Profile</h3>
+            <div class="setting-row"><span class="setting-label">Display Name</span><input type="text" class="setting-input" id="displayName" value="${profileData.displayName || ''}" placeholder="Optional display name"></div>
+            <div class="setting-row"><span class="setting-label">Avatar URL</span><input type="text" class="setting-input" id="avatarUrl" value="${profileData.avatar || ''}" placeholder="https://..."></div>
+            <div class="setting-row"><span class="setting-label"></span><button class="setting-btn primary" onclick="saveProfile()">Save Changes</button></div>
+        </div>
+        <div class="setting-section" id="traktSyncSection">
+            <h3><i class="fa-brands fa-trakt" style="color:#ed1c24;margin-right:0.5rem"></i>Trakt.tv Live Sync</h3>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">Connect your Trakt.tv account to automatically sync your watch history and ratings in real-time.</p>
+            <div id="traktStatus">
+                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                    <button class="setting-btn primary" onclick="connectTrakt()" style="background:linear-gradient(135deg,#ed1c24,#000);display:flex;align-items:center;gap:0.5rem;">
+                        <i class="fa-brands fa-trakt"></i> Connect with Trakt
+                    </button>
+                    <span style="font-size:0.75rem;color:var(--text-muted)">Auto-syncs when you mark something as watched</span>
+                </div>
+            </div>
+        </div>
+        <div class="setting-section">
+            <h3>Import from Trakt.tv</h3>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">Export your data from Trakt.tv and upload the JSON files below.</p>
+            <div class="import-section"><div class="import-title"><i class="fa-solid fa-star"></i>Ratings (Movies)</div><div class="import-desc">Upload ratings-movies.json</div><div class="import-row"><div class="import-file"><input type="file" id="importRatingsMovies" accept=".json" onchange="importTrakt('ratings-movies', this.files[0])"><label for="importRatingsMovies"><i class="fa-solid fa-upload"></i> Choose File</label></div><span class="import-status" id="statusRatingsMovies"></span></div></div>
+            <div class="import-section"><div class="import-title"><i class="fa-solid fa-star"></i>Ratings (TV Shows)</div><div class="import-desc">Upload ratings-shows.json</div><div class="import-row"><div class="import-file"><input type="file" id="importRatingsShows" accept=".json" onchange="importTrakt('ratings-shows', this.files[0])"><label for="importRatingsShows"><i class="fa-solid fa-upload"></i> Choose File</label></div><span class="import-status" id="statusRatingsShows"></span></div></div>
+            <div class="import-section"><div class="import-title"><i class="fa-solid fa-film"></i>Watched Movies</div><div class="import-desc">Upload watched-movies.json</div><div class="import-row"><div class="import-file"><input type="file" id="importWatchedMovies" accept=".json" onchange="importTrakt('watched-movies', this.files[0])"><label for="importWatchedMovies"><i class="fa-solid fa-upload"></i> Choose File</label></div><span class="import-status" id="statusWatchedMovies"></span></div></div>
+            <div class="import-section"><div class="import-title"><i class="fa-solid fa-tv"></i>Watched TV Shows</div><div class="import-desc">Upload watched-shows.json</div><div class="import-row"><div class="import-file"><input type="file" id="importWatchedShows" accept=".json" onchange="importTrakt('watched-shows', this.files[0])"><label for="importWatchedShows"><i class="fa-solid fa-upload"></i> Choose File</label></div><span class="import-status" id="statusWatchedShows"></span></div></div>
+            <div class="import-section" style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(59,130,246,0.1));border:1px solid rgba(34,197,94,0.2);"><div class="import-title" style="color:var(--green)"><i class="fa-solid fa-clock-rotate-left"></i>Watch History (with dates)</div><div class="import-desc">Upload history-1.json, history-2.json, etc. - select multiple files at once</div><div class="import-row"><div class="import-file"><input type="file" id="importHistory" accept=".json" multiple onchange="importTraktHistory(this.files)"><label for="importHistory"><i class="fa-solid fa-upload"></i> Choose Files</label></div><span class="import-status" id="statusHistory"></span></div></div>
+        </div>
+        <div class="setting-section">
+            <h3>Export for Trakt.tv</h3>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">Download all your Cinetrack data in Trakt.tv-compatible JSON format. You can import this file directly into Trakt.tv.</p>
+            <div class="import-section" style="background:linear-gradient(135deg,rgba(168,85,247,0.1),rgba(59,130,246,0.1));border:1px solid rgba(168,85,247,0.2);">
+                <div class="import-title" style="color:var(--purple)"><i class="fa-solid fa-download"></i>Export All Data</div>
+                <div class="import-desc">Includes watched movies, TV episodes, ratings, and watchlist</div>
+                <button class="setting-btn primary" onclick="exportForTrakt()" style="background:linear-gradient(135deg,var(--purple),var(--blue));"><i class="fa-solid fa-file-arrow-down"></i> Download Trakt Export</button>
+                <span class="import-status" id="statusExport" style="margin-left:0.75rem;"></span>
+            </div>
+        </div>
+        <div class="setting-section">
+            <h3>Danger Zone</h3>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:1rem">Clear all data resets your watch history, ratings, and stats but keeps your account. Use this before re-importing from Trakt.</p>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+                <button class="setting-btn danger" onclick="clearAllData()" style="border-color:var(--gold);color:var(--gold)">Clear All Data</button>
+                <button class="setting-btn danger" onclick="deleteProfile()">Delete My Account</button>
+            </div>
+        </div>
+    `;
+            // Check Trakt connection status after DOM renders
+            setTimeout(checkTraktStatus, 50);
+        }
+
+        function posterCard(item, type, rating, watchedAt) {
+            const watchDate = watchedAt ? new Date(watchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+            return `<a href="/cinetrack/${type === 'movie' ? 'movie' : 'show'}/${item.id}" class="poster"><div class="poster-wrap">${item.poster ? `<img class="poster-img" src="${IMG}/w185${item.poster}">` : '<div class="poster-img"></div>'}${rating ? `<span class="poster-rating"><i class="fa-solid fa-star"></i>${rating}</span>` : ''}</div><div class="poster-title">${item.title}</div>${watchDate ? `<div style="font-size:0.55rem;color:var(--text-muted);">${watchDate}</div>` : ''}</a>`;
+        }
+
+        function episodeCard(e) {
+            return `<a href="/cinetrack/show/${e.id}" class="episode-card"><div class="episode-wrap">${e.still ? `<img class="episode-img" src="${IMG}/w300${e.still}">` : (e.poster ? `<img class="episode-img" src="${IMG}/w300${e.poster}">` : '<div class="episode-img"></div>')}<span class="episode-badge">${e.episode || ''}</span></div><div class="episode-title">${e.title}</div><div class="episode-meta">${e.episodeTitle || ''}</div></a>`;
+        }
+
+        function listItem(w) {
+            const addedDate = w.addedAt ? new Date(w.addedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            const runtime = w.type === 'movie' ? '~2h' : 'Series';
+
+            return `<a href="/cinetrack/${w.type === 'movie' ? 'movie' : 'show'}/${w.id}" class="list-item">
+                ${w.poster ? `<img class="list-item-poster" src="${IMG}/w92${w.poster}" loading="lazy">` : '<div class="list-item-poster" style="background:var(--bg)"></div>'}
+                <div class="list-item-info">
+                    <div class="list-item-title">
+                        ${w.title}
+                        <span class="type-badge ${w.type === 'movie' ? 'movie' : 'tv'}">${w.type === 'movie' ? 'Movie' : 'TV'}</span>
+                    </div>
+                    <div class="list-item-meta">
+                        ${w.year ? `<span><i class="fa-solid fa-calendar"></i>${w.year}</span>` : ''}
+                        ${w.genres?.length ? `<span><i class="fa-solid fa-masks-theater"></i>${w.genres.slice(0, 2).join(', ')}</span>` : ''}
+                        <span><i class="fa-solid fa-clock"></i>${runtime}</span>
+                    </div>
+                </div>
+                <div class="list-item-right">
+                    ${w.tmdbRating ? `<div class="list-item-rating"><i class="fa-solid fa-star"></i>${w.tmdbRating.toFixed(1)}</div>` : ''}
+                    ${addedDate ? `<div class="list-item-added">Added ${addedDate}</div>` : ''}
+                </div>
+            </a>`;
+        }
+
+        function randomPickFromWatchlist() {
+            const watchlist = profileData.watchlist || [];
+            if (!watchlist.length) return alert('Your watchlist is empty!');
+
+            const pick = watchlist[Math.floor(Math.random() * watchlist.length)];
+            const container = document.getElementById('wlRandomPick');
+
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a href="/cinetrack/${pick.type === 'movie' ? 'movie' : 'show'}/${pick.id}">
+                        ${pick.poster ? `<img src="${IMG}/w185${pick.poster}" style="width:80px;border-radius:8px;">` : ''}
+                    </a>
+                    <div style="flex:1;">
+                        <div style="font-size:0.7rem;color:var(--purple);text-transform:uppercase;letter-spacing:1px;margin-bottom:0.25rem;"><i class="fa-solid fa-shuffle"></i> Your random pick</div>
+                        <div style="font-size:1.1rem;font-weight:600;margin-bottom:0.25rem;">${pick.title}</div>
+                        <div style="font-size:0.8rem;color:var(--text-muted);">
+                            ${pick.type === 'movie' ? 'Movie' : 'TV Show'}
+                            ${pick.year ? ` • ${pick.year}` : ''}
+                            ${pick.tmdbRating ? ` • <i class="fa-solid fa-star" style="color:var(--gold);"></i> ${pick.tmdbRating.toFixed(1)}` : ''}
+                        </div>
+                    </div>
+                    <a href="/cinetrack/${pick.type === 'movie' ? 'movie' : 'show'}/${pick.id}" style="padding:0.6rem 1.2rem;background:var(--accent);border-radius:8px;color:white;text-decoration:none;font-size:0.85rem;font-weight:500;">Watch Now</a>
+                </div>
+            `;
+
+            // Scroll to show the pick
+            container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function saveProfile() {
+            const displayName = document.getElementById('displayName').value;
+            const avatar = document.getElementById('avatarUrl').value;
+            await fetch(`${API}?action=update-profile`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ displayName, avatar }) });
+            profileData.displayName = displayName;
+            profileData.avatar = avatar;
+            render();
+            alert('Profile updated!');
+        }
+
+        // ==================== TRAKT.TV FUNCTIONS ====================
+
+        async function connectTrakt() {
+            const res = await fetch(`${API}?action=trakt-auth-url`);
+            const { authUrl } = await res.json();
+            window.location.href = authUrl;
+        }
+
+        async function disconnectTrakt() {
+            if (!confirm('Disconnect from Trakt? Your local data will remain, but syncing will stop.')) return;
+            await fetch(`${API}?action=trakt-disconnect`, { method: 'POST', credentials: 'include' });
+            checkTraktStatus();
+        }
+
+        async function checkTraktStatus() {
+            const res = await fetch(`${API}?action=trakt-status`, { credentials: 'include' });
+            const data = await res.json();
+            updateTraktUI(data);
+        }
+
+        async function quickTraktSync() {
+            const btn = event.target.closest('button');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API}?action=trakt-auto-sync`, {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const added = data.moviesAdded + (data.showsAdded || 0) + data.episodesAdded + data.ratingsAdded + (data.watchlistAdded || 0);
+                    if (added > 0) {
+                        let msg = `✓ Synced ${data.moviesAdded} movies, ${data.showsAdded || 0} shows, ${data.episodesAdded} episodes, ${data.ratingsAdded} ratings`;
+                        if (data.watchlistAdded > 0) msg += `, ${data.watchlistAdded} watchlist items`;
+                        alert(msg);
+                        location.reload();
+                    } else {
+                        alert('✓ Already up to date - no new items found');
+                    }
+                } else {
+                    throw new Error(data.error || 'Sync failed');
+                }
+            } catch (err) {
+                alert('Sync failed: ' + err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function updateTraktUI(data) {
+            const container = document.getElementById('traktStatus');
+            if (!container) return;
+
+            if (data.connected) {
+                const lastSync = data.lastSyncedAt
+                    ? `Last synced: ${new Date(data.lastSyncedAt).toLocaleString()}`
+                    : 'Never synced';
+                const autoSyncInfo = data.lastAutoSyncAt
+                    ? `Auto-sync: ${new Date(data.lastAutoSyncAt).toLocaleString()}`
+                    : 'Auto-sync: Every hour';
+
+                container.innerHTML = `
+                    <div style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(237,28,36,0.1));border:1px solid rgba(34,197,94,0.3);border-radius:10px;padding:1rem;">
+                        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                            <span style="color:var(--green);font-weight:600;">
+                                <i class="fa-solid fa-check-circle"></i> Connected to Trakt
+                            </span>
+                            <span style="font-size:0.8rem;color:var(--text-dim);">@${data.traktUsername}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                            <button class="setting-btn primary" onclick="openTraktImport()" style="background:var(--accent);display:flex;align-items:center;gap:0.5rem;">
+                                <i class="fa-solid fa-download"></i> Import from Trakt
+                            </button>
+                            <button class="setting-btn" onclick="quickTraktSync()" style="display:flex;align-items:center;gap:0.5rem;">
+                                <i class="fa-solid fa-sync"></i> Quick Sync
+                            </button>
+                            <button class="setting-btn" onclick="disconnectTrakt()" style="border-color:var(--accent);color:var(--accent);">
+                                <i class="fa-solid fa-unlink"></i> Disconnect
+                            </button>
+                        </div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);display:flex;gap:1rem;flex-wrap:wrap;">
+                            <span>${lastSync}</span>
+                            <span>${autoSyncInfo}</span>
+                            <span style="color:var(--green);"><i class="fa-solid fa-clock"></i> Auto-syncs new items hourly</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                        <button class="setting-btn primary" onclick="connectTrakt()" style="background:linear-gradient(135deg,#ed1c24,#000);display:flex;align-items:center;gap:0.5rem;">
+                            <i class="fa-brands fa-trakt"></i> Connect with Trakt
+                        </button>
+                        <span style="font-size:0.75rem;color:var(--text-muted)">Auto-syncs when you mark something as watched</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Check Trakt status when settings tab loads
+        if (currentTab === 'settings') {
+            setTimeout(checkTraktStatus, 100);
+        }
+
+        async function deleteProfile() {
+            if (!confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
+            if (!confirm('Really delete all your data?')) return;
+            await fetch(`${API}?action=delete-profile`, { method: 'POST', credentials: 'include' });
+            window.location.href = '/cinetrack/';
+        }
+
+        async function clearAllData() {
+            if (!confirm('Clear all watch history, ratings, and stats? Your account will be kept.')) return;
+            await fetch(`${API}?action=clear-data`, { method: 'POST', credentials: 'include' });
+            alert('All data cleared! You can now re-import from Trakt.');
+            init();
+        }
+
+        async function exportForTrakt() {
+            const statusEl = document.getElementById('statusExport');
+            statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Preparing export...';
+
+            try {
+                const res = await fetch(`${API}?action=export-trakt`, { credentials: 'include' });
+                if (!res.ok) throw new Error('Export failed');
+
+                const data = await res.json();
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `cinetrack-trakt-export-${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                statusEl.innerHTML = `<span style="color:var(--green)">✓ Downloaded ${data.length} items</span>`;
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color:var(--accent)">Error: ${e.message}</span>`;
+                console.error('Export error:', e);
+            }
+        }
+
+        async function importTraktHistory(files) {
+            if (!files || !files.length) return;
+            const statusEl = document.getElementById('statusHistory');
+            const progressId = 'progressHistory';
+
+            // Add progress bar if not exists
+            if (!document.getElementById(progressId)) {
+                statusEl.insertAdjacentHTML('afterend', `<div class="import-progress" id="${progressId}"><div class="import-progress-bar" style="width:0%"></div></div>`);
+            }
+            const progressBar = document.querySelector(`#${progressId} .import-progress-bar`);
+
+            statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing ${files.length} file(s)...`;
+            progressBar.style.width = '0%';
+
+            let totalMovies = 0, totalEpisodes = 0, totalSkipped = 0;
+
+            try {
+                for (let f = 0; f < files.length; f++) {
+                    const file = files[f];
+                    statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Reading ${file.name} (${f + 1}/${files.length})...`;
+
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+                    const items = Array.isArray(data) ? data : [data];
+                    const batchSize = 50; // Large batches since API no longer fetches TMDB
+
+                    for (let i = 0; i < items.length; i += batchSize) {
+                        const batch = items.slice(i, i + batchSize);
+                        const fileProgress = ((f / files.length) + ((i + batch.length) / items.length / files.length)) * 100;
+
+                        statusEl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${file.name}: ${Math.min(i + batchSize, items.length)}/${items.length}`;
+                        progressBar.style.width = `${fileProgress}%`;
+
+                        try {
+                            const res = await fetch(`${API}?action=import-trakt-history`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ items: batch })
+                            });
+
+                            if (res.ok) {
+                                const result = await res.json();
+                                totalMovies += result.movies || 0;
+                                totalEpisodes += result.episodes || 0;
+                                totalSkipped += result.skipped || 0;
+                            } else {
+                                totalSkipped += batch.length;
+                            }
+                        } catch (e) {
+                            console.error('Batch failed:', e);
+                            totalSkipped += batch.length;
+                        }
+
+                        await new Promise(r => setTimeout(r, 100));
+                    }
+                }
+
+                progressBar.style.width = '100%';
+                statusEl.innerHTML = `<span style="color:var(--green)">✓ ${totalMovies} movies, ${totalEpisodes} episodes imported</span>${totalSkipped ? ` <span style="color:var(--text-muted)">(${totalSkipped} skipped)</span>` : ''}`;
+                init();
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color:var(--accent)">Error: ${e.message}</span>`;
+                console.error('History import error:', e);
+            }
+        }
+
+        async function importTrakt(type, file) {
+            if (!file) return;
+            const statusId = `status${type.split('-').map(s => s[0].toUpperCase() + s.slice(1)).join('')}`;
+            const statusEl = document.getElementById(statusId);
+            const progressId = `progress${type.split('-').map(s => s[0].toUpperCase() + s.slice(1)).join('')}`;
+
+            // Add progress bar if not exists
+            if (!document.getElementById(progressId)) {
+                statusEl.insertAdjacentHTML('afterend', `<div class="import-progress" id="${progressId}"><div class="import-progress-bar" style="width:0%"></div></div>`);
+            }
+            const progressBar = document.querySelector(`#${progressId} .import-progress-bar`);
+
+            statusEl.textContent = 'Reading file...';
+            progressBar.style.width = '0%';
+
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                const items = Array.isArray(data) ? data : [data];
+                const total = items.length;
+                const batchSize = 5; // Process 5 at a time to avoid timeout
+
+                let action = '';
+                if (type === 'ratings-movies' || type === 'ratings-shows') action = 'import-trakt-ratings';
+                else if (type === 'watched-movies') action = 'import-trakt-movies';
+                else if (type === 'watched-shows') action = 'import-trakt-shows';
+
+                let totalImported = 0, totalSkipped = 0, allDuplicates = [];
+
+                // Process in batches
+                for (let i = 0; i < items.length; i += batchSize) {
+                    const batch = items.slice(i, i + batchSize);
+                    const progress = Math.round(((i + batch.length) / total) * 100);
+
+                    statusEl.innerHTML = `Importing... <strong>${i + batch.length}/${total}</strong> (${progress}%)`;
+                    progressBar.style.width = `${progress}%`;
+
+                    try {
+                        const res = await fetch(`${API}?action=${action}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'include',
+                            body: JSON.stringify({ items: batch })
+                        });
+
+                        if (!res.ok) {
+                            const errText = await res.text();
+                            console.error('Batch error:', errText);
+                            totalSkipped += batch.length;
+                            continue;
+                        }
+
+                        const result = await res.json();
+                        totalImported += result.imported || 0;
+                        totalSkipped += result.skipped || 0;
+                        if (result.duplicates?.length) allDuplicates.push(...result.duplicates);
+                    } catch (batchErr) {
+                        console.error('Batch failed:', batchErr);
+                        totalSkipped += batch.length;
+                    }
+
+                    // Small delay between batches to be nice to the API
+                    await new Promise(r => setTimeout(r, 100));
+                }
+
+                progressBar.style.width = '100%';
+                statusEl.innerHTML = `<span style="color:var(--green)">✓ ${totalImported} imported</span>${totalSkipped ? `, ${totalSkipped} skipped` : ''}`;
+
+                if (allDuplicates.length) {
+                    pendingDuplicates = allDuplicates;
+                    currentDuplicateType = type.includes('ratings') ? 'rating' : (type.includes('movies') ? 'movie' : 'show');
+                    showNextDuplicate();
+                }
+
+                init(); // Reload data
+            } catch (e) {
+                statusEl.innerHTML = `<span style="color:var(--accent)">Error: ${e.message}</span>`;
+                console.error('Import error:', e);
+            }
+        }
+
+        function showNextDuplicate() {
+            if (!pendingDuplicates.length) { closeDuplicateModal(); return; }
+            const dup = pendingDuplicates[0];
+            document.getElementById('duplicateBody').innerHTML = `
+        <p style="margin-bottom:1rem">This item already exists. Choose which version to keep:</p>
+        <div class="duplicate-compare">
+            <div class="duplicate-item" onclick="selectDuplicate('existing', this)">
+                <div class="duplicate-label">Current</div>
+                <div class="duplicate-title">${dup.existing.title}</div>
+                <div class="duplicate-meta">${dup.existing.rating ? `Rating: ${dup.existing.rating}` : ''}${dup.existing.watchedAt ? ` · Watched: ${new Date(dup.existing.watchedAt).toLocaleDateString()}` : ''}${dup.existing.episodes ? ` · ${dup.existing.episodes} episodes` : ''}</div>
+            </div>
+            <div class="duplicate-item" onclick="selectDuplicate('incoming', this)">
+                <div class="duplicate-label">Importing</div>
+                <div class="duplicate-title">${dup.incoming.title}</div>
+                <div class="duplicate-meta">${dup.incoming.rating ? `Rating: ${dup.incoming.rating}` : ''}${dup.incoming.ratedAt ? ` · Rated: ${new Date(dup.incoming.ratedAt).toLocaleDateString()}` : ''}${dup.incoming.watchedAt ? ` · Watched: ${new Date(dup.incoming.watchedAt).toLocaleDateString()}` : ''}${dup.incoming.episodes ? ` · ${dup.incoming.episodes} episodes` : ''}</div>
+            </div>
+        </div>
+    `;
+            document.getElementById('duplicateModal').classList.add('active');
+        }
+
+        let selectedDuplicate = 'existing';
+        function selectDuplicate(choice, el) {
+            selectedDuplicate = choice;
+            document.querySelectorAll('.duplicate-item').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        async function resolveDuplicate() {
+            if (!pendingDuplicates.length) return;
+            const dup = pendingDuplicates.shift();
+            if (selectedDuplicate === 'incoming') {
+                await fetch(`${API}?action=resolve-duplicate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ dataType: currentDuplicateType, id: dup.incoming.id, keepIncoming: true, incoming: dup.incoming }) });
+            }
+            showNextDuplicate();
+        }
+
+        function closeDuplicateModal() { document.getElementById('duplicateModal').classList.remove('active'); pendingDuplicates = []; }
+        document.getElementById('duplicateModal').addEventListener('click', e => { if (e.target.id === 'duplicateModal') closeDuplicateModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDuplicateModal(); });
+
+        // Trakt Import
+        let traktImportData = null;
+
+        async function openTraktImport() {
+            // Create modal if not exists
+            if (!document.getElementById('traktImportModal')) {
+                document.body.insertAdjacentHTML('beforeend', `
+                    <div id="traktImportModal" class="modal-overlay" onclick="if(event.target===this)closeTraktImport()">
+                        <div class="modal" style="max-width:500px;">
+                            <div id="traktImportContent" style="padding:1.5rem;">
+                                <div style="text-align:center;padding:2rem;">
+                                    <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:var(--accent);"></i>
+                                    <p style="margin-top:1rem;color:var(--text-dim);">Fetching your Trakt history...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+            document.getElementById('traktImportModal').classList.add('active');
+
+            try {
+                const res = await fetch(`${API}?action=trakt-import`, { credentials: 'include' });
+                const data = await res.json();
+
+                if (data.error) {
+                    document.getElementById('traktImportContent').innerHTML = `
+                        <h3 style="margin-bottom:1rem;">Import from Trakt</h3>
+                        <p style="color:var(--accent);">${data.error}</p>
+                        <button class="setting-btn" onclick="closeTraktImport()" style="margin-top:1rem;">Close</button>
+                    `;
+                    return;
+                }
+
+                traktImportData = data;
+                const { movies, shows, ratings, summary } = data;
+                const newMovies = movies.filter(m => !m.hasConflict).length;
+                const newShows = shows.filter(s => !s.hasConflict).length;
+                const newRatings = (ratings || []).filter(r => !r.hasConflict).length;
+
+                let conflictHtml = '';
+                if (summary.conflictMovies > 0 || summary.conflictShows > 0) {
+                    conflictHtml = `
+                        <div style="background:var(--accent-dim);border:1px solid var(--accent);border-radius:8px;padding:1rem;margin-bottom:1rem;">
+                            <div style="font-weight:600;color:var(--accent);margin-bottom:0.5rem;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Conflicts Detected
+                            </div>
+                            <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:0.75rem;">
+                                ${summary.conflictMovies} movies and ${summary.conflictShows} shows already exist in your Cinetrack.
+                            </p>
+                            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;cursor:pointer;">
+                                    <input type="radio" name="conflictRes" value="keep_existing" checked> Keep existing dates
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;cursor:pointer;">
+                                    <input type="radio" name="conflictRes" value="use_trakt"> Use Trakt dates
+                                </label>
+                                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;cursor:pointer;">
+                                    <input type="radio" name="conflictRes" value="merge_rewatches"> Merge as rewatches
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('traktImportContent').innerHTML = `
+                    <h3 style="margin-bottom:1rem;font-family:'Outfit',sans-serif;"><i class="fa-brands fa-trakt" style="margin-right:0.5rem;"></i>Import from Trakt</h3>
+                    
+                    <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:0.75rem;margin-bottom:1.5rem;">
+                        <div style="background:var(--bg);padding:1rem;border-radius:10px;text-align:center;">
+                            <div style="font-size:1.5rem;font-weight:700;color:var(--accent);">${summary.totalMovies}</div>
+                            <div style="font-size:0.7rem;color:var(--text-muted);">Movies</div>
+                            <div style="font-size:0.65rem;color:var(--green);margin-top:0.25rem;">${newMovies} new</div>
+                        </div>
+                        <div style="background:var(--bg);padding:1rem;border-radius:10px;text-align:center;">
+                            <div style="font-size:1.5rem;font-weight:700;color:var(--blue);">${summary.totalShows}</div>
+                            <div style="font-size:0.7rem;color:var(--text-muted);">TV Shows</div>
+                            <div style="font-size:0.65rem;color:var(--green);margin-top:0.25rem;">${newShows} new</div>
+                        </div>
+                        <div style="background:var(--bg);padding:1rem;border-radius:10px;text-align:center;">
+                            <div style="font-size:1.5rem;font-weight:700;color:var(--gold);">${summary.totalRatings || 0}</div>
+                            <div style="font-size:0.7rem;color:var(--text-muted);">Ratings</div>
+                            <div style="font-size:0.65rem;color:var(--green);margin-top:0.25rem;">${newRatings} new</div>
+                        </div>
+                        <div style="background:var(--bg);padding:1rem;border-radius:10px;text-align:center;">
+                            <div style="font-size:1.5rem;font-weight:700;color:var(--purple);">${summary.totalWatchlist || 0}</div>
+                            <div style="font-size:0.7rem;color:var(--text-muted);">Watchlist</div>
+                            <div style="font-size:0.65rem;color:var(--green);margin-top:0.25rem;">${summary.totalWatchlist || 0} new</div>
+                        </div>
+                    </div>
+                    
+                    ${conflictHtml}
+                    
+                    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                        <button class="setting-btn" onclick="closeTraktImport()">Cancel</button>
+                        <button class="setting-btn primary" onclick="applyTraktImport()" style="background:var(--green);">
+                            <i class="fa-solid fa-download"></i> Import All
+                        </button>
+                    </div>
+                `;
+            } catch (err) {
+                document.getElementById('traktImportContent').innerHTML = `
+                    <h3 style="margin-bottom:1rem;">Import from Trakt</h3>
+                    <p style="color:var(--accent);">Failed to fetch Trakt data. Please try again.</p>
+                    <button class="setting-btn" onclick="closeTraktImport()" style="margin-top:1rem;">Close</button>
+                `;
+            }
+        }
+
+        async function applyTraktImport() {
+            if (!traktImportData) return;
+
+            const conflictResolution = document.querySelector('input[name="conflictRes"]:checked')?.value || 'keep_existing';
+
+            document.getElementById('traktImportContent').innerHTML = `
+                <div style="text-align:center;padding:2rem;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem;color:var(--green);"></i>
+                    <p style="margin-top:1rem;color:var(--text-dim);">Importing your history...</p>
+                </div>
+            `;
+
+            try {
+                const res = await fetch(`${API}?action=trakt-import-apply`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        movies: traktImportData.movies,
+                        shows: traktImportData.shows,
+                        ratings: traktImportData.ratings,
+                        watchlist: traktImportData.watchlist,
+                        conflictResolution
+                    })
+                });
+
+                const result = await res.json();
+
+                if (result.success) {
+                    let resultText = `Added ${result.moviesAdded} movies`;
+                    if (result.moviesUpdated > 0) resultText += `, updated ${result.moviesUpdated}`;
+                    if (result.showsAdded > 0) resultText += `<br>Added ${result.showsAdded} shows`;
+                    resultText += `<br>Added ${result.episodesAdded} episodes`;
+                    if (result.ratingsAdded > 0) resultText += `<br>Added ${result.ratingsAdded} ratings`;
+                    if (result.watchlistAdded > 0) resultText += `<br>Added ${result.watchlistAdded} watchlist items`;
+
+                    document.getElementById('traktImportContent').innerHTML = `
+                        <div style="text-align:center;padding:1.5rem;">
+                            <i class="fa-solid fa-check-circle" style="font-size:3rem;color:var(--green);"></i>
+                            <h3 style="margin:1rem 0 0.5rem;font-family:'Outfit',sans-serif;">Import Complete!</h3>
+                            <p style="color:var(--text-dim);font-size:0.9rem;">${resultText}</p>
+                            <button class="setting-btn primary" onclick="location.reload()" style="margin-top:1.5rem;background:var(--green);">
+                                <i class="fa-solid fa-refresh"></i> Refresh Page
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (err) {
+                document.getElementById('traktImportContent').innerHTML = `
+                    <h3 style="margin-bottom:1rem;">Import Failed</h3>
+                    <p style="color:var(--accent);">${err.message}</p>
+                    <button class="setting-btn" onclick="closeTraktImport()" style="margin-top:1rem;">Close</button>
+                `;
+            }
+        }
+
+        function closeTraktImport() {
+            document.getElementById('traktImportModal')?.classList.remove('active');
+            traktImportData = null;
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

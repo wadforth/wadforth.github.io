@@ -12,6 +12,14 @@
 [functions."game-logger-wishlist-sync"]
   schedule = "@weekly"
 
+# Scheduled function for free games Discord notifications
+[functions."check-free-games"]
+  schedule = "@hourly"
+
+# Scheduled function for hourly Trakt sync
+[functions."trakt-scheduled-sync"]
+  schedule = "@hourly"
+
 # Game Logger redirects - exclude static files
 [[redirects]]
   from = "/game-logger/settings"
@@ -39,3 +47,50 @@
   to = "/game-logger/profile.html"
   status = 200
 
+
+
+# Cinetrack redirects
+[[redirects]]
+  from = "/cinetrack"
+  to = "/cinetrack/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/search"
+  to = "/cinetrack/search.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/dashboard"
+  to = "/cinetrack/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/movie/:id"
+  to = "/cinetrack/movie.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/show/:id"
+  to = "/cinetrack/show.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/person/:id"
+  to = "/cinetrack/person.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/trakt-callback"
+  to = "/cinetrack/trakt-callback.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/profile"
+  to = "/cinetrack/profile.html"
+  status = 200
+
+[[redirects]]
+  from = "/cinetrack/:username"
+  to = "/cinetrack/profile.html"
+  status = 200

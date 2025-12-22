@@ -141,7 +141,7 @@
             <div class="text-6xl mb-4">👾</div>
             <h2 class="text-xl font-bold mb-2">Game Not Found</h2>
             <p class="text-zinc-500 mb-4">This game doesn't exist in your library.</p>
-            <a href="profile.html" class="text-violet-400 hover:text-violet-300">← Back to Library</a>
+            <a href="/game-logger/me" class="text-violet-400 hover:text-violet-300">← Back to Library</a>
         </div>
     </div>
 
@@ -151,7 +151,7 @@
         <div class="hero-gradient absolute inset-0"></div>
 
         <!-- Back Button -->
-        <a href="profile.html"
+        <a href="/game-logger/me"
             class="absolute top-6 left-6 z-10 flex items-center gap-2 text-zinc-400 hover:text-white transition">
             <i class="fa-solid fa-arrow-left"></i>
             <span>Back to Library</span>
@@ -808,7 +808,7 @@
                 body: JSON.stringify({ steamAppId: game.steamAppId || game.id, hidden: true })
             });
 
-            location.href = 'profile.html';
+            location.href = '/game-logger/me';
         }
 
         async function saveNotes() {
@@ -825,7 +825,7 @@
 
         function openJournalModal() {
             // Redirect to profile with journal entry modal open
-            location.href = `profile.html?journal=${game.steamAppId || game.id}`;
+            location.href = `/game-logger/me?journal=${game.steamAppId || game.id}`;
         }
 
         init();

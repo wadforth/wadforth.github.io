@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cinetrack - Track Movies & TV Shows</title>
+    <meta name="description" content="Track your movies and TV shows. Rate, review, and discover new content.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="/cinetrack/manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2309090b' width='100' height='100' rx='20'/><text x='50' y='65' font-size='50' text-anchor='middle' fill='%23f59e0b'>🎬</text></svg>">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-hover: #22222e;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6a6a7a;
+            --accent: #e50914;
+            --accent-hover: #f40612;
+            --gold: #ffd700;
+            --border: rgba(255, 255, 255, 0.08);
+            --radius: 12px;
+            --radius-lg: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 3rem;
+            background: linear-gradient(to bottom, rgba(10, 10, 15, 0.9), transparent);
+            transition: background 0.3s;
+        }
+
+        .navbar.scrolled {
+            background: rgba(10, 10, 15, 0.95);
+            backdrop-filter: blur(20px);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: white;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-logo i {
+            color: var(--accent);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: white;
+        }
+
+        .nav-btn {
+            padding: 0.7rem 1.5rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Carousel */
+        .hero-carousel {
+            position: relative;
+            height: 100vh;
+            min-height: 700px;
+            overflow: hidden;
+        }
+
+        .carousel-slides {
+            position: absolute;
+            inset: 0;
+        }
+
+        .carousel-slide {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+        }
+
+        .carousel-slide.active {
+            opacity: 1;
+        }
+
+        .carousel-backdrop {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center 20%;
+            transform: scale(1.05);
+            animation: slowZoom 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes slowZoom {
+            0% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1.15);
+            }
+        }
+
+        .carousel-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg,
+                    rgba(10, 10, 15, 0.95) 0%,
+                    rgba(10, 10, 15, 0.7) 40%,
+                    transparent 70%), linear-gradient(to top,
+                    rgba(10, 10, 15, 1) 0%,
+                    rgba(10, 10, 15, 0.4) 30%,
+                    transparent 50%);
+        }
+
+        .carousel-content {
+            position: absolute;
+            bottom: 18%;
+            left: 5%;
+            max-width: 600px;
+            z-index: 10;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease 0.3s;
+        }
+
+        .carousel-slide.active .carousel-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .carousel-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.9rem;
+            background: var(--accent);
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+
+        .carousel-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.05;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .carousel-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.25rem;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        .carousel-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .carousel-meta .rating {
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .carousel-overview {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .carousel-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-hero.primary {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 4px 25px rgba(229, 9, 20, 0.4);
+        }
+
+        .btn-hero.primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 35px rgba(229, 9, 20, 0.5);
+        }
+
+        .btn-hero.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-hero.secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+
+        /* Carousel Indicators */
+        .carousel-indicators {
+            position: absolute;
+            bottom: 5%;
+            left: 5%;
+            display: flex;
+            gap: 0.75rem;
+            z-index: 20;
+        }
+
+        .carousel-indicator {
+            width: 40px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            overflow: hidden;
+        }
+
+        .carousel-indicator.active {
+            width: 60px;
+            background: var(--accent);
+        }
+
+        .carousel-indicator .progress {
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+            transition: width linear;
+        }
+
+        .carousel-indicator.active .progress {
+            width: 100%;
+            transition-duration: 8s;
+        }
+
+        /* Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            animation: bounce 2s infinite;
+            z-index: 20;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(8px);
+            }
+        }
+
+        /* Content Sections */
+        .section {
+            padding: 5rem 3rem;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title i {
+            color: var(--accent);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab {
+            padding: 0.6rem 1.25rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Content Slider */
+        .content-slider {
+            display: flex;
+            gap: 1.25rem;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            scroll-snap-type: x mandatory;
+            scrollbar-width: none;
+        }
+
+        .content-slider::-webkit-scrollbar {
+            display: none;
+        }
+
+        .poster-card {
+            flex-shrink: 0;
+            width: 200px;
+            scroll-snap-align: start;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s;
+        }
+
+        .poster-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .poster-wrapper {
+            position: relative;
+            aspect-ratio: 2/3;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .poster-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s;
+        }
+
+        .poster-card:hover .poster-wrapper img {
+            transform: scale(1.08);
+        }
+
+        .poster-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: flex-end;
+            padding: 1rem;
+        }
+
+        .poster-card:hover .poster-overlay {
+            opacity: 1;
+        }
+
+        .poster-rating {
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            padding: 0.3rem 0.6rem;
+            background: rgba(0, 0, 0, 0.75);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .poster-rating i {
+            color: var(--gold);
+            font-size: 0.7rem;
+        }
+
+        .poster-badge {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--accent);
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .poster-title {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .poster-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Features Section */
+        .features-section {
+            padding: 6rem 3rem;
+            background: linear-gradient(to bottom, var(--bg-primary), var(--bg-secondary));
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            padding: 2.5rem;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 50px rgba(229, 9, 20, 0.1);
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, var(--accent), #ff4444);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+        }
+
+        .feature-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 8rem 3rem;
+            text-align: center;
+            background: radial-gradient(ellipse at center, rgba(229, 9, 20, 0.15) 0%, transparent 70%);
+        }
+
+        .cta-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .cta-subtitle {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Username Modal */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 3rem;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid var(--border);
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .modal-backdrop.active .modal {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .input-group input {
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-modal {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-modal:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .carousel-title {
+                font-size: 3rem;
+            }
+
+            .navbar {
+                padding: 1rem 1.5rem;
+            }
+
+            .section {
+                padding: 3rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .carousel-title {
+                font-size: 2.25rem;
+            }
+
+            .carousel-content {
+                left: 1.5rem;
+                right: 1.5rem;
+                max-width: none;
+                bottom: 25%;
+            }
+
+            .carousel-overview {
+                display: none;
+            }
+
+            .carousel-indicators {
+                left: 1.5rem;
+            }
+
+            .cta-title {
+                font-size: 2.5rem;
+            }
+
+            .poster-card {
+                width: 140px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <a href="/cinetrack/" class="nav-logo">
+            <i class="fa-solid fa-clapperboard"></i>Cinetrack
+        </a>
+        <div class="nav-links">
+            <a href="/cinetrack/search" class="nav-link">Discover</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#" class="nav-btn" id="login-btn">Sign In</a>
+        </div>
+    </nav>
+
+    <!-- Hero Carousel -->
+    <section class="hero-carousel" id="hero-carousel">
+        <div class="carousel-slides" id="carousel-slides"></div>
+        <div class="carousel-indicators" id="carousel-indicators"></div>
+        <div class="scroll-indicator">
+            <span>Scroll to explore</span>
+            <i class="fa-solid fa-chevron-down"></i>
+        </div>
+    </section>
+
+    <!-- Now Playing Movies -->
+    <section class="section" id="now-playing-section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-ticket"></i> Now in Cinemas</h2>
+        </div>
+        <div class="content-slider" id="now-playing-slider"></div>
+    </section>
+
+    <!-- Trending Section -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-fire"></i> Trending This Week</h2>
+            <div class="tabs">
+                <button class="tab active" data-type="all">All</button>
+                <button class="tab" data-type="movie">Movies</button>
+                <button class="tab" data-type="tv">TV Shows</button>
+            </div>
+        </div>
+        <div class="content-slider" id="trending-slider"></div>
+    </section>
+
+    <!-- Top Rated TV -->
+    <section class="section">
+        <div class="section-header">
+            <h2 class="section-title"><i class="fa-solid fa-tv"></i> Top Rated TV Shows</h2>
+        </div>
+        <div class="content-slider" id="top-tv-slider"></div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section" id="features">
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-check-double"></i></div>
+                <h3 class="feature-title">Track Everything</h3>
+                <p class="feature-desc">Mark movies as watched and track TV shows episode by episode. Never lose your
+                    place again.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-star-half-stroke"></i></div>
+                <h3 class="feature-title">Rate & Review</h3>
+                <p class="feature-desc">Rate with half-star precision. Build your personal collection of favorites and
+                    recommendations.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-play-circle"></i></div>
+                <h3 class="feature-title">Up Next Queue</h3>
+                <p class="feature-desc">Always know what episode to watch next. Your personalized queue keeps you on
+                    track.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fa-solid fa-bookmark"></i></div>
+                <h3 class="feature-title">Watchlists</h3>
+                <p class="feature-desc">Save movies and shows for later. Your watchlist syncs across all your devices.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <h2 class="cta-title">Start Tracking Today</h2>
+        <p class="cta-subtitle">Join thousands of movie & TV enthusiasts tracking their watch history</p>
+        <button class="btn-hero primary" id="cta-login-btn">
+            <i class="fa-brands fa-discord"></i> Continue with Discord
+        </button>
+    </section>
+
+    <footer>
+        <p>Cinetrack © 2024 • Powered by TMDB</p>
+    </footer>
+
+    <!-- Username Modal -->
+    <div class="modal-backdrop" id="setup-modal">
+        <div class="modal">
+            <h2>🎬 Welcome!</h2>
+            <p>Choose a username for your profile</p>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="username-input" placeholder="filmfan123" maxlength="20">
+            </div>
+            <button class="btn-modal" id="save-username-btn">Get Started</button>
+        </div>
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/cinetrack-api';
+        const TMDB_IMG = 'https://image.tmdb.org/t/p';
+        let currentUser = null;
+        let carouselIndex = 0;
+        let carouselInterval = null;
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // Check auth
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API}?action=me`, { credentials: 'include' });
+                if (!res.ok) return; // Don't process on error
+                const data = await res.json();
+                currentUser = data.user;
+
+                if (currentUser) {
+                    // Clear redirect flag since auth worked
+                    sessionStorage.removeItem('auth_redirect');
+
+                    // Redirect to dashboard if user has set username (unless on setup)
+                    const isSetup = new URLSearchParams(location.search).get('setup') === 'true';
+
+                    if (currentUser.username && !isSetup) {
+                        location.href = '/cinetrack/dashboard';
+                        return;
+                    }
+
+                    const btn = document.getElementById('login-btn');
+                    btn.textContent = currentUser.username || currentUser.displayName;
+                    btn.href = currentUser.username ? `/cinetrack/${currentUser.username}` : '#';
+
+                    document.getElementById('cta-login-btn').innerHTML = `<i class="fa-solid fa-user"></i> View Profile`;
+
+                    if (isSetup && !currentUser.username) {
+                        document.getElementById('setup-modal').classList.add('active');
+                    }
+                }
+            } catch (e) { console.error('Auth check failed:', e); }
+        }
+
+        // Load hero carousel with now-playing movies
+        async function loadCarousel() {
+            try {
+                const res = await fetch(`${API}?action=trending&type=movie&window=day`);
+                const data = await res.json();
+                const movies = data.results.filter(m => m.backdrop_path).slice(0, 5);
+
+                const slidesContainer = document.getElementById('carousel-slides');
+                const indicatorsContainer = document.getElementById('carousel-indicators');
+
+                slidesContainer.innerHTML = movies.map((m, i) => `
+                    <div class="carousel-slide ${i === 0 ? 'active' : ''}" data-index="${i}">
+                        <div class="carousel-backdrop" style="background-image: url('${TMDB_IMG}/original${m.backdrop_path}')"></div>
+                        <div class="carousel-overlay"></div>
+                        <div class="carousel-content">
+                            <span class="carousel-badge"><i class="fa-solid fa-fire"></i> Trending #${i + 1}</span>
+                            <h1 class="carousel-title">${m.title || m.name}</h1>
+                            <div class="carousel-meta">
+                                <span class="rating"><i class="fa-solid fa-star"></i> ${m.vote_average.toFixed(1)}</span>
+                                <span><i class="fa-regular fa-calendar"></i> ${(m.release_date || m.first_air_date || '').split('-')[0]}</span>
+                                ${m.media_type === 'tv' ? '<span><i class="fa-solid fa-tv"></i> TV Series</span>' : '<span><i class="fa-solid fa-film"></i> Movie</span>'}
+                            </div>
+                            <p class="carousel-overview">${m.overview}</p>
+                            <div class="carousel-buttons">
+                                <a href="/cinetrack/${m.media_type === 'tv' ? 'show' : 'movie'}/${m.id}" class="btn-hero primary">
+                                    <i class="fa-solid fa-info-circle"></i> View Details
+                                </a>
+                                <a href="/cinetrack/search" class="btn-hero secondary">
+                                    <i class="fa-solid fa-search"></i> Discover More
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                indicatorsContainer.innerHTML = movies.map((_, i) => `
+                    <div class="carousel-indicator ${i === 0 ? 'active' : ''}" data-index="${i}">
+                        <div class="progress"></div>
+                    </div>
+                `).join('');
+
+                // Auto-rotate carousel
+                startCarouselTimer();
+
+                // Click indicators
+                document.querySelectorAll('.carousel-indicator').forEach(ind => {
+                    ind.addEventListener('click', () => {
+                        goToSlide(parseInt(ind.dataset.index));
+                        resetCarouselTimer();
+                    });
+                });
+
+            } catch (e) { console.error('Failed to load carousel:', e); }
+        }
+
+        function goToSlide(index) {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const indicators = document.querySelectorAll('.carousel-indicator');
+
+            slides.forEach((s, i) => s.classList.toggle('active', i === index));
+            indicators.forEach((ind, i) => ind.classList.toggle('active', i === index));
+            carouselIndex = index;
+        }
+
+        function startCarouselTimer() {
+            carouselInterval = setInterval(() => {
+                const slides = document.querySelectorAll('.carousel-slide');
+                carouselIndex = (carouselIndex + 1) % slides.length;
+                goToSlide(carouselIndex);
+            }, 8000);
+        }
+
+        function resetCarouselTimer() {
+            clearInterval(carouselInterval);
+            startCarouselTimer();
+        }
+
+        // Load content sliders
+        async function loadNowPlaying() {
+            try {
+                const res = await fetch(`${API}?action=trending&type=movie&window=day`);
+                const data = await res.json();
+                renderSlider('now-playing-slider', data.results, 'movie');
+            } catch (e) { console.error('Failed to load now playing:', e); }
+        }
+
+        async function loadTrending(type = 'all') {
+            try {
+                const res = await fetch(`${API}?action=trending&type=${type}`);
+                const data = await res.json();
+                renderSlider('trending-slider', data.results);
+            } catch (e) { console.error('Failed to load trending:', e); }
+        }
+
+        async function loadTopTV() {
+            try {
+                const res = await fetch(`${API}?action=trending&type=tv`);
+                const data = await res.json();
+                renderSlider('top-tv-slider', data.results, 'tv');
+            } catch (e) { console.error('Failed to load top TV:', e); }
+        }
+
+        function renderSlider(containerId, items, forceType = null) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = items.slice(0, 15).map(item => {
+                const isMovie = forceType === 'movie' || item.media_type === 'movie';
+                const title = item.title || item.name;
+                const year = (item.release_date || item.first_air_date || '').split('-')[0];
+                const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+                const detailUrl = isMovie ? `/cinetrack/movie/${item.id}` : `/cinetrack/show/${item.id}`;
+
+                return `
+                    <a href="${detailUrl}" class="poster-card">
+                        <div class="poster-wrapper">
+                            ${item.poster_path
+                        ? `<img src="${TMDB_IMG}/w500${item.poster_path}" alt="${title}" loading="lazy">`
+                        : `<div style="width:100%;height:100%;background:var(--bg-card);display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-film" style="font-size:2rem;color:var(--text-muted);"></i></div>`
+                    }
+                            <span class="poster-rating"><i class="fa-solid fa-star"></i> ${rating}</span>
+                            <div class="poster-overlay"></div>
+                        </div>
+                        <div class="poster-title">${title}</div>
+                        <div class="poster-meta">${year}</div>
+                    </a>
+                `;
+            }).join('');
+        }
+
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                loadTrending(tab.dataset.type);
+            });
+        });
+
+        // Login functionality
+        function handleLogin() {
+            if (currentUser && currentUser.username) {
+                location.href = `/cinetrack/${currentUser.username}`;
+                return;
+            }
+            if (currentUser && !currentUser.username) {
+                document.getElementById('setup-modal').classList.add('active');
+                return;
+            }
+
+            const clientId = '1449746245806719008';
+            const redirectUri = encodeURIComponent(`${location.origin}/.netlify/functions/cinetrack-auth`);
+            location.href = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=identify`;
+        }
+
+        document.getElementById('login-btn').addEventListener('click', (e) => { e.preventDefault(); handleLogin(); });
+        document.getElementById('cta-login-btn').addEventListener('click', handleLogin);
+
+        // Username setup
+        document.getElementById('save-username-btn').addEventListener('click', async () => {
+            const input = document.getElementById('username-input');
+            const btn = document.getElementById('save-username-btn');
+            const username = input.value.trim();
+
+            if (username.length < 3) { alert('Username must be at least 3 characters'); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+
+            try {
+                const res = await fetch(`${API}?action=set-username`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username })
+                });
+                const data = await res.json();
+
+                if (data.error) { alert(data.error); btn.disabled = false; btn.textContent = 'Get Started'; return; }
+                location.href = '/cinetrack/dashboard';
+            } catch (e) { alert('Failed to save username'); btn.disabled = false; btn.textContent = 'Get Started'; }
+        });
+
+        document.getElementById('username-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('save-username-btn').click();
+        });
+
+        // Initialize
+        checkAuth();
+        loadCarousel();
+        loadNowPlaying();
+        loadTrending('all');
+        loadTopTV();
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/cinetrack/sw.js').catch(() => { });
+        }
+    </script>
+</body>
+
+</html>

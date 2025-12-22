@@ -1,0 +1,2048 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TV Show - Cinetrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="/cinetrack/manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --bg: #09090b;
+            --bg-elevated: #18181b;
+            --bg-hover: #27272a;
+            --bg-subtle: #0f0f12;
+            --text: #fafafa;
+            --text-dim: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #f59e0b;
+            --accent-dim: rgba(245, 158, 11, 0.15);
+            --green: #10b981;
+            --gold: #fbbf24;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.04);
+            --radius: 8px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(12, 12, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav a {
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .nav a:hover {
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .back-btn:hover {
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        /* Hero - Cinematic */
+        .hero {
+            position: relative;
+            min-height: 80vh;
+            display: flex;
+            align-items: flex-end;
+            padding: 8rem 3rem 4rem;
+        }
+
+        .hero-backdrop {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center 15%;
+            opacity: 0.4;
+            filter: saturate(1.2) brightness(0.9);
+        }
+
+        .hero-backdrop::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 100% 100% at 50% 0%, transparent 0%, var(--bg) 70%);
+        }
+
+        .hero-backdrop::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                    transparent 0%,
+                    rgba(9, 9, 11, 0.3) 30%,
+                    rgba(9, 9, 11, 0.8) 60%,
+                    var(--bg) 100%);
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            gap: 3rem;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+            align-items: flex-end;
+        }
+
+        .poster-wrap {
+            flex-shrink: 0;
+            width: 260px;
+        }
+
+        .poster {
+            width: 100%;
+            border-radius: var(--radius-lg);
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.7),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .show-info {
+            flex: 1;
+        }
+
+        .show-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+
+        .show-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .show-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.7rem;
+            background: rgba(234, 179, 8, 0.15);
+            border-radius: 50px;
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 0.35rem 0.7rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-badge.returning {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--green);
+        }
+
+        .status-badge.ended {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .genre-tag {
+            padding: 0.35rem 0.75rem;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .overview {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+            max-width: 650px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+        }
+
+        .btn-secondary.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-rewatch {
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+            color: white;
+        }
+
+        .btn-rewatch:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Rating Section */
+        .rating-section {
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .rating-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 0.15rem;
+        }
+
+        .rating-star {
+            font-size: 1.25rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.15s;
+        }
+
+        .rating-star:hover {
+            transform: scale(1.15);
+        }
+
+        .rating-star.active {
+            color: var(--gold);
+        }
+
+        .rating-star.hover {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        .rating-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            min-width: 2.5rem;
+        }
+
+        .rating-name {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            max-width: 120px;
+        }
+
+        /* Multi-factor Rating Modal */
+        .rating-modal {
+            max-width: 420px;
+        }
+
+        .rating-modal .modal-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .rating-modal .modal-title .final-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .rating-factor {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .rating-factor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .rating-factor-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+        }
+
+        .rating-factor-desc {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .rating-factor-value {
+            font-weight: 700;
+            color: var(--gold);
+            font-size: 0.9rem;
+        }
+
+        .rating-factor-stars {
+            display: flex;
+            gap: 0.15rem;
+        }
+
+        .rating-factor-star {
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.1s;
+        }
+
+        .rating-factor-star:hover {
+            transform: scale(1.1);
+        }
+
+        .rating-factor-star.active {
+            color: var(--gold);
+        }
+
+        .rating-factor-star.hover {
+            color: var(--gold);
+            opacity: 0.7;
+        }
+
+        .rating-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-top: 0.75rem;
+        }
+
+        .rating-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text);
+            border-color: var(--gold);
+        }
+
+        .rating-btn.has-rating {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .rating-btn i {
+            color: var(--gold);
+        }
+
+        /* Content */
+        .content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 2.5rem 4rem;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Up Next Banner */
+        .up-next-banner {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .up-next-banner i {
+            font-size: 1.5rem;
+            color: var(--green);
+        }
+
+        .up-next-info {
+            flex: 1;
+        }
+
+        .up-next-info h3 {
+            font-size: 0.9rem;
+            color: var(--green);
+            margin-bottom: 0.15rem;
+        }
+
+        .up-next-info p {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .completed-banner {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05));
+            border: 1px solid rgba(234, 179, 8, 0.2);
+        }
+
+        .completed-banner i {
+            color: var(--gold);
+        }
+
+        .completed-banner h3 {
+            color: var(--gold);
+        }
+
+        .waiting-banner {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05));
+            border: 1px solid rgba(234, 179, 8, 0.2);
+        }
+
+        .waiting-banner i {
+            color: var(--gold);
+        }
+
+        .waiting-banner h3 {
+            color: var(--gold);
+        }
+
+        /* Progress */
+        .progress-card {
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .progress-percent {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--green);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--green);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        /* Season Tabs */
+        .season-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .season-tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-dim);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .season-tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .season-tab.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Episodes */
+        .episodes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .episode-card {
+            display: flex;
+            align-items: center;
+            gap: 0.875rem;
+            padding: 0.875rem 1rem;
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+
+        .episode-card:hover {
+            border-color: var(--text-muted);
+        }
+
+        .episode-card.watched {
+            opacity: 0.5;
+        }
+
+        .episode-card.watched .episode-check {
+            background: var(--green);
+            border-color: var(--green);
+        }
+
+        .episode-card.unreleased {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .episode-card.unreleased .episode-check {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .episode-check {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--text-muted);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.15s;
+            color: white;
+        }
+
+        .episode-check:hover {
+            border-color: var(--green);
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .episode-still {
+            width: 120px;
+            height: 68px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: var(--bg);
+            flex-shrink: 0;
+        }
+
+        .episode-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .episode-number {
+            font-size: 0.7rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .episode-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.15rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .episode-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .episode-meta .unreleased-tag {
+            color: var(--gold);
+        }
+
+        .episode-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .episode-action-btn {
+            padding: 0.4rem 0.65rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-dim);
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .episode-action-btn:hover {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .episode-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .episode-action-btn:disabled:hover {
+            border-color: var(--border);
+            color: var(--text-dim);
+        }
+
+        .episode-action-btn.unwatch {
+            border-color: var(--text-muted);
+        }
+
+        .episode-action-btn.unwatch:hover {
+            border-color: var(--text-dim);
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        /* Cast Row */
+        .cast-row {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            scrollbar-width: none;
+        }
+
+        .cast-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .cast-card {
+            flex-shrink: 0;
+            width: 100px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .cast-card:hover .cast-photo {
+            transform: scale(1.05);
+            border-color: var(--accent);
+        }
+
+        .cast-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 0.5rem;
+            background: var(--bg-elevated);
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .cast-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .cast-character {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Similar Shows */
+        .poster-row {
+            display: flex;
+            gap: 0.75rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            scrollbar-width: none;
+        }
+
+        .poster-row::-webkit-scrollbar {
+            display: none;
+        }
+
+        .poster-thumb {
+            flex-shrink: 0;
+            width: 120px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .poster-thumb:hover .poster-thumb-img {
+            transform: scale(1.03);
+        }
+
+        .poster-thumb-wrap {
+            position: relative;
+            aspect-ratio: 2/3;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 0.4rem;
+            background: var(--bg-elevated);
+        }
+
+        .poster-thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.25s;
+        }
+
+        .poster-thumb-rating {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.1rem 0.3rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        .poster-thumb-rating i {
+            color: var(--gold);
+            font-size: 0.5rem;
+        }
+
+        .poster-thumb-title {
+            font-size: 0.75rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-still {
+            width: 180px;
+            aspect-ratio: 16/9;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--bg);
+        }
+
+        .modal-header-info {
+            flex: 1;
+        }
+
+        .modal-ep-number {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-meta {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .modal-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-overview {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-section-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-option:hover {
+            border-color: var(--green);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .modal-option:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal-option:disabled:hover {
+            border-color: var(--border);
+            background: var(--bg);
+        }
+
+        .modal-option i {
+            color: var(--green);
+        }
+
+        .modal-option span {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .modal-date {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .modal-date label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .modal-date input {
+            width: 100%;
+            padding: 0.65rem 1rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .modal-date input:focus {
+            outline: none;
+            border-color: var(--green);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 0.65rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background: var(--bg);
+            color: var(--text-dim);
+        }
+
+        .modal-btn.confirm {
+            background: var(--green);
+            color: white;
+        }
+
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 32px;
+            height: 32px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            color: var(--text-dim);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: white;
+            border-color: var(--text-muted);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 0.875rem 1.5rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 300;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast i {
+            color: var(--green);
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            color: var(--text-muted);
+            padding-top: 64px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 0 1.25rem;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            .hero {
+                min-height: auto;
+                padding: 5rem 1.25rem 2rem;
+            }
+
+            .hero-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .poster-wrap {
+                width: 180px;
+            }
+
+            .show-title {
+                font-size: 1.75rem;
+            }
+
+            .show-meta,
+            .genres,
+            .actions {
+                justify-content: center;
+            }
+
+            .content {
+                padding: 1.5rem;
+            }
+
+            .episode-still {
+                display: none;
+            }
+
+            .episode-actions {
+                display: none;
+            }
+
+            .modal {
+                max-width: 95%;
+            }
+
+            .modal-still {
+                width: 120px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a href="/cinetrack/" class="logo"><i class="fa-solid fa-clapperboard"></i>Cinetrack</a>
+            <nav class="nav">
+                <a href="/cinetrack/dashboard">Home</a>
+                <a href="/cinetrack/search">Discover</a>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <a href="/cinetrack/dashboard" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Back</a>
+        </div>
+    </header>
+
+    <div id="content">
+        <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i>&nbsp;&nbsp;Loading show...</div>
+    </div>
+
+    <!-- Episode Detail Modal -->
+    <div class="modal-overlay" id="episode-modal">
+        <div class="modal" style="position:relative;">
+            <button class="modal-close" onclick="closeEpisodeModal()"><i class="fa-solid fa-times"></i></button>
+            <div class="modal-header" id="ep-modal-header"></div>
+            <div class="modal-body" id="ep-modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Rewatch Modal -->
+    <div class="modal-overlay" id="rewatch-modal">
+        <div class="modal" style="padding:1.5rem;">
+            <div class="modal-title"
+                style="font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:600;margin-bottom:0.25rem;">Start
+                Rewatch?</div>
+            <div style="font-size:0.85rem;color:var(--text-dim);margin-bottom:1.5rem;">This will reset your progress to
+                S1E1. Your previous watch history will be preserved.</div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="rewatch-cancel-btn">Cancel</button>
+                <button class="modal-btn confirm" id="rewatch-confirm-btn" style="background:var(--purple);">Start
+                    Rewatch</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div class="modal-overlay" id="rating-modal">
+        <div class="modal rating-modal">
+            <div class="modal-title">
+                <span>Rate this show</span>
+                <span class="final-score" id="rating-final-score">-</span>
+            </div>
+
+            <div class="rating-factor" data-factor="enjoyment">
+                <div class="rating-factor-header">
+                    <div>
+                        <div class="rating-factor-label">Enjoyment</div>
+                        <div class="rating-factor-desc">Did you enjoy it?</div>
+                    </div>
+                    <span class="rating-factor-value" id="factor-enjoyment-value">-</span>
+                </div>
+                <div class="rating-factor-stars" id="factor-enjoyment-stars"></div>
+            </div>
+
+            <div class="rating-factor" data-factor="story">
+                <div class="rating-factor-header">
+                    <div>
+                        <div class="rating-factor-label">Story</div>
+                        <div class="rating-factor-desc">Was the story good?</div>
+                    </div>
+                    <span class="rating-factor-value" id="factor-story-value">-</span>
+                </div>
+                <div class="rating-factor-stars" id="factor-story-stars"></div>
+            </div>
+
+            <div class="rating-factor" data-factor="acting">
+                <div class="rating-factor-header">
+                    <div>
+                        <div class="rating-factor-label">Acting</div>
+                        <div class="rating-factor-desc">Was the acting good?</div>
+                    </div>
+                    <span class="rating-factor-value" id="factor-acting-value">-</span>
+                </div>
+                <div class="rating-factor-stars" id="factor-acting-stars"></div>
+            </div>
+
+            <div class="rating-factor" data-factor="production">
+                <div class="rating-factor-header">
+                    <div>
+                        <div class="rating-factor-label">Production</div>
+                        <div class="rating-factor-desc">Was the production quality good?</div>
+                    </div>
+                    <span class="rating-factor-value" id="factor-production-value">-</span>
+                </div>
+                <div class="rating-factor-stars" id="factor-production-stars"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeRatingModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="submitRating()">Save Rating</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"><i class="fa-solid fa-check"></i><span id="toast-text">Done</span></div>
+
+    <script>
+        const API = '/.netlify/functions/cinetrack-api';
+        const IMG = 'https://image.tmdb.org/t/p';
+        let currentUser = null;
+        let showData = null;
+        let seasonData = null;
+        let userProgress = null;
+        let currentSeason = 1;
+        let pendingEpisode = null;
+        let userRating = null;
+
+        const showId = location.pathname.split('/').filter(Boolean).pop();
+
+        const ratingLabels = {
+            1: "What did I just watch?",
+            2: "Painful",
+            3: "Bad",
+            4: "Meh",
+            5: "Okay",
+            6: "Decent",
+            7: "Good",
+            8: "Great",
+            9: "Amazing",
+            10: "Absolute Cinema"
+        };
+
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        async function loadShow() {
+            try {
+                const [authRes, showRes] = await Promise.all([
+                    fetch(`${API}?action=me`, { credentials: 'include' }),
+                    fetch(`${API}?action=show&id=${showId}`)
+                ]);
+
+                currentUser = (await authRes.json()).user;
+                showData = await showRes.json();
+
+                if (showData.status_code) {
+                    document.getElementById('content').innerHTML = `<div class="loading"><i class="fa-solid fa-exclamation-triangle"></i>&nbsp;&nbsp;Show not found</div>`;
+                    return;
+                }
+
+                if (currentUser) {
+                    const progressRes = await fetch(`${API}?action=show-progress&showId=${showId}`, { credentials: 'include' });
+                    userProgress = (await progressRes.json()).progress;
+                    userRating = currentUser.ratings?.find(r => r.id == showId && r.type === 'tv')?.rating || 0;
+                }
+
+                document.title = `${showData.name} - Cinetrack`;
+                renderShow();
+
+                const firstSeason = showData.seasons?.find(s => s.season_number > 0);
+                if (firstSeason) loadSeason(firstSeason.season_number);
+            } catch (e) {
+                console.error(e);
+                document.getElementById('content').innerHTML = `<div class="loading"><i class="fa-solid fa-exclamation-triangle"></i>&nbsp;&nbsp;Failed to load</div>`;
+            }
+        }
+
+        function renderShow() {
+            const s = showData;
+            const year = s.first_air_date?.split('-')[0] || '';
+            const rating = s.vote_average?.toFixed(1) || 'N/A';
+            const isReturning = s.status === 'Returning Series';
+
+            const inWatchlist = currentUser?.watchlist?.some(w => w.id == showId && w.type === 'tv');
+            const inFavorites = currentUser?.favorites?.some(f => f.id == showId && f.type === 'tv');
+
+            const totalEpisodes = s.seasons?.reduce((sum, sn) => sum + (sn.season_number > 0 ? sn.episode_count : 0), 0) || 0;
+            const watchedCount = userProgress?.watchedEpisodes?.length || 0;
+            const progressPercent = totalEpisodes > 0 ? Math.round((watchedCount / totalEpisodes) * 100) : 0;
+            const isCompleted = progressPercent === 100 && totalEpisodes > 0;
+            const rewatchCount = userProgress?.rewatchCount || 0;
+
+            const network = s.networks?.[0];
+            const similar = s.similar?.results?.slice(0, 10) || [];
+
+            // Check if show hasn't started airing
+            const firstAirDate = s.first_air_date ? new Date(s.first_air_date) : null;
+            const hasNotAired = firstAirDate && firstAirDate > new Date();
+
+            document.getElementById('content').innerHTML = `
+                <section class="hero">
+                    <div class="hero-backdrop" style="background-image: url('${IMG}/w1280${s.backdrop_path}')"></div>
+                    <div class="hero-content">
+                        <div class="poster-wrap">
+                            ${s.poster_path ? `<img class="poster" src="${IMG}/w500${s.poster_path}" alt="">` : '<div class="poster" style="aspect-ratio:2/3;background:var(--bg-elevated);"></div>'}
+                        </div>
+                        <div class="show-info">
+                            <h1 class="show-title">${s.name}</h1>
+                            <div class="show-meta">
+                                <span class="rating-badge"><i class="fa-solid fa-star"></i> ${rating}</span>
+                                <span class="status-badge ${isReturning ? 'returning' : 'ended'}">${s.status || 'Unknown'}</span>
+                                ${year ? `<span><i class="fa-regular fa-calendar"></i> ${year}</span>` : ''}
+                                ${s.number_of_seasons ? `<span><i class="fa-solid fa-layer-group"></i> ${s.number_of_seasons} Seasons</span>` : ''}
+                                ${s.number_of_episodes ? `<span><i class="fa-solid fa-film"></i> ${s.number_of_episodes} Episodes</span>` : ''}
+                                ${network ? `<span><i class="fa-solid fa-tv"></i> ${network.name}</span>` : ''}
+                            </div>
+                            <div class="genres">
+                                ${(s.genres || []).map(g => `<span class="genre-tag">${g.name}</span>`).join('')}
+                            </div>
+                            <p class="overview">${s.overview || 'No overview available.'}</p>
+
+                            <div class="actions">
+                                <button class="btn btn-secondary ${inWatchlist ? 'active' : ''}" id="btn-watchlist" onclick="toggleWatchlist()">
+                                    <i class="fa-solid fa-${inWatchlist ? 'check' : 'plus'}"></i> ${inWatchlist ? 'In Watchlist' : 'Watchlist'}
+                                </button>
+                                <button class="btn btn-secondary ${inFavorites ? 'active' : ''}" id="btn-favorite" onclick="toggleFavorite()">
+                                    <i class="fa-${inFavorites ? 'solid' : 'regular'} fa-heart"></i>
+                                </button>
+                                ${isCompleted ? `
+                                <button class="btn btn-rewatch" onclick="openRewatchModal()">
+                                    <i class="fa-solid fa-rotate"></i> Rewatch ${rewatchCount > 0 ? `(${rewatchCount})` : ''}
+                                </button>
+                                ` : ''}
+                            </div>
+
+                            ${currentUser && !hasNotAired ? `
+                            <button class="rating-btn ${userRating ? 'has-rating' : ''}" onclick="openRatingModal()">
+                                <i class="fa-solid fa-star"></i>
+                                ${userRating ? `Your Rating: ${userRating}/10` : 'Rate this show'}
+                            </button>
+                            ` : hasNotAired ? '<p style="color:var(--gold);margin-top:1rem;"><i class="fa-solid fa-clock"></i> Not yet aired - rating available after release</p>' : ''}
+                        </div>
+                    </div>
+                </section>
+
+                <div class="content">
+                    <div id="up-next-container"></div>
+
+                    ${userProgress ? `
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <span class="progress-label">Overall Progress</span>
+                            <span class="progress-percent">${progressPercent}%</span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${progressPercent}%"></div></div>
+                        <div class="progress-stats">
+                            <span>${watchedCount} of ${totalEpisodes} episodes</span>
+                            ${rewatchCount > 0 ? `<span>🔁 Rewatched ${rewatchCount}x</span>` : ''}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <section class="section">
+                        <div class="section-header">
+                            <h2 class="section-title"><i class="fa-solid fa-tv"></i> Episodes</h2>
+                        </div>
+                        <div class="season-tabs" id="season-tabs">
+                            ${s.seasons.filter(sn => sn.season_number > 0).map(sn => `
+                                <button class="season-tab" data-season="${sn.season_number}" onclick="loadSeason(${sn.season_number})">
+                                    Season ${sn.season_number}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div class="episodes-list" id="episodes-list">
+                            <div style="text-align:center;color:var(--text-muted);padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                        </div>
+                    </section>
+
+                    ${s.credits?.cast?.length ? `
+                    <section class="section">
+                        <div class="section-header">
+                            <h2 class="section-title"><i class="fa-solid fa-users"></i> Cast</h2>
+                        </div>
+                        <div class="cast-row">
+                            ${s.credits.cast.slice(0, 12).map(c => `
+                                <a href="/cinetrack/person/${c.id}" class="cast-card">
+                                    ${c.profile_path ? `<img class="cast-photo" src="${IMG}/w185${c.profile_path}">` : '<div class="cast-photo" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-user" style="color:var(--text-muted);"></i></div>'}
+                                    <div class="cast-name">${c.name}</div>
+                                    <div class="cast-character">${c.character}</div>
+                                </a>
+                            `).join('')}
+                        </div>
+                    </section>
+                    ` : ''}
+
+                    ${similar.length ? `
+                    <section class="section">
+                        <div class="section-header">
+                            <h2 class="section-title"><i class="fa-solid fa-tv"></i> Similar Shows</h2>
+                        </div>
+                        <div class="poster-row">
+                            ${similar.map(sim => `
+                                <a href="/cinetrack/show/${sim.id}" class="poster-thumb">
+                                    <div class="poster-thumb-wrap">
+                                        ${sim.poster_path ? `<img class="poster-thumb-img" src="${IMG}/w342${sim.poster_path}">` : ''}
+                                        <span class="poster-thumb-rating"><i class="fa-solid fa-star"></i>${sim.vote_average?.toFixed(1) || '-'}</span>
+                                    </div>
+                                    <div class="poster-thumb-title">${sim.name}</div>
+                                </a>
+                            `).join('')}
+                        </div>
+                    </section>
+                    ` : ''}
+                </div>
+            `;
+
+            updateUpNext();
+        }
+
+        async function loadSeason(seasonNum) {
+            currentSeason = seasonNum;
+            document.querySelectorAll('.season-tab').forEach(t => {
+                t.classList.toggle('active', parseInt(t.dataset.season) === seasonNum);
+            });
+
+            const list = document.getElementById('episodes-list');
+            list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+
+            try {
+                const res = await fetch(`${API}?action=season&showId=${showId}&season=${seasonNum}`);
+                seasonData = await res.json();
+                renderEpisodes();
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem;">Failed to load</div>';
+            }
+        }
+
+        function renderEpisodes() {
+            const list = document.getElementById('episodes-list');
+            const episodes = seasonData.episodes || [];
+            const watchedEpisodes = userProgress?.watchedEpisodes || [];
+            const now = new Date();
+
+            list.innerHTML = episodes.map(ep => {
+                const epKey = `S${currentSeason}E${ep.episode_number}`;
+                const isWatched = watchedEpisodes.includes(epKey);
+                const airDate = ep.air_date ? new Date(ep.air_date) : null;
+                const hasAired = airDate && airDate <= now;
+                const airDateStr = airDate ? airDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+                return `
+                    <div class="episode-card ${isWatched ? 'watched' : ''} ${!hasAired ? 'unreleased' : ''}" onclick="openEpisodeModal(${JSON.stringify(ep).replace(/"/g, '&quot;')}, ${isWatched}, ${hasAired})">
+                        <div class="episode-check" onclick="event.stopPropagation(); ${hasAired && !isWatched ? `quickWatch(${ep.episode_number}, '${ep.name.replace(/'/g, "\\'")}')` : isWatched ? `unwatchEpisode(${currentSeason}, ${ep.episode_number})` : ''}">
+                            ${isWatched ? '<i class="fa-solid fa-check"></i>' : ''}
+                        </div>
+                        ${ep.still_path ? `<img class="episode-still" src="${IMG}/w300${ep.still_path}">` : '<div class="episode-still" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-image" style="color:var(--text-muted);"></i></div>'}
+                        <div class="episode-info">
+                            <div class="episode-number">Episode ${ep.episode_number}</div>
+                            <div class="episode-title">${ep.name}</div>
+                            <div class="episode-meta">
+                                ${!hasAired ? `<span class="unreleased-tag"><i class="fa-solid fa-clock"></i> Airs ${airDateStr}</span>` : airDateStr}
+                                ${ep.runtime ? ` • ${ep.runtime}m` : ''}
+                            </div>
+                        </div>
+                        <div class="episode-actions" onclick="event.stopPropagation();">
+                            ${hasAired && !isWatched ? `<button class="episode-action-btn" onclick="quickWatch(${ep.episode_number}, '${ep.name.replace(/'/g, "\\'")}')">Quick Watch</button>` : ''}
+                            ${isWatched ? `<button class="episode-action-btn unwatch" onclick="unwatchEpisode(${currentSeason}, ${ep.episode_number})"><i class="fa-solid fa-rotate-left"></i> Unwatch</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateUpNext() {
+            const container = document.getElementById('up-next-container');
+            if (!container) return;
+
+            if (!userProgress?.watchedEpisodes?.length) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const totalEpisodes = showData.seasons?.reduce((sum, sn) => sum + (sn.season_number > 0 ? sn.episode_count : 0), 0) || 0;
+            const watchedCount = userProgress.watchedEpisodes.length;
+
+            if (watchedCount >= totalEpisodes) {
+                container.innerHTML = `
+                    <div class="up-next-banner completed-banner">
+                        <i class="fa-solid fa-trophy"></i>
+                        <div class="up-next-info">
+                            <h3>All Caught Up!</h3>
+                            <p>You've watched all ${totalEpisodes} episodes</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Check if waiting for next episode
+            const nextEpInfo = showData.next_episode_to_air;
+            if (nextEpInfo && new Date(nextEpInfo.air_date) > new Date()) {
+                const airDate = new Date(nextEpInfo.air_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                container.innerHTML = `
+                    <div class="up-next-banner waiting-banner">
+                        <i class="fa-solid fa-clock"></i>
+                        <div class="up-next-info">
+                            <h3>Waiting for Next Episode</h3>
+                            <p>S${nextEpInfo.season_number}:E${nextEpInfo.episode_number} airs ${airDate}</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Find next unwatched episode
+            for (const season of showData.seasons.filter(s => s.season_number > 0)) {
+                for (let ep = 1; ep <= season.episode_count; ep++) {
+                    const epKey = `S${season.season_number}E${ep}`;
+                    if (!userProgress.watchedEpisodes.includes(epKey)) {
+                        container.innerHTML = `
+                            <div class="up-next-banner">
+                                <i class="fa-solid fa-play-circle"></i>
+                                <div class="up-next-info">
+                                    <h3>Up Next</h3>
+                                    <p>Season ${season.season_number}, Episode ${ep}</p>
+                                </div>
+                                <button class="btn btn-secondary" onclick="loadSeason(${season.season_number})" style="margin-left:auto;">
+                                    Go to Episode
+                                </button>
+                            </div>
+                        `;
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Episode Modal
+        const episodeModal = document.getElementById('episode-modal');
+
+        function openEpisodeModal(ep, isWatched, hasAired) {
+            const airDate = ep.air_date ? new Date(ep.air_date) : null;
+            const airDateStr = airDate ? airDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            const ratingStr = ep.vote_average ? `<span><i class="fa-solid fa-star" style="color:var(--gold);"></i> ${ep.vote_average.toFixed(1)}</span>` : '';
+
+            pendingEpisode = { ...ep, season: currentSeason };
+
+            document.getElementById('ep-modal-header').innerHTML = `
+                ${ep.still_path ? `<img class="modal-still" src="${IMG}/w300${ep.still_path}">` : '<div class="modal-still" style="display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-image" style="color:var(--text-muted);font-size:2rem;"></i></div>'}
+                <div class="modal-header-info">
+                    <div class="modal-ep-number">S${currentSeason}:E${ep.episode_number}</div>
+                    <div class="modal-title">${ep.name}</div>
+                    <div class="modal-meta">
+                        ${airDateStr ? `<span><i class="fa-regular fa-calendar"></i> ${airDateStr}</span>` : ''}
+                        ${ep.runtime ? `<span><i class="fa-regular fa-clock"></i> ${ep.runtime}m</span>` : ''}
+                        ${ratingStr}
+                    </div>
+                </div>
+            `;
+
+            let bodyHTML = `<div class="modal-overview">${ep.overview || 'No description available.'}</div>`;
+
+            if (currentUser && hasAired && !isWatched) {
+                bodyHTML += `
+                    <div class="modal-section-title">Mark as Watched</div>
+                    <button class="modal-option" onclick="quickWatchFromModal()"><i class="fa-solid fa-check"></i><span>Just finished watching</span></button>
+                    ${airDateStr ? `<button class="modal-option" onclick="watchOnAirDate()"><i class="fa-solid fa-calendar-day"></i><span>Watched on ${airDateStr}</span></button>` : ''}
+                    <div class="modal-date">
+                        <label>Or pick a date:</label>
+                        <input type="datetime-local" id="modal-date-input" value="${new Date().toISOString().slice(0, 16)}">
+                    </div>
+                    <div class="modal-actions">
+                        <button class="modal-btn cancel" onclick="closeEpisodeModal()">Cancel</button>
+                        <button class="modal-btn confirm" onclick="watchCustomDate()">Confirm Date</button>
+                    </div>
+                `;
+            } else if (!hasAired) {
+                bodyHTML += `<p style="color:var(--gold);text-align:center;padding:1rem;"><i class="fa-solid fa-clock"></i> This episode hasn't aired yet</p>`;
+            } else if (isWatched) {
+                bodyHTML += `
+                    <p style="color:var(--green);text-align:center;padding:1rem;margin-bottom:1rem;"><i class="fa-solid fa-check-circle"></i> You've watched this episode</p>
+                    <button class="modal-option" onclick="unwatchEpisode(${currentSeason}, ${ep.episode_number})" style="border-color:var(--text-muted);"><i class="fa-solid fa-rotate-left" style="color:var(--text-dim);"></i><span>Remove from watched</span></button>
+                `;
+            }
+
+            document.getElementById('ep-modal-body').innerHTML = bodyHTML;
+            episodeModal.classList.add('active');
+        }
+
+        function closeEpisodeModal() {
+            episodeModal.classList.remove('active');
+            pendingEpisode = null;
+        }
+
+        async function quickWatch(epNum, epTitle) {
+            if (!currentUser) { location.href = '/cinetrack/'; return; }
+            await markEpisodeWatched(currentSeason, epNum, epTitle);
+        }
+
+        async function quickWatchFromModal() {
+            if (pendingEpisode) {
+                await markEpisodeWatched(pendingEpisode.season, pendingEpisode.episode_number, pendingEpisode.name, pendingEpisode.still_path);
+                closeEpisodeModal();
+            }
+        }
+
+        async function watchOnAirDate() {
+            if (pendingEpisode?.air_date) {
+                await markEpisodeWatched(pendingEpisode.season, pendingEpisode.episode_number, pendingEpisode.name, pendingEpisode.still_path, new Date(pendingEpisode.air_date).toISOString());
+                closeEpisodeModal();
+            }
+        }
+
+        async function watchCustomDate() {
+            const dateInput = document.getElementById('modal-date-input')?.value;
+            if (dateInput && pendingEpisode) {
+                await markEpisodeWatched(pendingEpisode.season, pendingEpisode.episode_number, pendingEpisode.name, pendingEpisode.still_path, new Date(dateInput).toISOString());
+                closeEpisodeModal();
+            }
+        }
+
+        async function markEpisodeWatched(season, episode, title, still = null, customDate = null) {
+            const payload = {
+                showId: parseInt(showId),
+                showTitle: showData.name,
+                showPoster: showData.poster_path,
+                seasonNumber: season,
+                episodeNumber: episode,
+                episodeTitle: title,
+                episodeStill: still
+            };
+
+            const action = customDate ? 'watch-episode-dated' : 'watch-episode';
+            if (customDate) payload.watchedAt = customDate;
+
+            try {
+                const res = await fetch(`${API}?action=${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    userProgress = userProgress || { watchedEpisodes: [] };
+                    userProgress.watchedEpisodes = data.watchedEpisodes;
+                    renderEpisodes();
+                    updateUpNext();
+                    showToast(`Watched S${season}:E${episode}`);
+
+                    // Auto-sync to Trakt
+                    syncEpisodeToTrakt(season, episode, customDate || new Date().toISOString());
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function syncEpisodeToTrakt(season, episode, watchedAt) {
+            try {
+                const res = await fetch(`${API}?action=trakt-sync-history`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        items: [{
+                            type: 'episode',
+                            showTmdbId: parseInt(showId),
+                            season,
+                            episode,
+                            watchedAt
+                        }]
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Synced to Trakt ✓', 'success');
+                }
+            } catch (e) {
+                // Silently fail - user may not be connected
+                console.log('Trakt sync skipped:', e);
+            }
+        }
+
+        async function unwatchEpisode(season, episode) {
+            try {
+                const res = await fetch(`${API}?action=unwatch-episode`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        showId: parseInt(showId),
+                        seasonNumber: season,
+                        episodeNumber: episode
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    userProgress.watchedEpisodes = data.watchedEpisodes;
+                    closeEpisodeModal();
+                    renderEpisodes();
+                    updateUpNext();
+                    showToast(`Unwatched S${season}:E${episode}`);
+
+                    // Also remove from Trakt
+                    unsyncEpisodeFromTrakt(season, episode);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function unsyncEpisodeFromTrakt(season, episode) {
+            try {
+                await fetch(`${API}?action=trakt-unwatch`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        type: 'episode',
+                        showTmdbId: parseInt(showId),
+                        season,
+                        episode
+                    })
+                });
+            } catch (e) {
+                console.log('Trakt unwatch skipped:', e);
+            }
+        }
+
+        // Rewatch Modal
+        const rewatchModal = document.getElementById('rewatch-modal');
+        document.getElementById('rewatch-cancel-btn').addEventListener('click', () => rewatchModal.classList.remove('active'));
+        document.getElementById('rewatch-confirm-btn').addEventListener('click', startRewatch);
+
+        function openRewatchModal() { rewatchModal.classList.add('active'); }
+
+        async function startRewatch() {
+            try {
+                const res = await fetch(`${API}?action=rewatch-show`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ showId: parseInt(showId) })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    rewatchModal.classList.remove('active');
+                    userProgress = data.progress;
+                    showToast('Rewatch started! Back to S1:E1');
+                    renderShow();
+                    loadSeason(1);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Multi-factor rating system
+        const ratingFactors = { enjoyment: 0, story: 0, acting: 0, production: 0 };
+
+        function openRatingModal() {
+            if (!currentUser) return;
+
+            ['enjoyment', 'story', 'acting', 'production'].forEach(factor => {
+                const container = document.getElementById(`factor-${factor}-stars`);
+                container.innerHTML = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i =>
+                    `<span class="rating-factor-star" data-factor="${factor}" data-value="${i}" 
+                          onmouseenter="hoverFactorStar('${factor}', ${i})" 
+                          onmouseleave="unhoverFactorStar('${factor}')"
+                          onclick="setFactorRating('${factor}', ${i})">
+                        <i class="fa-solid fa-star"></i>
+                    </span>`
+                ).join('');
+
+                const existing = currentUser?.ratings?.find(r => r.id == showId && r.type === 'tv');
+                if (existing?.breakdown?.[factor]) {
+                    ratingFactors[factor] = existing.breakdown[factor];
+                    updateFactorDisplay(factor);
+                } else {
+                    ratingFactors[factor] = 0;
+                    document.getElementById(`factor-${factor}-value`).textContent = '-';
+                }
+            });
+
+            updateFinalScore();
+            document.getElementById('rating-modal').classList.add('active');
+        }
+
+        function closeRatingModal() {
+            document.getElementById('rating-modal').classList.remove('active');
+        }
+
+        function hoverFactorStar(factor, value) {
+            document.querySelectorAll(`[data-factor="${factor}"]`).forEach((star, i) => {
+                star.classList.toggle('hover', i < value);
+            });
+        }
+
+        function unhoverFactorStar(factor) {
+            document.querySelectorAll(`[data-factor="${factor}"]`).forEach(star => {
+                star.classList.remove('hover');
+            });
+        }
+
+        function setFactorRating(factor, value) {
+            ratingFactors[factor] = ratingFactors[factor] === value ? 0 : value;
+            updateFactorDisplay(factor);
+            updateFinalScore();
+        }
+
+        function updateFactorDisplay(factor) {
+            const value = ratingFactors[factor];
+            document.getElementById(`factor-${factor}-value`).textContent = value || '-';
+            document.querySelectorAll(`[data-factor="${factor}"]`).forEach((star, i) => {
+                star.classList.toggle('active', i < value);
+            });
+        }
+
+        function updateFinalScore() {
+            const values = Object.values(ratingFactors).filter(v => v > 0);
+            if (values.length === 0) {
+                document.getElementById('rating-final-score').textContent = '-';
+                return;
+            }
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const rounded = Math.round(avg);
+            document.getElementById('rating-final-score').textContent = rounded;
+        }
+
+        async function submitRating() {
+            const values = Object.values(ratingFactors).filter(v => v > 0);
+            if (values.length === 0) {
+                showToast('Please rate at least one factor');
+                return;
+            }
+
+            const finalRating = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+
+            try {
+                const res = await fetch(`${API}?action=rate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        id: parseInt(showId),
+                        type: 'tv',
+                        rating: finalRating,
+                        breakdown: { ...ratingFactors },
+                        title: showData.name,
+                        poster: showData.poster_path
+                    })
+                });
+
+                if ((await res.json()).success) {
+                    userRating = finalRating;
+                    closeRatingModal();
+                    showToast(`Rated ${finalRating}/10`);
+
+                    const btn = document.querySelector('.rating-btn');
+                    if (btn) {
+                        btn.classList.add('has-rating');
+                        btn.innerHTML = `<i class="fa-solid fa-star"></i> Your Rating: ${finalRating}/10`;
+                    }
+
+                    syncRatingToTrakt(finalRating);
+                    await removeFromWatchlist();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function syncRatingToTrakt(rating) {
+            try {
+                await fetch(`${API}?action=trakt-sync-rating`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        type: 'show',
+                        tmdbId: parseInt(showId),
+                        rating
+                    })
+                });
+            } catch (e) {
+                console.log('Trakt rating sync skipped:', e);
+            }
+        }
+
+        // Helper to remove from watchlist silently
+        async function removeFromWatchlist() {
+            const btn = document.getElementById('btn-watchlist');
+            if (btn?.classList.contains('active')) {
+                await fetch(`${API}?action=watchlist`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ id: parseInt(showId), type: 'tv', add: false })
+                });
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fa-solid fa-plus"></i> Watchlist';
+            }
+        }
+
+        // Watchlist/Favorite
+        async function toggleWatchlist() {
+            if (!currentUser) { location.href = '/cinetrack/'; return; }
+            const btn = document.getElementById('btn-watchlist');
+            const inList = btn.classList.contains('active');
+
+            const res = await fetch(`${API}?action=watchlist`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: parseInt(showId), type: 'tv', title: showData.name, poster: showData.poster_path, add: !inList })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                btn.classList.toggle('active', data.inWatchlist);
+                btn.innerHTML = data.inWatchlist ? '<i class="fa-solid fa-check"></i> In Watchlist' : '<i class="fa-solid fa-plus"></i> Watchlist';
+                showToast(data.inWatchlist ? 'Added to watchlist' : 'Removed');
+            }
+        }
+
+        async function toggleFavorite() {
+            if (!currentUser) { location.href = '/cinetrack/'; return; }
+            const btn = document.getElementById('btn-favorite');
+            const isFav = btn.classList.contains('active');
+
+            const res = await fetch(`${API}?action=favorite`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id: parseInt(showId), type: 'tv', title: showData.name, poster: showData.poster_path, add: !isFav })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                btn.classList.toggle('active', data.isFavorite);
+                btn.innerHTML = data.isFavorite ? '<i class="fa-solid fa-heart"></i>' : '<i class="fa-regular fa-heart"></i>';
+                showToast(data.isFavorite ? 'Added to favorites' : 'Removed');
+            }
+        }
+
+        // Modal close handlers
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') { episodeModal.classList.remove('active'); rewatchModal.classList.remove('active'); } });
+        episodeModal.addEventListener('click', e => { if (e.target === episodeModal) closeEpisodeModal(); });
+        rewatchModal.addEventListener('click', e => { if (e.target === rewatchModal) rewatchModal.classList.remove('active'); });
+
+        loadShow();
+    </script>
+</body>
+
+</html>

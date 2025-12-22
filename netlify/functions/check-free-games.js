@@ -122,18 +122,61 @@ function createGameEmbed(game) {
     return embed;
 }
 
+const CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Content-Type": "application/json"
+};
+
 exports.handler = async function (event, context) {
-    console.log('[Scheduled] Checking for new free games...');
+    // Handle CORS preflight
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers: CORS_HEADERS, body: "" };
+    }
+
+    const action = event.queryStringParameters?.action;
 
     try {
         if (event) connectLambda(event);
         const store = getStore('discord-webhooks');
 
+        // === STATUS ENDPOINT ===
+        if (action === 'status') {
+            const lastKnown = await store.get('_last_known_games', { type: 'json' }) || { gameIds: [] };
+            const index = await store.get('_webhook_index', { type: 'json' }) || { webhooks: [] };
+
+            return {
+                statusCode: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({
+                    lastKnownCount: lastKnown.gameIds?.length || 0,
+                    lastUpdated: lastKnown.updatedAt || 'never',
+                    webhookCount: index.webhooks?.length || 0,
+                    webhooks: index.webhooks?.map(w => ({ key: w.secretKey?.substring(0, 8) + '...', active: w.active })) || []
+                })
+            };
+        }
+
+        // === RESET ENDPOINT (clear last known games) ===
+        if (action === 'reset' && event.httpMethod === 'POST') {
+            await store.setJSON('_last_known_games', { gameIds: [], updatedAt: new Date().toISOString() });
+            return {
+                statusCode: 200,
+                headers: CORS_HEADERS,
+                body: JSON.stringify({ success: true, message: 'Last known games cleared - next check will treat all games as new' })
+            };
+        }
+
+        // === MANUAL TRIGGER or SCHEDULED RUN ===
+        const isManualTrigger = action === 'trigger';
+        console.log(isManualTrigger ? '[Manual] Triggered check for new free games...' : '[Scheduled] Checking for new free games...');
+
         // Fetch current free games
         const response = await fetch(GAMERPOWER_API);
         if (!response.ok) {
             console.error('Failed to fetch games from API');
-            return { statusCode: 500, body: 'API fetch failed' };
+            return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: 'API fetch failed' }) };
         }
 
         const allGames = await response.json();
@@ -149,7 +192,7 @@ exports.handler = async function (event, context) {
         console.log(`[Scheduled] ${newGames.length} new games to post`);
 
         if (newGames.length === 0) {
-            return { statusCode: 200, body: 'No new games' };
+            return { statusCode: 200, headers: CORS_HEADERS, body: JSON.stringify({ message: 'No new games' }) };
         }
 
         // Get all webhooks
@@ -211,11 +254,12 @@ exports.handler = async function (event, context) {
 
         return {
             statusCode: 200,
+            headers: CORS_HEADERS,
             body: JSON.stringify({ newGames: newGames.length, successCount, failCount })
         };
 
     } catch (e) {
         console.error('[Scheduled] Error:', e);
-        return { statusCode: 500, body: e.message };
+        return { statusCode: 500, headers: CORS_HEADERS, body: JSON.stringify({ error: e.message }) };
     }
 };

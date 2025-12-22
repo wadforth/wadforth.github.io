@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connecting to Trakt... - Cinetrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0c0c0f;
+            --bg-elevated: #141418;
+            --text: #ffffff;
+            --text-muted: #52525b;
+            --accent: #e50914;
+            --purple: #8b5cf6;
+            --green: #22c55e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--bg-elevated);
+            border-top-color: var(--purple);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sub {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .success {
+            color: var(--green);
+        }
+
+        .error {
+            color: var(--accent);
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--purple);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">Cine<span>track</span></div>
+        <div class="spinner" id="spinner"></div>
+        <div class="status" id="status">Connecting to Trakt...</div>
+        <div class="sub" id="sub">Please wait while we complete the connection</div>
+    </div>
+
+    <script>
+        const API = '/.netlify/functions/cinetrack-api';
+
+        async function handleCallback() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+
+            if (!code) {
+                showError('No authorization code received');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API}?action=trakt-callback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ code })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showSuccess(data.traktUsername);
+                } else {
+                    showError(data.error || 'Connection failed');
+                }
+            } catch (err) {
+                console.error(err);
+                showError('Network error');
+            }
+        }
+
+        function showSuccess(username) {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('status').innerHTML = `<span class="success">✓ Connected to Trakt!</span>`;
+            document.getElementById('sub').innerHTML = `
+                Logged in as <strong>${username}</strong><br>
+                <a href="/cinetrack/profile.html#settings" class="btn">Go to Settings</a>
+            `;
+        }
+
+        function showError(message) {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('status').innerHTML = `<span class="error">✗ Connection Failed</span>`;
+            document.getElementById('sub').innerHTML = `
+                ${message}<br>
+                <a href="/cinetrack/profile.html#settings" class="btn">Try Again</a>
+            `;
+        }
+
+        handleCallback();
+    </script>
+</body>
+
+</html>

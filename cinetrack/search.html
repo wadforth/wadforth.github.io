@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discover - Cinetrack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="manifest" href="/cinetrack/manifest.json">
+    <meta name="theme-color" content="#f59e0b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <style>
+        :root {
+            --bg: #09090b;
+            --bg-elevated: #18181b;
+            --bg-hover: #27272a;
+            --bg-subtle: #0f0f12;
+            --text: #fafafa;
+            --text-dim: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #f59e0b;
+            --accent-dim: rgba(245, 158, 11, 0.15);
+            --green: #10b981;
+            --gold: #fbbf24;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-subtle: rgba(255, 255, 255, 0.04);
+            --radius: 8px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(12, 12, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+        }
+
+        .logo i {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .nav {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .nav a {
+            padding: 0.5rem 1rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.15s;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            color: white;
+            background: var(--bg-hover);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 5.5rem 2.5rem 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Search Header */
+        .search-header {
+            margin-bottom: 2rem;
+        }
+
+        .search-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .search-header h1 i {
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        /* Search Box */
+        .search-box {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .search-input-wrap {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-input-wrap i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.875rem 1rem 0.875rem 2.75rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.15s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .type-tabs {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-elevated);
+            padding: 0.25rem;
+            border-radius: var(--radius);
+        }
+
+        .type-tab {
+            padding: 0.625rem 1rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .type-tab:hover {
+            color: white;
+        }
+
+        .type-tab.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-elevated);
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .filter-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-select,
+        .filter-input {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.8rem;
+            min-width: 120px;
+        }
+
+        .filter-select:focus,
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .filter-checkbox:hover {
+            background: var(--bg-hover);
+            border-color: var(--text-muted);
+            color: var(--text-dim);
+        }
+
+        .filter-checkbox.active {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+            border-color: var(--green);
+            color: var(--green);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+        }
+
+        .filter-checkbox input {
+            display: none;
+        }
+
+        .filter-checkbox i {
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+
+        .filter-checkbox.active i {
+            transform: scale(1.1);
+        }
+
+        .filter-apply {
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            align-self: flex-end;
+        }
+
+        .filter-apply:hover {
+            background: #f40612;
+        }
+
+        .filter-reset {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            align-self: flex-end;
+        }
+
+        .filter-reset:hover {
+            border-color: var(--text-muted);
+            color: white;
+        }
+
+        /* Results Info */
+        .results-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        /* Results Grid */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .result-card {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .result-card:hover .result-poster img {
+            transform: scale(1.03);
+        }
+
+        .result-card.watched {
+            opacity: 0.35;
+        }
+
+        .result-card.watched:hover {
+            opacity: 0.6;
+        }
+
+        .result-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .result-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--accent));
+            transition: width 0.3s ease;
+        }
+
+        .result-poster {
+            position: relative;
+            aspect-ratio: 2/3;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: var(--bg-elevated);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.25s;
+        }
+
+        .result-poster .no-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            font-size: 2rem;
+        }
+
+        .result-badge {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            padding: 0.15rem 0.4rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .result-badge.movie {
+            color: var(--blue);
+        }
+
+        .result-badge.tv {
+            color: var(--green);
+        }
+
+        .result-rating {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.15rem 0.4rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        .result-rating i {
+            color: var(--gold);
+            font-size: 0.5rem;
+        }
+
+        .result-watched {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, var(--green), #059669);
+            border-radius: 50%;
+            font-size: 0.65rem;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .result-watchlist {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            background: var(--purple);
+            border-radius: 50%;
+            font-size: 0.6rem;
+        }
+
+        .quick-add {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 0.75rem;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-poster:hover .quick-add {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .quick-add:hover {
+            background: var(--green);
+            transform: scale(1.1);
+        }
+
+        .result-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .result-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        /* Load More */
+        .load-more {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .load-more-btn {
+            padding: 0.75rem 2rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .load-more-btn:hover {
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Empty State */
+        .empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty h3 {
+            font-size: 1.1rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Loading */
+        .loading-grid {
+            display: contents;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-hover) 50%, var(--bg-elevated) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 0 1.25rem;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            .main {
+                padding: 5rem 1rem 2rem;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .type-tabs {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-select,
+            .filter-input {
+                width: 100%;
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="topbar-left">
+            <a href="/cinetrack/" class="logo"><i class="fa-solid fa-clapperboard"></i>Cinetrack</a>
+            <nav class="nav">
+                <a href="/cinetrack/dashboard">Home</a>
+                <a href="/cinetrack/search" class="active">Discover</a>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <a href="/cinetrack/" class="user-link" id="user-link">
+                <span id="username">Login</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="search-header">
+            <h1><i class="fa-solid fa-compass"></i> Discover</h1>
+            <div class="search-box">
+                <div class="search-input-wrap">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" class="search-input" id="search-input" placeholder="Search movies & TV shows...">
+                </div>
+                <div class="type-tabs">
+                    <button class="type-tab active" data-type="movie">Movies</button>
+                    <button class="type-tab" data-type="tv">TV Shows</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="filters" id="filters">
+            <div class="filter-group">
+                <span class="filter-label">Genre</span>
+                <select class="filter-select" id="filter-genre">
+                    <option value="">All Genres</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Year</span>
+                <select class="filter-select" id="filter-year">
+                    <option value="">Any Year</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Min Rating</span>
+                <select class="filter-select" id="filter-rating">
+                    <option value="">Any Rating</option>
+                    <option value="9">9+</option>
+                    <option value="8">8+</option>
+                    <option value="7">7+</option>
+                    <option value="6">6+</option>
+                    <option value="5">5+</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Min Votes</span>
+                <select class="filter-select" id="filter-votes">
+                    <option value="100">100+</option>
+                    <option value="500">500+</option>
+                    <option value="1000">1,000+</option>
+                    <option value="5000">5,000+</option>
+                    <option value="10000">10,000+</option>
+                    <option value="">Any</option>
+                </select>
+            </div>
+            <label class="filter-checkbox" id="hide-watched">
+                <input type="checkbox">
+                <i class="fa-solid fa-eye-slash"></i> Hide Watched
+            </label>
+            <label class="filter-checkbox" id="hide-watchlist">
+                <input type="checkbox">
+                <i class="fa-solid fa-bookmark"></i> Hide Watchlist
+            </label>
+            <button class="filter-apply" id="apply-filters"><i class="fa-solid fa-filter"></i> Apply</button>
+            <button class="filter-reset" id="reset-filters"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+
+        <div class="results-info" id="results-info"></div>
+        <div class="results-grid" id="results-grid"></div>
+        <div class="load-more" id="load-more" style="display:none;">
+            <button class="load-more-btn" id="load-more-btn">Load More</button>
+        </div>
+    </main>
+
+    <script>
+        const API = '/.netlify/functions/cinetrack-api';
+        const IMG = 'https://image.tmdb.org/t/p';
+
+        let currentType = 'movie';
+        let currentPage = 1;
+        let totalPages = 1;
+        let isSearchMode = false;
+        let searchTimeout = null;
+        let currentUser = null;
+        let genres = { movie: [], tv: [] };
+
+        // Initialize
+        async function init() {
+            await Promise.all([checkAuth(), loadGenres()]);
+            populateYears();
+            loadDiscover();
+            setupListeners();
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch(`${API}?action=me`, { credentials: 'include' });
+                const data = await res.json();
+                if (data.user) {
+                    currentUser = data.user;
+                    document.getElementById('username').textContent = data.user.username || data.user.displayName;
+                    document.getElementById('user-link').href = `/cinetrack/${data.user.username || 'dashboard'}`;
+                    document.getElementById('user-link').innerHTML = `<img class="user-avatar" src="${data.user.avatar}"> ${data.user.username || data.user.displayName}`;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function loadGenres() {
+            try {
+                const [movieGenres, tvGenres] = await Promise.all([
+                    fetch(`${API}?action=genres&type=movie`).then(r => r.json()),
+                    fetch(`${API}?action=genres&type=tv`).then(r => r.json())
+                ]);
+                genres.movie = movieGenres.genres || [];
+                genres.tv = tvGenres.genres || [];
+                updateGenreSelect();
+            } catch (e) { console.error(e); }
+        }
+
+        function updateGenreSelect() {
+            const select = document.getElementById('filter-genre');
+            const genreList = genres[currentType] || [];
+            select.innerHTML = '<option value="">All Genres</option>' +
+                genreList.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        }
+
+        function populateYears() {
+            const select = document.getElementById('filter-year');
+            const currentYear = new Date().getFullYear();
+            select.innerHTML = '<option value="">Any Year</option>' +
+                Array.from({ length: 50 }, (_, i) => currentYear - i)
+                    .map(y => `<option value="${y}">${y}</option>`).join('');
+        }
+
+        function setupListeners() {
+            // Type tabs
+            document.querySelectorAll('.type-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentType = tab.dataset.type;
+                    currentPage = 1;
+                    updateGenreSelect();
+                    isSearchMode ? search(document.getElementById('search-input').value) : loadDiscover();
+                });
+            });
+
+            // Search input
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                searchTimeout = setTimeout(() => {
+                    if (query.length >= 2) {
+                        isSearchMode = true;
+                        currentPage = 1;
+                        search(query);
+                    } else if (query.length === 0) {
+                        isSearchMode = false;
+                        currentPage = 1;
+                        loadDiscover();
+                    }
+                }, 300);
+            });
+
+            // Filter checkboxes - prevent double-fire from label+checkbox
+            ['hide-watched', 'hide-watchlist'].forEach(id => {
+                document.getElementById(id).addEventListener('click', function (e) {
+                    e.preventDefault();
+                    this.classList.toggle('active');
+                });
+            });
+
+            // Apply filters
+            document.getElementById('apply-filters').addEventListener('click', () => {
+                currentPage = 1;
+                if (isSearchMode) {
+                    search(document.getElementById('search-input').value);
+                } else {
+                    loadDiscover();
+                }
+            });
+
+            // Reset filters
+            document.getElementById('reset-filters').addEventListener('click', () => {
+                document.getElementById('filter-genre').value = '';
+                document.getElementById('filter-year').value = '';
+                document.getElementById('filter-rating').value = '';
+                document.getElementById('filter-votes').value = '100';
+                document.getElementById('hide-watched').classList.remove('active');
+                document.getElementById('hide-watchlist').classList.remove('active');
+                currentPage = 1;
+                loadDiscover();
+            });
+
+            // Load more
+            document.getElementById('load-more-btn').addEventListener('click', () => {
+                currentPage++;
+                isSearchMode ? search(document.getElementById('search-input').value, true) : loadDiscover(true);
+            });
+        }
+
+        async function loadDiscover(append = false) {
+            const grid = document.getElementById('results-grid');
+            const info = document.getElementById('results-info');
+
+            if (!append) {
+                grid.innerHTML = Array(12).fill('<div class="result-poster skeleton" style="aspect-ratio:2/3;"></div>').join('');
+                info.textContent = 'Loading...';
+            }
+
+            const params = new URLSearchParams({
+                action: 'discover',
+                type: currentType,
+                page: currentPage
+            });
+
+            const genre = document.getElementById('filter-genre').value;
+            const year = document.getElementById('filter-year').value;
+            const rating = document.getElementById('filter-rating').value;
+            const votes = document.getElementById('filter-votes').value;
+
+            if (genre) params.append('genre', genre);
+            if (year) params.append('year', year);
+            if (rating) params.append('min_rating', rating);
+            if (votes) params.append('min_votes', votes);
+
+            try {
+                const res = await fetch(`${API}?${params}`);
+                const data = await res.json();
+
+                totalPages = data.total_pages || 1;
+                let results = data.results || [];
+
+                // Client-side filtering for watched/watchlist
+                results = filterResults(results);
+
+                if (!append) {
+                    info.textContent = `${data.total_results?.toLocaleString() || 0} ${currentType === 'movie' ? 'movies' : 'shows'} found`;
+                }
+
+                renderResults(results, append);
+                updateLoadMore();
+            } catch (e) {
+                console.error(e);
+                if (!append) {
+                    grid.innerHTML = '<div class="empty"><i class="fa-solid fa-exclamation-triangle"></i><h3>Failed to load</h3><p>Please try again</p></div>';
+                    info.textContent = '';
+                }
+            }
+        }
+
+        async function search(query, append = false) {
+            const grid = document.getElementById('results-grid');
+            const info = document.getElementById('results-info');
+
+            if (!append) {
+                grid.innerHTML = Array(12).fill('<div class="result-poster skeleton" style="aspect-ratio:2/3;"></div>').join('');
+                info.textContent = 'Searching...';
+            }
+
+            try {
+                const res = await fetch(`${API}?action=search&query=${encodeURIComponent(query)}&type=${currentType}&page=${currentPage}`);
+                const data = await res.json();
+
+                totalPages = data.total_pages || 1;
+                let results = (data.results || []).filter(r => r.media_type !== 'person');
+
+                results = filterResults(results);
+
+                if (!append) {
+                    info.textContent = results.length ? `Found ${data.total_results} results for "${query}"` : '';
+                }
+
+                if (!results.length && !append) {
+                    grid.innerHTML = '<div class="empty"><i class="fa-solid fa-search"></i><h3>No results found</h3><p>Try a different search term</p></div>';
+                    return;
+                }
+
+                renderResults(results, append);
+                updateLoadMore();
+            } catch (e) {
+                console.error(e);
+                if (!append) {
+                    grid.innerHTML = '<div class="empty"><i class="fa-solid fa-exclamation-triangle"></i><h3>Search failed</h3><p>Please try again</p></div>';
+                    info.textContent = '';
+                }
+            }
+        }
+
+        function filterResults(results) {
+            const hideWatched = document.getElementById('hide-watched').classList.contains('active');
+            const hideWatchlist = document.getElementById('hide-watchlist').classList.contains('active');
+
+            if (!currentUser) return results;
+
+            return results.filter(item => {
+                const isMovie = currentType === 'movie' || item.media_type === 'movie';
+
+                if (hideWatched) {
+                    if (isMovie && currentUser.watchedMovies?.some(m => m.id == item.id)) return false;
+                    if (!isMovie && currentUser.showProgress?.[item.id]?.watchedEpisodes?.length > 0) return false;
+                }
+
+                if (hideWatchlist) {
+                    if (currentUser.watchlist?.some(w => w.id == item.id)) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function renderResults(results, append = false) {
+            const grid = document.getElementById('results-grid');
+            const html = results.map(item => {
+                const isMovie = currentType === 'movie' || item.media_type === 'movie';
+                const title = item.title || item.name;
+                const year = (item.release_date || item.first_air_date || '').split('-')[0];
+                const rating = item.vote_average?.toFixed(1);
+                const url = isMovie ? `/cinetrack/movie/${item.id}` : `/cinetrack/show/${item.id}`;
+
+                // Check status
+                let isWatched = false, inWatchlist = false;
+                if (currentUser) {
+                    isWatched = isMovie
+                        ? currentUser.watchedMovies?.some(m => m.id == item.id)
+                        : currentUser.showProgress?.[item.id]?.watchedEpisodes?.length > 0;
+                    inWatchlist = currentUser.watchlist?.some(w => w.id == item.id);
+                }
+
+                // Calculate progress bar for TV shows
+                let progressHtml = '';
+                if (!isMovie && currentUser?.showProgress?.[item.id]) {
+                    const progress = currentUser.showProgress[item.id];
+                    const watchedCount = progress.watchedEpisodes?.length || 0;
+                    const totalEpisodes = item.number_of_episodes || progress.totalEpisodes || 0;
+                    if (totalEpisodes > 0) {
+                        const percent = Math.min(100, Math.round((watchedCount / totalEpisodes) * 100));
+                        progressHtml = `<div class="result-progress"><div class="result-progress-fill" style="width:${percent}%"></div></div>`;
+                    }
+                }
+
+                return `
+                    <a href="${url}" class="result-card ${isWatched ? 'watched' : ''}">
+                        <div class="result-poster">
+                            ${item.poster_path
+                        ? `<img src="${IMG}/w342${item.poster_path}" loading="lazy">`
+                        : '<div class="no-image"><i class="fa-solid fa-film"></i></div>'}
+                            <span class="result-badge ${isMovie ? 'movie' : 'tv'}">${isMovie ? 'Movie' : 'TV'}</span>
+                            ${rating ? `<span class="result-rating"><i class="fa-solid fa-star"></i>${rating}</span>` : ''}
+                            ${isWatched ? '<span class="result-watched"><i class="fa-solid fa-check"></i></span>' : ''}
+                            ${inWatchlist && !isWatched ? '<span class="result-watchlist"><i class="fa-solid fa-bookmark"></i></span>' : ''}
+                            ${!isWatched && !inWatchlist && currentUser ? `<button class="quick-add" onclick="event.preventDefault();quickAddWatchlist(${item.id},'${isMovie ? 'movie' : 'show'}','${title.replace(/'/g, "\\'")}','${item.poster_path || ''}',this)"><i class="fa-solid fa-plus"></i></button>` : ''}
+                            ${progressHtml}
+                        </div>
+                        <div class="result-title">${title}</div>
+                        <div class="result-meta">${year}</div>
+                    </a>
+                `;
+            }).join('');
+
+            if (append) {
+                grid.innerHTML += html;
+            } else {
+                grid.innerHTML = html;
+            }
+        }
+
+        function updateLoadMore() {
+            const container = document.getElementById('load-more');
+            const btn = document.getElementById('load-more-btn');
+
+            if (currentPage < totalPages) {
+                container.style.display = 'flex';
+                btn.disabled = false;
+                btn.textContent = `Load More (Page ${currentPage + 1} of ${totalPages})`;
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        // Check for query param
+        const urlParams = new URLSearchParams(location.search);
+        const initialQuery = urlParams.get('q');
+        if (initialQuery) {
+            document.getElementById('search-input').value = initialQuery;
+            isSearchMode = true;
+        }
+
+        // Quick add to watchlist from discover page
+        async function quickAddWatchlist(id, type, title, poster, btn) {
+            if (!currentUser) return;
+
+            try {
+                const res = await fetch(`${API}?action=watchlist`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ itemId: id, type, title, poster })
+                });
+
+                if (res.ok) {
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    btn.style.background = 'var(--green)';
+                    btn.style.opacity = '1';
+
+                    // Update local user data
+                    currentUser.watchlist = currentUser.watchlist || [];
+                    currentUser.watchlist.push({ id, type, title, poster });
+                }
+            } catch (e) {
+                console.error('Failed to add to watchlist', e);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
