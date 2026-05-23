@@ -84,6 +84,9 @@ function openQueryEditor(queryData = null, techniqueId = null) {
     document.getElementById('query-description').value = queryData?.description || '';
     document.getElementById('query-source').value = queryData?.source || '';
     
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    document.getElementById('query-month').value = queryData?.monthAdded || currentMonth;
+    
     const selectGroup = document.getElementById('query-technique-select-group');
     const hiddenInput = document.getElementById('query-technique-id');
     
@@ -121,6 +124,7 @@ function saveQuery() {
     const queryText = document.getElementById('query-text').value.trim();
     const description = document.getElementById('query-description').value.trim();
     const source = document.getElementById('query-source').value.trim();
+    const monthAdded = document.getElementById('query-month').value || new Date().toISOString().slice(0, 7);
     const now = new Date().toISOString();
     
     if (techniqueIds.length === 0) {
@@ -135,34 +139,34 @@ function saveQuery() {
     
     if (!state.currentLayer) return;
     
+    // Generate one query ID for all techniques to avoid duplicates
+    const queryId = editId || ('q-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5));
+    
+    // When editing, remove the query from ALL techniques first (it may have been on multiple)
+    if (editId) {
+        for (const tech of state.currentLayer.techniques) {
+            if (tech.queries) {
+                tech.queries = tech.queries.filter(q => q.id !== editId);
+            }
+        }
+    }
+    
+    // Add the query to all selected techniques with the SAME ID
     for (const tid of techniqueIds) {
         let ann = getTechniqueAnnotation(tid);
         if (!ann) {
-            ann = { techniqueID: tid, enabled: true, queries: [], monthAdded: new Date().toISOString().slice(0, 7) };
+            ann = { techniqueID: tid, enabled: true, queries: [], monthAdded };
             state.currentLayer.techniques.push(ann);
         }
         if (!ann.queries) ann.queries = [];
-        if (!ann.monthAdded) ann.monthAdded = new Date().toISOString().slice(0, 7);
+        if (!ann.monthAdded) ann.monthAdded = monthAdded;
         
-        if (editId) {
-            const idx = ann.queries.findIndex(q => q.id === editId);
-            if (idx >= 0) {
-                const existing = ann.queries[idx];
-                ann.queries[idx] = { ...existing, name, language, query: queryText, description, source, lastModified: now };
-            } else {
-                ann.queries.push({
-                    id: 'q-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-                    name, language, query: queryText, description, source,
-                    created: now, lastModified: now, favorite: false,
-                });
-            }
-        } else {
-            ann.queries.push({
-                id: 'q-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-                name, language, query: queryText, description, source,
-                created: now, lastModified: now, favorite: false,
-            });
-        }
+        ann.queries.push({
+            id: queryId,
+            name, language, query: queryText, description, source,
+            created: now, lastModified: now, favorite: false,
+            monthAdded,
+        });
     }
     
     const queryModalInstance = bootstrap.Modal.getInstance(document.getElementById('query-modal'));
@@ -191,13 +195,16 @@ function saveQuery() {
 
 function deleteQuery(techniqueId, queryId) {
     if (!state.currentLayer) return;
-    const ann = getTechniqueAnnotation(techniqueId);
-    if (!ann?.queries) return;
-    const query = ann.queries.find(q => q.id === queryId);
-    ann.queries = ann.queries.filter(q => q.id !== queryId);
-    if (ann.queries.length === 0) delete ann.queries;
+    let queryName = '';
+    for (const tech of state.currentLayer.techniques) {
+        if (tech.queries) {
+            const q = tech.queries.find(q => q.id === queryId);
+            if (q) queryName = q.name;
+            tech.queries = tech.queries.filter(q => q.id !== queryId);
+        }
+    }
     saveCurrentLayer();
-    logActivity('query_delete', techniqueId, query?.name || queryId);
+    logActivity('query_delete', techniqueId, queryName || queryId);
     renderMatrix();
     renderQueriesView();
     refreshTechniqueModalQueries();
@@ -205,15 +212,18 @@ function deleteQuery(techniqueId, queryId) {
 }
 
 function toggleFavorite(techniqueId, queryId) {
-    const ann = getTechniqueAnnotation(techniqueId);
-    if (!ann?.queries) return;
-    const q = ann.queries.find(q => q.id === queryId);
-    if (q) {
-        q.favorite = !q.favorite;
-        q.lastModified = new Date().toISOString();
-        saveCurrentLayer();
-        renderQueriesView();
+    if (!state.currentLayer) return;
+    for (const tech of state.currentLayer.techniques) {
+        if (tech.queries) {
+            const q = tech.queries.find(q => q.id === queryId);
+            if (q) {
+                q.favorite = !q.favorite;
+                q.lastModified = new Date().toISOString();
+            }
+        }
     }
+    saveCurrentLayer();
+    renderQueriesView();
 }
 
 document.getElementById('btn-save-query').addEventListener('click', saveQuery);

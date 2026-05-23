@@ -397,11 +397,11 @@
                         <label class="form-label small fw-semibold">Techniques</label>
                         <div id="technique-select-container"></div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold">Query Name</label>
-                        <input type="text" id="query-name" class="form-control" placeholder="e.g. LSASS Access Detection">
-                    </div>
                     <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Month Added</label>
+                            <input type="month" id="query-month" class="form-control">
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Language</label>
                             <select id="query-language" class="form-select">
@@ -412,10 +412,14 @@
                                 <option value="custom">Custom</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Source / Reference</label>
-                            <input type="text" id="query-source" class="form-control" placeholder="e.g. Sigma rule ID, blog URL">
-                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Query Name</label>
+                        <input type="text" id="query-name" class="form-control" placeholder="e.g. LSASS Access Detection">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Source / Reference</label>
+                        <input type="text" id="query-source" class="form-control" placeholder="e.g. Sigma rule ID, blog URL">
                     </div>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Query</label>

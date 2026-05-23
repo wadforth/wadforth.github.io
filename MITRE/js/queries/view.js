@@ -11,17 +11,24 @@ let queriesShowFavoritesOnly = false;
 let queriesShowHeatmap = false;
 
 function getAllQueries() {
-    const queries = [];
-    if (!state.currentLayer?.techniques) return queries;
+    const queryMap = new Map();
+    if (!state.currentLayer?.techniques) return [];
     
     for (const tech of state.currentLayer.techniques) {
         if (tech.queries) {
             for (const q of tech.queries) {
-                queries.push({ ...q, techniqueID: tech.techniqueID });
+                if (queryMap.has(q.id)) {
+                    const existing = queryMap.get(q.id);
+                    if (!existing.techniqueIDs.includes(tech.techniqueID)) {
+                        existing.techniqueIDs.push(tech.techniqueID);
+                    }
+                } else {
+                    queryMap.set(q.id, { ...q, techniqueID: tech.techniqueID, techniqueIDs: [tech.techniqueID] });
+                }
             }
         }
     }
-    return queries;
+    return [...queryMap.values()];
 }
 
 function sortQueries(queries) {
@@ -173,9 +180,12 @@ function renderQueriesView() {
     controlsContainer.innerHTML = statsHtml + toolbarHtml;
     
     const cardsHtml = queries.map(q => {
-        const tech = state.techniques.find(t => t.external_references?.[0]?.external_id === q.techniqueID);
-        const techName = tech?.name || q.techniqueID;
+        const techIds = q.techniqueIDs || [q.techniqueID];
+        const primaryTech = state.techniques.find(t => t.external_references?.[0]?.external_id === techIds[0]);
+        const primaryTechName = primaryTech?.name || techIds[0];
         const modifiedStr = formatTimestamp(q.lastModified || q.created);
+        const techBadges = techIds.map(tid => `<span class="query-tech-ref">${tid}</span>`).join('');
+        const multiTechLabel = techIds.length > 1 ? `<span class="text-muted small">+${techIds.length - 1} more</span>` : `<span class="text-muted small">${escapeHtml(primaryTechName)}</span>`;
         
         if (queriesViewMode === 'list') {
             return `
@@ -186,10 +196,10 @@ function renderQueriesView() {
                         </button>
                         <div class="query-list-info">
                             <span class="query-list-name">${escapeHtml(q.name)}</span>
-                            <span class="query-list-tech">${escapeHtml(techName)}</span>
+                            <span class="query-list-tech">${escapeHtml(primaryTechName)}</span>
                         </div>
                         <span class="query-lang-badge ${q.language}">${q.language}</span>
-                        <span class="query-list-id">${q.techniqueID}</span>
+                        <span class="query-list-id">${techIds.join(', ')}</span>
                         <span class="query-list-modified" title="${q.lastModified || q.created}">${modifiedStr}</span>
                         <div class="query-list-actions">
                             <button class="btn btn-ghost btn-sm btn-copy-query" data-query-id="${q.id}" title="Copy query">
@@ -218,8 +228,8 @@ function renderQueriesView() {
                             <h6 class="query-card-title">${escapeHtml(q.name)}</h6>
                             <div class="query-meta mt-1">
                                 <span class="query-lang-badge ${q.language}">${q.language}</span>
-                                <span class="query-tech-ref">${q.techniqueID}</span>
-                                <span class="text-muted small">${escapeHtml(techName)}</span>
+                                ${techBadges}
+                                ${multiTechLabel}
                             </div>
                         </div>
                     </div>
