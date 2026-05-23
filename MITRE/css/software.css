@@ -1,0 +1,868 @@
+/* ============================================
+   Software Stats Bar
+   ============================================ */
+
+.software-stats-bar {
+    display: flex;
+    gap: 1.25rem;
+    padding: 0.6rem 0;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.software-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 60px;
+}
+
+.software-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+.software-stat-label {
+    font-size: 0.65rem;
+    color: var(--on-surface-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ============================================
+   Software Toolbar
+   ============================================ */
+
+.software-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.software-toolbar-left,
+.software-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.software-sort-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.software-sort-label {
+    font-size: 0.75rem;
+    color: var(--on-surface-tertiary);
+    font-weight: 500;
+}
+
+.software-sort-select {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-elevated);
+    color: var(--on-surface);
+    cursor: pointer;
+}
+
+.software-sort-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+}
+
+.software-sort-dir {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+/* ============================================
+   Software Grid & List
+   ============================================ */
+
+.software-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+}
+
+.software-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.software-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    transition: var(--transition);
+    position: relative;
+}
+
+.software-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+}
+
+.software-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.software-card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.software-id-badge {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 0.15em 0.45em;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.software-type-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.software-sw-malware {
+    background: rgba(220, 53, 69, 0.12);
+    color: #dc3545;
+}
+
+.software-sw-tool {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+}
+
+.software-card-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin: 0 0 0.4rem;
+    color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.software-tech-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-lighter);
+    padding: 0.2em 0.5em;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.software-card-desc {
+    font-size: 0.78rem;
+    color: var(--on-surface-secondary);
+    line-height: 1.5;
+    margin: 0 0 0.6rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.software-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.software-card-link {
+    font-size: 0.7rem;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+/* ============================================
+   List View
+   ============================================ */
+
+.software-card-list {
+    padding: 0.6rem 0.85rem;
+}
+
+.software-list-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.software-list-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.software-list-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.software-list-id {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.software-tech-count {
+    font-size: 0.7rem;
+    color: var(--on-surface-tertiary);
+    white-space: nowrap;
+}
+
+.software-list-arrow {
+    color: var(--on-surface-tertiary);
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.software-card-list:hover .software-list-arrow {
+    color: var(--primary);
+    transform: translateX(2px);
+    transition: var(--transition);
+}
+
+/* ============================================
+   Software Detail Modal
+   ============================================ */
+
+#software-detail-modal .modal-dialog {
+    max-width: 900px;
+}
+
+#software-detail-modal .modal-content {
+    max-height: 85vh;
+}
+
+#software-detail-modal .tech-modal-scroll {
+    padding: 1.5rem;
+    display: block;
+    overflow-y: auto;
+    max-height: calc(85vh - 120px);
+}
+
+#software-detail-modal .tech-modal-desc {
+    padding: 0;
+    border-bottom: none;
+    margin-bottom: 1.5rem;
+}
+
+#software-detail-modal .tech-modal-desc .desc-paragraph {
+    margin-bottom: 0.85rem;
+}
+
+#software-detail-modal .tech-modal-desc .desc-paragraph:last-child {
+    margin-bottom: 0;
+}
+
+#software-detail-modal .software-tab-nav {
+    margin: -1.5rem -1.5rem 1.5rem;
+    padding: 0 1.5rem;
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#software-detail-modal .software-tab-pane {
+    padding-top: 0.5rem;
+    display: none;
+}
+
+#software-detail-modal .software-tab-pane.active {
+    display: block;
+}
+
+#software-detail-modal .software-detail-desc {
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+#software-detail-modal .software-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background: var(--surface-subtle);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+}
+
+#software-detail-modal .software-meta-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+#software-detail-modal .software-meta-label {
+    font-size: 0.6rem;
+    color: var(--on-surface-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+
+#software-detail-modal .software-meta-value {
+    font-size: 0.82rem;
+    color: var(--on-surface);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+#software-detail-modal .software-coverage-good {
+    color: #198754;
+    font-weight: 700;
+}
+
+#software-detail-modal .software-coverage-none {
+    color: var(--on-surface-tertiary);
+}
+
+.software-coverage-bar-container {
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background: var(--surface-subtle);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+}
+
+.software-coverage-bar-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--on-surface-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.software-coverage-bar-track {
+    height: 8px;
+    background: var(--border-subtle);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+}
+
+.software-coverage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #198754, #20c997);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.software-coverage-bar-stats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    font-size: 0.68rem;
+}
+
+.software-view-matrix-btn {
+    font-size: 0.68rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.software-coverage-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.software-coverage-stat.covered {
+    color: #198754;
+}
+
+.software-coverage-stat.uncovered {
+    color: var(--on-surface-tertiary);
+}
+
+#software-detail-modal .software-section {
+    margin-bottom: 1.5rem;
+}
+
+#software-detail-modal .software-section:last-child {
+    margin-bottom: 0;
+}
+
+#software-detail-modal .software-section-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--on-surface);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+#software-detail-modal .software-tab-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--on-surface-secondary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 0;
+    margin-bottom: -1px;
+}
+
+#software-detail-modal .software-tab-btn:hover {
+    color: var(--on-surface);
+    background: var(--surface-subtle);
+}
+
+#software-detail-modal .software-tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    background: transparent;
+}
+
+#software-detail-modal .software-tab-count {
+    font-size: 0.65rem;
+    background: var(--surface-subtle);
+    padding: 0.1em 0.45em;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+#software-detail-modal .software-tab-btn.active .software-tab-count {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+/* ============================================
+   Technique Chips
+   ============================================ */
+
+.software-tech-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.software-tech-chip {
+    cursor: pointer;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.4rem 0.65rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: var(--transition);
+}
+
+.software-tech-chip:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+}
+
+.software-tech-chip-covered {
+    border-color: rgba(25, 135, 84, 0.4);
+    background: rgba(25, 135, 84, 0.08);
+}
+
+.software-tech-chip-covered:hover {
+    border-color: #198754;
+    background: rgba(25, 135, 84, 0.15);
+}
+
+.software-tech-query-indicator {
+    color: #198754;
+    font-size: 0.75rem;
+}
+
+.software-tech-chip-id {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-lighter);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+}
+
+.software-tech-chip-name {
+    font-size: 0.72rem;
+    color: var(--on-surface-secondary);
+}
+
+.software-tech-more {
+    font-size: 0.7rem;
+    color: var(--on-surface-tertiary);
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.5rem;
+}
+
+/* ============================================
+   Techniques Tab
+   ============================================ */
+
+.software-tech-filters {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.software-tech-filters .form-control {
+    font-size: 0.78rem;
+    background: var(--surface-elevated);
+    border-color: var(--border);
+    color: var(--on-surface);
+    flex: 1;
+    min-width: 180px;
+}
+
+.software-tech-filters .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.software-tech-filter-btns {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.software-tech-filter-btns .btn {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.software-tech-filter-btns .btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.software-tactic-section {
+    margin-bottom: 1rem;
+}
+
+.software-tactic-header {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+    background: var(--primary-lighter);
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+}
+
+.software-tactic-techs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.software-tech-item {
+    cursor: pointer;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.35rem 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: var(--transition);
+}
+
+.software-tech-item:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+}
+
+.software-tech-item-covered {
+    border-color: rgba(25, 135, 84, 0.4);
+    background: rgba(25, 135, 84, 0.08);
+}
+
+.software-tech-item-covered:hover {
+    border-color: #198754;
+    background: rgba(25, 135, 84, 0.15);
+}
+
+.software-tech-query-icon {
+    color: #198754;
+    font-size: 0.7rem;
+}
+
+.software-tech-item-id {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 0.68rem;
+    background: var(--primary-lighter);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+}
+
+.software-tech-item-name {
+    color: var(--on-surface-secondary);
+    font-size: 0.72rem;
+}
+
+/* ============================================
+   Groups Tab
+   ============================================ */
+
+.software-group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.software-group-item {
+    cursor: pointer;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    transition: var(--transition);
+}
+
+.software-group-item:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+}
+
+.software-group-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.software-group-id {
+    font-size: 0.7rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-light);
+    padding: 0.15em 0.45em;
+    border-radius: 3px;
+}
+
+.software-group-name {
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--on-surface);
+}
+
+.software-group-desc {
+    font-size: 0.72rem;
+    color: var(--on-surface-tertiary);
+    margin: 0;
+    line-height: 1.45;
+}
+
+.software-group-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.software-group-chip {
+    cursor: pointer;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.4rem 0.65rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: var(--transition);
+}
+
+.software-group-chip:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+}
+
+.software-group-chip-id {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-lighter);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+}
+
+.software-group-chip-name {
+    font-size: 0.72rem;
+    color: var(--on-surface-secondary);
+}
+
+.software-group-more {
+    font-size: 0.7rem;
+    color: var(--on-surface-tertiary);
+    display: flex;
+    align-items: center;
+    padding: 0.4rem 0.5rem;
+}
+
+/* ============================================
+   Heatmap Tab
+   ============================================ */
+
+.software-heatmap-container {
+    margin-top: 0.5rem;
+}
+
+.software-heatmap-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--surface-elevated);
+}
+
+.software-heatmap-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.7rem;
+}
+
+.software-heatmap-header {
+    padding: 0.5rem 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+    background: var(--primary-lighter);
+    border-bottom: 2px solid var(--border);
+    text-align: center;
+    font-size: 0.65rem;
+}
+
+.software-heatmap-row {
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.software-heatmap-row:last-child {
+    border-bottom: none;
+}
+
+.software-heatmap-tech-cell {
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-elevated);
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    min-width: 200px;
+    max-width: 250px;
+}
+
+.software-heatmap-tech-id {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--primary);
+    font-size: 0.7rem;
+    display: block;
+}
+
+.software-heatmap-tech-name {
+    font-size: 0.65rem;
+    color: var(--on-surface-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    margin-top: 0.1rem;
+}
+
+.software-heatmap-cell {
+    padding: 0.4rem;
+    text-align: center;
+    border-left: 1px solid var(--border-subtle);
+    min-width: 36px;
+    color: var(--on-surface-tertiary);
+    font-size: 0.7rem;
+}
+
+.software-heatmap-cell-active {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--on-surface-tertiary);
+}
+
+.software-heatmap-cell-covered {
+    background: rgba(25, 135, 84, 0.15);
+    color: #198754;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.software-heatmap-cell-covered:hover {
+    background: rgba(25, 135, 84, 0.3);
+    outline: 2px solid #198754;
+    outline-offset: -2px;
+    z-index: 1;
+    position: relative;
+}

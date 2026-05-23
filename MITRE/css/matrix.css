@@ -1,0 +1,250 @@
+/* ============================================
+   Matrix Styles
+   ============================================ */
+
+/* Matrix Wrapper */
+.matrix-wrapper {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: auto;
+    max-height: calc(100vh - 20rem);
+    box-shadow: var(--shadow-sm);
+}
+
+.matrix-table {
+    border-collapse: separate;
+    border-spacing: 2px;
+    width: 100%;
+    margin: 0;
+}
+
+.matrix-table th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--primary);
+    color: white;
+    padding: 0.6rem 0.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 120px;
+    vertical-align: bottom;
+}
+
+.matrix-table th .tactic-short {
+    display: block;
+    font-size: 0.6rem;
+    opacity: 0.7;
+    font-weight: 400;
+    margin-top: 0.15rem;
+}
+
+.matrix-table th .tactic-count {
+    display: block;
+    font-size: 0.55rem;
+    opacity: 0.6;
+    font-weight: 400;
+    margin-top: 0.1rem;
+}
+
+.matrix-table td {
+    vertical-align: top;
+    padding: 0;
+    background: var(--surface-subtle);
+    min-width: 120px;
+}
+
+/* Technique Cells */
+.technique-cell {
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: var(--transition);
+    position: relative;
+}
+
+.technique-cell:last-child { border-bottom: none; }
+
+.technique-cell:hover {
+    background: var(--primary-light);
+}
+
+.technique-cell.has-children {
+    background: var(--primary-lighter);
+    border-left: 2px solid var(--primary);
+    padding-left: calc(0.55rem - 2px);
+}
+
+.technique-cell.has-children:hover {
+    background: var(--primary-light);
+}
+
+.technique-cell.annotated {
+    font-weight: 500;
+}
+
+.expand-btn {
+    position: absolute;
+    right: 0.35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: var(--on-surface-tertiary);
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: 3px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(2px);
+}
+
+.expand-btn:hover {
+    background: var(--surface-elevated);
+    color: var(--primary);
+}
+
+.technique-cell.annotated .expand-btn {
+    color: rgba(255,255,255,0.7);
+    background: rgba(0,0,0,0.15);
+}
+
+.technique-cell.annotated .expand-btn:hover {
+    background: rgba(0,0,0,0.3);
+    color: white;
+}
+
+.expand-btn.expanded i {
+    transform: rotate(180deg);
+}
+
+.tech-id {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.tech-name {
+    font-size: 0.7rem;
+    color: var(--on-surface-secondary);
+    line-height: 1.3;
+}
+
+.technique-cell.annotated .tech-name {
+    color: var(--on-surface);
+}
+
+/* Sub-techniques */
+.sub-techniques-container {
+    margin-left: 0.5rem;
+    border-left: 1px solid var(--border);
+    padding-left: 0.5rem;
+}
+
+.sub-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+    color: var(--on-surface-tertiary);
+    cursor: pointer;
+    transition: var(--transition);
+    border-radius: 4px;
+}
+
+.sub-toggle:hover {
+    background: var(--primary-light);
+}
+
+.technique-cell.sub-technique {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.65rem;
+    border-left: 2px solid var(--border);
+}
+
+.technique-cell.sub-technique:hover {
+    background: var(--primary-light);
+}
+
+.technique-cell.sub-technique .tech-id {
+    font-size: 0.6rem;
+}
+
+.technique-cell.sub-technique .tech-name {
+    font-size: 0.65rem;
+}
+
+.sub-connector {
+    display: inline-block;
+    width: 8px;
+    height: 1px;
+    background: var(--border);
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+/* Platform Filters */
+.platform-chips {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.platform-chips .btn-check:checked + .btn {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.platform-chips .btn {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--radius-xs);
+}
+
+/* Matrix Search */
+.matrix-search {
+    position: relative;
+}
+
+.matrix-search .input-group-text {
+    background: transparent;
+    border-color: var(--border);
+}
+
+.matrix-search .form-control {
+    font-size: 0.8rem;
+    background: var(--surface-elevated);
+    border-color: var(--border);
+    color: var(--on-surface);
+}
+
+.matrix-search .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* Matrix No Results */
+#matrix-no-results {
+    padding: 3rem 1rem;
+}
+
+#matrix-no-results i {
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+#matrix-no-results h5 {
+    color: var(--on-surface-secondary);
+}
+
+#matrix-no-results p {
+    color: var(--on-surface-tertiary);
+}

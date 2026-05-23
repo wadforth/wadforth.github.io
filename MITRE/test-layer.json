@@ -1,0 +1,311 @@
+{
+    "name": "Test Layer - Query Coverage",
+    "version": "4.5",
+    "domain": "enterprise-attack",
+    "attackVersion": "v19.1",
+    "description": "Test layer with sample queries for testing auto-coloring",
+    "companyName": "Test Corp",
+    "companyLogo": null,
+    "autoColorByQueries": true,
+    "autoColorRules": [
+        { "label": "≥60% sub-techniques covered", "color": "#22c55e", "operator": ">=", "value": 60, "type": "sub-coverage" },
+        { "label": "<60% sub-techniques covered", "color": "#eab308", "operator": "<", "value": 60, "type": "sub-coverage" },
+        { "label": "2+ queries created", "color": "#22c55e", "operator": ">=", "value": 2, "type": "query-count" },
+        { "label": "1 query created", "color": "#eab308", "operator": "=", "value": 1, "type": "query-count" }
+    ],
+    "legend": [
+        { "label": "Critical", "color": "#ef4444" },
+        { "label": "High", "color": "#f97316" },
+        { "label": "Medium", "color": "#eab308" },
+        { "label": "Low", "color": "#22c55e" },
+        { "label": "Info", "color": "#3b82f6" }
+    ],
+    "techniques": [
+        {
+            "techniqueID": "T1003",
+            "enabled": true,
+            "color": "#ef4444",
+            "comment": "Parent technique with sub-techniques - manually colored red"
+        },
+        {
+            "techniqueID": "T1003.001",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-1",
+                    "name": "OS Credential Dumping Detection",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4624 LogonType=3 | stats count by user",
+                    "description": "Detects credential dumping via LSASS",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1003.002",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-2",
+                    "name": "Security Account Manager Access",
+                    "language": "kql",
+                    "query": "SecurityEvent | where EventID == 4624 | where LogonType == 3",
+                    "description": "SAM database access detection",
+                    "source": "Test Rule"
+                },
+                {
+                    "id": "q-test-3",
+                    "name": "SAM Backup Detection",
+                    "language": "splunk",
+                    "query": "index=windows SourceName=\"Security\" EventCode=4663",
+                    "description": "Detects SAM backup attempts",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1003.004",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-4",
+                    "name": "LSASS Memory Access",
+                    "language": "sigma",
+                    "query": "title: LSASS Memory Access\ndetection: selection: TargetImage|endswith: '\\lsass.exe'\ncondition: selection",
+                    "description": "Sigma rule for LSASS memory access",
+                    "source": "Sigma HQ"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1003.005",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-5a",
+                    "name": "DCSync Detection",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4662 | where Message contains \"DS-Replication\"",
+                    "description": "Detects DCSync replication requests",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1003.006",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-6a",
+                    "name": "Registry Key Access",
+                    "language": "kql",
+                    "query": "SecurityEvent | where EventID == 4656 | where ObjectName contains \"SAM\"",
+                    "description": "Detects registry key access for credentials",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1059",
+            "enabled": true,
+            "color": "#3b82f6",
+            "comment": "Command and Scripting Interpreter - manually colored blue"
+        },
+        {
+            "techniqueID": "T1059.001",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-5",
+                    "name": "PowerShell Execution Detection",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4104 | stats count by Computer",
+                    "description": "Detects PowerShell script execution",
+                    "source": "Test Rule"
+                },
+                {
+                    "id": "q-test-6",
+                    "name": "PowerShell Encoded Command",
+                    "language": "kql",
+                    "query": "SecurityEvent | where EventID == 4104 | where Message contains \"-EncodedCommand\"",
+                    "description": "Detects encoded PowerShell commands",
+                    "source": "Test Rule"
+                },
+                {
+                    "id": "q-test-7",
+                    "name": "PowerShell Download Cradle",
+                    "language": "elastic",
+                    "query": "event.code:4104 AND message:*DownloadString*",
+                    "description": "Detects PowerShell download cradles",
+                    "source": "Elastic Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1059.003",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-8",
+                    "name": "Windows Command Shell Detection",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4688 NewProcessName=\"*cmd.exe\"",
+                    "description": "Detects cmd.exe execution",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1059.005",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-9a",
+                    "name": "VBScript Execution",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4688 NewProcessName=\"*wscript.exe\" OR NewProcessName=\"*cscript.exe\"",
+                    "description": "Detects VBScript execution",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1078",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-9",
+                    "name": "Valid Accounts Usage",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4624 | stats count by user",
+                    "description": "Detects valid account usage",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1078.001",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-10",
+                    "name": "Default Account Usage",
+                    "language": "kql",
+                    "query": "SecurityEvent | where EventID == 4624 | where Account in (\"Administrator\", \"Guest\")",
+                    "description": "Detects default account usage",
+                    "source": "Test Rule"
+                },
+                {
+                    "id": "q-test-11",
+                    "name": "Default Account Login",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4624 AccountName=Administrator",
+                    "description": "Detects Administrator account login",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1078.002",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-12",
+                    "name": "Domain Account Usage",
+                    "language": "kql",
+                    "query": "SecurityEvent | where EventID == 4624 | where LogonType == 3",
+                    "description": "Detects domain account usage",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1078.003",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-13",
+                    "name": "Local Account Usage",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=4624 LogonType=2",
+                    "description": "Detects local account usage",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1078.004",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-14",
+                    "name": "Cloud Account Usage",
+                    "language": "kql",
+                    "query": "SigninLogs | where UserPrincipalName contains \"admin\"",
+                    "description": "Detects cloud account sign-ins",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1070",
+            "enabled": true
+        },
+        {
+            "techniqueID": "T1070.001",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-15",
+                    "name": "Clear Windows Event Logs",
+                    "language": "splunk",
+                    "query": "index=windows EventCode=1102",
+                    "description": "Detects Windows event log clearing",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1070.002",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-16",
+                    "name": "Application Log Deletion",
+                    "language": "kql",
+                    "query": "SecurityEvent | where EventID == 1102",
+                    "description": "Detects application log deletion",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1070.003",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-17",
+                    "name": "Command History Clear",
+                    "language": "splunk",
+                    "query": "index=linux \"history -c\" OR \"history --clear\"",
+                    "description": "Detects command history clearing",
+                    "source": "Test Rule"
+                }
+            ]
+        },
+        {
+            "techniqueID": "T1070.004",
+            "enabled": true,
+            "queries": [
+                {
+                    "id": "q-test-18",
+                    "name": "File Deletion Detection",
+                    "language": "elastic",
+                    "query": "event.action:file-deleted",
+                    "description": "Detects file deletion",
+                    "source": "Elastic Rule"
+                }
+            ]
+        }
+    ]
+}

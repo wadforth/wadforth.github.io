@@ -1,0 +1,47 @@
+/* ============================================
+   CSS Variables - Light Theme
+   ============================================ */
+:root {
+    --surface: #f8fafc;
+    --surface-elevated: #ffffff;
+    --surface-variant: #f1f5f9;
+    --surface-subtle: #f8fafc;
+    --on-surface: #0f172a;
+    --on-surface-secondary: #475569;
+    --on-surface-tertiary: #94a3b8;
+    --border: #e2e8f0;
+    --border-subtle: #f1f5f9;
+    --primary: #6366f1;
+    --primary-light: rgba(99, 102, 241, 0.1);
+    --primary-lighter: rgba(99, 102, 241, 0.05);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.06);
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+/* CSS Variables - Dark Theme */
+[data-bs-theme="dark"] {
+    --surface: #0f172a;
+    --surface-elevated: #1e293b;
+    --surface-variant: #1e293b;
+    --surface-subtle: #162032;
+    --on-surface: #f1f5f9;
+    --on-surface-secondary: #94a3b8;
+    --on-surface-tertiary: #64748b;
+    --border: #334155;
+    --border-subtle: #1e293b;
+    --primary-light: rgba(99, 102, 241, 0.15);
+    --primary-lighter: rgba(99, 102, 241, 0.08);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.2);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.3);
+}

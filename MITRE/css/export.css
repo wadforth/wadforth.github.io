@@ -1,0 +1,132 @@
+/* ============================================
+   Export Styles
+   ============================================ */
+.matrix-export-container {
+    background: var(--surface-elevated);
+    padding: 1rem;
+}
+
+.matrix-export-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #6366f1;
+}
+
+.matrix-export-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.matrix-export-logo {
+    height: 30px;
+    max-width: 120px;
+    object-fit: contain;
+}
+
+.matrix-export-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #6366f1;
+    margin: 0;
+}
+
+.matrix-export-subtitle {
+    font-size: 0.7rem;
+    color: #666;
+    margin: 0.15rem 0 0;
+}
+
+.matrix-export-header-right {
+    text-align: right;
+}
+
+.matrix-export-company {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.matrix-export-meta {
+    font-size: 0.6rem;
+    color: #999;
+}
+
+.matrix-export-legend {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+    flex-wrap: wrap;
+}
+
+.matrix-export-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+}
+
+.matrix-export-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid #ddd;
+}
+
+.matrix-export-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 1px;
+}
+
+.matrix-export-table th {
+    background: #6366f1;
+    color: white;
+    font-weight: 600;
+    text-align: center;
+    padding: 0.35rem;
+    min-width: 120px;
+    font-size: 0.65rem;
+}
+
+.matrix-export-table td {
+    vertical-align: top;
+    padding: 0;
+    background: #f8f8f8;
+    min-width: 120px;
+}
+
+.matrix-export-cell {
+    padding: 0.2rem 0.35rem;
+    border-bottom: 1px solid #eee;
+    font-size: 0.6rem;
+}
+
+.matrix-export-cell .tech-id {
+    font-family: monospace;
+    font-weight: 600;
+    color: #6366f1;
+}
+
+.matrix-export-cell .tech-name {
+    color: #333;
+    font-size: 0.55rem;
+}
+
+.matrix-export-cell.sub-technique {
+    margin-left: 0.35rem;
+}
+
+.matrix-export-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.35rem;
+    border-top: 1px solid #ddd;
+    font-size: 0.55rem;
+    color: #999;
+    text-align: center;
+}
