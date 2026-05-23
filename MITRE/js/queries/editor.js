@@ -94,6 +94,7 @@ function openQueryEditor(queryData = null, techniqueId = null) {
         selectGroup.classList.add('d-none');
         hiddenInput.value = queryData?.techniqueID || techniqueId || '';
     } else {
+        state.currentModalTechniqueId = null;
         selectGroup.classList.remove('d-none');
         hiddenInput.value = '';
         const selected = queryData ? [queryData.techniqueID] : [];

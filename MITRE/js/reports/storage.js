@@ -75,26 +75,6 @@ function getActivitiesSince(dateStr) {
     return state.currentLayer.activityLog.filter(a => new Date(a.timestamp).getTime() > cutoff);
 }
 
-function getLayerSnapshot() {
-    if (!state.currentLayer) return null;
-    const techniques = (state.currentLayer.techniques || []).map(t => ({
-        techniqueID: t.techniqueID,
-        color: t.color || null,
-        enabled: t.enabled !== false,
-        queryCount: t.queries ? t.queries.length : 0,
-        queries: t.queries ? t.queries.map(q => ({ id: q.id, name: q.name, language: q.language })) : []
-    }));
-    
-    return {
-        techniqueCount: techniques.length,
-        totalQueries: techniques.reduce((sum, t) => sum + t.queryCount, 0),
-        techniques,
-        mitigationStatus: state.currentLayer.mitigationStatus || {},
-        companyName: state.currentLayer.companyName || '',
-        companyLogo: state.currentLayer.companyLogo || null
-    };
-}
-
 function detectChanges(lastReport) {
     if (!lastReport) return { new: [], modified: [], all: [] };
     

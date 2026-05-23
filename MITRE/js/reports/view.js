@@ -25,9 +25,24 @@ function getTechniquesByMonth() {
     const byMonth = {};
     
     state.currentLayer.techniques.forEach(ann => {
-        const month = ann.monthAdded || new Date().toISOString().slice(0, 7);
-        if (!byMonth[month]) byMonth[month] = [];
-        byMonth[month].push(ann);
+        const baseMonth = ann.monthAdded || new Date().toISOString().slice(0, 7);
+        
+        if (ann.queries && ann.queries.length > 0) {
+            ann.queries.forEach(q => {
+                const qMonth = q.monthAdded || baseMonth;
+                if (!byMonth[qMonth]) byMonth[qMonth] = [];
+                const existing = byMonth[qMonth].find(t => t.techniqueID === ann.techniqueID);
+                if (!existing) {
+                    byMonth[qMonth].push({ ...ann, queries: [q] });
+                } else {
+                    if (!existing.queries) existing.queries = [];
+                    existing.queries.push(q);
+                }
+            });
+        } else {
+            if (!byMonth[baseMonth]) byMonth[baseMonth] = [];
+            byMonth[baseMonth].push(ann);
+        }
     });
     
     return Object.fromEntries(
@@ -410,8 +425,13 @@ function getColorChangesForMonth(month) {
     const prevMonths = getPreviousMonths(month);
     
     state.currentLayer.techniques.forEach(ann => {
-        if (ann.monthAdded !== month) return;
         if (!ann.queries || ann.queries.length === 0) return;
+        
+        const hasQueryThisMonth = ann.queries.some(q => {
+            const qMonth = q.monthAdded || (q.created ? q.created.slice(0, 7) : null);
+            return qMonth === month;
+        });
+        if (!hasQueryThisMonth) return;
         
         const techId = ann.techniqueID;
         const isSub = isSubTechnique(techId);
@@ -549,16 +569,14 @@ function getNewHuntsForExistingTechniques(month, existingIds) {
         if (!ann.queries || ann.queries.length === 0) return;
         
         ann.queries.forEach(q => {
-            if (q.created) {
-                const queryMonth = q.created.slice(0, 7);
-                if (queryMonth === month) {
-                    hunts.push({
-                        techniqueID: ann.techniqueID,
-                        huntName: q.name,
-                        sirTicket: '',
-                        queryId: q.id
-                    });
-                }
+            const queryMonth = q.monthAdded || (q.created ? q.created.slice(0, 7) : null);
+            if (queryMonth === month) {
+                hunts.push({
+                    techniqueID: ann.techniqueID,
+                    huntName: q.name,
+                    sirTicket: '',
+                    queryId: q.id
+                });
             }
         });
     });
@@ -725,7 +743,7 @@ function viewReport(reportId) {
         ? buildChangesSection(report.changes) 
         : '<p class="text-muted">No changes detected during this period.</p>';
     
-    const threatsHtml = buildThreatsSection({ _reportId: report.id });
+    const threatsHtml = buildThreatsSection(report);
     
     const tacticTableHtml = (report.coverageByTactic?.length > 0 || report.type === 'initial') 
         ? buildTacticTable(report.coverageByTactic || getCoverageByTactic(), report) 
@@ -1050,7 +1068,12 @@ function buildMethodology(report) {
 function generateLeadershipOverview(report) {
     const stats = report.fullStats || getFullCoverageStats();
     const coveragePct = stats.pct;
-    return `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework, which is the global standard for understanding adversary behavior. Our security team has implemented detection queries across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% coverage. This means we can detect and respond to ${coveragePct}% of known attacker tactics, techniques, and procedures.`;
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const byMonth = getTechniquesByMonth();
+    const monthTechniques = byMonth[month] || [];
+    const monthQueries = monthTechniques.reduce((sum, ann) => sum + (ann.queries?.length || 0), 0);
+    const periodLabel = report.reportMonth || (month ? getMonthLabel(month) : 'this period');
+    return `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework for ${periodLabel}. Our security team has implemented ${monthQueries} detection queries this period across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% overall coverage. This means we can detect and respond to ${coveragePct}% of known attacker tactics, techniques, and procedures. The remaining gaps represent areas where we may be vulnerable to undetected adversary activity.`;
 }
 
 function buildNewQueriesSection(report) {
@@ -1102,6 +1125,16 @@ function buildNewQueriesSection(report) {
 function buildTechniquesAtRisk(report) {
     if (!state.techniques || !state.relationships || !state.groups) return '';
     
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const byMonth = getTechniquesByMonth();
+    const monthTechniques = byMonth[month] || [];
+    
+    const monthTechStixIds = new Set();
+    monthTechniques.forEach(ann => {
+        const stixId = getTechniqueStixId(ann.techniqueID);
+        if (stixId) monthTechStixIds.add(stixId);
+    });
+    
     const layerTechIds = new Set();
     const coverageMap = {};
     const layerTechs = state.currentLayer?.techniques || report.snapshot?.techniques || [];
@@ -1131,8 +1164,10 @@ function buildTechniquesAtRisk(report) {
         const techId = getTechniqueIdFromStix(rel.target_ref);
         if (!techId) return;
         
-        if (!threatGroups[group.name]) threatGroups[group.name] = new Set();
-        threatGroups[group.name].add(techId);
+        if (monthTechStixIds.size > 0 && monthTechStixIds.has(rel.target_ref)) {
+            if (!threatGroups[group.name]) threatGroups[group.name] = new Set();
+            threatGroups[group.name].add(techId);
+        }
     });
     
     const atRisk = [];
@@ -1145,7 +1180,7 @@ function buildTechniquesAtRisk(report) {
     if (atRisk.length === 0) return '';
     
     let html = '<div class="report-section techniques-at-risk"><h4><i class="bi bi-exclamation-triangle"></i> Techniques at Risk</h4>';
-    html += '<p class="text-muted mb-3">Zero-coverage techniques used by known threat groups, prioritized by group relevance.</p>';
+    html += '<p class="text-muted mb-3">Zero-coverage techniques used by known threat groups active this month, prioritized by group relevance.</p>';
     
     atRisk.slice(0, 10).forEach(item => {
         const techList = item.techniques.map(id => {
@@ -1233,8 +1268,7 @@ function buildChangesSection(changes) {
     return html;
 }
 
-function buildThreatsSection(threats) {
-    const report = state._cachedReports?.find(r => r.id === threats?._reportId);
+function buildThreatsSection(report) {
     const month = report?.selectedMonth || report?.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     const byMonth = getTechniquesByMonth();
     const techniques = byMonth[month] || [];
@@ -1523,6 +1557,7 @@ function markdownToHtml(text) {
 function validateReport(report) {
     const requiredFields = [
         { field: 'executiveSummary', label: 'Executive Summary', dynamic: true },
+        { field: 'leadershipOverview', label: 'Leadership Overview', dynamic: true },
         { field: 'monthlyFocus', label: 'Monthly Focus Areas', dynamic: true },
         { field: 'gapAnalysis', label: 'Gap Analysis & Prioritization', dynamic: true }
     ];
@@ -1533,6 +1568,7 @@ function validateReport(report) {
         const isEmpty = !value || value.trim() === '';
         const hasDynamic = dynamic && (
             (field === 'executiveSummary' && generateDynamicExecutiveSummary(report)) ||
+            (field === 'leadershipOverview' && generateLeadershipOverview(report)) ||
             (field === 'monthlyFocus' && generateDynamicMonthlyFocus(report)) ||
             (field === 'gapAnalysis' && generateDynamicGapAnalysis(report))
         );
@@ -1769,114 +1805,6 @@ async function confirmDeleteReport(reportId) {
         showToast('Report deleted', 'success');
         loadReportsList();
     }
-}
-
-function exportThreatHuntPDF(reportId) {
-    const report = state._cachedReports?.find(r => r.id === reportId);
-    if (!report) return;
-    
-    showToast('Generating PDF...', 'info');
-    
-    const content = `
-${report.companyName || 'MITRE ATT&CK Coverage Report'}
-Threat Hunting Report
-${getMonthLabel(report.generatedAt.slice(0, 7))}
-${report.author ? `Prepared by: ${report.author}` : ''}
-
-${report.title}
-Focus Area: ${report.focus?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-${report.threatActor ? `Threat Actor: ${report.threatActor}` : ''}
-${report.techniques ? `Targeted Techniques: ${report.techniques}` : ''}
-${report.sources ? `Data Sources: ${report.sources}` : ''}
-
-Hunt Hypothesis
-${report.hypothesis || 'No hypothesis provided.'}
-
-Findings
-${report.findings || 'No findings documented.'}
-
-Recommendations
-${report.recommendations || 'No recommendations provided.'}
-    `;
-    
-    if (typeof window.jspdf !== 'undefined') {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const lines = pdf.splitTextToSize(content, 180);
-        pdf.setFontSize(16);
-        pdf.text(report.companyName || 'Threat Hunting Report', 15, 20);
-        pdf.setFontSize(10);
-        pdf.text(lines, 15, 30);
-        pdf.save(`threat-hunt-${reportId}.pdf`);
-        showToast('PDF exported', 'success');
-    } else {
-        showToast('jsPDF not loaded', 'error');
-    }
-}
-
-function exportThreatHuntEmail(reportId) {
-    const report = state._cachedReports?.find(r => r.id === reportId);
-    if (!report) return;
-    
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-        h1, h2, h3 { color: #0f172a; }
-        .header { text-align: center; border-bottom: 3px solid #3b82f6; padding-bottom: 30px; margin-bottom: 40px; }
-        .logo { max-height: 60px; margin-bottom: 20px; }
-        .section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e2e8f0; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 0.85rem; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        ${report.companyLogo ? `<img src="${report.companyLogo}" class="logo" alt="Logo">` : ''}
-        <h1>${report.companyName || 'Threat Hunting Report'}</h1>
-        <p>${getMonthLabel(report.generatedAt.slice(0, 7))}</p>
-        ${report.author ? `<p>Prepared by: ${report.author}</p>` : ''}
-    </div>
-
-    <div class="section">
-        <h2>${report.title}</h2>
-        <p><strong>Focus Area:</strong> ${report.focus?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
-        ${report.threatActor ? `<p><strong>Threat Actor:</strong> ${report.threatActor}</p>` : ''}
-        ${report.techniques ? `<p><strong>Targeted Techniques:</strong> ${report.techniques}</p>` : ''}
-        ${report.sources ? `<p><strong>Data Sources:</strong> ${report.sources}</p>` : ''}
-    </div>
-
-    <div class="section">
-        <h3>Hunt Hypothesis</h3>
-        <p>${report.hypothesis || 'No hypothesis provided.'}</p>
-    </div>
-
-    <div class="section">
-        <h3>Findings</h3>
-        <p>${report.findings || 'No findings documented.'}</p>
-    </div>
-
-    <div class="section">
-        <h3>Recommendations</h3>
-        <p>${report.recommendations || 'No recommendations provided.'}</p>
-    </div>
-
-    <div class="footer">
-        <p>Generated by MITRE ATT&CK Coverage Tool</p>
-    </div>
-</body>
-</html>
-    `;
-    
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const link = document.createElement('a');
-    link.download = `threat-hunt-${reportId}.html`;
-    link.href = URL.createObjectURL(blob);
-    link.click();
-    URL.revokeObjectURL(link.href);
-    showToast('Email HTML exported', 'success');
 }
 
 function saveAndValidateReport(reportId) {
@@ -2265,6 +2193,15 @@ function exportReportPDF(reportId) {
     
     // 8b. Techniques at Risk
     if (state.techniques && state.relationships && state.groups) {
+        const mThreats = report.selectedMonth || report.generatedAt?.slice(0, 7);
+        const byM = getTechniquesByMonth();
+        const monthTechs = byM[mThreats] || [];
+        const monthTechStixIds = new Set();
+        monthTechs.forEach(a => {
+            const stixId = getTechniqueStixId(a.techniqueID);
+            if (stixId) monthTechStixIds.add(stixId);
+        });
+        
         const layerTechIds = new Set();
         const coverageMap = {};
         const layerTechs = state.currentLayer?.techniques || report.snapshot?.techniques || [];
@@ -2286,6 +2223,7 @@ function exportReportPDF(reportId) {
             state.relationships.forEach(rel => {
                 if (rel.relationship_type !== 'uses') return;
                 if (!zeroCoverageTechs.has(rel.target_ref)) return;
+                if (monthTechStixIds.size > 0 && !monthTechStixIds.has(rel.target_ref)) return;
                 const group = state.groups.find(g => g.id === rel.source_ref);
                 if (!group) return;
                 const tid = getTechniqueIdFromStix(rel.target_ref);
@@ -2305,7 +2243,7 @@ function exportReportPDF(reportId) {
                 pdf.setFontSize(9);
                 pdf.setTextColor(71, 85, 105);
                 pdf.setFont(undefined, 'normal');
-                pdf.text('Zero-coverage techniques used by known threat groups:', margin, y);
+                pdf.text('Zero-coverage techniques used by known threat groups active this month:', margin, y);
                 y += 6;
                 
                 atRisk.slice(0, 8).forEach(item => {
@@ -2942,6 +2880,16 @@ function buildThreatsSectionEmail(report) {
 function buildTechniquesAtRiskEmail(report) {
     if (!state.techniques || !state.relationships || !state.groups) return '';
     
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const byMonth = getTechniquesByMonth();
+    const monthTechniques = byMonth[month] || [];
+    
+    const monthTechStixIds = new Set();
+    monthTechniques.forEach(ann => {
+        const stixId = getTechniqueStixId(ann.techniqueID);
+        if (stixId) monthTechStixIds.add(stixId);
+    });
+    
     const layerTechIds = new Set();
     const coverageMap = {};
     const layerTechs = state.currentLayer?.techniques || report.snapshot?.techniques || [];
@@ -2964,12 +2912,15 @@ function buildTechniquesAtRiskEmail(report) {
     state.relationships.forEach(rel => {
         if (rel.relationship_type !== 'uses') return;
         if (!zeroCoverageTechs.has(rel.target_ref)) return;
-        const group = state.groups.find(g => g.id === rel.source_ref);
-        if (!group) return;
-        const tid = getTechniqueIdFromStix(rel.target_ref);
-        if (!tid) return;
-        if (!threatGroups[group.name]) threatGroups[group.name] = new Set();
-        threatGroups[group.name].add(tid);
+        
+        if (monthTechStixIds.size > 0 && monthTechStixIds.has(rel.target_ref)) {
+            const group = state.groups.find(g => g.id === rel.source_ref);
+            if (!group) return;
+            const tid = getTechniqueIdFromStix(rel.target_ref);
+            if (!tid) return;
+            if (!threatGroups[group.name]) threatGroups[group.name] = new Set();
+            threatGroups[group.name].add(tid);
+        }
     });
     
     const atRisk = [];
@@ -2980,7 +2931,7 @@ function buildTechniquesAtRiskEmail(report) {
     if (atRisk.length === 0) return '';
     
     let html = `<div class="section"><h3>Techniques at Risk</h3>
-        <p style="margin-bottom: 8px; color: #64748b; font-size: 13px;">Zero-coverage techniques used by known threat groups:</p>`;
+        <p style="margin-bottom: 8px; color: #64748b; font-size: 13px;">Zero-coverage techniques used by known threat groups active this month:</p>`;
     
     atRisk.slice(0, 8).forEach(item => {
         const techList = item.techniques.map(id => {
