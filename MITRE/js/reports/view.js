@@ -762,8 +762,20 @@ function viewReport(reportId) {
     const newQueriesHtml = buildNewQueriesSection(report);
     const techniquesAtRiskHtml = buildTechniquesAtRisk(report);
 
+    const availableMonths = getAvailableMonths();
+    const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const monthSelectorHtml = `
+        <div class="report-month-selector">
+            <label class="text-muted small me-2">Report Month:</label>
+            <select class="form-select form-select-sm" style="width: auto; min-width: 180px;" onchange="changeReportMonth('${report.id}', this.value)">
+                ${availableMonths.map(m => `<option value="${m}" ${m === currentMonth ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
+            </select>
+        </div>
+    `;
+
     body.innerHTML = `
         <div class="report-viewer" id="report-export-area">
+            ${monthSelectorHtml}
             <div class="report-viewer-header">
                 ${logoHtml}
                 <h2>${report.companyName || 'MITRE ATT&CK Coverage Report'}</h2>
@@ -1543,6 +1555,16 @@ function updateReportField(reportId, field, value) {
     if (report) {
         report[field] = value;
         saveReport(report);
+    }
+}
+
+function changeReportMonth(reportId, newMonth) {
+    const report = state._cachedReports?.find(r => r.id === reportId);
+    if (report) {
+        report.selectedMonth = newMonth;
+        saveReport(report).then(() => {
+            viewReport(reportId);
+        });
     }
 }
 

@@ -104,7 +104,7 @@ function renderQueriesView() {
     
     queries = sortQueries(queries);
     
-    const techsWithQueries = new Set(queries.map(q => q.techniqueID));
+    const techsWithQueries = new Set(queries.flatMap(q => q.techniqueIDs || [q.techniqueID]));
     const langCounts = {};
     queries.forEach(q => {
         langCounts[q.language] = (langCounts[q.language] || 0) + 1;
