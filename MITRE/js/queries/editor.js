@@ -133,8 +133,8 @@ function saveQuery() {
         return;
     }
     
-    if (!name || !queryText) {
-        showToast('Name and query are required', 'error');
+    if (!name) {
+        showToast('Query Name is required', 'error');
         return;
     }
     
