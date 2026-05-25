@@ -47,8 +47,10 @@ function renderTechniqueSelector(selectedIds = []) {
             const name = t.name;
             const checked = selectedIds.includes(id) ? 'checked' : '';
             html += `<div class="technique-checkbox-item" data-id="${id}" data-name="${name.toLowerCase()}">
-                <input type="checkbox" id="tc-${id}" value="${id}" ${checked}>
-                <label for="tc-${id}"><span class="tech-id">${id}</span> ${escapeHtml(name)}</label>
+                <label class="technique-checkbox-label">
+                    <input type="checkbox" class="technique-cb" data-tech-id="${id}" value="${id}" ${checked}>
+                    <span class="tech-id">${id}</span> ${escapeHtml(name)}
+                </label>
             </div>`;
         }
         html += '</div>';
@@ -56,6 +58,15 @@ function renderTechniqueSelector(selectedIds = []) {
     
     html += '</div>';
     container.innerHTML = html;
+    
+    container.querySelectorAll('.technique-cb').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const techId = e.target.dataset.techId;
+            container.querySelectorAll(`.technique-cb[data-tech-id="${techId}"]`).forEach(other => {
+                other.checked = e.target.checked;
+            });
+        });
+    });
     
     document.getElementById('technique-search').addEventListener('input', (e) => {
         const q = e.target.value.toLowerCase();
@@ -71,7 +82,7 @@ function renderTechniqueSelector(selectedIds = []) {
 }
 
 function getSelectedTechniques() {
-    const ids = [...document.querySelectorAll('#technique-list input[type="checkbox"]:checked')].map(cb => cb.value);
+    const ids = [...document.querySelectorAll('#technique-list .technique-cb:checked')].map(cb => cb.value);
     return [...new Set(ids)];
 }
 
