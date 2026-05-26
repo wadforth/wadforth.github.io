@@ -34,6 +34,7 @@ function generateReport(reportType = 'initial') {
         author: state.author || '',
         companyName: snapshot.companyName,
         companyLogo: snapshot.companyLogo,
+        bannerTheme: 'blue',
         executiveSummary: '',
         monthlyFocus: '',
         detectionResults: [],
@@ -216,7 +217,7 @@ function getCoverageByTactic() {
     return Object.entries(tacticMap)
         .map(([tactic, data]) => ({
             tactic,
-            coverage: data.total > 0 ? Math.round((data.withQueries / data.total) * 100) : 0,
+            coverage: data.total > 0 ? Math.round((data.withQueries / data.total) * 1000) / 10 : 0,
             withQueries: data.withQueries,
             total: data.total
         }))
@@ -271,6 +272,6 @@ function getFullCoverageStats() {
         total: totalTechniques,
         logged: layerTechIds.size,
         covered: coveredCount,
-        pct: totalTechniques > 0 ? Math.round((coveredCount / totalTechniques) * 100) : 0
+        pct: totalTechniques > 0 ? Math.round((coveredCount / totalTechniques) * 1000) / 10 : 0
     };
 }

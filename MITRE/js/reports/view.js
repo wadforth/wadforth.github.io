@@ -1,3 +1,13 @@
+const BANNER_THEMES = {
+    blue: { bg: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', accent: '#3b82f6', label: 'Blue' },
+    orange: { bg: 'linear-gradient(135deg, #1a0f00 0%, #4a2800 100%)', accent: '#f97316', label: 'Orange' },
+    green: { bg: 'linear-gradient(135deg, #052e16 0%, #0f4a2e 100%)', accent: '#22c55e', label: 'Green' },
+    purple: { bg: 'linear-gradient(135deg, #1a0a2e 0%, #3b1d6e 100%)', accent: '#a855f7', label: 'Purple' },
+    red: { bg: 'linear-gradient(135deg, #2a0a0a 0%, #5f1e1e 100%)', accent: '#ef4444', label: 'Red' },
+    teal: { bg: 'linear-gradient(135deg, #042f2e 0%, #0e4a47 100%)', accent: '#14b8a6', label: 'Teal' },
+    slate: { bg: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', accent: '#94a3b8', label: 'Slate' },
+};
+
 function escapeHtml(text) {
     if (!text) return '';
     return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -157,7 +167,7 @@ function renderReportsList(reports) {
                     <div class="stat-label">With Queries</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${stats.pct}%</div>
+                    <div class="stat-value">${stats.pct % 1 === 0 ? stats.pct : stats.pct.toFixed(1)}%</div>
                     <div class="stat-label">Coverage</div>
                 </div>
                 <div class="stat-card">
@@ -764,11 +774,19 @@ function viewReport(reportId) {
 
     const availableMonths = getAvailableMonths();
     const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const currentTheme = report.bannerTheme || 'blue';
+    const themeOptionsHtml = Object.entries(BANNER_THEMES).map(([key, t]) =>
+        `<option value="${key}" ${key === currentTheme ? 'selected' : ''}>${t.label}</option>`
+    ).join('');
     const monthSelectorHtml = `
         <div class="report-month-selector">
             <label class="text-muted small me-2">Report Month:</label>
             <select class="form-select form-select-sm" style="width: auto; min-width: 180px;" onchange="changeReportMonth('${report.id}', this.value)">
                 ${availableMonths.map(m => `<option value="${m}" ${m === currentMonth ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
+            </select>
+            <label class="text-muted small ms-3 me-2">Banner Theme:</label>
+            <select class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="changeReportTheme('${report.id}', this.value)">
+                ${themeOptionsHtml}
             </select>
         </div>
     `;
@@ -1079,7 +1097,7 @@ function buildMethodology(report) {
 
 function generateLeadershipOverview(report) {
     const stats = report.fullStats || getFullCoverageStats();
-    const coveragePct = stats.pct;
+    const coveragePct = stats.pct % 1 === 0 ? stats.pct : stats.pct.toFixed(1);
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
     const byMonth = getTechniquesByMonth();
     const monthTechniques = byMonth[month] || [];
@@ -1382,6 +1400,7 @@ function buildThreatsSection(report) {
 
 function buildTacticTable(tactics, report) {
     if (!tactics || tactics.length === 0) return '<p class="text-muted">No tactic data available.</p>';
+    const fmtCov = (v) => v % 1 === 0 ? v : v.toFixed(1);
     
     let html = '<table class="report-table"><thead><tr><th>Tactic</th><th>Coverage</th><th>Progress</th></tr></thead><tbody>';
     
@@ -1389,7 +1408,7 @@ function buildTacticTable(tactics, report) {
         const tacticName = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         html += `<tr>
             <td>${tacticName}</td>
-            <td>${t.withQueries}/${t.total}</td>
+            <td>${t.withQueries}/${t.total} (${fmtCov(t.coverage)}%)</td>
             <td>
                 <div class="progress" style="height: 8px;">
                     <div class="progress-bar" style="width: ${t.coverage}%"></div>
@@ -1416,11 +1435,14 @@ function buildLanguageTable(languages, report) {
 }
 
 function buildCoverageChanges(report) {
-    const lastReport = state._cachedReports?.find(r => r.id !== report.id && r.type === 'update');
-    if (!lastReport) return '<p class="text-muted">No previous update report to compare against.</p>';
+    const sortedReports = [...(state._cachedReports || [])].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
+    const reportIdx = sortedReports.findIndex(r => r.id === report.id);
+    const lastReport = reportIdx >= 0 && reportIdx < sortedReports.length - 1 ? sortedReports[reportIdx + 1] : null;
+    if (!lastReport || !lastReport.coverageByTactic || lastReport.coverageByTactic.length === 0) return '<p class="text-muted">No previous update report to compare against.</p>';
     
-    const currentTactics = report.coverageByTactic || [];
-    const lastTactics = lastReport.coverageByTactic || [];
+    const currentTactics = getCoverageByTactic();
+    const lastTactics = lastReport.coverageByTactic;
+    const fmtCov = (v) => v % 1 === 0 ? v : v.toFixed(1);
     
     let html = '<table class="report-table"><thead><tr><th>Tactic</th><th>Previous</th><th>Current</th><th>Change</th></tr></thead><tbody>';
     
@@ -1435,14 +1457,14 @@ function buildCoverageChanges(report) {
         const change = currentPct - lastPct;
         
         const changeIcon = change > 0 ? '<i class="bi bi-arrow-up text-success"></i>' : change < 0 ? '<i class="bi bi-arrow-down text-danger"></i>' : '<i class="bi bi-dash text-muted"></i>';
-        const changeText = change > 0 ? `+${change}%` : change < 0 ? `${change}%` : '0%';
+        const changeText = change > 0 ? `+${change % 1 === 0 ? change : change.toFixed(1)}%` : change < 0 ? `${change % 1 === 0 ? change : change.toFixed(1)}%` : '0%';
         
         const tacticName = tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         
         html += `<tr>
             <td>${tacticName}</td>
-            <td>${lastPct}%</td>
-            <td>${currentPct}%</td>
+            <td>${fmtCov(lastPct)}%</td>
+            <td>${fmtCov(currentPct)}%</td>
             <td>${changeIcon} ${changeText}</td>
         </tr>`;
     });
@@ -1562,6 +1584,16 @@ function changeReportMonth(reportId, newMonth) {
     const report = state._cachedReports?.find(r => r.id === reportId);
     if (report) {
         report.selectedMonth = newMonth;
+        saveReport(report).then(() => {
+            viewReport(reportId);
+        });
+    }
+}
+
+function changeReportTheme(reportId, newTheme) {
+    const report = state._cachedReports?.find(r => r.id === reportId);
+    if (report) {
+        report.bannerTheme = newTheme;
         saveReport(report).then(() => {
             viewReport(reportId);
         });
@@ -1845,7 +1877,7 @@ function saveAndValidateReport(reportId) {
     }
 }
 
-function exportReportPDF(reportId) {
+async function exportReportPDF(reportId) {
     const report = state._cachedReports?.find(r => r.id === reportId);
     if (!report) {
         showToast('Report not found', 'error');
@@ -1854,535 +1886,36 @@ function exportReportPDF(reportId) {
 
     showToast('Generating PDF...', 'info');
     
-    if (typeof window.jspdf === 'undefined') {
+    if (typeof window.html2pdf === 'undefined') {
         showToast('PDF library not loaded', 'error');
         return;
     }
     
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const margin = 15;
-    const contentWidth = pageWidth - 2 * margin;
+    const htmlContent = buildEmailHTML(report);
     
-    let y = 20;
+    const container = document.createElement('div');
+    container.style.cssText = 'width:794px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;';
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
     
-    function checkPage(needed = 20) {
-        if (y + needed > pageHeight - 15) { pdf.addPage(); y = 20; }
-    }
-    
-    function addTitle(text) {
-        checkPage(15);
-        pdf.setFontSize(14);
-        pdf.setTextColor(30, 58, 138);
-        pdf.setFont(undefined, 'bold');
-        pdf.text(text, margin, y);
-        y += 2;
-        pdf.setDrawColor(59, 130, 246);
-        pdf.setLineWidth(0.5);
-        pdf.line(margin, y, margin + 40, y);
-        y += 6;
-    }
-    
-    function addParagraph(text, size = 10, color = [71, 85, 105]) {
-        if (!text) return;
-        pdf.setFontSize(size);
-        pdf.setTextColor(...color);
-        pdf.setFont(undefined, 'normal');
-        const plain = text.replace(/\*\*(.+?)\*\*/g, '$1').replace(/\*(.+?)\*/g, '$1').replace(/\n/g, ' ');
-        const lines = pdf.splitTextToSize(plain, contentWidth);
-        lines.forEach(line => { checkPage(6); pdf.text(line, margin, y); y += size * 0.4; });
-        y += 4;
-    }
-    
-    function addStatsBar(stats) {
-        checkPage(25);
-        const h = 18, w = contentWidth / stats.length;
-        stats.forEach((s, i) => {
-            const x = margin + (i * w);
-            pdf.setFillColor(248, 250, 252);
-            pdf.rect(x, y, w - 1, h, 'F');
-            pdf.setDrawColor(226, 232, 240);
-            pdf.rect(x, y, w - 1, h, 'S');
-            pdf.setFontSize(16);
-            pdf.setTextColor(30, 64, 175);
-            pdf.setFont(undefined, 'bold');
-            pdf.text(String(s.value), x + w/2, y + 8, { align: 'center' });
-            pdf.setFontSize(8);
-            pdf.setTextColor(100, 116, 139);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(s.label, x + w/2, y + 14, { align: 'center' });
-        });
-        y += h + 8;
-    }
-    
-    function addTable(headers, rows) {
-        if (!rows || rows.length === 0) return;
-        checkPage(20 + rows.length * 8);
-        const cw = contentWidth / headers.length, rh = 7;
-        pdf.setFillColor(248, 250, 252);
-        pdf.rect(margin, y, contentWidth, rh, 'F');
-        pdf.setFontSize(8);
-        pdf.setTextColor(71, 85, 105);
-        pdf.setFont(undefined, 'bold');
-        headers.forEach((h, i) => pdf.text(h, margin + (i * cw) + 2, y + 5));
-        y += rh;
-        pdf.setFont(undefined, 'normal');
-        pdf.setTextColor(51, 65, 85);
-        pdf.setFontSize(9);
-        rows.forEach((row, ri) => {
-            checkPage(rh + 2);
-            pdf.setFillColor(ri % 2 === 0 ? 255 : 248, ri % 2 === 0 ? 255 : 250, ri % 2 === 0 ? 255 : 252);
-            pdf.rect(margin, y, contentWidth, rh, 'F');
-            row.forEach((cell, ci) => pdf.text(String(cell).substring(0, 30), margin + (ci * cw) + 2, y + 5));
-            y += rh;
-        });
-        y += 4;
-    }
-    
-    // 1. Header - Professional design
-    pdf.setFillColor(30, 58, 138);
-    pdf.rect(0, 0, pageWidth, 55, 'F');
-    
-    // Accent line
-    pdf.setFillColor(59, 130, 246);
-    pdf.rect(0, 55, pageWidth, 2, 'F');
-    
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFontSize(16);
-    pdf.setFont(undefined, 'bold');
-    pdf.text('THREAT HUNTING MITRE MONTHLY UPDATE', margin, 16);
-    
-    pdf.setFontSize(11);
-    pdf.setFont(undefined, 'normal');
-    pdf.text(report.companyName || 'MITRE ATT&CK Coverage Report', margin, 24);
-    
-    pdf.setFontSize(9);
-    pdf.setTextColor(191, 219, 254);
-    pdf.text(report.reportMonth || report.generatedDate, margin, 32);
-    if (report.attckVersion) pdf.text(`ATT&CK Framework v${report.attckVersion}`, margin, 38);
-    if (report.author) pdf.text(`Prepared by: ${report.author}`, margin, report.attckVersion ? 44 : 38);
-    
-    // Report type badge
-    const typeText = report.type === 'initial' ? 'INITIAL ASSESSMENT' : 'MONTHLY UPDATE';
-    pdf.setFontSize(8);
-    pdf.setFont(undefined, 'bold');
-    pdf.setTextColor(30, 58, 138);
-    const badgeW = pdf.getTextWidth(typeText) + 10;
-    pdf.setFillColor(219, 234, 254);
-    pdf.roundedRect(pageWidth - margin - badgeW, 14, badgeW, 8, 2, 2, 'F');
-    pdf.text(typeText, pageWidth - margin - badgeW / 2, 20, { align: 'center' });
-    
-    y = 68;
-    
-    // 2. Stats - Month & Overall
-    const tactics = report.coverageByTactic || getCoverageByTactic();
-    const overallCoverage = tactics.length > 0 ? Math.round(tactics.reduce((s, t) => s + t.coverage, 0) / tactics.length) : 0;
-    const tacticsWithCoverage = tactics.filter(t => t.coverage > 0).length;
-    
-    // Month stats
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
-    const byMonth = getTechniquesByMonth();
-    const monthTechniques = byMonth[month] || [];
-    const monthNewTechs = monthTechniques.filter(t => !isSubTechnique(t.techniqueID)).length;
-    const monthNewSubs = monthTechniques.filter(t => isSubTechnique(t.techniqueID)).length;
-    const monthQueries = monthTechniques.reduce((s, a) => s + (a.queries?.length || 0), 0);
-    
-    addStatsBar([
-        { value: `${overallCoverage}%`, label: 'Overall Coverage' },
-        { value: tacticsWithCoverage, label: 'Tactics Covered' },
-        { value: monthNewTechs + monthNewSubs, label: `New This Month (${monthQueries} queries)` }
-    ]);
-    
-    // 3. Executive Summary
-    const execSummary = report.executiveSummary || generateDynamicExecutiveSummary(report);
-    if (execSummary) { addTitle('Executive Summary'); addParagraph(execSummary); }
-    
-    // 4. Leadership Overview
-    const leadership = report.leadershipOverview || generateLeadershipOverview(report);
-    if (leadership) { addTitle('Leadership Overview'); addParagraph(leadership); }
-    
-    // 5. Methodology & Scope with descriptions
-    if (report.methodology && Object.keys(report.methodology).length > 0) {
-        addTitle('Methodology & Scope');
-        const methodDescriptions = {
-            'sig-based': 'Signature-based detection using rule matching against known patterns and indicators.',
-            'behavioral': 'Behavioral analysis focusing on anomaly detection and deviation from normal baselines.',
-            'threat-intel': 'Threat intelligence driven hunting based on known adversary TTPs and campaigns.',
-            'hypothesis': 'Hypothesis-driven testing of specific assumptions about potential attacker behavior.',
-            'data-driven': 'Data-driven exploratory analysis of telemetry to uncover hidden threats.',
-            'compliance': 'Compliance-driven detection aligned with regulatory and framework requirements.'
-        };
-        const scopeDescriptions = {
-            'endpoints': 'Workstations, servers, and mobile devices across the enterprise.',
-            'network': 'Network traffic analysis including firewall logs, DNS, and flow data.',
-            'cloud': 'Cloud infrastructure including AWS, Azure, and GCP environments.',
-            'identity': 'Identity systems including Active Directory, SSO, and authentication logs.',
-            'email': 'Email security including phishing detection and attachment analysis.',
-            'applications': 'Application security including web apps, APIs, and database activity.'
+    try {
+        const opt = {
+            margin: 0,
+            filename: `report_${reportId}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
         };
         
-        const selectedMethods = Object.entries(report.methodology).filter(([, v]) => v).map(([k]) => {
-            const name = k.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const desc = methodDescriptions[k] || '';
-            return desc ? `${name}: ${desc}` : name;
-        });
-        if (selectedMethods.length) addParagraph('Detection Methodologies:\n' + selectedMethods.join('\n'));
-        
-        const selectedScopes = report.scope ? Object.entries(report.scope).filter(([, v]) => v).map(([k]) => {
-            const name = k.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const desc = scopeDescriptions[k] || '';
-            return desc ? `${name}: ${desc}` : name;
-        }) : [];
-        if (selectedScopes.length) addParagraph('Scope:\n' + selectedScopes.join('\n'));
+        await window.html2pdf().set(opt).from(container).save();
+        showToast('PDF exported', 'success');
+    } catch (e) {
+        console.error('PDF generation failed:', e);
+        showToast('Failed to generate PDF: ' + e.message, 'error');
+    } finally {
+        document.body.removeChild(container);
     }
-    
-    // 6. Top Tactics Graph
-    if (tactics.length > 0) {
-        addTitle('Top Tactics by Coverage');
-        const topTactics = tactics.slice(0, 8);
-        topTactics.forEach(t => {
-            checkPage(10);
-            const name = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).substring(0, 20);
-            const barW = 80, fillW = (t.coverage / 100) * barW;
-            pdf.setFontSize(9);
-            pdf.setTextColor(51, 65, 85);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(name, margin, y + 4);
-            pdf.setFillColor(226, 232, 240);
-            pdf.rect(margin + 60, y, barW, 5, 'F');
-            const c = t.coverage >= 80 ? [34, 197, 94] : t.coverage >= 50 ? [234, 179, 8] : [239, 68, 68];
-            pdf.setFillColor(...c);
-            pdf.rect(margin + 60, y, fillW, 5, 'F');
-            pdf.text(`${t.coverage}%`, margin + 60 + barW + 3, y + 4);
-            y += 8;
-        });
-        y += 4;
-    }
-    
-    // 7. Monthly Activity Summary
-    if (month) {
-        const byMonth = getTechniquesByMonth();
-        const techniques = byMonth[month] || [];
-        if (techniques.length > 0) {
-            addTitle('Monthly Activity Summary');
-            const newMains = techniques.filter(t => !isSubTechnique(t.techniqueID));
-            const newSubs = techniques.filter(t => isSubTechnique(t.techniqueID));
-            const totalQueries = techniques.reduce((s, a) => s + (a.queries?.length || 0), 0);
-            pdf.setFontSize(10);
-            pdf.setTextColor(71, 85, 105);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(`New Techniques: ${newMains.length}  |  New Sub-techniques: ${newSubs.length}  |  Total Queries: ${totalQueries}`, margin, y);
-            y += 8;
-            
-            if (newMains.length > 0) {
-                pdf.setFont(undefined, 'bold');
-                pdf.setTextColor(30, 58, 138);
-                pdf.text('New Techniques:', margin, y);
-                y += 6;
-                pdf.setFont(undefined, 'normal');
-                pdf.setTextColor(51, 65, 85);
-                newMains.slice(0, 8).forEach(ann => {
-                    checkPage(6);
-                    pdf.text(`• ${ann.techniqueID} - ${getTechniqueName(ann.techniqueID)}`, margin + 3, y);
-                    y += 5;
-                });
-                if (newMains.length > 8) {
-                    pdf.setFontSize(9);
-                    pdf.setTextColor(100, 116, 139);
-                    pdf.text(`... and ${newMains.length - 8} more`, margin + 3, y);
-                    y += 5;
-                    pdf.setFontSize(10);
-                    pdf.setTextColor(51, 65, 85);
-                }
-                y += 3;
-            }
-            
-            if (newSubs.length > 0) {
-                checkPage(15);
-                pdf.setFont(undefined, 'bold');
-                pdf.setTextColor(30, 58, 138);
-                pdf.text('New Sub-techniques:', margin, y);
-                y += 6;
-                pdf.setFont(undefined, 'normal');
-                pdf.setTextColor(51, 65, 85);
-                newSubs.slice(0, 8).forEach(ann => {
-                    checkPage(6);
-                    pdf.text(`• ${ann.techniqueID} - ${getTechniqueName(ann.techniqueID)}`, margin + 3, y);
-                    y += 5;
-                });
-                if (newSubs.length > 8) {
-                    pdf.setFontSize(9);
-                    pdf.setTextColor(100, 116, 139);
-                    pdf.text(`... and ${newSubs.length - 8} more`, margin + 3, y);
-                    y += 5;
-                    pdf.setFontSize(10);
-                    pdf.setTextColor(51, 65, 85);
-                }
-                y += 3;
-            }
-        }
-    }
-    
-    // 7b. New Threat Hunt Queries
-    if (month) {
-        const byMonth = getTechniquesByMonth();
-        const techniques = byMonth[month] || [];
-        const seenIds = new Set();
-        const newQueries = [];
-        techniques.forEach(ann => {
-            if (ann.queries) {
-                ann.queries.forEach(q => {
-                    if (!seenIds.has(q.id)) {
-                        seenIds.add(q.id);
-                        newQueries.push({ name: q.name, techniqueID: ann.techniqueID, language: q.language });
-                    }
-                });
-            }
-        });
-        
-        if (newQueries.length > 0) {
-            addTitle('New Threat Hunt Queries');
-            pdf.setFontSize(10);
-            pdf.setTextColor(71, 85, 105);
-            pdf.setFont(undefined, 'normal');
-            pdf.text(`${newQueries.length} queries for this period:`, margin, y);
-            y += 6;
-            
-            newQueries.forEach(q => {
-                checkPage(6);
-                const techName = getTechniqueName(q.techniqueID);
-                const queryName = q.name || 'Unnamed Query';
-                pdf.setFont(undefined, 'bold');
-                pdf.setTextColor(30, 58, 138);
-                pdf.text(`• ${queryName}`, margin + 3, y);
-                y += 5;
-                pdf.setFont(undefined, 'normal');
-                pdf.setTextColor(100, 116, 139);
-                pdf.setFontSize(8);
-                pdf.text(`  ${q.language} | ${q.techniqueID}${techName ? ' - ' + techName : ''}`, margin + 3, y);
-                y += 4;
-                pdf.setFontSize(10);
-                pdf.setTextColor(71, 85, 105);
-            });
-            y += 3;
-        }
-    }
-    
-    // 8. Top Associated Threats
-    const mThreats = report.selectedMonth || report.generatedAt?.slice(0, 7);
-    if (mThreats) {
-        const byM = getTechniquesByMonth();
-        const techs = byM[mThreats] || [];
-        const techStixIds = new Set();
-        techs.forEach(a => {
-            const stixId = getTechniqueStixId(a.techniqueID);
-            if (stixId) techStixIds.add(stixId);
-        });
-        
-        if (state.relationships?.length > 0 && techStixIds.size > 0) {
-            const tMap = { groups: [], software: [] };
-            state.relationships.forEach(rel => {
-                if (rel.relationship_type !== 'uses') return;
-                if (!techStixIds.has(rel.target_ref)) return;
-                const g = state.groups?.find(x => x.id === rel.source_ref);
-                if (g) {
-                    let e = tMap.groups.find(x => x.id === g.id);
-                    if (!e) { e = { id: g.id, name: g.name, count: 0 }; tMap.groups.push(e); }
-                    e.count++;
-                    return;
-                }
-                const s = state.software?.find(x => x.id === rel.source_ref);
-                if (s) {
-                    let e = tMap.software.find(x => x.id === s.id);
-                    if (!e) { e = { id: s.id, name: s.name, type: s.x_mitre_type || 'tool', count: 0 }; tMap.software.push(e); }
-                    e.count++;
-                }
-            });
-            
-            const all = [];
-            tMap.groups.forEach(g => all.push({ type: 'Group', name: g.name, count: g.count }));
-            tMap.software.forEach(s => all.push({ type: s.type || 'Tool', name: s.name, count: s.count }));
-            const sorted = all.sort((a, b) => b.count - a.count).slice(0, 8);
-            
-            if (sorted.length > 0) {
-                addTitle('Top Associated Threats');
-                addTable(['Type', 'Name', 'Techniques'], sorted.map(t => [t.type, t.name.substring(0, 35), t.count]));
-            }
-        }
-    }
-    
-    // 8b. Techniques at Risk
-    if (state.techniques && state.relationships && state.groups) {
-        const mThreats = report.selectedMonth || report.generatedAt?.slice(0, 7);
-        const byM = getTechniquesByMonth();
-        const monthTechs = byM[mThreats] || [];
-        const monthTechStixIds = new Set();
-        monthTechs.forEach(a => {
-            const stixId = getTechniqueStixId(a.techniqueID);
-            if (stixId) monthTechStixIds.add(stixId);
-        });
-        
-        const layerTechIds = new Set();
-        const coverageMap = {};
-        const layerTechs = state.currentLayer?.techniques || report.snapshot?.techniques || [];
-        layerTechs.forEach(t => {
-            layerTechIds.add(t.techniqueID);
-            coverageMap[t.techniqueID] = t.queryCount > 0 || (t.queries && t.queries.length > 0);
-        });
-        
-        const zeroCoverageTechs = new Set();
-        state.techniques.forEach(t => {
-            const techId = t.external_references?.[0]?.external_id;
-            if (!techId || t.x_mitre_is_subtechnique) return;
-            if (layerTechIds.has(techId) && coverageMap[techId]) return;
-            zeroCoverageTechs.add(techId);
-        });
-        
-        if (zeroCoverageTechs.size > 0) {
-            const threatGroups = {};
-            state.relationships.forEach(rel => {
-                if (rel.relationship_type !== 'uses') return;
-                if (!zeroCoverageTechs.has(rel.target_ref)) return;
-                if (monthTechStixIds.size > 0 && !monthTechStixIds.has(rel.target_ref)) return;
-                const group = state.groups.find(g => g.id === rel.source_ref);
-                if (!group) return;
-                const tid = getTechniqueIdFromStix(rel.target_ref);
-                if (!tid) return;
-                if (!threatGroups[group.name]) threatGroups[group.name] = new Set();
-                threatGroups[group.name].add(tid);
-            });
-            
-            const atRisk = [];
-            Object.entries(threatGroups).forEach(([groupName, techIds]) => {
-                atRisk.push({ group: groupName, techniques: [...techIds].slice(0, 3), count: techIds.size });
-            });
-            atRisk.sort((a, b) => b.count - a.count);
-            
-            if (atRisk.length > 0) {
-                addTitle('Techniques at Risk');
-                pdf.setFontSize(9);
-                pdf.setTextColor(71, 85, 105);
-                pdf.setFont(undefined, 'normal');
-                pdf.text('Zero-coverage techniques used by known threat groups active this month:', margin, y);
-                y += 6;
-                
-                atRisk.slice(0, 8).forEach(item => {
-                    checkPage(12);
-                    pdf.setFont(undefined, 'bold');
-                    pdf.setTextColor(30, 58, 138);
-                    pdf.text(`${item.group} (${item.count} techniques)`, margin + 3, y);
-                    y += 5;
-                    pdf.setFont(undefined, 'normal');
-                    pdf.setTextColor(100, 116, 139);
-                    pdf.setFontSize(8);
-                    const techStr = item.techniques.map(id => {
-                        const name = getTechniqueName(id);
-                        return `${id}${name ? ' - ' + name : ''}`;
-                    }).join(', ');
-                    const more = item.count > 3 ? ` +${item.count - 3} more` : '';
-                    pdf.text(techStr + more, margin + 6, y);
-                    y += 5;
-                    pdf.setFontSize(10);
-                    pdf.setTextColor(71, 85, 105);
-                });
-                y += 3;
-            }
-        }
-    }
-    
-    // 9. Detection Results
-    if (report.detectionResults?.length > 0) {
-        addTitle('Detection Results');
-        report.detectionResults.forEach(r => {
-            checkPage(12);
-            pdf.setFontSize(10);
-            pdf.setTextColor(30, 58, 138);
-            pdf.setFont(undefined, 'bold');
-            pdf.text(r.huntName || 'Untitled', margin, y);
-            y += 5;
-            pdf.setFont(undefined, 'normal');
-            pdf.setTextColor(71, 85, 105);
-            if (r.sirTicket) { pdf.text(`SIR: ${r.sirTicket}`, margin, y); y += 5; }
-            if (r.notes) addParagraph(r.notes, 9, [100, 116, 139]);
-            y += 3;
-        });
-    }
-    
-    // 10. Monthly Focus
-    const mFocus = report.monthlyFocus || generateDynamicMonthlyFocus(report);
-    if (mFocus) { addTitle('Monthly Focus Areas'); addParagraph(mFocus); }
-    
-    // 11. Gap Analysis
-    const gap = report.gapAnalysis || generateDynamicGapAnalysis(report);
-    if (gap) { addTitle('Gap Analysis & Prioritization'); addParagraph(gap); }
-    
-    // 12. Coverage Breakdown/Changes
-    if (report.type === 'initial') {
-        addTitle('Coverage Breakdown');
-        const rows = tactics.map(t => [t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), `${t.withQueries}/${t.total}`, `${t.coverage}%`]);
-        addTable(['Tactic', 'Coverage', 'Progress'], rows);
-    } else {
-        const lastReport = state._cachedReports?.find(r => r.id !== report.id && r.type === 'update');
-        if (lastReport) {
-            addTitle('Coverage Changes');
-            const lastTactics = lastReport.coverageByTactic || [];
-            const allTactics = new Set([...tactics.map(t => t.tactic), ...lastTactics.map(t => t.tactic)]);
-            const rows = [];
-            allTactics.forEach(tactic => {
-                const cur = tactics.find(t => t.tactic === tactic);
-                const last = lastTactics.find(t => t.tactic === tactic);
-                const curPct = cur?.coverage || 0;
-                const lastPct = last?.coverage || 0;
-                const change = curPct - lastPct;
-                const icon = change > 0 ? '+' : '';
-                rows.push([tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), `${lastPct}%`, `${curPct}%`, `${icon}${change}%`]);
-            });
-            addTable(['Tactic', 'Previous', 'Current', 'Change'], rows);
-        }
-    }
-    
-    // 13. References
-    if (report.references?.length > 0) {
-        addTitle('References');
-        report.references.forEach((ref, i) => {
-            checkPage(6);
-            pdf.setFontSize(9);
-            pdf.setTextColor(71, 85, 105);
-            pdf.text(`${i + 1}. ${ref.substring(0, 80)}`, margin, y);
-            y += 5;
-        });
-    }
-    
-    // 14. Appendix
-    if (report.appendix) {
-        const app = report.appendix;
-        if (app.methodology) { addTitle('Appendix - Methodology'); addParagraph(app.methodology); }
-        if (app.scope) { addTitle('Appendix - Scope'); addParagraph(app.scope); }
-        if (app.limitations) { addTitle('Appendix - Limitations'); addParagraph(app.limitations); }
-        if (app.additionalNotes) { addTitle('Appendix - Additional Notes'); addParagraph(app.additionalNotes); }
-    }
-    
-    // Footer with page numbers
-    checkPage(15);
-    const totalPages = pdf.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-        pdf.setFillColor(248, 250, 252);
-        pdf.rect(0, pageHeight - 15, pageWidth, 15, 'F');
-        pdf.setDrawColor(226, 232, 240);
-        pdf.setLineWidth(0.3);
-        pdf.line(0, pageHeight - 15, pageWidth, pageHeight - 15);
-        pdf.setFontSize(8);
-        pdf.setTextColor(148, 163, 184);
-        pdf.text(`Generated by MITRE ATT&CK Coverage Tool | ${report.generatedDate || new Date().toLocaleDateString()}`, margin, pageHeight - 7);
-        pdf.text('Confidential - For authorized recipients only', margin, pageHeight - 3);
-        pdf.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 7, { align: 'right' });
-    }
-    
-    pdf.save(`report_${reportId}.pdf`);
-    showToast('PDF exported', 'success');
 }
 
 function exportReportEmail(reportId) {
@@ -2431,7 +1964,7 @@ function exportReportEML(reportId) {
     showToast('EML file exported', 'success');
 }
 
-function buildEmailMonthlyActivity(report) {
+function buildEmailMonthlyActivity(report, theme) {
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || report.reportMonth?.slice(0, 7);
     if (!month) return '';
     
@@ -2471,7 +2004,7 @@ function buildEmailMonthlyActivity(report) {
             
             html += `<li class="new"><strong>${ann.techniqueID}</strong> - ${techName}<br>`;
             if (techDesc) html += `<span style="color: #64748b; font-size: 0.85rem;">${techDesc}</span><br>`;
-            if (techTactics.length > 0) html += `<span style="color: #3b82f6; font-size: 0.8rem;">Tactics: ${techTactics.join(', ')}</span><br>`;
+            if (techTactics.length > 0) html += `<span style="color: ${theme.accent}; font-size: 0.8rem;">Tactics: ${techTactics.join(', ')}</span><br>`;
             html += `<span style="color: #64748b; font-size: 0.85rem;">Queries: ${queryNames}</span></li>`;
         });
         html += '</ul></div>';
@@ -2487,7 +2020,7 @@ function buildEmailMonthlyActivity(report) {
             
             html += `<li class="new"><strong>${ann.techniqueID}</strong> - ${techName}<br>`;
             if (techDesc) html += `<span style="color: #64748b; font-size: 0.85rem;">${techDesc}</span><br>`;
-            if (techTactics.length > 0) html += `<span style="color: #3b82f6; font-size: 0.8rem;">Tactics: ${techTactics.join(', ')}</span><br>`;
+            if (techTactics.length > 0) html += `<span style="color: ${theme.accent}; font-size: 0.8rem;">Tactics: ${techTactics.join(', ')}</span><br>`;
             html += `<span style="color: #64748b; font-size: 0.85rem;">Queries: ${queryNames}</span></li>`;
         });
         html += '</ul></div>';
@@ -2508,17 +2041,19 @@ function buildEmailMonthlyActivity(report) {
 }
 
 function buildEmailHTML(report) {
+    const fullStats = report.fullStats || getFullCoverageStats();
     const tactics = report.coverageByTactic || getCoverageByTactic();
-    const overallCoverage = tactics.length > 0 ? Math.round(tactics.reduce((sum, t) => sum + t.coverage, 0) / tactics.length) : 0;
-    const tacticsWithCoverage = tactics.filter(t => t.coverage > 0).length;
+    const theme = BANNER_THEMES[report.bannerTheme || 'blue'] || BANNER_THEMES.blue;
     
     // Month stats for stats bar
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
     const byMonth = getTechniquesByMonth();
     const monthTechniques = byMonth[month] || [];
-    const monthNewTechs = monthTechniques.filter(t => !isSubTechnique(t.techniqueID)).length;
-    const monthNewSubs = monthTechniques.filter(t => isSubTechnique(t.techniqueID)).length;
-    const monthQueries = monthTechniques.reduce((s, a) => s + (a.queries?.length || 0), 0);
+    const existingIds = getExistingTechniqueIds(month);
+    const newThisMonth = monthTechniques.filter(t => !existingIds.has(t.techniqueID));
+    const monthNewTechs = newThisMonth.filter(t => !isSubTechnique(t.techniqueID)).length;
+    const monthNewSubs = newThisMonth.filter(t => isSubTechnique(t.techniqueID)).length;
+    const monthQueries = newThisMonth.reduce((s, a) => s + (a.queries?.length || 0), 0);
     
     const execSummary = report.executiveSummary || generateDynamicExecutiveSummary(report);
     const monthlyFocus = report.monthlyFocus || generateDynamicMonthlyFocus(report);
@@ -2601,12 +2136,13 @@ function buildEmailHTML(report) {
             ${topTactics.map(t => {
                 const name = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                 const color = t.coverage >= 80 ? '#22c55e' : t.coverage >= 50 ? '#eab308' : '#ef4444';
+                const pct = t.coverage % 1 === 0 ? t.coverage : t.coverage.toFixed(1);
                 return `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                     <span style="width: 120px; font-size: 13px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</span>
                     <div style="flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
                         <div style="width: ${t.coverage}%; height: 100%; background: ${color}; border-radius: 4px;"></div>
                     </div>
-                    <span style="width: 40px; font-size: 13px; font-weight: 600; color: #334155; text-align: right;">${t.coverage}%</span>
+                    <span style="width: 40px; font-size: 13px; font-weight: 600; color: #334155; text-align: right;">${pct}%</span>
                 </div>`;
             }).join('')}
         </div>`;
@@ -2614,22 +2150,27 @@ function buildEmailHTML(report) {
     
     // Coverage Breakdown/Changes
     let coverageHtml = '';
+    const liveTactics = getCoverageByTactic();
+    const fmtCov = (v) => v % 1 === 0 ? v : v.toFixed(1);
     if (report.type === 'initial') {
-        const rows = tactics.map(t => {
+        const rows = liveTactics.map(t => {
             const badgeClass = t.coverage >= 80 ? 'coverage-high' : t.coverage >= 50 ? 'coverage-mid' : 'coverage-low';
-            return `<tr><td>${t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td><td>${t.withQueries}/${t.total}</td><td><span class="coverage-badge ${badgeClass}">${t.coverage}%</span></td></tr>`;
+            return `<tr><td>${t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td><td>${t.withQueries}/${t.total}</td><td><span class="coverage-badge ${badgeClass}">${fmtCov(t.coverage)}%</span></td></tr>`;
         }).join('');
         coverageHtml = `<div class="section"><h3>Coverage Breakdown</h3>
             <table><thead><tr><th>Tactic</th><th>Coverage</th><th>Progress</th></tr></thead><tbody>${rows}</tbody></table>
         </div>`;
     } else {
-        const lastReport = state._cachedReports?.find(r => r.id !== report.id && r.type === 'update');
-        if (lastReport) {
-            const lastTactics = lastReport.coverageByTactic || [];
-            const allTactics = new Set([...tactics.map(t => t.tactic), ...lastTactics.map(t => t.tactic)]);
+        const sortedReports = [...(state._cachedReports || [])].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
+        const reportIdx = sortedReports.findIndex(r => r.id === report.id);
+        const lastReport = reportIdx >= 0 && reportIdx < sortedReports.length - 1 ? sortedReports[reportIdx + 1] : null;
+        if (lastReport && lastReport.coverageByTactic && lastReport.coverageByTactic.length > 0 && lastReport.id !== report.id) {
+            const lastTactics = lastReport.coverageByTactic;
+            const lastMonthLabel = lastReport.reportMonth || lastReport.generatedDate || 'Previous';
+            const allTactics = new Set([...liveTactics.map(t => t.tactic), ...lastTactics.map(t => t.tactic)]);
             let rows = '';
             allTactics.forEach(tactic => {
-                const cur = tactics.find(t => t.tactic === tactic);
+                const cur = liveTactics.find(t => t.tactic === tactic);
                 const last = lastTactics.find(t => t.tactic === tactic);
                 const curPct = cur?.coverage || 0;
                 const lastPct = last?.coverage || 0;
@@ -2637,9 +2178,9 @@ function buildEmailHTML(report) {
                 const icon = change > 0 ? '↑' : change < 0 ? '↓' : '→';
                 const color = change > 0 ? '#22c55e' : change < 0 ? '#ef4444' : '#64748b';
                 const badgeClass = curPct >= 80 ? 'coverage-high' : curPct >= 50 ? 'coverage-mid' : 'coverage-low';
-                rows += `<tr><td>${tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td><td>${lastPct}%</td><td><span class="coverage-badge ${badgeClass}">${curPct}%</span></td><td style="color: ${color}; font-weight: 600;">${icon} ${change > 0 ? '+' : ''}${change}%</td></tr>`;
+                rows += `<tr><td>${tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td><td>${fmtCov(lastPct)}%</td><td><span class="coverage-badge ${badgeClass}">${fmtCov(curPct)}%</span></td><td style="color: ${color}; font-weight: 600;">${icon} ${change > 0 ? '+' : ''}${change % 1 === 0 ? change : change.toFixed(1)}%</td></tr>`;
             });
-            coverageHtml = `<div class="section"><h3>Coverage Changes</h3>
+            coverageHtml = `<div class="section"><h3>Coverage Changes <span style="font-size:12px;font-weight:400;color:#64748b;">(vs ${lastMonthLabel})</span></h3>
                 <table><thead><tr><th>Tactic</th><th>Previous</th><th>Current</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table>
             </div>`;
         }
@@ -2670,12 +2211,12 @@ function buildEmailHTML(report) {
         * { box-sizing: border-box; }
         .email-wrapper { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
         .container { background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04); }
-        .header { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; }
-        .header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .header { background: ${theme.bg}; color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; }
+        .header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: ${theme.accent}; }
         .header .logo { max-height: 40px; margin-bottom: 14px; filter: brightness(0) invert(1); }
         .header h1 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
         .header .subtitle { font-size: 13px; font-weight: 400; color: #94a3b8; margin: 0 0 12px 0; }
-        .header .report-type { display: inline-block; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #93c5fd; margin-bottom: 10px; }
+        .header .report-type { display: inline-block; background: ${theme.accent}33; border: 1px solid ${theme.accent}55; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffffcc; margin-bottom: 10px; }
         .header .report-date { font-size: 13px; color: #cbd5e1; margin: 0; }
         .header .attck-version { font-size: 11px; color: #64748b; margin: 3px 0 0; }
         .header .author { font-size: 12px; color: #94a3b8; margin-top: 4px; }
@@ -2687,10 +2228,10 @@ function buildEmailHTML(report) {
         .content { padding: 24px 28px; }
         .section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #f1f5f9; }
         .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
-        .section h3 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; padding-left: 10px; border-left: 3px solid #3b82f6; }
+        .section h3 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; padding-left: 10px; border-left: 3px solid ${theme.accent}; }
         .section p { margin: 0; color: #475569; font-size: 13px; line-height: 1.65; }
         .subsection { margin-top: 14px; padding-top: 14px; border-top: 1px solid #f8fafc; }
-        .subsection h4 { font-size: 13px; font-weight: 600; color: #1e40af; margin: 0 0 6px 0; }
+        .subsection h4 { font-size: 13px; font-weight: 600; color: ${theme.accent}; margin: 0 0 6px 0; }
         table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
         th { background-color: #f8fafc; padding: 8px 10px; text-align: left; font-weight: 600; color: #475569; border-bottom: 2px solid #e2e8f0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
         td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; color: #334155; }
@@ -2700,7 +2241,7 @@ function buildEmailHTML(report) {
         .coverage-mid { background: #fef3c7; color: #a16207; }
         .coverage-low { background: #fee2e2; color: #b91c1c; }
         .changes-list { list-style: none; padding: 0; margin: 0; }
-        .changes-list li { padding: 10px; margin-bottom: 6px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #3b82f6; font-size: 12px; }
+        .changes-list li { padding: 10px; margin-bottom: 6px; background: #f8fafc; border-radius: 6px; border-left: 3px solid ${theme.accent}; font-size: 12px; }
         .changes-list li:last-child { margin-bottom: 0; }
         .changes-list li.status { border-left-color: #eab308; }
         .changes-list li.new { border-left-color: #22c55e; }
@@ -2715,9 +2256,9 @@ function buildEmailHTML(report) {
         .detection-item:last-child { margin-bottom: 0; }
         .detection-item strong { color: #0f172a; font-size: 13px; }
         .detection-item .notes { color: #64748b; font-size: 12px; margin-top: 3px; }
-        .attachment-notice { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center; }
+        .attachment-notice { background: linear-gradient(135deg, ${theme.accent}11 0%, ${theme.accent}22 100%); border: 1px solid ${theme.accent}44; border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center; }
         .attachment-notice .icon { font-size: 28px; margin-bottom: 6px; }
-        .attachment-notice h4 { color: #1e40af; margin: 0 0 4px 0; font-size: 14px; font-weight: 700; }
+        .attachment-notice h4 { color: ${theme.accent}; margin: 0 0 4px 0; font-size: 14px; font-weight: 700; }
         .attachment-notice p { color: #475569; font-size: 12px; margin: 0; line-height: 1.5; }
         .footer { background-color: #f8fafc; padding: 16px 28px; text-align: center; border-top: 1px solid #e2e8f0; }
         .footer p { margin: 0; font-size: 11px; color: #94a3b8; }
@@ -2725,6 +2266,9 @@ function buildEmailHTML(report) {
         .footer .confidential { font-size: 10px; color: #e2e8f0; margin-top: 2px; }
         strong { font-weight: 600; color: #0f172a; }
         em { font-style: italic; color: #475569; }
+        .section { page-break-inside: avoid; }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; }
         @media only screen and (max-width: 600px) {
             .email-wrapper { padding: 8px; }
             .header { padding: 24px 16px; }
@@ -2750,12 +2294,16 @@ function buildEmailHTML(report) {
 
             <div class="stats-bar">
                 <div class="stat-item">
-                    <div class="stat-value">${overallCoverage}%</div>
-                    <div class="stat-label">Overall Coverage</div>
+                    <div class="stat-value">${fullStats.pct % 1 === 0 ? fullStats.pct : fullStats.pct.toFixed(1)}%</div>
+                    <div class="stat-label">Coverage</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">${tacticsWithCoverage}</div>
-                    <div class="stat-label">Tactics Covered</div>
+                    <div class="stat-value">${fullStats.covered}</div>
+                    <div class="stat-label">With Queries</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${fullStats.total}</div>
+                    <div class="stat-label">Total Techniques</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-value">${monthNewTechs + monthNewSubs}</div>
@@ -2772,7 +2320,7 @@ function buildEmailHTML(report) {
 
                 ${tacticsGraphHtml}
 
-                ${buildEmailMonthlyActivity(report)}
+                ${buildEmailMonthlyActivity(report, theme)}
 
                 ${newQueriesHtml}
 
