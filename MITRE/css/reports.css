@@ -1,33 +1,52 @@
 :root {
-    --report-bg: #0f172a;
-    --report-card: #1e293b;
-    --report-border: #334155;
-    --report-text: #f1f5f9;
-    --report-text-muted: #94a3b8;
-    --report-accent: #3b82f6;
-    --report-accent-hover: #2563eb;
-    --report-success: #22c55e;
-    --report-warning: #eab308;
-    --report-danger: #ef4444;
+    --report-bg: #DAE0E6;
+    --report-card: #FFFFFF;
+    --report-border: #EDEFF1;
+    --report-text: #1A1A1B;
+    --report-text-muted: #7C7C7D;
+    --report-text-strong: #000000;
+    --report-accent: #FF4500;
+    --report-accent-hover: #FF5722;
+    --report-success: #46D160;
+    --report-warning: #FFB000;
+    --report-danger: #FF453A;
+    --report-bg-secondary: #F6F7F8;
+    --report-bg-tertiary: #F8F9FA;
+}
+
+[data-bs-theme="dark"] {
+    --report-bg: #030303;
+    --report-card: #1A1A1B;
+    --report-border: #343536;
+    --report-text: #D7DADC;
+    --report-text-muted: #818384;
+    --report-text-strong: #FFFFFF;
+    --report-accent: #FF4500;
+    --report-accent-hover: #FF5722;
+    --report-success: #5CDB6E;
+    --report-warning: #FFC107;
+    --report-danger: #FF5A50;
+    --report-bg-secondary: #141414;
+    --report-bg-tertiary: #272729;
 }
 
 .reports-container {
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1.5rem;
 }
 
 .reports-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2.5rem;
-    padding-bottom: 1.5rem;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
     border-bottom: 1px solid var(--report-border);
 }
 
 .reports-header h2 {
-    font-size: 1.75rem;
+    font-size: 1.35rem;
     font-weight: 700;
     margin: 0;
     color: var(--report-text);
@@ -35,102 +54,100 @@
 
 .reports-header p {
     color: var(--report-text-muted);
-    margin: 0.25rem 0 0;
-    font-size: 0.95rem;
+    margin: 0.2rem 0 0;
+    font-size: 0.85rem;
 }
 
 .reports-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .reports-actions .btn {
-    padding: 0.625rem 1.25rem;
+    padding: 0.5rem 1rem;
     font-weight: 600;
-    font-size: 0.875rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
+    font-size: 0.8rem;
+    border-radius: var(--radius-pill);
+    transition: all 0.15s ease;
 }
 
 .reports-stats {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
 .stat-card {
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.75rem;
-    padding: 1.25rem;
+    border-radius: var(--radius-md);
+    padding: 1rem;
     text-align: center;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .stat-card:hover {
-    border-color: var(--report-accent);
-    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .stat-card .stat-value {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    color: var(--report-text);
+    color: var(--report-accent);
     line-height: 1;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
 }
 
 .stat-card .stat-label {
-    font-size: 0.8rem;
+    font-size: 0.68rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: var(--report-text-muted);
 }
 
 .reports-list {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .report-card {
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.75rem;
-    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-md);
+    padding: 1rem 1.1rem;
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .report-card:hover {
-    border-color: var(--report-accent);
-    background: #253347;
-    transform: translateX(4px);
+    border-color: var(--on-surface-tertiary);
+    background: var(--report-bg-secondary);
 }
 
 .report-card .report-type-badge {
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.7rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     white-space: nowrap;
 }
 
 .report-type-badge.initial {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(255, 69, 0, 0.1);
+    color: var(--report-accent);
 }
 
 .report-type-badge.update {
-    background: rgba(34, 197, 94, 0.15);
-    color: #4ade80;
+    background: rgba(70, 209, 96, 0.1);
+    color: var(--report-success);
 }
 
 .report-card .report-info {
@@ -139,14 +156,14 @@
 }
 
 .report-card .report-title {
-    font-size: 1rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--report-text);
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.15rem;
 }
 
 .report-card .report-summary {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: var(--report-text-muted);
     margin: 0;
     white-space: nowrap;
@@ -157,16 +174,16 @@
 .report-card .report-meta {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
     flex-shrink: 0;
 }
 
 .report-card .report-changes {
-    padding: 0.25rem 0.625rem;
-    background: rgba(234, 179, 8, 0.15);
-    color: #fbbf24;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
+    padding: 0.18rem 0.5rem;
+    background: rgba(255, 176, 0, 0.1);
+    color: var(--report-warning);
+    border-radius: var(--radius-pill);
+    font-size: 0.68rem;
     font-weight: 600;
 }
 
@@ -175,31 +192,31 @@
     border: none;
     color: var(--report-text-muted);
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    transition: all 0.2s ease;
+    padding: 0.4rem;
+    border-radius: var(--radius-pill);
+    transition: all 0.15s ease;
 }
 
 .report-card .report-delete:hover {
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(255, 69, 58, 0.1);
     color: var(--report-danger);
 }
 
 .reports-empty {
     text-align: center;
-    padding: 4rem 2rem;
+    padding: 3.5rem 2rem;
     color: var(--report-text-muted);
 }
 
 .reports-empty i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+    font-size: 2.5rem;
+    margin-bottom: 0.85rem;
+    opacity: 0.35;
 }
 
 .reports-empty h5 {
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.45rem;
     color: var(--report-text);
 }
 
@@ -210,48 +227,48 @@
 
 .report-viewer-header {
     text-align: center;
-    padding: 2rem 0;
-    border-bottom: 2px solid var(--report-border);
-    margin-bottom: 2rem;
+    padding: 1.75rem 0;
+    border-bottom: 1px solid var(--report-border);
+    margin-bottom: 1.75rem;
 }
 
 .report-viewer-header .company-logo {
-    max-height: 60px;
-    max-width: 200px;
+    max-height: 50px;
+    max-width: 160px;
     object-fit: contain;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .report-viewer-header h2 {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    margin: 0 0 0.25rem;
+    margin: 0 0 0.15rem;
     color: var(--report-text);
 }
 
 .report-viewer-header .report-type {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     color: var(--report-accent);
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
 }
 
 .report-viewer-header .report-date {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: var(--report-text-muted);
 }
 
 .report-month-selector {
     display: flex;
     align-items: center;
-    padding: 0.75rem 1.5rem;
+    padding: 0.6rem 1rem;
     background: var(--report-bg-secondary);
     border-bottom: 1px solid var(--report-border);
 }
 
 .report-section {
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
     border-bottom: 1px solid var(--report-border);
 }
 
@@ -260,13 +277,13 @@
 }
 
 .report-section h4 {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--report-text);
-    margin: 0 0 1rem;
+    margin: 0 0 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
 }
 
 .report-section h4 i {
@@ -283,38 +300,38 @@
     width: 100%;
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.75rem;
     color: var(--report-text);
-    font-size: 0.9rem;
-    line-height: 1.6;
+    font-size: 0.82rem;
+    line-height: 1.55;
     resize: vertical;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.15s ease;
 }
 
 .report-section textarea:focus,
 .report-section input:focus {
     outline: none;
-    border-color: var(--report-accent);
+    border-color: var(--on-surface-tertiary);
 }
 
 .report-section input {
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-sm);
+    padding: 0.4rem 0.6rem;
     color: var(--report-text);
-    font-size: 0.9rem;
-    transition: border-color 0.2s ease;
+    font-size: 0.82rem;
+    transition: border-color 0.15s ease;
 }
 
 .detection-result-item,
 .reference-item {
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    border-radius: var(--radius-sm);
+    padding: 0.6rem;
+    margin-bottom: 0.5rem;
 }
 
 .report-table {
@@ -325,19 +342,19 @@
 
 .report-table th,
 .report-table td {
-    padding: 0.75rem 1rem;
+    padding: 0.6rem 0.75rem;
     text-align: left;
     border-bottom: 1px solid var(--report-border);
-    font-size: 0.85rem;
+    font-size: 0.78rem;
 }
 
 .report-table th {
-    background: var(--report-card);
+    background: var(--report-bg-secondary);
     font-weight: 600;
     color: var(--report-text);
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
 }
 
 .report-table td {
@@ -345,7 +362,7 @@
 }
 
 .report-table tr:hover td {
-    background: rgba(59, 130, 246, 0.05);
+    background: var(--report-bg-secondary);
 }
 
 .changes-list {
@@ -355,13 +372,13 @@
 }
 
 .changes-list li {
-    padding: 0.75rem 0;
+    padding: 0.55rem 0;
     border-bottom: 1px solid var(--report-border);
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.55rem;
     color: var(--report-text-muted);
-    font-size: 0.9rem;
+    font-size: 0.82rem;
 }
 
 .changes-list li:last-child {
@@ -369,7 +386,7 @@
 }
 
 .changes-list li i {
-    font-size: 1rem;
+    font-size: 0.85rem;
 }
 
 .changes-list li i.bi-plus-circle {
@@ -386,26 +403,26 @@
 
 .report-actions {
     display: flex;
-    gap: 0.75rem;
-    padding-top: 1.5rem;
+    gap: 0.5rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--report-border);
 }
 
 .report-actions .btn {
-    padding: 0.625rem 1.25rem;
+    padding: 0.5rem 1rem;
     font-weight: 600;
-    font-size: 0.875rem;
-    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    border-radius: var(--radius-pill);
 }
 
 .status-change-display {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin: 0.75rem 0;
-    padding: 0.75rem;
-    background: rgba(15, 23, 42, 0.5);
-    border-radius: 0.5rem;
+    gap: 0.55rem;
+    margin: 0.55rem 0;
+    padding: 0.55rem;
+    background: var(--report-bg-secondary);
+    border-radius: var(--radius-sm);
     border: 1px solid var(--report-border);
 }
 
@@ -413,63 +430,63 @@
 .status-after {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.35rem;
     flex: 1;
 }
 
 .status-swatch {
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-xs);
     border: 2px solid;
     flex-shrink: 0;
 }
 
 .status-label {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--report-text);
 }
 
 .status-arrow {
     color: var(--report-text-muted);
-    font-size: 1.25rem;
+    font-size: 1rem;
     flex-shrink: 0;
 }
 
 .methodology-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 .methodology-section h6 {
     font-weight: 600;
     color: var(--report-text);
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.55rem;
 }
 
 .methodology-option {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
+    gap: 0.55rem;
+    padding: 0.55rem;
+    margin-bottom: 0.35rem;
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-sm);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s ease;
 }
 
 .methodology-option:hover {
-    border-color: var(--report-accent);
+    border-color: var(--on-surface-tertiary);
 }
 
 .methodology-option input[type="checkbox"] {
-    margin-top: 0.25rem;
-    width: 1.1rem;
-    height: 1.1rem;
+    margin-top: 0.15rem;
+    width: 0.95rem;
+    height: 0.95rem;
     cursor: pointer;
 }
 
@@ -481,14 +498,14 @@
 .methodology-option label strong {
     display: block;
     color: var(--report-text);
-    font-size: 0.9rem;
-    margin-bottom: 0.125rem;
+    font-size: 0.82rem;
+    margin-bottom: 0.08rem;
 }
 
 .methodology-option label span {
     display: block;
     color: var(--report-text-muted);
-    font-size: 0.8rem;
+    font-size: 0.72rem;
 }
 
 .threat-hunt-form .form-label {
@@ -505,8 +522,7 @@
 
 .threat-hunt-form .form-control:focus,
 .threat-hunt-form .form-select:focus {
-    border-color: var(--report-accent);
-    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    border-color: var(--on-surface-tertiary);
 }
 
 .changelog-item.hunt {
@@ -514,7 +530,7 @@
 }
 
 .changelog-item.hunt .changelog-item-icon {
-    background: rgba(236, 72, 153, 0.15);
+    background: rgba(236, 72, 153, 0.1);
     color: #ec4899;
 }
 
@@ -523,62 +539,62 @@
 }
 
 .changelog-item.existing .changelog-item-icon {
-    background: rgba(100, 116, 139, 0.15);
+    background: rgba(100, 116, 139, 0.1);
     color: #64748b;
 }
 
 .tech-type-badge {
     display: inline-block;
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
-    font-size: 0.7rem;
+    padding: 0.08rem 0.4rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.62rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-left: 0.5rem;
+    letter-spacing: 0.03em;
+    margin-left: 0.35rem;
     vertical-align: middle;
 }
 
 .tech-type-badge.main {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(255, 69, 0, 0.1);
+    color: var(--report-accent);
 }
 
 .tech-type-badge.sub {
-    background: rgba(139, 92, 246, 0.15);
-    color: #a78bfa;
+    background: rgba(155, 89, 182, 0.1);
+    color: var(--accent-purple);
 }
 
 .status-change-minimal {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin: 0.5rem 0;
+    gap: 0.35rem;
+    margin: 0.35rem 0;
 }
 
 .status-swatch-small {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-xs);
     border: 2px solid;
     flex-shrink: 0;
 }
 
 .status-label-small {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 500;
     color: var(--report-text);
 }
 
 .status-arrow-small {
     color: var(--report-text-muted);
-    font-size: 0.9rem;
-    margin: 0 0.25rem;
+    font-size: 0.75rem;
+    margin: 0 0.15rem;
 }
 
 .changelog-item.color-change {
     border-left: 3px solid var(--report-accent);
-    padding: 0.75rem 1rem;
+    padding: 0.55rem 0.75rem;
 }
 
 .changelog-item.color-change .changelog-item-content {
@@ -592,13 +608,13 @@
 }
 
 .report-section .changes-list li {
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
+    padding: 0.55rem;
+    margin-bottom: 0.35rem;
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-sm);
     color: var(--report-text);
-    font-size: 0.9rem;
+    font-size: 0.82rem;
 }
 
 .report-section .changes-list li strong {
@@ -606,59 +622,59 @@
 }
 
 .report-section h5 {
-    font-size: 1rem;
+    font-size: 0.88rem;
     font-weight: 600;
     color: var(--report-text);
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
+    margin-top: 1rem;
+    margin-bottom: 0.55rem;
 }
 
 .leadership-section {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
+    background: var(--report-bg-secondary);
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-md);
+    padding: 1.1rem;
 }
 
 .leadership-content p {
-    font-size: 1.05rem;
-    line-height: 1.7;
+    font-size: 0.92rem;
+    line-height: 1.65;
     color: var(--report-text);
     margin: 0;
 }
 
 .hunts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 0.55rem;
 }
 
 .hunt-card {
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.75rem;
+    transition: all 0.15s ease;
 }
 
 .hunt-card:hover {
-    border-color: var(--report-accent);
-    transform: translateY(-2px);
+    border-color: var(--on-surface-tertiary);
 }
 
 .hunt-card-name {
     font-weight: 600;
     color: var(--report-text);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 0.82rem;
 }
 
 .hunt-card-meta {
     display: flex;
-    gap: 0.5rem;
-    font-size: 0.8rem;
+    gap: 0.35rem;
+    font-size: 0.68rem;
 }
 
 .hunt-card-tech {
@@ -668,9 +684,9 @@
 
 .hunt-card-lang {
     color: var(--report-text-muted);
-    background: rgba(148, 163, 184, 0.1);
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
+    background: var(--report-bg-secondary);
+    padding: 0.08rem 0.3rem;
+    border-radius: var(--radius-xs);
 }
 
 .query-list {
@@ -680,18 +696,18 @@
 }
 
 .query-list li {
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.375rem;
+    padding: 0.35rem 0.55rem;
+    margin-bottom: 0.25rem;
     background: var(--report-bg-secondary);
-    border-radius: 0.375rem;
-    border-left: 3px solid var(--primary);
-    font-size: 0.85rem;
+    border-radius: var(--radius-xs);
+    border-left: 3px solid var(--report-accent);
+    font-size: 0.78rem;
     color: var(--report-text);
 }
 
 .query-list li strong {
     color: var(--report-text-strong);
-    font-size: 0.9rem;
+    font-size: 0.82rem;
 }
 
 .query-list li .text-muted {
@@ -699,23 +715,19 @@
 }
 
 .query-list li .small {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
 }
 
 .query-list li:last-child {
     margin-bottom: 0;
 }
 
-.query-list li strong {
-    color: var(--report-text-strong);
-}
-
 .techniques-at-risk .risk-item {
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
+    padding: 0.55rem;
+    margin-bottom: 0.35rem;
     background: var(--report-bg-secondary);
-    border-radius: 0.5rem;
-    border-left: 3px solid #ef4444;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--report-danger);
 }
 
 .techniques-at-risk .risk-item:last-child {
@@ -726,33 +738,33 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
 }
 
 .techniques-at-risk .risk-count {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     color: var(--report-text-muted);
-    background: rgba(239, 68, 68, 0.1);
-    padding: 0.125rem 0.5rem;
-    border-radius: 0.25rem;
+    background: rgba(255, 69, 58, 0.1);
+    padding: 0.08rem 0.35rem;
+    border-radius: var(--radius-pill);
 }
 
 .techniques-at-risk .risk-tech-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.375rem;
+    gap: 0.25rem;
 }
 
 .techniques-at-risk .risk-tech-badge {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.5rem;
-    background: var(--report-bg-tertiary, #f1f5f9);
-    border-radius: 0.25rem;
+    font-size: 0.68rem;
+    padding: 0.15rem 0.35rem;
+    background: var(--report-bg-tertiary);
+    border-radius: var(--radius-xs);
     color: var(--report-text);
 }
 
 .techniques-at-risk .risk-more {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     color: var(--report-text-muted);
     font-style: italic;
 }
@@ -760,10 +772,10 @@
 .coverage-trend .trend-chart {
     display: flex;
     align-items: flex-end;
-    gap: 0.5rem;
-    padding: 1rem 0.5rem 0;
-    min-height: 160px;
-    border-bottom: 2px solid var(--report-border);
+    gap: 0.35rem;
+    padding: 0.75rem 0.35rem 0;
+    min-height: 120px;
+    border-bottom: 1px solid var(--report-border);
 }
 
 .coverage-trend .trend-bar-container {
@@ -771,61 +783,61 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    min-width: 60px;
+    min-width: 45px;
 }
 
 .coverage-trend .trend-bar {
     width: 100%;
-    max-width: 80px;
-    min-height: 20px;
-    background: linear-gradient(180deg, #60a5fa, #3b82f6);
-    border-radius: 4px 4px 0 0;
+    max-width: 60px;
+    min-height: 16px;
+    background: var(--report-accent);
+    border-radius: var(--radius-xs) var(--radius-xs) 0 0;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding-top: 4px;
+    padding-top: 2px;
     transition: height 0.3s ease;
 }
 
 .coverage-trend .trend-value {
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 600;
     color: white;
 }
 
 .coverage-trend .trend-label {
-    font-size: 0.65rem;
+    font-size: 0.58rem;
     color: var(--report-text-muted);
-    margin-top: 0.375rem;
+    margin-top: 0.25rem;
     text-align: center;
     white-space: nowrap;
 }
 
 .coverage-trend .trend-change {
-    font-size: 0.65rem;
+    font-size: 0.58rem;
     font-weight: 600;
-    margin-top: 0.125rem;
+    margin-top: 0.08rem;
 }
 
-.coverage-trend .trend-up { color: #22c55e; }
-.coverage-trend .trend-down { color: #ef4444; }
-.coverage-trend .trend-flat { color: #64748b; }
+.coverage-trend .trend-up { color: var(--report-success); }
+.coverage-trend .trend-down { color: var(--report-danger); }
+.coverage-trend .trend-flat { color: var(--report-text-muted); }
 
 .tactics-graph {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.55rem;
 }
 
 .tactic-bar-item {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
 }
 
 .tactic-bar-label {
-    width: 150px;
-    font-size: 0.85rem;
+    width: 130px;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--report-text);
     white-space: nowrap;
@@ -835,24 +847,24 @@
 
 .tactic-bar-track {
     flex: 1;
-    height: 24px;
-    background: var(--report-card);
-    border-radius: 0.375rem;
+    height: 18px;
+    background: var(--report-bg-secondary);
+    border-radius: var(--radius-xs);
     overflow: hidden;
     border: 1px solid var(--report-border);
 }
 
 .tactic-bar-fill {
     height: 100%;
-    border-radius: 0.375rem;
+    border-radius: var(--radius-xs);
     transition: width 0.5s ease;
     min-width: 2%;
 }
 
 .tactic-bar-value {
-    width: 50px;
+    width: 40px;
     text-align: right;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--report-text);
 }
@@ -872,11 +884,11 @@
 .month-selector-bar {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
+    gap: 0.55rem;
+    padding: 0.75rem;
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.75rem;
+    border-radius: var(--radius-md);
 }
 
 .month-selector-bar label {
@@ -891,47 +903,46 @@
 }
 
 .month-selector-bar select:focus {
-    border-color: var(--report-accent);
-    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    border-color: var(--on-surface-tertiary);
 }
 
 .changelog-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--report-border);
 }
 
 .changelog-header h4 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--report-text);
 }
 
 .changelog-count {
-    padding: 0.375rem 0.75rem;
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
-    border-radius: 0.375rem;
-    font-size: 0.8rem;
+    padding: 0.2rem 0.55rem;
+    background: rgba(255, 69, 0, 0.1);
+    color: var(--report-accent);
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
     font-weight: 600;
 }
 
 .changelog-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.25rem;
 }
 
 .changelog-section h5 {
-    font-size: 1rem;
+    font-size: 0.88rem;
     font-weight: 600;
     color: var(--report-text);
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.35rem;
 }
 
 .changelog-section h5 i {
@@ -941,23 +952,22 @@
 .changelog-items {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.55rem;
 }
 
 .changelog-item {
     display: flex;
     align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
+    gap: 0.75rem;
+    padding: 0.75rem;
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.75rem;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-md);
+    transition: all 0.15s ease;
 }
 
 .changelog-item:hover {
-    border-color: var(--report-accent);
-    transform: translateX(4px);
+    border-color: var(--on-surface-tertiary);
 }
 
 .changelog-item.new {
@@ -973,28 +983,28 @@
 }
 
 .changelog-item-icon {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0.5rem;
-    font-size: 1.25rem;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
     flex-shrink: 0;
 }
 
 .changelog-item.new .changelog-item-icon {
-    background: rgba(34, 197, 94, 0.15);
+    background: rgba(70, 209, 96, 0.1);
     color: var(--report-success);
 }
 
 .changelog-item.update .changelog-item-icon {
-    background: rgba(234, 179, 8, 0.15);
+    background: rgba(255, 176, 0, 0.1);
     color: var(--report-warning);
 }
 
 .changelog-item.color-change .changelog-item-icon {
-    background: rgba(59, 130, 246, 0.15);
+    background: rgba(255, 69, 0, 0.1);
     color: var(--report-accent);
 }
 
@@ -1006,79 +1016,77 @@
 .changelog-item-title {
     font-weight: 600;
     color: var(--report-text);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
 }
 
 .changelog-item-detail {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: var(--report-text-muted);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.35rem;
 }
 
 .changelog-item-meta {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     color: var(--report-accent);
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.15rem;
 }
 
 .changelog-queries {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
 }
 
 .query-chip {
-    padding: 0.25rem 0.5rem;
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    color: #60a5fa;
+    padding: 0.15rem 0.35rem;
+    background: rgba(255, 69, 0, 0.08);
+    border-radius: var(--radius-xs);
+    font-size: 0.68rem;
+    color: var(--report-accent);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    max-width: 160px;
 }
 
 .query-chip.more {
-    background: rgba(148, 163, 184, 0.1);
-    border-color: rgba(148, 163, 184, 0.2);
+    background: var(--report-bg-secondary);
     color: var(--report-text-muted);
 }
 
 .color-swatch-small {
     display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-xs);
     vertical-align: middle;
-    margin: 0 4px;
+    margin: 0 2px;
     border: 1px solid var(--report-border);
 }
 
 .changelog-empty {
     text-align: center;
-    padding: 3rem 2rem;
+    padding: 2.5rem 2rem;
     color: var(--report-text-muted);
 }
 
 .changelog-empty i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
+    font-size: 2.5rem;
+    margin-bottom: 0.85rem;
+    opacity: 0.35;
 }
 
 .changelog-empty h5 {
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.45rem;
     color: var(--report-text);
 }
 
 .reports-section-header {
-    padding-top: 1.5rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--report-border);
 }
 
@@ -1090,31 +1098,31 @@
 
 /* Monthly Activity Section */
 .monthly-activity-section {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    border-radius: 0.75rem;
-    padding: 1.5rem;
+    background: var(--report-bg-secondary);
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
 }
 
 .activity-subsection {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--report-border);
 }
 
 .activity-subsection:first-of-type {
-    margin-top: 1rem;
+    margin-top: 0.75rem;
     padding-top: 0;
     border-top: none;
 }
 
 .activity-title {
-    font-size: 1rem;
+    font-size: 0.88rem;
     font-weight: 600;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.35rem;
 }
 
 .activity-title.status-title {
@@ -1130,34 +1138,33 @@
 }
 
 .activity-title i {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
 }
 
 .activity-cards {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.55rem;
 }
 
 .activity-card {
     background: var(--report-card);
     border: 1px solid var(--report-border);
-    border-radius: 0.5rem;
-    padding: 0.75rem 1rem;
-    transition: all 0.2s ease;
+    border-radius: var(--radius-sm);
+    padding: 0.55rem 0.75rem;
+    transition: all 0.15s ease;
 }
 
 .activity-card:hover {
-    border-color: var(--report-accent);
-    transform: translateX(2px);
+    border-color: var(--on-surface-tertiary);
 }
 
 .activity-card-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    gap: 0.35rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.82rem;
     color: var(--report-text);
 }
 
@@ -1167,77 +1174,77 @@
 }
 
 .activity-card-body {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: var(--report-text-muted);
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
 }
 
 .activity-card-body i {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
 }
 
 .activity-card-footer {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     color: var(--report-text-muted);
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
+    margin-top: 0.35rem;
+    padding-top: 0.35rem;
     border-top: 1px solid var(--report-border);
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
 }
 
 .activity-card-footer i {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
 }
 
 .activity-type-badge {
     display: inline-block;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
-    font-size: 0.65rem;
+    padding: 0.08rem 0.3rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.58rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.03em;
     margin-left: auto;
 }
 
 .activity-type-badge.main {
-    background: rgba(59, 130, 246, 0.15);
-    color: #60a5fa;
+    background: rgba(255, 69, 0, 0.1);
+    color: var(--report-accent);
 }
 
 .activity-type-badge.sub {
-    background: rgba(139, 92, 246, 0.15);
-    color: #a78bfa;
+    background: rgba(155, 89, 182, 0.1);
+    color: var(--accent-purple);
 }
 
 .activity-status-flow {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin: 0.5rem 0;
+    gap: 0.55rem;
+    margin: 0.35rem 0;
 }
 
 .status-pill {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.25rem 0.625rem;
-    border-radius: 0.375rem;
+    gap: 0.25rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: var(--radius-pill);
     border: 1px solid;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 500;
     color: var(--report-text);
 }
 
 .status-pill-label {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
 }
 
 .status-arrow {
     color: var(--report-text-muted);
-    font-size: 1rem;
+    font-size: 0.85rem;
 }

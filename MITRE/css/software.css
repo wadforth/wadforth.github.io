@@ -29,7 +29,8 @@
     font-size: 0.65rem;
     color: var(--on-surface-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 /* ============================================
@@ -134,12 +135,12 @@
 
 .software-id-badge {
     font-size: 0.7rem;
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     background: var(--primary-light);
     padding: 0.15em 0.45em;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
 }
 
@@ -149,7 +150,7 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     padding: 0.2em 0.5em;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -181,7 +182,7 @@
     color: var(--primary);
     background: var(--primary-lighter);
     padding: 0.2em 0.5em;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
 }
 
@@ -245,11 +246,11 @@
 
 .software-list-id {
     font-size: 0.7rem;
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     color: var(--primary);
     background: var(--primary-light);
     padding: 0.1em 0.35em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
     font-weight: 600;
     flex-shrink: 0;
 }
@@ -352,8 +353,9 @@
     font-size: 0.6rem;
     color: var(--on-surface-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 #software-detail-modal .software-meta-value {
@@ -533,13 +535,13 @@
 }
 
 .software-tech-chip-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
     font-weight: 600;
     color: var(--primary);
     background: var(--primary-lighter);
     padding: 0.1em 0.35em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
 }
 
 .software-tech-chip-name {
@@ -604,12 +606,13 @@
     font-size: 0.7rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: var(--primary);
     background: var(--primary-lighter);
     padding: 0.4rem 0.65rem;
     border-radius: var(--radius-sm);
     margin-bottom: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .software-tactic-techs {
@@ -652,13 +655,13 @@
 }
 
 .software-tech-item-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     font-size: 0.68rem;
     background: var(--primary-lighter);
     padding: 0.1em 0.35em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
 }
 
 .software-tech-item-name {
@@ -701,12 +704,12 @@
 
 .software-group-id {
     font-size: 0.7rem;
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     background: var(--primary-light);
     padding: 0.15em 0.45em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
 }
 
 .software-group-name {
@@ -747,13 +750,13 @@
 }
 
 .software-group-chip-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
     font-weight: 600;
     color: var(--primary);
     background: var(--primary-lighter);
     padding: 0.1em 0.35em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
 }
 
 .software-group-chip-name {
@@ -794,12 +797,13 @@
     padding: 0.5rem 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: var(--primary);
     background: var(--primary-lighter);
     border-bottom: 2px solid var(--border);
     text-align: center;
     font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .software-heatmap-row {
@@ -821,7 +825,7 @@
 }
 
 .software-heatmap-tech-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     font-size: 0.7rem;
@@ -848,7 +852,7 @@
 }
 
 .software-heatmap-cell-active {
-    background: rgba(99, 102, 241, 0.1);
+    background: rgba(0, 229, 255, 0.1);
     color: var(--on-surface-tertiary);
 }
 

@@ -796,10 +796,10 @@ function viewReport(reportId) {
             ${monthSelectorHtml}
             <div class="report-viewer-header">
                 ${logoHtml}
-                <h2>${report.companyName || 'MITRE ATT&CK Coverage Report'}</h2>
+                <h2>${escapeHtml(report.companyName) || 'MITRE ATT&CK Coverage Report'}</h2>
                 <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
-                <div class="report-date">${report.reportMonth || report.generatedDate}</div>
-                ${report.author ? `<div class="report-date">Prepared by: ${report.author}</div>` : ''}
+                <div class="report-date">${escapeHtml(report.reportMonth) || escapeHtml(report.generatedDate)}</div>
+                ${report.author ? `<div class="report-date">Prepared by: ${escapeHtml(report.author)}</div>` : ''}
             </div>
 
             <div class="report-section">
@@ -1095,15 +1095,45 @@ function buildMethodology(report) {
     return html;
 }
 
+function getMonthStats(month) {
+    if (!month || !state.currentLayer?.techniques) {
+        return { mainTechs: 0, subTechs: 0, queries: 0, techIds: new Set() };
+    }
+    
+    const mainTechs = new Set();
+    const subTechs = new Set();
+    const uniqueQueryIds = new Set();
+    
+    state.currentLayer.techniques.forEach(ann => {
+        if (!ann.queries || ann.queries.length === 0) return;
+        
+        ann.queries.forEach(q => {
+            if (q.monthAdded === month) {
+                uniqueQueryIds.add(q.id);
+                if (isSubTechnique(ann.techniqueID)) {
+                    subTechs.add(ann.techniqueID);
+                } else {
+                    mainTechs.add(ann.techniqueID);
+                }
+            }
+        });
+    });
+    
+    return {
+        mainTechs: mainTechs.size,
+        subTechs: subTechs.size,
+        queries: uniqueQueryIds.size,
+        techIds: new Set([...mainTechs, ...subTechs])
+    };
+}
+
 function generateLeadershipOverview(report) {
     const stats = report.fullStats || getFullCoverageStats();
     const coveragePct = stats.pct % 1 === 0 ? stats.pct : stats.pct.toFixed(1);
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
-    const byMonth = getTechniquesByMonth();
-    const monthTechniques = byMonth[month] || [];
-    const monthQueries = monthTechniques.reduce((sum, ann) => sum + (ann.queries?.length || 0), 0);
+    const monthStats = getMonthStats(month);
     const periodLabel = report.reportMonth || (month ? getMonthLabel(month) : 'this period');
-    return `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework for ${periodLabel}. Our security team has implemented ${monthQueries} detection queries this period across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% overall coverage. This means we can detect and respond to ${coveragePct}% of known attacker tactics, techniques, and procedures. The remaining gaps represent areas where we may be vulnerable to undetected adversary activity.`;
+    return `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework for ${periodLabel}. Our security team has implemented ${monthStats.queries} detection queries this period across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% overall coverage. These queries represent our active detection logging efforts across the framework. Coverage percentages reflect techniques with logged queries, though individual techniques may have multiple attack vectors not yet covered. The remaining gaps highlight areas for future detection development.`;
 }
 
 function buildNewQueriesSection(report) {
@@ -1437,7 +1467,19 @@ function buildLanguageTable(languages, report) {
 function buildCoverageChanges(report) {
     const sortedReports = [...(state._cachedReports || [])].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
     const reportIdx = sortedReports.findIndex(r => r.id === report.id);
-    const lastReport = reportIdx >= 0 && reportIdx < sortedReports.length - 1 ? sortedReports[reportIdx + 1] : null;
+    
+    // Find the most recent report from a DIFFERENT month
+    const currentMonthKey = report.reportMonth || report.generatedAt?.slice(0, 7);
+    let lastReport = null;
+    for (let i = reportIdx + 1; i < sortedReports.length; i++) {
+        const candidate = sortedReports[i];
+        const candidateMonthKey = candidate.reportMonth || candidate.generatedAt?.slice(0, 7);
+        if (candidateMonthKey !== currentMonthKey) {
+            lastReport = candidate;
+            break;
+        }
+    }
+    
     if (!lastReport || !lastReport.coverageByTactic || lastReport.coverageByTactic.length === 0) return '<p class="text-muted">No previous update report to compare against.</p>';
     
     const currentTactics = getCoverageByTactic();
@@ -1664,7 +1706,10 @@ function generateDynamicMonthlyFocus(report) {
     
     const newTechCount = techniques.filter(t => !isSubTechnique(t.techniqueID)).length;
     const newSubCount = techniques.filter(t => isSubTechnique(t.techniqueID)).length;
-    const totalQueries = techniques.reduce((sum, ann) => sum + (ann.queries?.length || 0), 0);
+    const totalQueries = techniques.reduce((sum, ann) => {
+        const qCount = ann.queries?.filter(q => q.monthAdded === month).length || 0;
+        return sum + qCount;
+    }, 0);
     
     let focus = `This month's threat hunting activities focused on ${topTactics.length > 0 ? topTactics.join(', ') + ' tactics' : 'multiple tactics'}. `;
     focus += `Added ${newTechCount} new technique${newTechCount !== 1 ? 's' : ''} and ${newSubCount} sub-technique${newSubCount !== 1 ? 's' : ''} with ${totalQueries} detection queries. `;
@@ -1737,18 +1782,18 @@ function generateDynamicGapAnalysis(report) {
 
 function generateDynamicExecutiveSummary(report) {
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
-    const byMonth = getTechniquesByMonth();
-    const techniques = byMonth[month] || [];
+    const stats = getMonthStats(month);
     
+    const fullStats = report.fullStats || getFullCoverageStats();
     const tactics = report.coverageByTactic || getCoverageByTactic();
-    const overallCoverage = tactics.length > 0 ? Math.round(tactics.reduce((sum, t) => sum + t.coverage, 0) / tactics.length) : 0;
-    
-    const newTechCount = techniques.filter(t => !isSubTechnique(t.techniqueID)).length;
-    const newSubCount = techniques.filter(t => isSubTechnique(t.techniqueID)).length;
-    const totalQueries = techniques.reduce((sum, ann) => sum + (ann.queries?.length || 0), 0);
+    const overallCoverage = fullStats.pct % 1 === 0 ? fullStats.pct : fullStats.pct.toFixed(1);
     
     const tacticCounts = {};
-    techniques.forEach(ann => {
+    state.currentLayer?.techniques.forEach(ann => {
+        if (!ann.queries) return;
+        const hasMonthQuery = ann.queries.some(q => q.monthAdded === month);
+        if (!hasMonthQuery) return;
+        
         const tacs = getTechniqueTactics(ann.techniqueID);
         tacs.forEach(tactic => {
             tacticCounts[tactic] = (tacticCounts[tactic] || 0) + 1;
@@ -1762,11 +1807,11 @@ function generateDynamicExecutiveSummary(report) {
     
     let summary = `This ${report.type === 'initial' ? 'initial assessment' : 'monthly update'} report covers threat hunting activities for ${report.reportMonth || month}. `;
     
-    summary += `Overall detection coverage stands at ${overallCoverage}% across ${tactics.length} tactics. `;
+    summary += `Overall detection coverage stands at ${overallCoverage}% across ${fullStats.logged} of ${fullStats.total} techniques. `;
     
-    if (newTechCount > 0 || newSubCount > 0) {
-        summary += `During this period, ${newTechCount} new technique${newTechCount !== 1 ? 's' : ''} and ${newSubCount} sub-technique${newSubCount !== 1 ? 's' : ''} were added to the detection portfolio, `;
-        summary += `resulting in ${totalQueries} active detection queries. `;
+    if (stats.mainTechs > 0 || stats.subTechs > 0) {
+        summary += `During this period, ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} were added to the detection portfolio, `;
+        summary += `resulting in ${stats.queries} active detection queries. `;
     }
     
     if (topTactics.length > 0) {
@@ -2163,7 +2208,16 @@ function buildEmailHTML(report) {
     } else {
         const sortedReports = [...(state._cachedReports || [])].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
         const reportIdx = sortedReports.findIndex(r => r.id === report.id);
-        const lastReport = reportIdx >= 0 && reportIdx < sortedReports.length - 1 ? sortedReports[reportIdx + 1] : null;
+        const currentMonthKey = report.reportMonth || report.generatedAt?.slice(0, 7);
+        let lastReport = null;
+        for (let i = reportIdx + 1; i < sortedReports.length; i++) {
+            const candidate = sortedReports[i];
+            const candidateMonthKey = candidate.reportMonth || candidate.generatedAt?.slice(0, 7);
+            if (candidateMonthKey !== currentMonthKey) {
+                lastReport = candidate;
+                break;
+            }
+        }
         if (lastReport && lastReport.coverageByTactic && lastReport.coverageByTactic.length > 0 && lastReport.id !== report.id) {
             const lastTactics = lastReport.coverageByTactic;
             const lastMonthLabel = lastReport.reportMonth || lastReport.generatedDate || 'Previous';
@@ -2285,11 +2339,11 @@ function buildEmailHTML(report) {
             <div class="header">
                 ${report.companyLogo ? `<img src="${report.companyLogo}" class="logo" alt="Logo">` : ''}
                 <h1>THREAT HUNTING MITRE MONTHLY UPDATE</h1>
-                <p class="subtitle">${report.companyName || 'MITRE ATT&CK Coverage Report'}</p>
+                <p class="subtitle">${escapeHtml(report.companyName) || 'MITRE ATT&CK Coverage Report'}</p>
                 <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
-                <p class="report-date">${report.reportMonth || report.generatedDate}</p>
-                ${report.attckVersion ? `<p class="attck-version">ATT&CK Framework v${report.attckVersion}</p>` : ''}
-                ${report.author ? `<p class="author">Prepared by: ${report.author}</p>` : ''}
+                <p class="report-date">${escapeHtml(report.reportMonth) || escapeHtml(report.generatedDate)}</p>
+                ${report.attckVersion ? `<p class="attck-version">ATT&CK Framework v${escapeHtml(report.attckVersion)}</p>` : ''}
+                ${report.author ? `<p class="author">Prepared by: ${escapeHtml(report.author)}</p>` : ''}
             </div>
 
             <div class="stats-bar">

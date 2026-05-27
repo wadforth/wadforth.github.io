@@ -107,11 +107,6 @@ function renderMatrix() {
                 showTechniqueModal(el.dataset.id);
             }
         });
-        el.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            showContextMenu(e, el.dataset.id);
-        });
     });
 
     container.addEventListener('contextmenu', (e) => {

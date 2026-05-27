@@ -19,12 +19,12 @@
     padding: 0.25rem 0.5rem;
     background: var(--surface-elevated);
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-pill);
     font-size: 0.7rem;
 }
 
 .version-warning-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
 }

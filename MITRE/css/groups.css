@@ -29,7 +29,8 @@
     font-size: 0.65rem;
     color: var(--on-surface-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 /* ============================================
@@ -134,23 +135,13 @@
 
 .group-id-badge {
     font-size: 0.7rem;
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     background: var(--primary-light);
     padding: 0.15em 0.45em;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
-}
-
-.group-card-title {
-    font-weight: 600;
-    font-size: 0.95rem;
-    margin: 0;
-    color: var(--on-surface);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .group-tech-badge {
@@ -159,7 +150,7 @@
     color: var(--primary);
     background: var(--primary-lighter);
     padding: 0.2em 0.5em;
-    border-radius: 12px;
+    border-radius: var(--radius-pill);
     flex-shrink: 0;
 }
 
@@ -176,7 +167,7 @@
     background: var(--surface-subtle);
     border: 1px solid var(--border-subtle);
     padding: 0.1em 0.4em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
     font-style: italic;
 }
 
@@ -248,11 +239,11 @@
 
 .group-list-id {
     font-size: 0.7rem;
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     color: var(--primary);
     background: var(--primary-light);
     padding: 0.1em 0.35em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
     font-weight: 600;
     flex-shrink: 0;
 }
@@ -443,8 +434,9 @@
     font-size: 0.6rem;
     color: var(--on-surface-tertiary);
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.04em;
     font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .group-meta-value {
@@ -537,7 +529,7 @@
 .group-tag {
     font-size: 0.7rem;
     padding: 0.25em 0.65em;
-    border-radius: 4px;
+    border-radius: var(--radius-pill);
     background: var(--surface-subtle);
     border: 1px solid var(--border-subtle);
     color: var(--on-surface-secondary);
@@ -549,8 +541,8 @@
 }
 
 .group-tag-motivation {
-    background: rgba(99, 102, 241, 0.1);
-    border-color: rgba(99, 102, 241, 0.2);
+    background: rgba(0, 229, 255, 0.1);
+    border-color: rgba(0, 229, 255, 0.2);
     color: var(--primary);
 }
 
@@ -594,183 +586,33 @@
 }
 
 .group-tech-chip-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
     font-weight: 600;
     color: var(--primary);
     background: var(--primary-lighter);
     padding: 0.1em 0.35em;
-    border-radius: 3px;
-}
-
-.group-tech-chip-name {
-    font-size: 0.72rem;
-    color: var(--on-surface-secondary);
-}
-
-.group-tech-more {
-    font-size: 0.7rem;
-    color: var(--on-surface-tertiary);
-    display: flex;
-    align-items: center;
-    padding: 0.4rem 0.5rem;
-}
-
-/* ============================================
-   Techniques Tab
-   ============================================ */
-
-.group-tech-filters {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.group-tech-filters .form-control {
-    font-size: 0.78rem;
-    background: var(--surface-elevated);
-    border-color: var(--border);
-    color: var(--on-surface);
-    flex: 1;
-    min-width: 180px;
-}
-
-.group-tech-filters .form-control:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
-}
-
-.group-tech-filter-btns {
-    display: flex;
-    gap: 0.25rem;
-}
-
-.group-tech-filter-btns .btn {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.5rem;
-}
-
-.group-tech-filter-btns .btn.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.group-tactic-section {
-    margin-bottom: 1rem;
-}
-
-.group-tactic-header {
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--primary);
-    background: var(--primary-lighter);
-    padding: 0.4rem 0.65rem;
-    border-radius: var(--radius-sm);
-    margin-bottom: 0.5rem;
-}
-
-.group-tactic-techs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-}
-
-.group-tech-item {
-    cursor: pointer;
-    background: var(--surface-subtle);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.35rem 0.6rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    transition: var(--transition);
-}
-
-.group-tech-item:hover {
-    border-color: var(--primary);
-    background: var(--primary-light);
-    transform: translateY(-1px);
-}
-
-.group-tech-item-covered {
-    border-color: rgba(25, 135, 84, 0.4);
-    background: rgba(25, 135, 84, 0.08);
-}
-
-.group-tech-item-covered:hover {
-    border-color: #198754;
-    background: rgba(25, 135, 84, 0.15);
-}
-
-.group-tech-query-icon {
-    color: #198754;
-    font-size: 0.7rem;
+    border-radius: var(--radius-pill);
 }
 
 .group-tech-item-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     font-size: 0.68rem;
     background: var(--primary-lighter);
     padding: 0.1em 0.35em;
-    border-radius: 3px;
-}
-
-.group-tech-item-name {
-    color: var(--on-surface-secondary);
-    font-size: 0.72rem;
-}
-
-/* ============================================
-   Software Tab
-   ============================================ */
-
-.group-software-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.group-sw-item {
-    background: var(--surface-subtle);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 0.75rem;
-}
-
-.group-sw-clickable {
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.group-sw-clickable:hover {
-    border-color: var(--primary);
-    background: var(--primary-light);
-    transform: translateY(-1px);
-}
-
-.group-sw-item-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.35rem;
-    flex-wrap: wrap;
+    border-radius: var(--radius-pill);
 }
 
 .group-sw-id {
     font-size: 0.7rem;
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     background: var(--primary-light);
     padding: 0.15em 0.45em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
 }
 
 .group-sw-type {
@@ -779,7 +621,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0.15em 0.5em;
-    border-radius: 3px;
+    border-radius: var(--radius-pill);
 }
 
 .group-sw-malware {
@@ -830,12 +672,13 @@
     padding: 0.5rem 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: var(--primary);
     background: var(--primary-lighter);
     border-bottom: 2px solid var(--border);
     text-align: center;
     font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .group-heatmap-row {
@@ -857,7 +700,7 @@
 }
 
 .group-heatmap-tech-id {
-    font-family: var(--font-mono);
+    font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
     font-size: 0.7rem;
@@ -884,14 +727,14 @@
 }
 
 .group-heatmap-cell-active {
-    background: rgba(99, 102, 241, 0.15);
+    background: rgba(0, 229, 255, 0.15);
     color: var(--primary);
     cursor: pointer;
     transition: var(--transition);
 }
 
 .group-heatmap-cell-active:hover {
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(0, 229, 255, 0.3);
     outline: 2px solid var(--primary);
     outline-offset: -2px;
     z-index: 1;

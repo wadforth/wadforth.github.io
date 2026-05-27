@@ -1,47 +1,64 @@
 /* ============================================
-   CSS Variables - Light Theme
+   CSS Variables - Modern Clean Theme
    ============================================ */
 :root {
-    --surface: #f8fafc;
-    --surface-elevated: #ffffff;
-    --surface-variant: #f1f5f9;
-    --surface-subtle: #f8fafc;
-    --on-surface: #0f172a;
-    --on-surface-secondary: #475569;
-    --on-surface-tertiary: #94a3b8;
-    --border: #e2e8f0;
-    --border-subtle: #f1f5f9;
-    --primary: #6366f1;
-    --primary-light: rgba(99, 102, 241, 0.1);
-    --primary-lighter: rgba(99, 102, 241, 0.05);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
-    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.06);
+    --surface: #DAE0E6;
+    --surface-elevated: #FFFFFF;
+    --surface-variant: #F6F7F8;
+    --surface-subtle: #F8F9FA;
+    --on-surface: #1A1A1B;
+    --on-surface-secondary: #7C7C7D;
+    --on-surface-tertiary: #A6A6A7;
+    --border: #EDEFF1;
+    --border-subtle: #F0F0F0;
+    --primary: #FF4500;
+    --primary-hover: #FF5722;
+    --primary-light: rgba(255, 69, 0, 0.08);
+    --primary-lighter: rgba(255, 69, 0, 0.04);
+    --primary-gradient: linear-gradient(135deg, #FF4500 0%, #FF5722 100%);
+    --accent-blue: #4A90E2;
+    --accent-green: #46D160;
+    --accent-amber: #FFB000;
+    --accent-red: #FF453A;
+    --accent-purple: #9B59B6;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+    --shadow-xl: 0 8px 32px rgba(0,0,0,0.12);
     --radius: 12px;
     --radius-lg: 16px;
     --radius-md: 10px;
     --radius-sm: 8px;
     --radius-xs: 6px;
-    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius-pill: 999px;
+    --transition: all 0.15s ease;
     --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* CSS Variables - Dark Theme */
+/* Dark Theme */
 [data-bs-theme="dark"] {
-    --surface: #0f172a;
-    --surface-elevated: #1e293b;
-    --surface-variant: #1e293b;
-    --surface-subtle: #162032;
-    --on-surface: #f1f5f9;
-    --on-surface-secondary: #94a3b8;
-    --on-surface-tertiary: #64748b;
-    --border: #334155;
-    --border-subtle: #1e293b;
-    --primary-light: rgba(99, 102, 241, 0.15);
-    --primary-lighter: rgba(99, 102, 241, 0.08);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
-    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.3), 0 2px 4px -2px rgba(0,0,0,0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.2);
-    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.5), 0 8px 10px -6px rgba(0,0,0,0.3);
+    --surface: #030303;
+    --surface-elevated: #1A1A1B;
+    --surface-variant: #141414;
+    --surface-subtle: #272729;
+    --on-surface: #D7DADC;
+    --on-surface-secondary: #818384;
+    --on-surface-tertiary: #5B5D5E;
+    --border: #343536;
+    --border-subtle: #2A2A2B;
+    --primary: #FF4500;
+    --primary-hover: #FF5722;
+    --primary-light: rgba(255, 69, 0, 0.12);
+    --primary-lighter: rgba(255, 69, 0, 0.06);
+    --primary-gradient: linear-gradient(135deg, #FF4500 0%, #FF5722 100%);
+    --accent-blue: #5BA3F5;
+    --accent-green: #5CDB6E;
+    --accent-amber: #FFC107;
+    --accent-red: #FF5A50;
+    --accent-purple: #B07CC6;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.5);
+    --shadow-xl: 0 8px 32px rgba(0,0,0,0.6);
 }

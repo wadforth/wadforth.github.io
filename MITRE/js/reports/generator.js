@@ -1,3 +1,18 @@
+function getTechniqueStixId(techId) {
+    if (!state.techniques) return null;
+    const tech = state.techniques.find(t => {
+        const ref = t.external_references?.[0]?.external_id;
+        return ref === techId;
+    });
+    return tech?.id || null;
+}
+
+function getTechniqueIdFromStix(stixId) {
+    if (!state.techniques) return null;
+    const tech = state.techniques.find(t => t.id === stixId);
+    return tech?.external_references?.[0]?.external_id || null;
+}
+
 function generateReport(reportType = 'initial') {
     if (!state.currentLayer) {
         showToast('No active layer', 'error');
@@ -80,7 +95,7 @@ function generateExecutiveSummary(report) {
     const snapshot = report.snapshot;
     const coveragePct = stats.pct;
     
-    const leadershipOverview = `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework, which is the global standard for understanding adversary behavior. Our security team has implemented ${snapshot.totalQueries} detection queries across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% coverage. This means we can detect and respond to ${coveragePct}% of known attacker tactics, techniques, and procedures. The remaining gaps represent areas where we may be vulnerable to undetected adversary activity.`;
+    const leadershipOverview = `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework, which is the global standard for understanding adversary behavior. Our security team has implemented ${snapshot.totalQueries} detection queries across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% coverage. These queries represent our active detection logging efforts across the framework. Coverage percentages reflect techniques with logged queries, though individual techniques may have multiple attack vectors not yet covered. The remaining gaps highlight areas for future detection development.`;
     
     if (report.type === 'initial') {
         let summary = `This initial assessment establishes our baseline detection coverage across the MITRE ATT&CK framework. `;
@@ -135,56 +150,57 @@ function generateExecutiveSummary(report) {
 }
 
 function getTopThreatsForChanges(changes) {
-    if (!state.groups || !state.software) return [];
+    if (!state.groups || !state.software || !state.relationships) return [];
     
-    const changedTechIds = new Set();
+    const changedTechStixIds = new Set();
     changes.all.forEach(c => {
-        if (c.data?.techniqueID) changedTechIds.add(c.data.techniqueID);
+        if (c.data?.techniqueID) {
+            const stixId = getTechniqueStixId(c.data.techniqueID);
+            if (stixId) changedTechStixIds.add(stixId);
+        }
     });
     
-    if (changedTechIds.size === 0) return [];
+    if (changedTechStixIds.size === 0) return [];
     
     const threatMap = { groups: [], software: [] };
     
-    state.groups.forEach(group => {
-        if (!group.relationships) return;
-        group.relationships.forEach(rel => {
-            const targetId = rel.target_ref;
-            if (changedTechIds.has(targetId)) {
-                let existing = threatMap.groups.find(g => g.id === group.id);
-                if (!existing) {
-                    existing = { id: group.id, name: group.name, techniques: [] };
-                    threatMap.groups.push(existing);
-                }
-                if (!existing.techniques.includes(targetId)) {
-                    existing.techniques.push(targetId);
-                }
+    state.relationships.forEach(rel => {
+        if (rel.relationship_type !== 'uses') return;
+        const targetId = rel.target_ref;
+        if (!changedTechStixIds.has(targetId)) return;
+        
+        const sourceId = rel.source_ref;
+        const group = state.groups.find(g => g.id === sourceId);
+        if (group) {
+            let existing = threatMap.groups.find(g => g.id === group.id);
+            if (!existing) {
+                existing = { id: group.id, name: group.name, techniques: [] };
+                threatMap.groups.push(existing);
             }
-        });
-    });
-    
-    state.software.forEach(software => {
-        if (!software.relationships) return;
-        software.relationships.forEach(rel => {
-            const targetId = rel.target_ref;
-            if (changedTechIds.has(targetId)) {
-                let existing = threatMap.software.find(s => s.id === software.id);
-                if (!existing) {
-                    existing = { id: software.id, name: software.name, type: software.x_mitre_type || 'tool', techniques: [] };
-                    threatMap.software.push(existing);
-                }
-                if (!existing.techniques.includes(targetId)) {
-                    existing.techniques.push(targetId);
-                }
+            if (!existing.techniques.includes(targetId)) {
+                existing.techniques.push(targetId);
             }
-        });
+            return;
+        }
+        
+        const software = state.software.find(s => s.id === sourceId);
+        if (software) {
+            let existing = threatMap.software.find(s => s.id === software.id);
+            if (!existing) {
+                existing = { id: software.id, name: software.name, type: software.x_mitre_type || 'tool', techniques: [] };
+                threatMap.software.push(existing);
+            }
+            if (!existing.techniques.includes(targetId)) {
+                existing.techniques.push(targetId);
+            }
+        }
     });
     
     const threats = [];
-    threatMap.groups.slice(0, 5).forEach(g => {
+    threatMap.groups.forEach(g => {
         threats.push({ type: 'group', name: g.name, techniques: g.techniques.length, techniqueIds: g.techniques });
     });
-    threatMap.software.slice(0, 5).forEach(s => {
+    threatMap.software.forEach(s => {
         threats.push({ type: s.type, name: s.name, techniques: s.techniques.length, techniqueIds: s.techniques });
     });
     

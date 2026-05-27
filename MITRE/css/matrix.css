@@ -1,20 +1,20 @@
 /* ============================================
-   Matrix Styles
+   Matrix Styles - Modern Clean Theme
    ============================================ */
 
 /* Matrix Wrapper */
 .matrix-wrapper {
     background: var(--surface-elevated);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-md);
     overflow: auto;
-    max-height: calc(100vh - 20rem);
+    max-height: calc(100vh - 17rem);
     box-shadow: var(--shadow-sm);
 }
 
 .matrix-table {
     border-collapse: separate;
-    border-spacing: 2px;
+    border-spacing: 1px;
     width: 100%;
     margin: 0;
 }
@@ -23,42 +23,45 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: var(--primary);
-    color: white;
-    padding: 0.6rem 0.5rem;
+    background: var(--surface-elevated);
+    color: var(--on-surface);
+    padding: 0.45rem 0.4rem;
     text-align: center;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    min-width: 120px;
+    min-width: 100px;
     vertical-align: bottom;
+    border-bottom: 2px solid var(--border);
 }
 
 .matrix-table th .tactic-short {
     display: block;
-    font-size: 0.6rem;
-    opacity: 0.7;
+    font-size: 0.58rem;
+    opacity: 0.6;
     font-weight: 400;
-    margin-top: 0.15rem;
+    margin-top: 0.1rem;
+    color: var(--on-surface-tertiary);
 }
 
 .matrix-table th .tactic-count {
     display: block;
-    font-size: 0.55rem;
-    opacity: 0.6;
+    font-size: 0.52rem;
+    opacity: 0.5;
     font-weight: 400;
-    margin-top: 0.1rem;
+    margin-top: 0.05rem;
+    color: var(--on-surface-tertiary);
 }
 
 .matrix-table td {
     vertical-align: top;
     padding: 0;
     background: var(--surface-subtle);
-    min-width: 120px;
+    min-width: 100px;
 }
 
 /* Technique Cells */
 .technique-cell {
-    padding: 0.35rem 0.55rem;
+    padding: 0.28rem 0.45rem;
     cursor: pointer;
     border-bottom: 1px solid var(--border-subtle);
     transition: var(--transition);
@@ -68,17 +71,17 @@
 .technique-cell:last-child { border-bottom: none; }
 
 .technique-cell:hover {
-    background: var(--primary-light);
+    background: var(--surface-variant);
 }
 
 .technique-cell.has-children {
-    background: var(--primary-lighter);
-    border-left: 2px solid var(--primary);
-    padding-left: calc(0.55rem - 2px);
+    background: var(--surface-subtle);
+    border-left: 2px solid var(--border);
+    padding-left: calc(0.45rem - 2px);
 }
 
 .technique-cell.has-children:hover {
-    background: var(--primary-light);
+    background: var(--surface-variant);
 }
 
 .technique-cell.annotated {
@@ -87,36 +90,28 @@
 
 .expand-btn {
     position: absolute;
-    right: 0.35rem;
+    right: 0.25rem;
     top: 50%;
     transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.6rem;
+    font-size: 0.5rem;
     color: var(--on-surface-tertiary);
     cursor: pointer;
     transition: var(--transition);
-    border-radius: 3px;
-    background: rgba(255,255,255,0.15);
-    backdrop-filter: blur(2px);
+    border-radius: var(--radius-xs);
 }
 
 .expand-btn:hover {
     background: var(--surface-elevated);
-    color: var(--primary);
+    color: var(--on-surface);
 }
 
 .technique-cell.annotated .expand-btn {
-    color: rgba(255,255,255,0.7);
-    background: rgba(0,0,0,0.15);
-}
-
-.technique-cell.annotated .expand-btn:hover {
-    background: rgba(0,0,0,0.3);
-    color: white;
+    color: var(--on-surface-secondary);
 }
 
 .expand-btn.expanded i {
@@ -125,13 +120,13 @@
 
 .tech-id {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.58rem;
     font-weight: 600;
-    color: var(--primary);
+    color: var(--accent-blue);
 }
 
 .tech-name {
-    font-size: 0.7rem;
+    font-size: 0.62rem;
     color: var(--on-surface-secondary);
     line-height: 1.3;
 }
@@ -142,71 +137,71 @@
 
 /* Sub-techniques */
 .sub-techniques-container {
-    margin-left: 0.5rem;
+    margin-left: 0.35rem;
     border-left: 1px solid var(--border);
-    padding-left: 0.5rem;
+    padding-left: 0.35rem;
 }
 
 .sub-toggle {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.65rem;
+    gap: 0.18rem;
+    padding: 0.18rem 0.35rem;
+    font-size: 0.58rem;
     color: var(--on-surface-tertiary);
     cursor: pointer;
     transition: var(--transition);
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
 }
 
 .sub-toggle:hover {
-    background: var(--primary-light);
+    background: var(--surface-variant);
 }
 
 .technique-cell.sub-technique {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.65rem;
+    padding: 0.18rem 0.35rem;
+    font-size: 0.58rem;
     border-left: 2px solid var(--border);
 }
 
 .technique-cell.sub-technique:hover {
-    background: var(--primary-light);
+    background: var(--surface-variant);
 }
 
 .technique-cell.sub-technique .tech-id {
-    font-size: 0.6rem;
+    font-size: 0.52rem;
 }
 
 .technique-cell.sub-technique .tech-name {
-    font-size: 0.65rem;
+    font-size: 0.58rem;
 }
 
 .sub-connector {
     display: inline-block;
-    width: 8px;
+    width: 5px;
     height: 1px;
     background: var(--border);
-    margin-right: 4px;
+    margin-right: 2px;
     vertical-align: middle;
 }
 
 /* Platform Filters */
 .platform-chips {
     display: flex;
-    gap: 0.35rem;
+    gap: 0.25rem;
     flex-wrap: wrap;
 }
 
 .platform-chips .btn-check:checked + .btn {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
+    background: var(--on-surface);
+    color: var(--surface-elevated);
+    border-color: var(--on-surface);
 }
 
 .platform-chips .btn {
-    font-size: 0.72rem;
-    padding: 0.35rem 0.65rem;
-    border-radius: var(--radius-xs);
+    font-size: 0.68rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: var(--radius-pill);
 }
 
 /* Matrix Search */
@@ -220,25 +215,25 @@
 }
 
 .matrix-search .form-control {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     background: var(--surface-elevated);
     border-color: var(--border);
     color: var(--on-surface);
 }
 
 .matrix-search .form-control:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
+    border-color: var(--on-surface-tertiary);
+    box-shadow: 0 0 0 2px var(--primary-light);
 }
 
 /* Matrix No Results */
 #matrix-no-results {
-    padding: 3rem 1rem;
+    padding: 2.5rem 1rem;
 }
 
 #matrix-no-results i {
-    font-size: 3rem;
-    opacity: 0.3;
+    font-size: 2.25rem;
+    opacity: 0.25;
 }
 
 #matrix-no-results h5 {
