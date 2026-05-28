@@ -5,11 +5,14 @@ const LAYER_VERSION = '4.5';
 
 const state = {
     techniques: [],
+    revokedTechniques: [],
     tactics: [],
     groups: [],
     software: [],
     mitigations: [],
     relationships: [],
+    dataSources: [],
+    dataComponents: [],
     platforms: new Set(),
     currentDomain: 'enterprise-attack',
     currentVersion: null,

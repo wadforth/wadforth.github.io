@@ -14,7 +14,7 @@ function showContextMenu(e, techniqueId) {
     if (isAutoColor) {
         colorSection.innerHTML = `
             <div class="context-menu-label">Color <span class="badge bg-secondary ms-1" style="font-size: 0.6rem;">Auto</span></div>
-            <div class="text-muted small px-3 py-2">
+            <div class="text-on-surface-tertiary text-sm px-3 py-2">
                 <i class="bi bi-info-circle me-1"></i>
                 Disable auto-color in Legend to set manual colors.
             </div>
@@ -91,11 +91,11 @@ function showContextMenu(e, techniqueId) {
     
     menu.style.left = `${Math.max(10, x)}px`;
     menu.style.top = `${Math.max(10, y)}px`;
-    menu.classList.remove('d-none');
+    menu.classList.remove('hidden');
 }
 
 function hideContextMenu() {
-    document.getElementById('context-menu').classList.add('d-none');
+    document.getElementById('context-menu').classList.add('hidden');
     state.contextTarget = null;
 }
 
@@ -127,7 +127,7 @@ document.getElementById('btn-save-score').addEventListener('click', () => {
 
 document.getElementById('btn-expand-all').addEventListener('click', () => {
     document.querySelectorAll('.sub-techniques-container').forEach(el => {
-        el.classList.remove('d-none');
+        el.classList.remove('hidden');
         state.expandedTechniques.add(el.dataset.parent);
     });
     document.querySelectorAll('.sub-toggle i').forEach(i => {
@@ -143,7 +143,7 @@ document.getElementById('btn-expand-all').addEventListener('click', () => {
 
 document.getElementById('btn-collapse-all').addEventListener('click', () => {
     document.querySelectorAll('.sub-techniques-container').forEach(el => {
-        el.classList.add('d-none');
+        el.classList.add('hidden');
         state.expandedTechniques.delete(el.dataset.parent);
     });
     document.querySelectorAll('.sub-toggle i').forEach(i => {
@@ -163,7 +163,7 @@ const matrixSearchClear = document.getElementById('matrix-search-clear');
 if (matrixSearchInput) {
     matrixSearchInput.addEventListener('input', (e) => {
         state.matrixSearchQuery = e.target.value.trim();
-        matrixSearchClear?.classList.toggle('d-none', !state.matrixSearchQuery);
+        matrixSearchClear?.classList.toggle('hidden', !state.matrixSearchQuery);
         renderMatrix();
     });
 }
@@ -172,7 +172,7 @@ if (matrixSearchClear) {
     matrixSearchClear.addEventListener('click', () => {
         state.matrixSearchQuery = '';
         matrixSearchInput.value = '';
-        matrixSearchClear.classList.add('d-none');
+        matrixSearchClear.classList.add('hidden');
         renderMatrix();
     });
 }

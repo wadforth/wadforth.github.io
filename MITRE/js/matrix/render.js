@@ -70,7 +70,7 @@ function renderMatrix() {
         const short = tactic.x_mitre_shortname;
         const count = techniqueMap[short]?.length || 0;
         if (count > 0) hasAnyVisible = true;
-        html += `<th><div class="fw-bold">${tactic.name}</div><div class="tactic-short">${short}</div><div class="tactic-count">${count} techniques</div></th>`;
+        html += `<th><div class="font-bold">${tactic.name}</div><div class="tactic-short">${short}</div><div class="tactic-count">${count} techniques</div></th>`;
     }
     html += '</tr></thead><tbody><tr>';
 
@@ -99,7 +99,7 @@ function renderMatrix() {
     html += '</tr></tbody></table>';
 
     container.innerHTML = html;
-    noResults.classList.toggle('d-none', hasAnyVisible || filtered.length > 0);
+    noResults.classList.toggle('hidden', hasAnyVisible || filtered.length > 0);
 
     container.querySelectorAll('.technique-cell[data-id]').forEach(el => {
         el.addEventListener('click', (e) => {
@@ -145,7 +145,7 @@ function renderMatrix() {
     
     if (state.autoColorByQueries) {
         const sections = buildAutoLegendSections();
-        legendBar.classList.toggle('d-none', sections.length === 0);
+        legendBar.classList.toggle('hidden', sections.length === 0);
         legendBar.innerHTML = sections.map(section => `
             <div class="matrix-legend-section">
                 <span class="matrix-legend-section-title">${escapeHtml(section.title)}</span>
@@ -159,7 +159,7 @@ function renderMatrix() {
         `).join('');
     } else {
         const legend = state.currentLayer?.legend || defaultLegend;
-        legendBar.classList.toggle('d-none', legend.length === 0);
+        legendBar.classList.toggle('hidden', legend.length === 0);
         legendBar.innerHTML = legend.map(l => `
             <div class="matrix-legend-item">
                 <span class="matrix-legend-color" style="background: ${l.color}"></span>
@@ -176,7 +176,7 @@ function toggleSubTechniques(pid, btnElement) {
     }
     const subContainer = td?.querySelector(`.sub-techniques-container[data-parent="${pid}"]`);
     if (!subContainer) return;
-    const isHidden = subContainer.classList.contains('d-none');
+    const isHidden = subContainer.classList.contains('hidden');
 
     if (isHidden) {
         state.expandedTechniques.add(pid);
@@ -184,7 +184,7 @@ function toggleSubTechniques(pid, btnElement) {
         state.expandedTechniques.delete(pid);
     }
 
-    subContainer.classList.toggle('d-none', !isHidden);
+    subContainer.classList.toggle('hidden', !isHidden);
 
     const parentBtn = td.querySelector(`.expand-btn[data-parent="${pid}"]`);
     if (parentBtn) {
@@ -225,7 +225,7 @@ function buildTechniqueCell(tech, subs = []) {
 
     if (hasSubs) {
         const isExpanded = state.expandedTechniques.has(id);
-        html += `<div class="sub-techniques-container ${isExpanded ? '' : 'd-none'}" data-parent="${id}">`;
+        html += `<div class="sub-techniques-container ${isExpanded ? '' : 'hidden'}" data-parent="${id}">`;
         html += subs.map(s => {
             const subId = s.external_references?.[0]?.external_id || '';
             const subName = s.name;

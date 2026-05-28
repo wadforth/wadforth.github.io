@@ -18,6 +18,9 @@ function showSoftwareModal(softwareId) {
         const swTypeIcon = software.type === 'malware' ? 'bi-bug' : 'bi-wrench';
         const created = software.created ? new Date(software.created).toLocaleDateString() : '';
         const modified = software.modified ? new Date(software.modified).toLocaleDateString() : '';
+        const aliases = software.x_mitre_aliases || software.aliases || [];
+        const platforms = software.x_mitre_platforms || [];
+        const contributors = software.x_mitre_contributors || [];
         
         const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === software.id);
         const relatedTechniques = techRels.map(r => {
@@ -95,6 +98,27 @@ function showSoftwareModal(softwareId) {
                                 <i class="bi bi-grid-3x2"></i> View in Matrix
                             </button>
                         </div>
+                    </div>
+                ` : ''}
+                
+                ${aliases.length ? `
+                    <div class="software-section">
+                        <h6 class="software-section-title"><i class="bi bi-tag"></i> Aliases</h6>
+                        <div class="software-tags flex flex-wrap gap-2">${aliases.map(a => `<span class="detail-tag">${escapeHtml(a)}</span>`).join('')}</div>
+                    </div>
+                ` : ''}
+                
+                ${platforms.length ? `
+                    <div class="software-section">
+                        <h6 class="software-section-title"><i class="bi bi-laptop"></i> Platforms</h6>
+                        <div class="software-tags flex flex-wrap gap-2">${platforms.map(p => `<span class="detail-tag tag-true"><i class="bi bi-hdd-network mr-1"></i>${escapeHtml(p)}</span>`).join('')}</div>
+                    </div>
+                ` : ''}
+                
+                ${contributors.length ? `
+                    <div class="software-section">
+                        <h6 class="software-section-title"><i class="bi bi-person-fill-check"></i> Contributors</h6>
+                        <div class="software-tags flex flex-wrap gap-2">${contributors.map(c => `<span class="detail-tag">${escapeHtml(c)}</span>`).join('')}</div>
                     </div>
                 ` : ''}
                 
@@ -361,8 +385,8 @@ function showSoftwareModal(softwareId) {
                 setTimeout(() => {
                     document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
                     document.querySelector('[data-view="matrix"]')?.classList.add('active');
-                    document.querySelectorAll('.view-section').forEach(s => s.classList.add('d-none'));
-                    document.getElementById('matrix-view')?.classList.remove('d-none');
+                    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                    document.getElementById('matrix-view')?.classList.remove('hidden');
                     
                     const sw = state.software.find(s => {
                         const sid = s.external_references?.[0]?.external_id || '';

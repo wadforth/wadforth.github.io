@@ -1,64 +1,95 @@
 /* ============================================
-   CSS Variables - Modern Clean Theme
+   CSS Variables - Space-Nebula Dark Theme
    ============================================ */
 :root {
-    --surface: #DAE0E6;
-    --surface-elevated: #FFFFFF;
-    --surface-variant: #F6F7F8;
-    --surface-subtle: #F8F9FA;
-    --on-surface: #1A1A1B;
-    --on-surface-secondary: #7C7C7D;
-    --on-surface-tertiary: #A6A6A7;
-    --border: #EDEFF1;
-    --border-subtle: #F0F0F0;
-    --primary: #FF4500;
-    --primary-hover: #FF5722;
-    --primary-light: rgba(255, 69, 0, 0.08);
-    --primary-lighter: rgba(255, 69, 0, 0.04);
-    --primary-gradient: linear-gradient(135deg, #FF4500 0%, #FF5722 100%);
-    --accent-blue: #4A90E2;
-    --accent-green: #46D160;
-    --accent-amber: #FFB000;
-    --accent-red: #FF453A;
-    --accent-purple: #9B59B6;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-    --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
-    --shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
-    --shadow-xl: 0 8px 32px rgba(0,0,0,0.12);
+    /* Premium space-purple/nebula dark palette */
+    --surface: #070814;          /* Rich space obsidian deep indigo background */
+    --surface-elevated: #0f1026; /* Elevated glassmorphic slate-purple card background */
+    --surface-variant: #191b38;  /* Glassmorphic border/highlight/active surface */
+    --surface-subtle: #0b0c1b;   /* Muted deep indigo background for inputs/controls */
+    --on-surface: #f3f4f6;       /* Clean silver white text */
+    --on-surface-secondary: #a2a6cc; /* Periwinkle-slate silver text */
+    --on-surface-tertiary: #6b709c;  /* Muted space-indigo text */
+    --border: rgba(255, 255, 255, 0.08); /* Sophisticated thin white periwinkle border */
+    --border-subtle: rgba(255, 255, 255, 0.04); /* Sub-border */
+    
+    /* Cyber Violet, Magenta, & Nebula Cyan gradients */
+    --primary: #a855f7;          /* Bright cyber-purple/violet primary accent */
+    --primary-hover: #c084fc;    /* Lighter violet on hover */
+    --primary-light: rgba(168, 85, 247, 0.15);
+    --primary-lighter: rgba(168, 85, 247, 0.08);
+    
+    --secondary: #06b6d4;        /* Nebula cyan secondary accent */
+    --secondary-hover: #22d3ee;  /* Lighter cyan on hover */
+    --secondary-light: rgba(6, 182, 212, 0.15);
+    
+    --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%); /* Magenta-to-Purple Nebula */
+    --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #7c3aed 100%);  /* Cyan-to-Blue-to-Purple */
+    --gradient-card: linear-gradient(145deg, rgba(20, 21, 38, 0.7) 0%, rgba(13, 14, 28, 0.4) 100%); /* Glassmorphic card back */
+    
+    /* Tech Accent colors */
+    --accent-tan: #f59e0b;       /* Amber */
+    --accent-peach: #f97316;     /* Orange */
+    --accent-mint: #14b8a6;      /* Teal */
+    --accent-green: #10b981;     /* Emerald */
+    --accent-amber: #f59e0b;     /* Amber */
+    --accent-red: #ef4444;       /* Red */
+    --accent-purple: #a855f7;    /* Violet */
+    --accent-cyan: #06b6d4;      /* Cyan */
+    --accent-blue: #3b82f6;      /* Blue */
+    
+    /* Shadows with neon purple and cyan glows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 2px 8px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 5px 15px -3px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 50px -10px rgba(0, 0, 0, 0.6), 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    
+    --glow-primary: 0 0 20px rgba(168, 85, 247, 0.3);
+    --glow-accent: 0 0 20px rgba(6, 182, 212, 0.3);
+    --glow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    
+    /* Soft premium rounded corners (12px standard, matching modern templates) */
     --radius: 12px;
     --radius-lg: 16px;
     --radius-md: 10px;
-    --radius-sm: 8px;
-    --radius-xs: 6px;
-    --radius-pill: 999px;
-    --transition: all 0.15s ease;
-    --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
-    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --radius-sm: 6px;
+    --radius-xs: 4px;
+    --radius-pill: 9999px;
+    
+    /* Transitions */
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Typography */
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    --font-sans: 'Outfit', 'Inter', -apple-system, sans-serif;
 }
 
-/* Dark Theme */
-[data-bs-theme="dark"] {
-    --surface: #030303;
-    --surface-elevated: #1A1A1B;
-    --surface-variant: #141414;
-    --surface-subtle: #272729;
-    --on-surface: #D7DADC;
-    --on-surface-secondary: #818384;
-    --on-surface-tertiary: #5B5D5E;
-    --border: #343536;
-    --border-subtle: #2A2A2B;
-    --primary: #FF4500;
-    --primary-hover: #FF5722;
-    --primary-light: rgba(255, 69, 0, 0.12);
-    --primary-lighter: rgba(255, 69, 0, 0.06);
-    --primary-gradient: linear-gradient(135deg, #FF4500 0%, #FF5722 100%);
-    --accent-blue: #5BA3F5;
-    --accent-green: #5CDB6E;
-    --accent-amber: #FFC107;
-    --accent-red: #FF5A50;
-    --accent-purple: #B07CC6;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-md: 0 2px 8px rgba(0,0,0,0.4);
-    --shadow-lg: 0 4px 16px rgba(0,0,0,0.5);
-    --shadow-xl: 0 8px 32px rgba(0,0,0,0.6);
+/* Light Theme Override - Sophisticated Clean Light Nebula */
+[data-theme="light"] {
+    --surface: #f6f8fc;          /* Clean slate-50 light background */
+    --surface-elevated: #ffffff; /* Pure white containers */
+    --surface-variant: #eef2f6;  /* Muted slate-100 highlight surface */
+    --surface-subtle: #f8fafc;
+    --on-surface: #0a0e20;       /* Dark space-indigo text */
+    --on-surface-secondary: #3f4770; /* Muted periwinkle text */
+    --on-surface-tertiary: #6b7280;  /* Slate gray */
+    --border: rgba(15, 23, 42, 0.08); /* Clean slate border */
+    --border-subtle: rgba(15, 23, 42, 0.04);
+    
+    --primary: #7c3aed;
+    --primary-hover: #6d28d9;
+    --primary-light: rgba(124, 58, 237, 0.08);
+    --primary-lighter: rgba(124, 58, 237, 0.04);
+    
+    --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.05);
+    --shadow-xl: 0 20px 40px rgba(15, 23, 42, 0.06);
+    --glow-primary: 0 0 16px rgba(124, 58, 237, 0.15);
+    --glow-accent: 0 0 16px rgba(6, 182, 212, 0.15);
 }

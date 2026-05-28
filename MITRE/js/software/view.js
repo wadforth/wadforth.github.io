@@ -174,7 +174,7 @@ function renderSoftwareView() {
         const swTypeIcon = s.type === 'malware' ? 'bi-bug' : 'bi-wrench';
         const techCount = getSoftwareTechniqueCount(swId);
         const desc = s.description || '';
-        const truncatedDesc = desc.length > 100 ? desc.substring(0, 100) + '...' : desc;
+        const truncatedDesc = truncateDescription(desc, 140);
         
         if (softwareViewMode === 'list') {
             return `

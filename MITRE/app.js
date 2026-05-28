@@ -2,33 +2,34 @@ function showLoading(show, text = 'Fetching STIX bundle...') {
     const overlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     loadingText.textContent = text;
-    overlay.classList.toggle('d-none', !show);
+    overlay.classList.toggle('hidden', !show);
 }
 
 function showLanding() {
-    document.getElementById('landing-view').classList.remove('d-none');
-    document.getElementById('workspace-view').classList.add('d-none');
-    document.querySelector('.top-nav').classList.add('d-none');
+    document.getElementById('landing-view').classList.remove('hidden');
+    document.getElementById('workspace-view').classList.add('hidden');
+    document.querySelector('.top-nav').classList.add('hidden');
     renderRecentLayers();
+    setTimeout(() => enhanceLandingPage(), 100);
 }
 
 function showWorkspace() {
-    document.getElementById('landing-view').classList.add('d-none');
-    document.getElementById('workspace-view').classList.remove('d-none');
-    document.querySelector('.top-nav').classList.remove('d-none');
+    document.getElementById('landing-view').classList.add('hidden');
+    document.getElementById('workspace-view').classList.remove('hidden');
+    document.querySelector('.top-nav').classList.remove('hidden');
 }
 
 function initTheme() {
     const saved = localStorage.getItem('attack-explorer-theme');
     if (saved === 'dark') {
-        document.documentElement.setAttribute('data-bs-theme', 'dark');
+        document.documentElement.setAttribute('data-theme', 'dark');
         document.getElementById('theme-toggle').innerHTML = '<i class="bi bi-sun-fill"></i>';
     }
 }
 
 document.getElementById('theme-toggle').addEventListener('click', () => {
-    const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
-    document.documentElement.setAttribute('data-bs-theme', isDark ? 'light' : 'dark');
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
     document.getElementById('theme-toggle').innerHTML = isDark
         ? '<i class="bi bi-moon-fill"></i>'
         : '<i class="bi bi-sun-fill"></i>';
@@ -40,8 +41,8 @@ document.querySelectorAll('[data-view]').forEach(link => {
         e.preventDefault();
         document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
         link.classList.add('active');
-        document.querySelectorAll('.view-section').forEach(s => s.classList.add('d-none'));
-        document.getElementById(`${link.dataset.view}-view`).classList.remove('d-none');
+        document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+        document.getElementById(`${link.dataset.view}-view`).classList.remove('hidden');
         
         if (link.dataset.view === 'queries') {
             renderQueriesView();
@@ -94,52 +95,74 @@ document.getElementById('file-import').addEventListener('change', async (e) => {
     reader.onload = async (ev) => {
         try {
             const layerData = JSON.parse(ev.target.result);
+            if (!layerData.id) {
+                layerData.id = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            }
             state.currentDomain = layerData.domain || 'enterprise-attack';
-            state.currentVersion = layerData.attackVersion || 'master';
+            
+            const importedVer = layerData.attackVersion || 'master';
+            const latestVer = state.releases[0]?.tag || 'master';
+            
             state.companyName = layerData.companyName || '';
             state.companyLogo = layerData.companyLogo || null;
             state.author = layerData.author || '';
             state.autoColorRules = layerData.autoColorRules || state.autoColorRules;
             state.expandedTechniques.clear();
             
-            // Normalize version for dropdown matching
-            const normalizedVersion = state.currentVersion.replace(/^v/i, '');
-            const dropdown = document.getElementById('version-select');
-            const matchingOption = Array.from(dropdown.options).find(opt => 
-                opt.value.replace(/^v/i, '') === normalizedVersion
-            );
-            dropdown.value = matchingOption ? matchingOption.value : state.currentVersion;
-            
             showWorkspace();
-            await loadSTIX(state.currentDomain, state.currentVersion, layerData);
             
-            if (state.currentLayer) {
-                const orphans = findOrphanedTechniques(state.currentLayer, state.techniques);
-                if (orphans.length > 0) {
-                    const layerVer = normalizeVersion(layerData.attackVersion);
-                    const currentVer = normalizeVersion(state.currentVersion);
-                    const versionsMatch = layerVer && currentVer && layerVer === currentVer;
-                    
-                    const title = versionsMatch 
-                        ? 'Technique Compatibility Warning' 
-                        : 'Version Compatibility Warning';
-                    const message = versionsMatch
-                        ? `${orphans.length} technique(s) in this layer are not available in ATT&CK ${state.currentVersion} and will be hidden. They may have been deprecated or revoked.`
-                        : `This layer was created for ATT&CK ${layerData.attackVersion || 'unknown'}. ${orphans.length} technique(s) are not available in the current version (${state.currentVersion}) and will be hidden.`;
-                    
-                    showVersionWarningModal(title, message, orphans,
-                        () => {
-                            state.currentLayer.techniques = state.currentLayer.techniques.filter(ann => 
-                                state.techniques.some(t => t.external_references?.[0]?.external_id === ann.techniqueID)
-                            );
-                            saveCurrentLayer();
-                            renderMatrix();
-                            showToast('Orphaned techniques removed', 'info');
-                        },
-                        () => {}
-                    );
+            if (importedVer !== latestVer) {
+                const proceed = await showConfirm(
+                    'Upgrade Imported Layer?',
+                    `This layer was created using ATT&CK ${importedVer}. Would you like to automatically upgrade and migrate your queries to the latest version (${latestVer})?`
+                );
+                
+                if (proceed) {
+                    showLoading(true, 'Fetching latest STIX dataset for migration...');
+                    try {
+                        const url = `${RAW_BASE}/${latestVer}/${state.currentDomain}/${state.currentDomain}.json`;
+                        const resp = await fetch(url);
+                        if (!resp.ok) throw new Error('Failed to load dataset');
+                        const bundle = await resp.json();
+                        
+                        const tempState = {
+                            techniques: [], revokedTechniques: [], tactics: [], groups: [], software: [], mitigations: [], relationships: [], dataSources: [], dataComponents: []
+                        };
+                        const objects = bundle.objects || [];
+                        for (const obj of objects) {
+                            if (obj.type === 'attack-pattern') {
+                                if (!obj.deprecated && !obj.revoked) tempState.techniques.push(obj);
+                                else tempState.revokedTechniques.push(obj);
+                            } else if (obj.type === 'relationship') {
+                                tempState.relationships.push(obj);
+                            }
+                        }
+                        
+                        const changes = MigrationEngine.analyzeMigration(layerData, latestVer, tempState.techniques, tempState.relationships);
+                        showLoading(false);
+                        
+                        MigrationEngine.showMigrationWizard(layerData, latestVer, changes, async (migratedLayer) => {
+                            state.currentVersion = latestVer;
+                            document.getElementById('version-select').value = latestVer;
+                            await loadSTIX(state.currentDomain, latestVer, migratedLayer);
+                            showToast(`Layer migrated to ATT&CK ${latestVer}`, 'success');
+                        }, async () => {
+                            state.currentVersion = importedVer;
+                            document.getElementById('version-select').value = importedVer;
+                            await loadSTIX(state.currentDomain, importedVer, layerData);
+                        });
+                        return;
+                    } catch (err) {
+                        showLoading(false);
+                        showToast('Failed to fetch migration data. Loading original layer.', 'warning');
+                    }
                 }
             }
+            
+            state.currentVersion = importedVer;
+            document.getElementById('version-select').value = importedVer;
+            await loadSTIX(state.currentDomain, importedVer, layerData);
+            
         } catch (err) {
             showToast('Invalid layer file: ' + err.message, 'error');
         }
@@ -164,42 +187,100 @@ document.getElementById('version-select').addEventListener('change', async (e) =
     }
     
     const currentVer = state.currentVersion;
-    const currentLayerBackup = JSON.parse(JSON.stringify(state.currentLayer));
+    if (currentVer === newVersion) return;
     
-    state.currentVersion = newVersion;
-    await loadSTIX(state.currentDomain, newVersion, state.currentLayer);
-    
-    const orphans = findOrphanedTechniques(state.currentLayer, state.techniques);
-    if (orphans.length > 0) {
-        showVersionWarningModal(
-            'Version Downgrade Warning',
-            `Switching from ${currentVer} to ${newVersion} hides ${orphans.length} technique(s) not available in the older version. Annotations are preserved but hidden.`,
-            orphans,
-            () => {
-                showToast('Version changed. Orphaned techniques hidden.', 'info');
-            },
-            () => {
-                state.currentVersion = currentVer;
-                state.currentLayer = currentLayerBackup;
-                document.getElementById('version-select').value = currentVer;
-                loadSTIX(state.currentDomain, currentVer, state.currentLayer);
-                showToast('Version change cancelled', 'info');
+    showLoading(true, 'Fetching STIX data for migration...');
+    try {
+        const url = `${RAW_BASE}/${newVersion}/${state.currentDomain}/${state.currentDomain}.json`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error('STIX Fetch Failed');
+        const bundle = await resp.json();
+        
+        const tempState = {
+            techniques: [], revokedTechniques: [], tactics: [], groups: [], software: [], mitigations: [], relationships: [], dataSources: [], dataComponents: []
+        };
+        const objects = bundle.objects || [];
+        for (const obj of objects) {
+            if (obj.type === 'attack-pattern') {
+                if (!obj.deprecated && !obj.revoked) tempState.techniques.push(obj);
+                else tempState.revokedTechniques.push(obj);
+            } else if (obj.type === 'relationship') {
+                tempState.relationships.push(obj);
             }
-        );
+        }
+        
+        const changes = MigrationEngine.analyzeMigration(state.currentLayer, newVersion, tempState.techniques, tempState.relationships);
+        showLoading(false);
+        
+        MigrationEngine.showMigrationWizard(state.currentLayer, newVersion, changes, async (migratedLayer) => {
+            state.currentVersion = newVersion;
+            await loadSTIX(state.currentDomain, newVersion, migratedLayer);
+            showToast(`Layer migrated to ATT&CK ${newVersion}`, 'success');
+        }, () => {
+            document.getElementById('version-select').value = currentVer;
+            state.currentVersion = currentVer;
+            showToast('Migration cancelled', 'info');
+        });
+    } catch (err) {
+        showLoading(false);
+        document.getElementById('version-select').value = currentVer;
+        showToast('Failed to load version: ' + err.message, 'error');
     }
 });
 
+window.triggerVersionUpgrade = function(targetVersion) {
+    const select = document.getElementById('version-select');
+    const option = Array.from(select.options).find(opt => 
+        opt.value.replace(/v/i, '') === targetVersion.replace(/v/i, '')
+    );
+    if (option) {
+        select.value = option.value;
+        select.dispatchEvent(new Event('change'));
+    } else {
+        const latestRelease = state.releases[0]?.tag;
+        if (latestRelease) {
+            select.value = latestRelease;
+            select.dispatchEvent(new Event('change'));
+        }
+    }
+};
+
 async function checkForUpdates() {
     try {
+        const cachedVer = localStorage.getItem('attack-explorer-latest-version');
+        const cachedTs = localStorage.getItem('attack-explorer-latest-version-timestamp');
+        const currentVer = (state.currentVersion || '').replace(/v/i, '');
+        
+        if (cachedVer && cachedTs && (Date.now() - parseInt(cachedTs, 10)) < 12 * 60 * 60 * 1000) {
+            if (cachedVer && currentVer && cachedVer !== currentVer) {
+                showToastWithOptions(`ATT&CK ${cachedVer} is available!`, {
+                    type: 'info',
+                    duration: 10000,
+                    actionLabel: 'Upgrade Layer',
+                    action: () => { window.triggerVersionUpgrade(localStorage.getItem('attack-explorer-latest-version')) }
+                });
+            }
+            return;
+        }
+
         const res = await fetch('https://api.github.com/repos/mitre/cti/releases/latest');
         if (!res.ok) return;
         const data = await res.json();
         const rawTag = data.tag_name || '';
         const latestVer = rawTag.replace(/ATT&CK-?v?/i, '');
-        const currentVer = (state.currentVersion || '').replace(/v/i, '');
         
-        if (latestVer && currentVer && latestVer !== currentVer) {
-            showToast(`ATT&CK ${latestVer} is available. You're on ${currentVer}.`, 'info');
+        if (latestVer) {
+            localStorage.setItem('attack-explorer-latest-version', latestVer);
+            localStorage.setItem('attack-explorer-latest-version-timestamp', Date.now().toString());
+            
+            if (currentVer && latestVer !== currentVer) {
+                showToastWithOptions(`ATT&CK ${latestVer} is available!`, {
+                    type: 'info',
+                    duration: 10000,
+                    actionLabel: 'Upgrade Layer',
+                    action: () => { window.triggerVersionUpgrade(localStorage.getItem('attack-explorer-latest-version')) }
+                });
+            }
         }
     } catch {
         // Silently fail - offline or rate limited
@@ -208,6 +289,7 @@ async function checkForUpdates() {
 
 async function init() {
     initTheme();
+    initUI();
 
     await fetchReleases();
 

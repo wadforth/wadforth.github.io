@@ -8,15 +8,10 @@ const BANNER_THEMES = {
     slate: { bg: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', accent: '#94a3b8', label: 'Slate' },
 };
 
-function escapeHtml(text) {
-    if (!text) return '';
-    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-}
-
 async function loadReportsList() {
     if (!state.currentLayer) {
         const container = document.getElementById('reports-list');
-        if (container) container.innerHTML = '<p class="text-muted">No active layer loaded.</p>';
+        if (container) container.innerHTML = '<p class="text-on-surface-secondary">No active layer loaded.</p>';
         return;
     }
 
@@ -36,6 +31,20 @@ function getTechniquesByMonth() {
     
     state.currentLayer.techniques.forEach(ann => {
         const baseMonth = ann.monthAdded || new Date().toISOString().slice(0, 7);
+        const techId = ann.techniqueID;
+        const isSub = isSubTechnique(techId);
+        
+        let hasSubs = false;
+        if (!isSub && state.techniques) {
+            hasSubs = state.techniques.some(t => {
+                const ref = t.external_references?.[0]?.external_id;
+                return ref && ref.startsWith(techId + '.');
+            });
+        }
+        
+        // Strict filtering: Sub-techniques and standalone techniques must have a color
+        // or have logged queries to be considered "active" for the report.
+        if (!hasSubs && !ann.color && !(ann.queries && ann.queries.length > 0)) return;
         
         if (ann.queries && ann.queries.length > 0) {
             ann.queries.forEach(q => {
@@ -50,8 +59,13 @@ function getTechniquesByMonth() {
                 }
             });
         } else {
-            if (!byMonth[baseMonth]) byMonth[baseMonth] = [];
-            byMonth[baseMonth].push(ann);
+            // According to user requirements: sub-techniques and standalone techniques 
+            // should only show up in the report if they have logged queries.
+            // Parent techniques (which have sub-techniques) can be included under baseMonth if annotated.
+            if (hasSubs) {
+                if (!byMonth[baseMonth]) byMonth[baseMonth] = [];
+                byMonth[baseMonth].push(ann);
+            }
         }
     });
     
@@ -132,7 +146,7 @@ function renderReportsList(reports) {
     const emptyState = document.getElementById('reports-empty');
     if (!container) return;
 
-    if (emptyState) emptyState.classList.add('d-none');
+    if (emptyState) emptyState.classList.add('hidden');
 
     const stats = getFullCoverageStats();
     const availableMonths = getAvailableMonths();
@@ -148,7 +162,7 @@ function renderReportsList(reports) {
                 </div>
                 <div class="reports-actions">
                     <button class="btn btn-outline-success" onclick="openThreatHuntReportModal()">
-                        <i class="bi bi-crosshair me-2"></i>Threat Hunt Report
+                        <i class="bi bi-crosshair mr-2"></i>Threat Hunt Report
                     </button>
                 </div>
             </div>
@@ -181,7 +195,7 @@ function renderReportsList(reports) {
             </div>
 
             <div class="month-selector-bar mb-4">
-                <label class="text-muted small me-2">View by Month:</label>
+                <label class="text-on-surface-tertiary text-sm mr-2">View by Month:</label>
                 <select class="form-select form-select-sm" style="width: auto; min-width: 200px;" onchange="renderMonthChangelog(this.value)">
                     ${availableMonths.map(m => `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
                 </select>
@@ -195,7 +209,7 @@ function renderReportsList(reports) {
     if (reports.length > 0) {
         html += `
             <div class="reports-section-header mt-5 mb-3">
-                <h5><i class="bi bi-journal-text me-2"></i>Generated Reports</h5>
+                <h5><i class="bi bi-journal-text mr-2"></i>Generated Reports</h5>
             </div>
             <div class="reports-list">
         `;
@@ -247,7 +261,7 @@ function renderMonthChangelogHTML(month) {
 
     let html = `
         <div class="changelog-header">
-            <h4><i class="bi bi-calendar-event me-2"></i>${getMonthLabel(month)}</h4>
+            <h4><i class="bi bi-calendar-event mr-2"></i>${getMonthLabel(month)}</h4>
             <span class="changelog-count">${techniques.length} technique${techniques.length === 1 ? '' : 's'} logged</span>
         </div>
     `;
@@ -255,7 +269,7 @@ function renderMonthChangelogHTML(month) {
     if (colorChanges.length > 0) {
         html += `
             <div class="changelog-section">
-                <h5><i class="bi bi-palette me-2"></i>Status Changes</h5>
+                <h5><i class="bi bi-palette mr-2"></i>Status Changes</h5>
                 <div class="changelog-items">
         `;
         colorChanges.forEach(change => {
@@ -280,7 +294,7 @@ function renderMonthChangelogHTML(month) {
                             <span class="status-label-small">${change.toLabel}</span>
                         </div>
                         <div class="changelog-item-meta">
-                            <i class="bi bi-code-slash me-1"></i>
+                            <i class="bi bi-code-slash mr-1"></i>
                             Triggered by: "${change.queryName}"
                         </div>
                     </div>
@@ -297,7 +311,7 @@ function renderMonthChangelogHTML(month) {
         if (newMains.length > 0) {
             html += `
                 <div class="changelog-section">
-                    <h5><i class="bi bi-plus-circle me-2"></i>New Techniques Added</h5>
+                    <h5><i class="bi bi-plus-circle mr-2"></i>New Techniques Added</h5>
                     <div class="changelog-items">
             `;
             newMains.forEach(ann => {
@@ -314,10 +328,10 @@ function renderMonthChangelogHTML(month) {
                                 <div class="changelog-queries">
                                     ${ann.queries.map(q => `<span class="query-chip">${escapeHtml(q.name)}</span>`).join('')}
                                 </div>
-                            ` : '<div class="changelog-item-detail">No queries yet</div>'}
+                            ` : '<div class="changelog-item-detail">No queries yet (Check sub-techniques)</div>'}
                             ${threatHunts.length > 0 ? `
                                 <div class="changelog-item-meta">
-                                    <i class="bi bi-crosshair me-1"></i>
+                                    <i class="bi bi-crosshair mr-1"></i>
                                     ${threatHunts.map(h => `"${h}"`).join(', ')}
                                 </div>
                             ` : ''}
@@ -331,7 +345,7 @@ function renderMonthChangelogHTML(month) {
         if (newSubs.length > 0) {
             html += `
                 <div class="changelog-section">
-                    <h5><i class="bi bi-plus-circle me-2"></i>New Sub-techniques Added</h5>
+                    <h5><i class="bi bi-plus-circle mr-2"></i>New Sub-techniques Added</h5>
                     <div class="changelog-items">
             `;
             newSubs.forEach(ann => {
@@ -351,7 +365,7 @@ function renderMonthChangelogHTML(month) {
                             ` : '<div class="changelog-item-detail">No queries yet</div>'}
                             ${threatHunts.length > 0 ? `
                                 <div class="changelog-item-meta">
-                                    <i class="bi bi-crosshair me-1"></i>
+                                    <i class="bi bi-crosshair mr-1"></i>
                                     ${threatHunts.map(h => `"${h}"`).join(', ')}
                                 </div>
                             ` : ''}
@@ -366,7 +380,7 @@ function renderMonthChangelogHTML(month) {
     if (newHunts.length > 0) {
         html += `
             <div class="changelog-section">
-                <h5><i class="bi bi-crosshair me-2"></i>New Hunts on Existing Techniques</h5>
+                <h5><i class="bi bi-crosshair mr-2"></i>New Hunts on Existing Techniques</h5>
                 <div class="changelog-items">
         `;
         newHunts.forEach(hunt => {
@@ -385,7 +399,7 @@ function renderMonthChangelogHTML(month) {
                             ${typeBadge}
                         </div>
                         <div class="changelog-item-detail">New hunt added: "${hunt.huntName}"</div>
-                        ${hunt.sirTicket ? `<div class="changelog-item-meta"><i class="bi bi-ticket-perforated me-1"></i>SIR: ${hunt.sirTicket}</div>` : ''}
+                        ${hunt.sirTicket ? `<div class="changelog-item-meta"><i class="bi bi-ticket-perforated mr-1"></i>SIR: ${hunt.sirTicket}</div>` : ''}
                     </div>
                 </div>
             `;
@@ -396,7 +410,7 @@ function renderMonthChangelogHTML(month) {
     if (existingTechniques.length > 0 && newHunts.length === 0) {
         html += `
             <div class="changelog-section">
-                <h5><i class="bi bi-arrow-repeat me-2"></i>Existing Techniques (No New Hunts)</h5>
+                <h5><i class="bi bi-arrow-repeat mr-2"></i>Existing Techniques (No New Hunts)</h5>
                 <div class="changelog-items">
         `;
         existingTechniques.forEach(ann => {
@@ -660,8 +674,10 @@ function renderMonthChangelog(month) {
     }
 }
 
-function openThreatHuntReportModal() {
-    const selectedMonth = document.querySelector('.month-selector-bar select')?.value || new Date().toISOString().slice(0, 7);
+function openThreatHuntReportModal(selectedMonth = null) {
+    if (!selectedMonth) {
+        selectedMonth = document.querySelector('.month-selector-bar select')?.value || new Date().toISOString().slice(0, 7);
+    }
     const now = new Date();
     
     const report = {
@@ -676,7 +692,38 @@ function openThreatHuntReportModal() {
         periodStart: selectedMonth + '-01T00:00:00.000Z',
         periodEnd: now.toISOString(),
         snapshot: getLayerSnapshot(),
-        changes: { all: [], newTechniques: [], newQueries: [], colorChanges: [], mitigationChanges: [] },
+        changes: (() => {
+            const byMonth = getTechniquesByMonth();
+            const monthTechniques = byMonth[selectedMonth] || [];
+            const existingIds = getExistingTechniqueIds(selectedMonth);
+            
+            const colorChanges = getColorChangesForMonth(selectedMonth);
+            const newTechniques = monthTechniques.filter(t => !existingIds.has(t.techniqueID));
+            const newHunts = getNewHuntsForExistingTechniques(selectedMonth, existingIds);
+            
+            const compiledChanges = {
+                all: [],
+                newTechniques: newTechniques,
+                newQueries: [],
+                colorChanges: colorChanges,
+                mitigationChanges: []
+            };
+            
+            newTechniques.forEach(t => {
+                compiledChanges.all.push({ type: 'new_technique', data: t });
+            });
+            
+            colorChanges.forEach(c => {
+                compiledChanges.all.push({ type: 'color_change', data: c });
+            });
+            
+            newHunts.forEach(h => {
+                compiledChanges.all.push({ type: 'new_query', data: h });
+                compiledChanges.newQueries.push(h);
+            });
+            
+            return compiledChanges;
+        })(),
         topThreats: [],
         coverageByTactic: getCoverageByTactic(),
         coverageByLanguage: getCoverageByLanguage(),
@@ -751,17 +798,17 @@ function viewReport(reportId) {
     
     const changesHtml = report.changes?.all?.length > 0 
         ? buildChangesSection(report.changes) 
-        : '<p class="text-muted">No changes detected during this period.</p>';
+        : '<p class="text-on-surface-secondary">No changes detected during this period.</p>';
     
     const threatsHtml = buildThreatsSection(report);
     
     const tacticTableHtml = (report.coverageByTactic?.length > 0 || report.type === 'initial') 
         ? buildTacticTable(report.coverageByTactic || getCoverageByTactic(), report) 
-        : '<p class="text-muted">No tactic data available.</p>';
+        : '<p class="text-on-surface-secondary">No tactic data available.</p>';
     
     const langTableHtml = (report.coverageByLanguage?.length > 0 || report.type === 'initial') 
         ? buildLanguageTable(report.coverageByLanguage || getCoverageByLanguage(), report) 
-        : '<p class="text-muted">No language data available.</p>';
+        : '<p class="text-on-surface-secondary">No language data available.</p>';
 
     const detectionResultsHtml = buildDetectionResults(report);
     const referencesHtml = buildReferences(report);
@@ -780,14 +827,64 @@ function viewReport(reportId) {
     ).join('');
     const monthSelectorHtml = `
         <div class="report-month-selector">
-            <label class="text-muted small me-2">Report Month:</label>
+            <label class="text-on-surface-tertiary text-sm mr-2">Report Month:</label>
             <select class="form-select form-select-sm" style="width: auto; min-width: 180px;" onchange="changeReportMonth('${report.id}', this.value)">
                 ${availableMonths.map(m => `<option value="${m}" ${m === currentMonth ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
             </select>
-            <label class="text-muted small ms-3 me-2">Banner Theme:</label>
+            <label class="text-on-surface-tertiary text-sm ml-3 mr-2">Banner Theme:</label>
             <select class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="changeReportTheme('${report.id}', this.value)">
                 ${themeOptionsHtml}
             </select>
+        </div>
+    `;
+
+    // Dynamic Milestone Board Metrics calculated perfectly for the selected month
+    const stats = getMonthStats(currentMonth);
+    const coverageStats = getOverallCoverageStatsUpToMonth(currentMonth);
+    
+    const queriesDeployed = stats.queries; // dynamic queries added this month
+    const techniquesCovered = stats.techIds.size; // dynamic techniques covered this month
+    const frameworkCoverage = coverageStats.pct; // dynamic overall coverage up to this month
+    const threatsDisrupted = getThreatsDisruptedCount(currentMonth); // dynamic threat groups/software disrupted this month
+
+    const availableMonthsSorted = getAvailableMonths().sort((a, b) => b.localeCompare(a));
+    const currentIdx = availableMonthsSorted.indexOf(currentMonth);
+    const prevMonth = currentIdx !== -1 && currentIdx + 1 < availableMonthsSorted.length ? availableMonthsSorted[currentIdx + 1] : null;
+    
+    let deltaHtml = '';
+    if (prevMonth) {
+        const prevCoverageStats = getOverallCoverageStatsUpToMonth(prevMonth);
+        const pctDiff = frameworkCoverage - prevCoverageStats.pct;
+        if (pctDiff > 0) {
+            deltaHtml = `<span class="milestone-delta up"><i class="bi bi-caret-up-fill mr-1"></i> +${pctDiff.toFixed(1)}% vs last month</span>`;
+        } else if (pctDiff < 0) {
+            deltaHtml = `<span class="milestone-delta down"><i class="bi bi-caret-down-fill mr-1"></i> ${pctDiff.toFixed(1)}% vs last month</span>`;
+        } else {
+            deltaHtml = `<span class="milestone-delta flat"><i class="bi bi-dash"></i> 0.0% change</span>`;
+        }
+    } else {
+        deltaHtml = `<span class="milestone-delta flat">Initial baseline</span>`;
+    }
+
+    const milestoneBoardHtml = `
+        <div class="milestone-board">
+            <div class="milestone-card">
+                <div class="milestone-value">${queriesDeployed}</div>
+                <div class="milestone-label">Queries Deployed</div>
+            </div>
+            <div class="milestone-card">
+                <div class="milestone-value">${techniquesCovered}</div>
+                <div class="milestone-label">Techniques Covered</div>
+            </div>
+            <div class="milestone-card">
+                <div class="milestone-value">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
+                <div class="milestone-label">Framework Coverage</div>
+                ${deltaHtml}
+            </div>
+            <div class="milestone-card">
+                <div class="milestone-value">${threatsDisrupted}</div>
+                <div class="milestone-label">Threats Disrupted</div>
+            </div>
         </div>
     `;
 
@@ -799,8 +896,11 @@ function viewReport(reportId) {
                 <h2>${escapeHtml(report.companyName) || 'MITRE ATT&CK Coverage Report'}</h2>
                 <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
                 <div class="report-date">${escapeHtml(report.reportMonth) || escapeHtml(report.generatedDate)}</div>
+                ${report.layerName ? `<div class="report-date"><i class="bi bi-layers mr-1"></i>Layer: ${escapeHtml(report.layerName)}</div>` : ''}
                 ${report.author ? `<div class="report-date">Prepared by: ${escapeHtml(report.author)}</div>` : ''}
             </div>
+
+            ${milestoneBoardHtml}
 
             <div class="report-section">
                 <h4><i class="bi bi-journal-text"></i> Executive Summary</h4>
@@ -827,7 +927,7 @@ function viewReport(reportId) {
 
             <div class="report-section">
                 <h4><i class="bi bi-shield-exclamation"></i> Top Associated Threats</h4>
-                <p class="text-muted mb-3">Threat actors and tools associated with recently added or modified techniques.</p>
+                <p class="text-on-surface-secondary mb-3">Threat actors and tools associated with recently added or modified techniques.</p>
                 ${threatsHtml}
             </div>
 
@@ -853,11 +953,11 @@ function viewReport(reportId) {
                 <h4><i class="bi bi-grid-3x3"></i> Coverage Breakdown</h4>
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="text-muted mb-3">By Tactic</h6>
+                        <h6 class="text-on-surface-secondary mb-3">By Tactic</h6>
                         ${tacticTableHtml}
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-muted mb-3">By Query Language</h6>
+                        <h6 class="text-on-surface-secondary mb-3">By Query Language</h6>
                         ${langTableHtml}
                     </div>
                 </div>
@@ -879,21 +979,33 @@ function viewReport(reportId) {
                 ${appendixHtml}
             </div>
 
+            <div class="report-export-options mb-3" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--report-bg-secondary); border-radius: var(--radius-pill); border: 1px solid var(--report-border);">
+                <div class="form-check form-switch" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input class="form-check-input" type="checkbox" id="export-dark-mode-toggle" style="cursor: pointer; margin: 0;">
+                    <label class="form-check-label text-sm font-semibold" for="export-dark-mode-toggle" style="cursor: pointer; color: var(--report-text); font-size: 0.8rem; user-select: none;">
+                        <i class="bi bi-moon-stars text-primary mr-1"></i>Export in Space-Nebula Dark Mode
+                    </label>
+                </div>
+            </div>
+
             <div class="report-actions">
                 <button class="btn btn-success" onclick="saveAndValidateReport('${report.id}')">
-                    <i class="bi bi-check-circle me-2"></i>Save & Validate
+                    <i class="bi bi-check-circle mr-2"></i>Save & Validate
                 </button>
                 <button class="btn btn-primary" onclick="exportReportPDF('${report.id}')">
-                    <i class="bi bi-file-earmark-pdf me-2"></i>Export PDF
+                    <i class="bi bi-file-earmark-pdf mr-2"></i>Export PDF
                 </button>
                 <button class="btn btn-outline-primary" onclick="exportReportEmail('${report.id}')">
-                    <i class="bi bi-file-earmark-html me-2"></i>Export HTML
+                    <i class="bi bi-file-earmark-html mr-2"></i>Export HTML
                 </button>
                 <button class="btn btn-outline-info" onclick="exportReportEML('${report.id}')">
-                    <i class="bi bi-envelope me-2"></i>Export EML
+                    <i class="bi bi-envelope mr-2"></i>Export EML
+                </button>
+                <button class="btn btn-outline-secondary" onclick="exportReportSVG('${report.id}')">
+                    <i class="bi bi-filetype-svg mr-2"></i>Export SVG
                 </button>
                 <button class="btn btn-outline-secondary" onclick="printReport()">
-                    <i class="bi bi-printer me-2"></i>Print
+                    <i class="bi bi-printer mr-2"></i>Print
                 </button>
             </div>
         </div>
@@ -903,7 +1015,27 @@ function viewReport(reportId) {
     modalEl.show();
 }
 
-function buildMonthlyChangelog(report) {
+window.filterTimeline = function(filterType, btn) {
+    const container = btn.closest('.monthly-activity-section');
+    const buttons = container.querySelectorAll('.timeline-filter-btn');
+    buttons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    const events = container.querySelectorAll('.timeline-event');
+    events.forEach(e => {
+        if (filterType === 'all') {
+            e.classList.remove('hidden');
+        } else if (filterType === 'status' && e.classList.contains('event-status')) {
+            e.classList.remove('hidden');
+        } else if (filterType === 'new' && e.classList.contains('event-new')) {
+            e.classList.remove('hidden');
+        } else if (filterType === 'hunt' && e.classList.contains('event-hunt')) {
+            e.classList.remove('hidden');
+        } else {
+            e.classList.add('hidden');
+        }
+    });
+};function buildMonthlyChangelog(report) {
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
     if (!month) return '';
     
@@ -917,115 +1049,142 @@ function buildMonthlyChangelog(report) {
     const newTechniques = techniques.filter(t => !existingIds.has(t.techniqueID));
     const newHunts = getNewHuntsForExistingTechniques(month, existingIds);
     
-    let html = '<div class="report-section monthly-activity-section"><h4><i class="bi bi-calendar-check"></i> Monthly Activity Summary</h4>';
+    if (colorChanges.length === 0 && newTechniques.length === 0 && newHunts.length === 0) return '';
     
+    const mainTechniques = newTechniques.filter(t => !isSubTechnique(t.techniqueID));
+    const subTechniques = newTechniques.filter(t => isSubTechnique(t.techniqueID));
+    
+    let html = `
+        <div class="report-section monthly-activity-section">
+            <h4><i class="bi bi-calendar-check"></i> Monthly Activity Timeline</h4>
+            <p class="text-on-surface-secondary mb-3">Chronological log of query deployments and technique status updates.</p>
+            
+            <div class="timeline-filters">
+                <button class="timeline-filter-btn active" onclick="filterTimeline('all', this)">All Activity</button>
+                <button class="timeline-filter-btn" onclick="filterTimeline('status', this)">Status Changes (${colorChanges.length})</button>
+                <button class="timeline-filter-btn" onclick="filterTimeline('new', this)">New Detections (${newTechniques.length})</button>
+            </div>
+            
+            <div class="activity-timeline">
+    `;
+    
+    // 1. Process Status/Color changes (Minimal Single-line Layout)
     if (colorChanges.length > 0) {
-        html += '<div class="activity-subsection"><h5 class="activity-title status-title"><i class="bi bi-palette"></i> Status Changes</h5><div class="activity-cards">';
+        html += `
+            <div class="timeline-event event-status" style="margin: 1rem 0 0.5rem 0.6rem; padding-left: 1.5rem; border-left: none;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; display: flex; flex-direction: column; gap: 0.2rem;">
+                    <span style="display: flex; align-items: center; gap: 0.4rem;"><i class="bi bi-arrow-left-right"></i> Status & Coverage Changes (${colorChanges.length})</span>
+                    <span style="font-size: 0.65rem; color: var(--report-text-muted); font-weight: 500; text-transform: none; letter-spacing: normal; margin-top: 2px; line-height: 1.3; font-style: italic;">
+                        Tracks automatic updates to technique coverage status when live threat hunt queries or sub-technique coverage percentages change (e.g., transitioning from unassigned to a defined coverage level).
+                    </span>
+                </div>
+            </div>
+        `;
         colorChanges.forEach(change => {
             const techName = getTechniqueName(change.techniqueID);
             const isSub = isSubTechnique(change.techniqueID);
-            const typeLabel = isSub ? 'Sub-technique' : 'Technique';
             const fromColor = change.from || 'transparent';
             const toColor = change.to || 'transparent';
             
+            const fromLabel = change.fromLabel === 'None' ? 'Unassigned' : change.fromLabel;
+            const toLabel = change.toLabel === 'None' ? 'Unassigned' : change.toLabel;
+            
             html += `
-                <div class="activity-card status-card">
-                    <div class="activity-card-header">
-                        <strong>${change.techniqueID}</strong> - ${techName}
-                        <span class="activity-type-badge ${isSub ? 'sub' : 'main'}">${typeLabel}</span>
-                    </div>
-                    <div class="activity-status-flow">
-                        <div class="status-pill" style="background: ${fromColor}; border-color: ${fromColor}">
-                            <span class="status-pill-label">${change.fromLabel}</span>
+                <div class="timeline-event event-status">
+                    <div class="timeline-node status" title="Status Change"></div>
+                    <div class="activity-card status-card" style="padding: 0.5rem 0.75rem;">
+                        <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+                            <span style="font-weight: 700; font-size: 0.8rem; color: #38bdf8;">${change.techniqueID}</span>
+                            <span style="font-size: 0.8rem; font-weight: 600; color: var(--report-text);">${techName}</span>
+                            <span class="activity-type-badge ${isSub ? 'sub' : 'main'}" style="margin: 0; padding: 0.08rem 0.35rem; font-size: 0.58rem;">${isSub ? 'Sub' : 'Main'}</span>
+                            <span style="font-size: 0.72rem; color: var(--report-text-muted); margin-left: auto;">
+                                Coverage Status: <span style="font-weight: 600; color: #fbbf24;">${fromLabel}</span> &rarr; <span style="font-weight: 600; color: #34d399;">${toLabel}</span>
+                            </span>
                         </div>
-                        <i class="bi bi-arrow-right status-arrow"></i>
-                        <div class="status-pill" style="background: ${toColor}; border-color: ${toColor}">
-                            <span class="status-pill-label">${change.toLabel}</span>
-                        </div>
-                    </div>
-                    <div class="activity-card-footer">
-                        <i class="bi bi-code-slash"></i> Triggered by: "${change.queryName}"
                     </div>
                 </div>
             `;
         });
-        html += '</div></div>';
     }
     
-    const newMains = newTechniques.filter(t => !isSubTechnique(t.techniqueID));
-    const newSubs = newTechniques.filter(t => isSubTechnique(t.techniqueID));
-    
-    if (newMains.length > 0) {
-        html += '<div class="activity-subsection"><h5 class="activity-title new-title"><i class="bi bi-plus-circle"></i> New Techniques Added</h5><div class="activity-cards">';
-        newMains.forEach(ann => {
+    // 2. Process New Main Techniques
+    if (mainTechniques.length > 0) {
+        html += `
+            <div class="timeline-event event-new" style="margin: 1.5rem 0 0.5rem 0.6rem; padding-left: 1.5rem; border-left: none;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.5px; display: flex; flex-direction: column; gap: 0.2rem;">
+                    <span style="display: flex; align-items: center; gap: 0.4rem;"><i class="bi bi-shield-check"></i> New Main Techniques Deployed (${mainTechniques.length})</span>
+                    <span style="font-size: 0.65rem; color: var(--report-text-muted); font-weight: 500; text-transform: none; letter-spacing: normal; margin-top: 2px; line-height: 1.3; font-style: italic;">
+                        Displays parent-level ATT&CK techniques that received their very first hunt query implementation this month, expanding our defensive visibility footprint.
+                    </span>
+                </div>
+            </div>
+        `;
+        mainTechniques.forEach(ann => {
             const techName = getTechniqueName(ann.techniqueID);
             const techDesc = getTechniqueDescription(ann.techniqueID);
             const techTactics = getTechniqueTactics(ann.techniqueID);
-            const queryNames = ann.queries?.map(q => q.name).join(', ') || 'No queries';
+            const queryNames = (ann.queries && ann.queries.length > 0) ? ann.queries.map(q => q.name).join(', ') : 'No queries (Check sub-techniques)';
             
             html += `
-                <div class="activity-card new-card">
-                    <div class="activity-card-header">
-                        <strong>${ann.techniqueID}</strong> - ${techName}
-                    </div>
-                    ${techDesc ? `<div class="activity-card-body"><i class="bi bi-info-circle"></i> ${techDesc}</div>` : ''}
-                    ${techTactics.length > 0 ? `<div class="activity-card-body"><i class="bi bi-diagram-3"></i> Tactics: ${techTactics.join(', ')}</div>` : ''}
-                    <div class="activity-card-body">
-                        <i class="bi bi-code-slash"></i> Queries: ${queryNames}
+                <div class="timeline-event event-new">
+                    <div class="timeline-node new" title="New Technique"></div>
+                    <div class="activity-card new-card" style="padding: 0.6rem 0.75rem;">
+                        <div class="activity-card-header" style="margin-bottom: 0.25rem;">
+                            <strong>${ann.techniqueID}</strong> - ${techName}
+                            <span class="activity-type-badge main">Technique</span>
+                        </div>
+                        ${techDesc ? `<div class="activity-card-body mb-1" style="font-size: 0.76rem; color: var(--report-text-muted);"><i class="bi bi-info-circle mr-1"></i> ${techDesc}</div>` : ''}
+                        ${techTactics.length > 0 ? `<div class="activity-card-body mb-1" style="font-size: 0.76rem; color: var(--report-text-muted);"><i class="bi bi-diagram-3 mr-1"></i> Tactics: ${techTactics.join(', ')}</div>` : ''}
+                        <div class="activity-card-footer" style="margin-top: 0.25rem; padding-top: 0.25rem;">
+                            <i class="bi bi-code-slash"></i> Queries implemented: "${queryNames}"
+                        </div>
                     </div>
                 </div>
             `;
         });
-        html += '</div></div>';
     }
     
-    if (newSubs.length > 0) {
-        html += '<div class="activity-subsection"><h5 class="activity-title new-title"><i class="bi bi-plus-circle"></i> New Sub-techniques Added</h5><div class="activity-cards">';
-        newSubs.forEach(ann => {
+    // 3. Process New Sub-techniques
+    if (subTechniques.length > 0) {
+        html += `
+            <div class="timeline-event event-new" style="margin: 1.5rem 0 0.5rem 0.6rem; padding-left: 1.5rem; border-left: none;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; flex-direction: column; gap: 0.2rem;">
+                    <span style="display: flex; align-items: center; gap: 0.4rem;"><i class="bi bi-grid-3x3-gap"></i> New Sub-techniques Deployed (${subTechniques.length})</span>
+                    <span style="font-size: 0.65rem; color: var(--report-text-muted); font-weight: 500; text-transform: none; letter-spacing: normal; margin-top: 2px; line-height: 1.3; font-style: italic;">
+                        Highlights granular, specific sub-techniques that have had threat hunt queries newly deployed, providing high-fidelity detection capability.
+                    </span>
+                </div>
+            </div>
+        `;
+        subTechniques.forEach(ann => {
             const techName = getTechniqueName(ann.techniqueID);
             const techDesc = getTechniqueDescription(ann.techniqueID);
             const techTactics = getTechniqueTactics(ann.techniqueID);
-            const queryNames = ann.queries?.map(q => q.name).join(', ') || 'No queries';
+            const queryNames = (ann.queries && ann.queries.length > 0) ? ann.queries.map(q => q.name).join(', ') : 'No queries';
             
             html += `
-                <div class="activity-card new-card">
-                    <div class="activity-card-header">
-                        <strong>${ann.techniqueID}</strong> - ${techName}
-                    </div>
-                    ${techDesc ? `<div class="activity-card-body"><i class="bi bi-info-circle"></i> ${techDesc}</div>` : ''}
-                    ${techTactics.length > 0 ? `<div class="activity-card-body"><i class="bi bi-diagram-3"></i> Tactics: ${techTactics.join(', ')}</div>` : ''}
-                    <div class="activity-card-body">
-                        <i class="bi bi-code-slash"></i> Queries: ${queryNames}
+                <div class="timeline-event event-new">
+                    <div class="timeline-node new" title="New Sub-technique"></div>
+                    <div class="activity-card new-card sub-card" style="padding: 0.6rem 0.75rem;">
+                        <div class="activity-card-header" style="margin-bottom: 0.25rem;">
+                            <strong>${ann.techniqueID}</strong> - ${techName}
+                            <span class="activity-type-badge sub">Sub-technique</span>
+                        </div>
+                        ${techDesc ? `<div class="activity-card-body mb-1" style="font-size: 0.76rem; color: var(--report-text-muted);"><i class="bi bi-info-circle mr-1"></i> ${techDesc}</div>` : ''}
+                        ${techTactics.length > 0 ? `<div class="activity-card-body mb-1" style="font-size: 0.76rem; color: var(--report-text-muted);"><i class="bi bi-diagram-3 mr-1"></i> Tactics: ${techTactics.join(', ')}</div>` : ''}
+                        <div class="activity-card-footer" style="margin-top: 0.25rem; padding-top: 0.25rem;">
+                            <i class="bi bi-code-slash"></i> Queries implemented: "${queryNames}"
+                        </div>
                     </div>
                 </div>
             `;
         });
-        html += '</div></div>';
     }
+    html += `
+            </div>
+        </div>
+    `;
     
-    if (newHunts.length > 0) {
-        html += '<div class="activity-subsection"><h5 class="activity-title hunt-title"><i class="bi bi-crosshair"></i> New Hunts on Existing Techniques</h5><div class="activity-cards">';
-        newHunts.forEach(hunt => {
-            const techName = getTechniqueName(hunt.techniqueID);
-            const isSub = isSubTechnique(hunt.techniqueID);
-            const typeLabel = isSub ? 'Sub-technique' : 'Technique';
-            
-            html += `
-                <div class="activity-card hunt-card">
-                    <div class="activity-card-header">
-                        <strong>${hunt.techniqueID}</strong> - ${techName}
-                        <span class="activity-type-badge ${isSub ? 'sub' : 'main'}">${typeLabel}</span>
-                    </div>
-                    <div class="activity-card-body">
-                        <i class="bi bi-crosshair"></i> Hunt: "${hunt.huntName}"
-                    </div>
-                </div>
-            `;
-        });
-        html += '</div></div>';
-    }
-    
-    html += '</div>';
     return html;
 }
 
@@ -1053,7 +1212,7 @@ function buildMethodology(report) {
     
     let html = '<div class="methodology-grid">';
     
-    html += '<div class="methodology-section"><h6 class="text-muted mb-2">Detection Methodologies</h6>';
+    html += '<div class="methodology-section"><h6 class="text-on-surface-tertiary mb-2">Detection Methodologies</h6>';
     methodologyOptions.forEach(opt => {
         const checked = methodology[opt.id] ? 'checked' : '';
         html += `
@@ -1068,7 +1227,7 @@ function buildMethodology(report) {
     });
     html += '</div>';
     
-    html += '<div class="methodology-section"><h6 class="text-muted mb-2">Scope</h6>';
+    html += '<div class="methodology-section"><h6 class="text-on-surface-tertiary mb-2">Scope</h6>';
     scopeOptions.forEach(opt => {
         const checked = scope[opt.id] ? 'checked' : '';
         html += `
@@ -1087,12 +1246,54 @@ function buildMethodology(report) {
     
     html += `
         <div class="mt-3">
-            <label class="form-label text-muted small">Additional Notes</label>
+            <label class="form-label text-on-surface-tertiary text-sm">Additional Notes</label>
             <textarea class="form-control" rows="2" onchange="updateReportField('${report.id}', 'methodologyNotes', this.value)" placeholder="Any additional methodology notes...">${report.methodologyNotes || ''}</textarea>
         </div>
     `;
     
     return html;
+}
+
+function getThreatsDisruptedCount(month) {
+    if (!month || !state.currentLayer?.techniques || !state.groups || !state.software || !state.relationships) return 0;
+    
+    const byMonth = getTechniquesByMonth();
+    const techniques = byMonth[month] || [];
+    const changedTechStixIds = new Set();
+    
+    techniques.forEach(ann => {
+        const stixId = getTechniqueStixId(ann.techniqueID);
+        if (stixId) changedTechStixIds.add(stixId);
+    });
+    
+    if (changedTechStixIds.size === 0) return 0;
+    
+    const threatIds = new Set();
+    
+    state.relationships.forEach(rel => {
+        if (rel.relationship_type !== 'uses') return;
+        
+        const targetId = rel.target_ref;
+        if (!changedTechStixIds.has(targetId)) return;
+        
+        const sourceId = rel.source_ref;
+        
+        const isGroup = state.groups.some(g => g.id === sourceId);
+        const isSoftware = state.software.some(s => s.id === sourceId);
+        
+        if (isGroup || isSoftware) {
+            threatIds.add(sourceId);
+        }
+    });
+    
+    return threatIds.size;
+}
+
+function resolveQueryMonth(q, ann) {
+    if (q.monthAdded) return q.monthAdded;
+    if (q.created) return q.created.slice(0, 7);
+    if (ann && ann.monthAdded) return ann.monthAdded;
+    return new Date().toISOString().slice(0, 7);
 }
 
 function getMonthStats(month) {
@@ -1108,7 +1309,8 @@ function getMonthStats(month) {
         if (!ann.queries || ann.queries.length === 0) return;
         
         ann.queries.forEach(q => {
-            if (q.monthAdded === month) {
+            const qMonth = resolveQueryMonth(q, ann);
+            if (qMonth === month) {
                 uniqueQueryIds.add(q.id);
                 if (isSubTechnique(ann.techniqueID)) {
                     subTechs.add(ann.techniqueID);
@@ -1127,13 +1329,120 @@ function getMonthStats(month) {
     };
 }
 
+function getOverallCoverageStatsUpToMonth(targetMonth) {
+    if (!state.techniques) return { total: 0, covered: 0, pct: 0, parents: { total: 0, covered: 0, pct: 0 }, subs: { total: 0, covered: 0, pct: 0 }, all: { total: 0, covered: 0, pct: 0 } };
+    
+    const parentTechniques = state.techniques.filter(t => !t.x_mitre_is_subtechnique);
+    const subTechniques = state.techniques.filter(t => t.x_mitre_is_subtechnique);
+    const totalTechniques = parentTechniques.length;
+    
+    let coveredCount = 0;
+    const coveredIds = new Set();
+    
+    if (state.currentLayer?.techniques) {
+        state.currentLayer.techniques.forEach(lt => {
+            const hasQueries = lt.queries?.some(q => {
+                const qMonth = resolveQueryMonth(q, lt);
+                return qMonth <= targetMonth;
+            });
+            if (hasQueries) {
+                coveredIds.add(lt.techniqueID);
+            }
+        });
+    }
+    
+    parentTechniques.forEach(parentTech => {
+        const parentId = parentTech.external_references?.[0]?.external_id;
+        if (!parentId) return;
+        
+        // 1. Check parent itself
+        if (coveredIds.has(parentId)) {
+            coveredCount++;
+            return;
+        }
+        
+        // 2. Check sub-techniques
+        const hasCoveredSub = [...coveredIds].some(id => id.startsWith(parentId + '.'));
+        if (hasCoveredSub) {
+            coveredCount++;
+        }
+    });
+    
+    let coveredSubsCount = 0;
+    subTechniques.forEach(subTech => {
+        const subId = subTech.external_references?.[0]?.external_id;
+        if (subId && coveredIds.has(subId)) {
+            coveredSubsCount++;
+        }
+    });
+    
+    const totalParents = parentTechniques.length;
+    const totalSubs = subTechniques.length;
+    const totalAll = totalParents + totalSubs;
+    
+    // Count how many unique active IDs from coveredIds are in state.techniques
+    const coveredAll = [...coveredIds].filter(id => {
+        return state.techniques.some(t => t.external_references?.[0]?.external_id === id);
+    }).length;
+    
+    return {
+        total: totalTechniques, // parent techniques count (backward compatibility)
+        covered: coveredCount,  // parent techniques covered (backward compatibility)
+        pct: totalTechniques > 0 ? Math.round((coveredCount / totalTechniques) * 1000) / 10 : 0,
+        parents: {
+            total: totalParents,
+            covered: coveredCount,
+            pct: totalParents > 0 ? Math.round((coveredCount / totalParents) * 1000) / 10 : 0
+        },
+        subs: {
+            total: totalSubs,
+            covered: coveredSubsCount,
+            pct: totalSubs > 0 ? Math.round((coveredSubsCount / totalSubs) * 1000) / 10 : 0
+        },
+        all: {
+            total: totalAll,
+            covered: coveredAll,
+            pct: totalAll > 0 ? Math.round((coveredAll / totalAll) * 1000) / 10 : 0
+        }
+    };
+}
+
+function getTotalUniqueActiveQueriesUpToMonth(targetMonth) {
+    if (!state.currentLayer?.techniques) return 0;
+    const activeIds = new Set();
+    state.currentLayer.techniques.forEach(t => {
+        if (t.queries) {
+            t.queries.forEach(q => {
+                const qMonth = resolveQueryMonth(q, t);
+                if (qMonth <= targetMonth) {
+                    activeIds.add(q.id);
+                }
+            });
+        }
+    });
+    return activeIds.size;
+}
+
+function getTotalActiveQueriesUpToMonth(targetMonth) {
+    return getTotalUniqueActiveQueriesUpToMonth(targetMonth);
+}
+
 function generateLeadershipOverview(report) {
-    const stats = report.fullStats || getFullCoverageStats();
-    const coveragePct = stats.pct % 1 === 0 ? stats.pct : stats.pct.toFixed(1);
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
-    const monthStats = getMonthStats(month);
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const coverageStats = getOverallCoverageStatsUpToMonth(month);
+    const coveragePct = coverageStats.pct % 1 === 0 ? coverageStats.pct : coverageStats.pct.toFixed(1);
+    const threatsDisrupted = getThreatsDisruptedCount(month);
     const periodLabel = report.reportMonth || (month ? getMonthLabel(month) : 'this period');
-    return `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework for ${periodLabel}. Our security team has implemented ${monthStats.queries} detection queries this period across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% overall coverage. These queries represent our active detection logging efforts across the framework. Coverage percentages reflect techniques with logged queries, though individual techniques may have multiple attack vectors not yet covered. The remaining gaps highlight areas for future detection development.`;
+    
+    let statsText = '';
+    if (coverageStats.parents && coverageStats.parents.total) {
+        const allPct = coverageStats.all.pct % 1 === 0 ? coverageStats.all.pct : coverageStats.all.pct.toFixed(1);
+        statsText = `${coverageStats.parents.covered} of ${coverageStats.parents.total} known parent attack techniques (and ${coverageStats.subs.covered} sub-techniques), achieving ${coveragePct}% overall parent coverage (or ${allPct}% combined framework coverage)`;
+    } else {
+        statsText = `${coverageStats.covered} of ${coverageStats.total} known attack techniques, achieving ${coveragePct}% overall coverage`;
+    }
+    
+    return `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework for ${periodLabel}. Our security team has disrupted ${threatsDisrupted} active threat groups and tools by deploying targeted detection queries across ${statsText}. These queries represent our active detection logging efforts across the framework. Coverage percentages reflect techniques with logged queries, though individual techniques may have multiple attack vectors not yet covered. The remaining gaps highlight areas for future detection development.`;
 }
 
 function buildNewQueriesSection(report) {
@@ -1154,7 +1463,8 @@ function buildNewQueriesSection(report) {
                         name: q.name,
                         techniqueID: ann.techniqueID,
                         language: q.language,
-                        created: q.created
+                        created: q.created,
+                        description: q.description
                     });
                 }
             });
@@ -1169,16 +1479,23 @@ function buildNewQueriesSection(report) {
     });
     
     let html = '<div class="report-section"><h4><i class="bi bi-search"></i> New Threat Hunt Queries</h4>';
-    html += `<p class="text-muted mb-3">${allQueries.length} queries for ${getMonthLabel(month)}:</p>`;
-    html += '<ul class="query-list">';
+    html += `<p class="text-on-surface-secondary mb-3">${allQueries.length} queries for ${getMonthLabel(month)}:</p>`;
+    html += '<ul class="query-list" style="padding-left: 0; margin: 0;">';
     
     allQueries.forEach(q => {
         const queryName = q.name || 'Unnamed Query';
         const techName = techNameMap[q.techniqueID] || '';
-        html += `<li><strong>${escapeHtml(queryName)}</strong> <span class="text-muted">(${q.language})</span><br><span class="text-muted small">${q.techniqueID}${techName ? ' - ' + techName : ''}</span></li>`;
+        html += `
+            <li class="mb-3" style="list-style-type: none; border-bottom: 1px solid var(--report-border); padding-bottom: 8px;">
+                <strong class="text-on-surface">${escapeHtml(queryName)}</strong> 
+                <span class="text-on-surface-secondary text-sm" style="margin-left: 8px;">(${q.language} | ${q.techniqueID}${techName ? ' - ' + techName : ''})</span>
+                ${q.description ? `<p class="text-on-surface-secondary text-sm mt-1 mb-0" style="font-style: italic; line-height: 1.4;">${escapeHtml(q.description)}</p>` : ''}
+            </li>
+        `;
     });
     
     html += '</ul></div>';
+    return html;
     return html;
 }
 
@@ -1240,7 +1557,7 @@ function buildTechniquesAtRisk(report) {
     if (atRisk.length === 0) return '';
     
     let html = '<div class="report-section techniques-at-risk"><h4><i class="bi bi-exclamation-triangle"></i> Techniques at Risk</h4>';
-    html += '<p class="text-muted mb-3">Zero-coverage techniques used by known threat groups active this month, prioritized by group relevance.</p>';
+    html += '<p class="text-on-surface-secondary mb-3">Zero-coverage techniques used by known threat groups active this month, prioritized by group relevance.</p>';
     
     atRisk.slice(0, 10).forEach(item => {
         const techList = item.techniques.map(id => {
@@ -1263,30 +1580,71 @@ function buildTechniquesAtRisk(report) {
 }
 
 function buildTacticsGraph(report) {
-    const tactics = report.coverageByTactic || getCoverageByTactic();
+    const tactics = report.coverageByTactic || getCoverageByTactic() || [];
     if (tactics.length === 0) return '';
     
-    const topTactics = tactics.slice(0, 8);
+    const criticalGaps = [];
+    const moderateCoverage = [];
+    const strongCoverage = [];
     
-    let html = '<div class="report-section"><h4><i class="bi bi-bar-chart-line"></i> Top Tactics by Coverage</h4>';
-    html += '<div class="tactics-graph">';
-    
-    topTactics.forEach(t => {
-        const tacticName = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const barColor = t.coverage >= 80 ? 'var(--report-success)' : t.coverage >= 50 ? 'var(--report-warning)' : 'var(--report-danger)';
-        
-        html += `
-            <div class="tactic-bar-item">
-                <div class="tactic-bar-label">${tacticName}</div>
-                <div class="tactic-bar-track">
-                    <div class="tactic-bar-fill" style="width: ${t.coverage}%; background: ${barColor}"></div>
-                </div>
-                <div class="tactic-bar-value">${t.coverage}%</div>
-            </div>
-        `;
+    tactics.forEach(t => {
+        const pct = t.coverage;
+        const name = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const item = { ...t, displayName: name };
+        if (pct < 50) {
+            criticalGaps.push(item);
+        } else if (pct < 80) {
+            moderateCoverage.push(item);
+        } else {
+            strongCoverage.push(item);
+        }
     });
     
-    html += '</div></div>';
+    const formatItems = (list) => {
+        if (list.length === 0) return '<div class="triage-empty">No tactics in this category</div>';
+        return list.map(item => `
+            <div class="triage-item">
+                <span class="triage-item-name" title="${item.displayName}">${item.displayName}</span>
+                <span class="triage-item-pct">${item.coverage % 1 === 0 ? item.coverage : item.coverage.toFixed(1)}%</span>
+            </div>
+        `).join('');
+    };
+
+    let html = `
+        <div class="report-section">
+            <h4><i class="bi bi-shield-slash"></i> Tactic Gap Triage Radar</h4>
+            <p class="text-on-surface-secondary mb-3">Gap ranking categorized by detection strength across ATT&CK tactics.</p>
+            <div class="tactic-triage-grid">
+                <div class="triage-column critical">
+                    <div class="triage-header">
+                        <span class="triage-header-title"><i class="bi bi-shield-fill-x"></i> Critical Gaps (<50%)</span>
+                        <span class="triage-badge">${criticalGaps.length}</span>
+                    </div>
+                    <div class="triage-list">
+                        ${formatItems(criticalGaps)}
+                    </div>
+                </div>
+                <div class="triage-column moderate">
+                    <div class="triage-header">
+                        <span class="triage-header-title"><i class="bi bi-shield-fill-exclamation"></i> Moderate (50%-80%)</span>
+                        <span class="triage-badge">${moderateCoverage.length}</span>
+                    </div>
+                    <div class="triage-list">
+                        ${formatItems(moderateCoverage)}
+                    </div>
+                </div>
+                <div class="triage-column strong">
+                    <div class="triage-header">
+                        <span class="triage-header-title"><i class="bi bi-shield-fill-check"></i> Strong Coverage (≥80%)</span>
+                        <span class="triage-badge">${strongCoverage.length}</span>
+                    </div>
+                    <div class="triage-list">
+                        ${formatItems(strongCoverage)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     return html;
 }
 
@@ -1309,9 +1667,12 @@ function buildChangesSection(changes) {
                 break;
             case 'color_change':
                 icon = 'bi-palette';
-                const fromColor = change.data.from || 'none';
-                const toColor = change.data.to || 'none';
-                text = `<strong>Priority Updated:</strong> ${change.data.techniqueID} - ${fromColor} → ${toColor}`;
+                const techType = isSubTechnique(change.data.techniqueID) ? 'sub' : 'main';
+                const fromLabel = getColorName(change.data.from, techType);
+                const toLabel = getColorName(change.data.to, techType);
+                const readableFrom = fromLabel === 'None' ? 'Unassigned' : fromLabel;
+                const readableTo = toLabel === 'None' ? 'Unassigned' : toLabel;
+                text = `<strong>Coverage Status Changed:</strong> ${change.data.techniqueID} - <span style="font-weight: 600;">${readableFrom}</span> &rarr; <span style="font-weight: 600;">${readableTo}</span>`;
                 break;
             case 'mitigation_change':
                 icon = 'bi-shield-check';
@@ -1343,15 +1704,15 @@ function buildThreatsSection(report) {
     });
     
     if (changedTechIds.size === 0) {
-        return '<p class="text-muted">No techniques added this month.</p>';
+        return '<p class="text-on-surface-secondary">No techniques added this month.</p>';
     }
     
     if (!state.groups || state.groups.length === 0 || !state.software || state.software.length === 0) {
-        return '<p class="text-muted">Threat intelligence data not loaded. Please ensure ATT&CK data is loaded.</p>';
+        return '<p class="text-on-surface-secondary">Threat intelligence data not loaded. Please ensure ATT&CK data is loaded.</p>';
     }
     
     if (!state.relationships || state.relationships.length === 0) {
-        return '<p class="text-muted">No threat associations found in the loaded data.</p>';
+        return '<p class="text-on-surface-secondary">No threat associations found in the loaded data.</p>';
     }
     
     const threatMap = { groups: [], software: [] };
@@ -1402,34 +1763,64 @@ function buildThreatsSection(report) {
     });
     
     if (allThreats.length === 0) {
-        return '<p class="text-muted">No threat actors or tools associated with this month\'s techniques.</p>';
+        return '<p class="text-on-surface-secondary">No threat actors or tools associated with this month\'s techniques.</p>';
     }
     
     const sortedThreats = allThreats.sort((a, b) => b.techniques - a.techniques).slice(0, 8);
     
-    let html = '<table class="report-table"><thead><tr><th>Type</th><th>Name</th><th>Associated Techniques</th></tr></thead><tbody>';
+    let html = '<div class="threat-roi-grid">';
     
     sortedThreats.forEach(t => {
-        const icon = t.type === 'group' ? 'bi-people' : 'bi-cpu';
-        const techList = t.techniqueIds?.map(id => {
+        const typeLabel = t.type === 'group' ? 'Threat Group' : t.type.toUpperCase();
+        const icon = t.type === 'group' ? 'bi-people-fill' : 'bi-cpu-fill';
+        
+        // Determine exposure risk based on count of techniques used
+        let exposureLevel = 'Medium';
+        let exposureClass = 'medium';
+        if (t.techniques >= 4) {
+            exposureLevel = 'Critical';
+            exposureClass = 'critical';
+        } else if (t.techniques >= 2) {
+            exposureLevel = 'High';
+            exposureClass = 'high';
+        }
+        
+        // Truncate techniques list to top 6 elements with a more badge
+        const techListHtml = t.techniqueIds?.slice(0, 6).map(id => {
             const techId = getTechniqueIdFromStix(id);
             const name = getTechniqueName(techId || id);
-            return techId ? `${techId} (${name})` : id;
-        }).join(', ') || t.techniques;
+            return techId ? `<span class="roi-tech-chip" title="${techId} - ${name}">${techId}</span>` : `<span class="roi-tech-chip">${id}</span>`;
+        }).join('') || '';
+        const moreCount = t.techniqueIds?.length > 6 ? t.techniqueIds.length - 6 : 0;
+        const moreTechsHtml = moreCount > 0 ? `<span class="roi-tech-chip more">+${moreCount} more</span>` : '';
         
-        html += `<tr>
-            <td><i class="bi ${icon} me-2"></i>${t.type}</td>
-            <td>${t.name}</td>
-            <td>${techList}</td>
-        </tr>`;
+        html += `
+            <div class="threat-roi-card ${t.type === 'group' ? 'group' : 'software'}">
+                <div class="roi-card-left">
+                    <span class="roi-card-type"><i class="bi ${icon} mr-1"></i>${typeLabel}</span>
+                    <h5 class="roi-card-title" style="margin: 0.15rem 0;">${t.name}</h5>
+                </div>
+                <div class="roi-card-mid">
+                    <div class="roi-card-metric" style="margin-bottom: 0.35rem;">
+                        <i class="bi bi-shield-check"></i> Disruption Impact: <strong>${t.techniques} technique${t.techniques > 1 ? 's' : ''}</strong>
+                    </div>
+                    <div class="roi-tech-chips">
+                        ${techListHtml}${moreTechsHtml}
+                    </div>
+                </div>
+                <div class="roi-card-right">
+                    <span class="roi-exposure-badge ${exposureClass}">${exposureLevel} Risk</span>
+                </div>
+            </div>
+        `;
     });
     
-    html += '</tbody></table>';
+    html += '</div>';
     return html;
 }
 
 function buildTacticTable(tactics, report) {
-    if (!tactics || tactics.length === 0) return '<p class="text-muted">No tactic data available.</p>';
+    if (!tactics || tactics.length === 0) return '<p class="text-on-surface-secondary">No tactic data available.</p>';
     const fmtCov = (v) => v % 1 === 0 ? v : v.toFixed(1);
     
     let html = '<table class="report-table"><thead><tr><th>Tactic</th><th>Coverage</th><th>Progress</th></tr></thead><tbody>';
@@ -1452,7 +1843,7 @@ function buildTacticTable(tactics, report) {
 }
 
 function buildLanguageTable(languages, report) {
-    if (!languages || languages.length === 0) return '<p class="text-muted">No language data available.</p>';
+    if (!languages || languages.length === 0) return '<p class="text-on-surface-secondary">No language data available.</p>';
     
     let html = '<table class="report-table"><thead><tr><th>Language</th><th>Query Count</th></tr></thead><tbody>';
     
@@ -1464,26 +1855,43 @@ function buildLanguageTable(languages, report) {
     return html;
 }
 
+function getCoverageByTacticUpToMonth(targetMonth) {
+    if (!state.currentLayer?.techniques || !state.techniques) return [];
+    const tacticMap = {};
+    state.techniques.forEach(stixTech => {
+        const techId = stixTech.external_references?.[0]?.external_id;
+        if (!techId) return;
+        const tactics = stixTech.kill_chain_phases?.filter(k => k.kill_chain_name === 'mitre-attack').map(k => k.phase_name) || [];
+        const layerTech = state.currentLayer.techniques.find(t => t.techniqueID === techId);
+        
+        const hasQueries = layerTech?.queries?.some(q => {
+            const qMonth = resolveQueryMonth(q, layerTech);
+            return qMonth <= targetMonth;
+        });
+        
+        tactics.forEach(tactic => {
+            if (!tacticMap[tactic]) tacticMap[tactic] = { total: 0, withQueries: 0 };
+            tacticMap[tactic].total++;
+            if (hasQueries) tacticMap[tactic].withQueries++;
+        });
+    });
+    return Object.entries(tacticMap).map(([tactic, data]) => ({
+        tactic, coverage: data.total > 0 ? Math.round((data.withQueries / data.total) * 1000) / 10 : 0, withQueries: data.withQueries, total: data.total
+    })).sort((a, b) => b.coverage - a.coverage);
+}
+
 function buildCoverageChanges(report) {
-    const sortedReports = [...(state._cachedReports || [])].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
-    const reportIdx = sortedReports.findIndex(r => r.id === report.id);
+    const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const availableMonths = getAvailableMonths().sort((a, b) => b.localeCompare(a));
+    const currentIdx = availableMonths.indexOf(currentMonth);
+    const prevMonth = currentIdx !== -1 && currentIdx + 1 < availableMonths.length ? availableMonths[currentIdx + 1] : null;
     
-    // Find the most recent report from a DIFFERENT month
-    const currentMonthKey = report.reportMonth || report.generatedAt?.slice(0, 7);
-    let lastReport = null;
-    for (let i = reportIdx + 1; i < sortedReports.length; i++) {
-        const candidate = sortedReports[i];
-        const candidateMonthKey = candidate.reportMonth || candidate.generatedAt?.slice(0, 7);
-        if (candidateMonthKey !== currentMonthKey) {
-            lastReport = candidate;
-            break;
-        }
+    if (!prevMonth) {
+        return '<p class="text-on-surface-secondary">No previous month data to compare against.</p>';
     }
     
-    if (!lastReport || !lastReport.coverageByTactic || lastReport.coverageByTactic.length === 0) return '<p class="text-muted">No previous update report to compare against.</p>';
-    
-    const currentTactics = getCoverageByTactic();
-    const lastTactics = lastReport.coverageByTactic;
+    const currentTactics = getCoverageByTacticUpToMonth(currentMonth);
+    const lastTactics = getCoverageByTacticUpToMonth(prevMonth);
     const fmtCov = (v) => v % 1 === 0 ? v : v.toFixed(1);
     
     let html = '<table class="report-table"><thead><tr><th>Tactic</th><th>Previous</th><th>Current</th><th>Change</th></tr></thead><tbody>';
@@ -1498,8 +1906,8 @@ function buildCoverageChanges(report) {
         const lastPct = last?.coverage || 0;
         const change = currentPct - lastPct;
         
-        const changeIcon = change > 0 ? '<i class="bi bi-arrow-up text-success"></i>' : change < 0 ? '<i class="bi bi-arrow-down text-danger"></i>' : '<i class="bi bi-dash text-muted"></i>';
-        const changeText = change > 0 ? `+${change % 1 === 0 ? change : change.toFixed(1)}%` : change < 0 ? `${change % 1 === 0 ? change : change.toFixed(1)}%` : '0%';
+        const changeIcon = change > 0 ? '<i class="bi bi-arrow-up text-success"></i>' : change < 0 ? '<i class="bi bi-arrow-down text-danger"></i>' : '<i class="bi bi-dash text-on-surface-secondary"></i>';
+        const changeText = change === 0 ? '0%' : (change > 0 ? '+' : '') + Number(change.toFixed(1)) + '%';
         
         const tacticName = tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         
@@ -1521,14 +1929,14 @@ function buildDetectionResults(report) {
     let html = '<div id="detection-results-container">';
     
     if (results.length === 0) {
-        html += '<p class="text-muted mb-3">No tangible results for this update.</p>';
+        html += '<p class="text-on-surface-secondary mb-3">No tangible results for this update.</p>';
     }
     
     results.forEach((result, idx) => {
         html += `
             <div class="detection-result-item mb-3 p-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <input type="text" class="form-control form-control-sm me-2" placeholder="Threat Hunt Name" value="${result.huntName || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'huntName', this.value)">
+                <div class="d-flex justify-content-between align-iteml-center mb-2">
+                    <input type="text" class="form-control form-control-sm mr-2" placeholder="Threat Hunt Name" value="${result.huntName || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'huntName', this.value)">
                     <button class="btn btn-sm btn-outline-danger" onclick="removeDetectionResult('${report.id}', ${idx})">
                         <i class="bi bi-trash"></i>
                     </button>
@@ -1541,7 +1949,7 @@ function buildDetectionResults(report) {
     
     html += `
         <button class="btn btn-sm btn-outline-primary" onclick="addDetectionResult('${report.id}')">
-            <i class="bi bi-plus me-1"></i>Add Detection Result
+            <i class="bi bi-plus mr-1"></i>Add Detection Result
         </button>
     </div>`;
     
@@ -1555,7 +1963,7 @@ function buildReferences(report) {
     
     references.forEach((ref, idx) => {
         html += `
-            <div class="reference-item mb-2 d-flex align-items-center gap-2">
+            <div class="reference-item mb-2 d-flex align-iteml-center gap-2">
                 <input type="text" class="form-control form-control-sm" placeholder="Reference URL or description" value="${ref}" onchange="updateReference('${report.id}', ${idx}, this.value)">
                 <button class="btn btn-sm btn-outline-danger" onclick="removeReference('${report.id}', ${idx})">
                     <i class="bi bi-trash"></i>
@@ -1566,7 +1974,7 @@ function buildReferences(report) {
     
     html += `
         <button class="btn btn-sm btn-outline-primary" onclick="addReference('${report.id}')">
-            <i class="bi bi-plus me-1"></i>Add Reference
+            <i class="bi bi-plus mr-1"></i>Add Reference
         </button>
     </div>`;
     
@@ -1579,19 +1987,19 @@ function buildAppendix(report) {
     
     return `
         <div class="mb-3">
-            <label class="form-label text-muted small">Methodology</label>
+            <label class="form-label text-on-surface-tertiary text-sm">Methodology</label>
             <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'methodology', this.value)" placeholder="Describe the methodology used for this assessment...">${appendix.methodology || dynamicAppendix.methodology}</textarea>
         </div>
         <div class="mb-3">
-            <label class="form-label text-muted small">Scope</label>
+            <label class="form-label text-on-surface-tertiary text-sm">Scope</label>
             <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'scope', this.value)" placeholder="Define the scope of this assessment...">${appendix.scope || dynamicAppendix.scope}</textarea>
         </div>
         <div class="mb-3">
-            <label class="form-label text-muted small">Limitations</label>
+            <label class="form-label text-on-surface-tertiary text-sm">Limitations</label>
             <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'limitations', this.value)" placeholder="Document any limitations or constraints...">${appendix.limitations || dynamicAppendix.limitations}</textarea>
         </div>
         <div class="mb-3">
-            <label class="form-label text-muted small">Additional Notes</label>
+            <label class="form-label text-on-surface-tertiary text-sm">Additional Notes</label>
             <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'additionalNotes', this.value)" placeholder="Any additional notes or context...">${appendix.additionalNotes || dynamicAppendix.additionalNotes}</textarea>
         </div>
     `;
@@ -1691,6 +2099,8 @@ function generateDynamicMonthlyFocus(report) {
     
     if (techniques.length === 0) return '';
     
+    const stats = getMonthStats(month);
+    
     const tacticCounts = {};
     techniques.forEach(ann => {
         const tactics = getTechniqueTactics(ann.techniqueID);
@@ -1704,15 +2114,8 @@ function generateDynamicMonthlyFocus(report) {
         .slice(0, 3)
         .map(([tactic]) => tactic);
     
-    const newTechCount = techniques.filter(t => !isSubTechnique(t.techniqueID)).length;
-    const newSubCount = techniques.filter(t => isSubTechnique(t.techniqueID)).length;
-    const totalQueries = techniques.reduce((sum, ann) => {
-        const qCount = ann.queries?.filter(q => q.monthAdded === month).length || 0;
-        return sum + qCount;
-    }, 0);
-    
     let focus = `This month's threat hunting activities focused on ${topTactics.length > 0 ? topTactics.join(', ') + ' tactics' : 'multiple tactics'}. `;
-    focus += `Added ${newTechCount} new technique${newTechCount !== 1 ? 's' : ''} and ${newSubCount} sub-technique${newSubCount !== 1 ? 's' : ''} with ${totalQueries} detection queries. `;
+    focus += `Added ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} with ${stats.queries} detection queries. `;
     
     if (topTactics.length > 0) {
         focus += `Primary focus areas include ${topTactics[0]} (${tacticCounts[topTactics[0]]} techniques), `;
@@ -1731,7 +2134,8 @@ function generateDynamicMonthlyFocus(report) {
 }
 
 function generateDynamicGapAnalysis(report) {
-    const tactics = report.coverageByTactic || getCoverageByTactic();
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const tactics = getCoverageByTacticUpToMonth(month);
     if (tactics.length === 0) return '';
     
     const lowCoverage = tactics.filter(t => t.coverage < 50).sort((a, b) => a.coverage - b.coverage);
@@ -1781,17 +2185,17 @@ function generateDynamicGapAnalysis(report) {
 }
 
 function generateDynamicExecutiveSummary(report) {
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     const stats = getMonthStats(month);
     
-    const fullStats = report.fullStats || getFullCoverageStats();
-    const tactics = report.coverageByTactic || getCoverageByTactic();
-    const overallCoverage = fullStats.pct % 1 === 0 ? fullStats.pct : fullStats.pct.toFixed(1);
+    const coverageStats = getOverallCoverageStatsUpToMonth(month);
+    const tactics = getCoverageByTacticUpToMonth(month);
+    const overallCoverage = coverageStats.pct % 1 === 0 ? coverageStats.pct : coverageStats.pct.toFixed(1);
     
     const tacticCounts = {};
     state.currentLayer?.techniques.forEach(ann => {
         if (!ann.queries) return;
-        const hasMonthQuery = ann.queries.some(q => q.monthAdded === month);
+        const hasMonthQuery = ann.queries.some(q => resolveQueryMonth(q, ann) === month);
         if (!hasMonthQuery) return;
         
         const tacs = getTechniqueTactics(ann.techniqueID);
@@ -1807,11 +2211,16 @@ function generateDynamicExecutiveSummary(report) {
     
     let summary = `This ${report.type === 'initial' ? 'initial assessment' : 'monthly update'} report covers threat hunting activities for ${report.reportMonth || month}. `;
     
-    summary += `Overall detection coverage stands at ${overallCoverage}% across ${fullStats.logged} of ${fullStats.total} techniques. `;
+    if (coverageStats.parents && coverageStats.parents.total) {
+        const allPct = coverageStats.all.pct % 1 === 0 ? coverageStats.all.pct : coverageStats.all.pct.toFixed(1);
+        summary += `Overall detection coverage stands at ${overallCoverage}% across ${coverageStats.parents.covered} of ${coverageStats.parents.total} parent techniques (or ${allPct}% across ${coverageStats.all.covered} of ${coverageStats.all.total} total techniques and sub-techniques). `;
+    } else {
+        summary += `Overall detection coverage stands at ${overallCoverage}% across ${coverageStats.covered} of ${coverageStats.total} techniques. `;
+    }
     
     if (stats.mainTechs > 0 || stats.subTechs > 0) {
         summary += `During this period, ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} were added to the detection portfolio, `;
-        summary += `resulting in ${stats.queries} active detection queries. `;
+        summary += `resulting in ${stats.queries} new detection queries added this period. `;
     }
     
     if (topTactics.length > 0) {
@@ -1936,10 +2345,13 @@ async function exportReportPDF(reportId) {
         return;
     }
     
-    const htmlContent = buildEmailHTML(report);
+    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const htmlContent = buildEmailHTML(report, isDark);
     
     const container = document.createElement('div');
-    container.style.cssText = 'width:794px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;';
+    container.style.cssText = isDark
+        ? 'width:794px;background:#070814;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#cbd5e1;'
+        : 'width:794px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;';
     container.innerHTML = htmlContent;
     document.body.appendChild(container);
     
@@ -1970,7 +2382,8 @@ function exportReportEmail(reportId) {
         return;
     }
 
-    const htmlContent = buildEmailHTML(report);
+    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const htmlContent = buildEmailHTML(report, isDark);
     const blob = new Blob([htmlContent], { type: 'text/html' });
     const link = document.createElement('a');
     link.download = `report_${reportId}.html`;
@@ -1987,17 +2400,31 @@ function exportReportEML(reportId) {
         return;
     }
 
-    const htmlContent = buildEmailHTML(report);
+    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const htmlContent = buildEmailHTML(report, isDark);
     const subject = `MITRE ATT&CK Coverage Report - ${report.reportMonth || report.generatedDate}`;
+    
+    // Base64 encode the HTML to prevent line length issues in EML viewers
+    const utf8Bytes = new TextEncoder().encode(htmlContent);
+    let binaryString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+        binaryString += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
+    }
+    const base64Content = btoa(binaryString);
+    // Split base64 into 76 character lines per RFC 2045
+    const formattedBase64 = base64Content.match(/.{1,76}/g).join('\r\n');
+    
     const emlContent = [
-        'From: MITRE ATT&CK Coverage Tool',
+        'From: MITRE ATT&CK Coverage Tool <noreply@mitre-attack-explorer>',
         `To: recipient@example.com`,
         `Subject: ${subject}`,
         `Date: ${new Date().toUTCString()}`,
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset="UTF-8"',
+        'Content-Transfer-Encoding: base64',
         '',
-        htmlContent
+        formattedBase64
     ].join('\r\n');
 
     const blob = new Blob([emlContent], { type: 'message/rfc822' });
@@ -2009,7 +2436,50 @@ function exportReportEML(reportId) {
     showToast('EML file exported', 'success');
 }
 
-function buildEmailMonthlyActivity(report, theme) {
+async function exportReportSVG(reportId) {
+    const report = state._cachedReports?.find(r => r.id === reportId);
+    if (!report) {
+        showToast('Report not found', 'error');
+        return;
+    }
+
+    if (typeof window.htmlToImage === 'undefined') {
+        showToast('SVG library not loaded', 'error');
+        return;
+    }
+
+    showToast('Generating SVG...', 'info');
+
+    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const htmlContent = buildEmailHTML(report, isDark);
+    const container = document.createElement('div');
+    container.style.cssText = isDark
+        ? 'width:794px;background:#070814;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#cbd5e1;position:absolute;top:-9999px;left:-9999px;'
+        : 'width:794px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;position:absolute;top:-9999px;left:-9999px;';
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
+
+    try {
+        const svgDataUrl = await window.htmlToImage.toSvg(container, {
+            filter: (node) => {
+                // filter out hidden elements
+                return node.tagName !== 'SCRIPT';
+            }
+        });
+        const link = document.createElement('a');
+        link.download = `report_${reportId}.svg`;
+        link.href = svgDataUrl;
+        link.click();
+        showToast('SVG exported', 'success');
+    } catch (e) {
+        console.error('SVG generation failed:', e);
+        showToast('Failed to generate SVG: ' + e.message, 'error');
+    } finally {
+        document.body.removeChild(container);
+    }
+}
+
+function buildEmailMonthlyActivity(report, theme, isDark = false) {
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || report.reportMonth?.slice(0, 7);
     if (!month) return '';
     
@@ -2023,87 +2493,313 @@ function buildEmailMonthlyActivity(report, theme) {
     const newTechniques = techniques.filter(t => !existingIds.has(t.techniqueID));
     const newHunts = getNewHuntsForExistingTechniques(month, existingIds);
     
-    let html = '';
+    if (colorChanges.length === 0 && newTechniques.length === 0 && newHunts.length === 0) return '';
     
+    const mainTechniques = newTechniques.filter(t => !isSubTechnique(t.techniqueID));
+    const subTechniques = newTechniques.filter(t => isSubTechnique(t.techniqueID));
+    
+    let html = `<div class="section"><h3>Monthly Activity Timeline</h3>
+        <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">`;
+    
+    const renderTimelineRow = (color, typeLabel, title, details, footerText) => {
+        const parts = title.split(' - ');
+        const isStandardTech = parts.length > 1;
+        const techId = isStandardTech ? parts[0] : '';
+        const techName = isStandardTech ? parts.slice(1).join(' - ') : title;
+
+        const titleHtml = isStandardTech
+            ? `<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: ${color}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'}; padding: 2px 6px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'};">${techId}</span>
+               <span style="font-size: 11.5px; font-weight: 600; color: ${isDark ? '#f3f4f6' : '#1e293b'}; margin-left: 6px;">${techName}</span>`
+            : `<span style="font-size: 11.5px; font-weight: 600; color: ${isDark ? '#f3f4f6' : '#1e293b'};">${title}</span>`;
+
+        return `
+            <tr>
+                <td style="width: 24px; vertical-align: top; padding-top: 12px; text-align: center; position: relative;">
+                    <div style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 3px solid ${color}; background-color: ${isDark ? '#070814' : '#ffffff'}; box-shadow: ${isDark ? '0 0 10px ' + color + '40' : 'none'}; z-index: 2; position: relative;"></div>
+                </td>
+                <td style="padding: 0 0 16px 12px; vertical-align: top;">
+                    <div style="background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.8) 0%, rgba(13, 14, 28, 0.5) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}; border-left: 4px solid ${color}; border-radius: 10px; padding: 14px; box-shadow: ${isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(15, 23, 42, 0.03)'}; transition: all 0.3s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                ${titleHtml}
+                            </div>
+                            <span style="font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 9999px; ${isDark ? 'background-color: rgba(255, 255, 255, 0.06); color: #a2a6cc;' : 'background-color: #f1f5f9; color: #475569;'}">${typeLabel}</span>
+                        </div>
+                        ${details ? `<div style="font-size: 11px; color: ${isDark ? '#a2a6cc' : '#475569'}; line-height: 1.5; margin-top: 6px;">${details}</div>` : ''}
+                        ${footerText ? `
+                            <div style="font-size: 10px; color: ${isDark ? '#f3f4f6' : '#1e293b'}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0'}; border-radius: 6px; padding: 8px 12px; margin-top: 10px; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace;">
+                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: ${color}; flex-shrink: 0; box-shadow: 0 0 6px ${color};"></span>
+                                ${footerText}
+                            </div>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `;
+    };
+    
+    // Status/Color changes
     if (colorChanges.length > 0) {
-        html += `<div class="section"><h3>Status Changes</h3><ul class="changes-list">`;
+        html += `
+            <tr>
+                <td colspan="2" style="padding: 12px 0 8px 0; border: none;">
+                    <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding-bottom: 3px;">
+                        🔄 Status & Coverage Changes (${colorChanges.length})
+                    </div>
+                    <div style="font-size: 9.5px; color: ${isDark ? '#a2a6cc' : '#64748b'}; margin-top: 4px; line-height: 1.4; font-style: italic;">
+                        Tracks automatic updates to technique coverage status when live threat hunt queries or sub-technique coverage percentages change (e.g., transitioning from unassigned to a defined coverage level).
+                    </div>
+                </td>
+            </tr>
+        `;
         colorChanges.forEach(change => {
             const techName = getTechniqueName(change.techniqueID);
             const isSub = isSubTechnique(change.techniqueID);
-            const typeLabel = isSub ? 'Sub-technique' : 'Technique';
-            html += `<li class="status"><strong>${change.techniqueID}</strong> - ${techName} <span class="badge badge-blue">${typeLabel}</span><br><span style="color: #64748b; font-size: 0.85rem;">${change.fromLabel} → ${change.toLabel} | Triggered by: "${change.queryName}"</span></li>`;
-        });
-        html += '</ul></div>';
-    }
-    
-    const newMains = newTechniques.filter(t => !isSubTechnique(t.techniqueID));
-    const newSubs = newTechniques.filter(t => isSubTechnique(t.techniqueID));
-    
-    if (newMains.length > 0) {
-        html += `<div class="section"><h3>New Techniques Added</h3><ul class="changes-list">`;
-        newMains.forEach(ann => {
-            const techName = getTechniqueName(ann.techniqueID);
-            const techDesc = getTechniqueDescription(ann.techniqueID);
-            const techTactics = getTechniqueTactics(ann.techniqueID);
-            const queryNames = ann.queries?.map(q => q.name).join(', ') || 'No queries';
+            const techType = isSub ? 'Sub-technique' : 'Technique';
+            const typeBadgeBg = isSub ? 'rgba(56, 189, 248, 0.1)' : 'rgba(168, 85, 247, 0.1)';
+            const typeBadgeColor = isSub ? '#0284c7' : '#7e22ce';
             
-            html += `<li class="new"><strong>${ann.techniqueID}</strong> - ${techName}<br>`;
-            if (techDesc) html += `<span style="color: #64748b; font-size: 0.85rem;">${techDesc}</span><br>`;
-            if (techTactics.length > 0) html += `<span style="color: ${theme.accent}; font-size: 0.8rem;">Tactics: ${techTactics.join(', ')}</span><br>`;
-            html += `<span style="color: #64748b; font-size: 0.85rem;">Queries: ${queryNames}</span></li>`;
-        });
-        html += '</ul></div>';
-    }
-    
-    if (newSubs.length > 0) {
-        html += `<div class="section"><h3>New Sub-techniques Added</h3><ul class="changes-list">`;
-        newSubs.forEach(ann => {
-            const techName = getTechniqueName(ann.techniqueID);
-            const techDesc = getTechniqueDescription(ann.techniqueID);
-            const techTactics = getTechniqueTactics(ann.techniqueID);
-            const queryNames = ann.queries?.map(q => q.name).join(', ') || 'No queries';
+            const fromLabel = change.fromLabel === 'None' ? 'Unassigned' : change.fromLabel;
+            const toLabel = change.toLabel === 'None' ? 'Unassigned' : change.toLabel;
             
-            html += `<li class="new"><strong>${ann.techniqueID}</strong> - ${techName}<br>`;
-            if (techDesc) html += `<span style="color: #64748b; font-size: 0.85rem;">${techDesc}</span><br>`;
-            if (techTactics.length > 0) html += `<span style="color: ${theme.accent}; font-size: 0.8rem;">Tactics: ${techTactics.join(', ')}</span><br>`;
-            html += `<span style="color: #64748b; font-size: 0.85rem;">Queries: ${queryNames}</span></li>`;
+            html += `
+                <tr>
+                    <td style="width: 24px; vertical-align: top; padding-top: 10px; text-align: center;">
+                        <div style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 54, 0.4); z-index: 2; position: relative;"></div>
+                    </td>
+                    <td style="padding: 0 0 10px 12px; vertical-align: top;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; flex-wrap: wrap; gap: 8px; background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.7) 0%, rgba(13, 14, 28, 0.4) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0'}; border-left: 3px solid #fbbf24; padding: 10px 14px; border-radius: 8px; box-shadow: ${isDark ? '0 4px 12px rgba(0,0,0,0.15)' : '0 2px 6px rgba(15, 23, 42, 0.02)'};">
+                            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${isDark ? '#f3f4f6' : '#1e293b'}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'};">${change.techniqueID}</span>
+                                <span style="font-weight: 600; color: ${isDark ? '#cbd5e1' : '#475569'}; margin-left: 6px;">${techName}</span>
+                                <span style="font-size: 8px; font-weight: 700; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; background-color: ${typeBadgeBg}; color: ${typeBadgeColor}; margin-left: 6px; display: inline-block; vertical-align: middle;">${techType}</span>
+                            </div>
+                            <div style="font-size: 10px; color: ${isDark ? '#a2a6cc' : '#64748b'}; font-weight: 500; margin-left: auto;">
+                                Coverage Status: <span style="font-weight: 600; color: ${isDark ? '#fbbf24' : '#d97706'};">${fromLabel}</span> &rarr; <span style="font-weight: 600; color: ${isDark ? '#4ade80' : '#16a34a'};">${toLabel}</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
         });
-        html += '</ul></div>';
     }
     
-    if (newHunts.length > 0) {
-        html += `<div class="section"><h3>New Hunts on Existing Techniques</h3><ul class="changes-list">`;
-        newHunts.forEach(hunt => {
-            const techName = getTechniqueName(hunt.techniqueID);
-            const isSub = isSubTechnique(hunt.techniqueID);
-            const typeLabel = isSub ? 'Sub-technique' : 'Technique';
-            html += `<li class="hunt"><strong>${hunt.techniqueID}</strong> - ${techName} <span class="badge badge-blue">${typeLabel}</span><br><span style="color: #64748b; font-size: 0.85rem;">Hunt: "${hunt.huntName}"</span></li>`;
+    // New Main Techniques
+    if (mainTechniques.length > 0) {
+        html += `
+            <tr>
+                <td colspan="2" style="padding: 16px 0 8px 0; border: none;">
+                    <div style="font-size: 11px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding-bottom: 3px;">
+                        🛡️ New Main Techniques Deployed (${mainTechniques.length})
+                    </div>
+                    <div style="font-size: 9.5px; color: ${isDark ? '#a2a6cc' : '#64748b'}; margin-top: 4px; line-height: 1.4; font-style: italic;">
+                        Displays parent-level ATT&CK techniques that received their very first hunt query implementation this month, expanding our defensive visibility footprint.
+                    </div>
+                </td>
+            </tr>
+        `;
+        mainTechniques.forEach(ann => {
+            const techName = getTechniqueName(ann.techniqueID);
+            const techDesc = getTechniqueDescription(ann.techniqueID) || '';
+            const techTactics = getTechniqueTactics(ann.techniqueID);
+            const queryNames = (ann.queries && ann.queries.length > 0) ? ann.queries.map(q => q.name).join(', ') : 'No queries (Check sub-techniques)';
+            
+            let details = techDesc ? `<div style="margin-bottom: 4px;">${techDesc}</div>` : '';
+            if (techTactics.length > 0) details += `<div style="font-size: 10px; color: ${theme.accent};">Tactics: ${techTactics.join(', ')}</div>`;
+            
+            html += renderTimelineRow(
+                '#34d399', 
+                'Technique', 
+                `${ann.techniqueID} - ${techName}`, 
+                details,
+                `Queries implemented: "${queryNames}"`
+            );
         });
-        html += '</ul></div>';
     }
     
+    // New Sub-techniques
+    if (subTechniques.length > 0) {
+        html += `
+            <tr>
+                <td colspan="2" style="padding: 16px 0 8px 0; border: none;">
+                    <div style="font-size: 11px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding-bottom: 3px;">
+                        🧩 New Sub-techniques Deployed (${subTechniques.length})
+                    </div>
+                    <div style="font-size: 9.5px; color: ${isDark ? '#a2a6cc' : '#64748b'}; margin-top: 4px; line-height: 1.4; font-style: italic;">
+                        Highlights granular, specific sub-techniques that have had threat hunt queries newly deployed, providing high-fidelity detection capability.
+                    </div>
+                </td>
+            </tr>
+        `;
+        subTechniques.forEach(ann => {
+            const techName = getTechniqueName(ann.techniqueID);
+            const techDesc = getTechniqueDescription(ann.techniqueID) || '';
+            const techTactics = getTechniqueTactics(ann.techniqueID);
+            const queryNames = (ann.queries && ann.queries.length > 0) ? ann.queries.map(q => q.name).join(', ') : 'No queries';
+            
+            let details = techDesc ? `<div style="margin-bottom: 4px;">${techDesc}</div>` : '';
+            if (techTactics.length > 0) details += `<div style="font-size: 10px; color: ${theme.accent};">Tactics: ${techTactics.join(', ')}</div>`;
+            
+            html += renderTimelineRow(
+                '#38bdf8', 
+                'Sub-technique', 
+                `${ann.techniqueID} - ${techName}`, 
+                details,
+                `Queries implemented: "${queryNames}"`
+            );
+        });
+    }
+    
+    html += `</table></div>`;
     return html;
 }
 
-function buildEmailHTML(report) {
+function buildGapAnalysisVisual(report, theme, isDark = false) {
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const tactics = getCoverageByTacticUpToMonth(month);
+    if (tactics.length === 0) return '';
+    
+    const lowCoverage = tactics.filter(t => t.coverage < 50).sort((a, b) => a.coverage - b.coverage);
+    const mediumCoverage = tactics.filter(t => t.coverage >= 50 && t.coverage < 80).sort((a, b) => a.coverage - b.coverage);
+    const highCoverage = tactics.filter(t => t.coverage >= 80).sort((a, b) => b.coverage - a.coverage);
+    
+    let html = `
+        <div class="section" style="page-break-inside: avoid;">
+            <h3>Gap Analysis & Prioritization</h3>
+            <p style="margin-bottom: 12px; font-size: 13px; color: ${isDark ? '#cbd5e1' : '#475569'};">A granular assessment of coverage across all tactics, with recommended immediate action items to address visibility gaps.</p>
+    `;
+    
+    // Critical Gaps Panel
+    if (lowCoverage.length > 0) {
+        const items = lowCoverage.map(t => {
+            const tacticName = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return `
+                <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; ${isDark ? 'background-color: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2);' : 'background-color: #ffffff; border: 1px solid #fee2e2;'} border-radius: 6px; padding: 8px 12px; font-size: 12px;">
+                    <div>
+                        <strong style="color: ${isDark ? '#fca5a5' : '#991b1b'};">${tacticName}</strong>
+                        <span style="color: #64748b; margin-left: 6px;">(${t.withQueries}/${t.total} techniques)</span>
+                    </div>
+                    <span style="font-weight: 700; color: ${isDark ? '#f87171' : '#ef4444'}; background-color: ${isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2'}; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${t.coverage.toFixed(1)}% Coverage</span>
+                </div>
+            `;
+        }).join('');
+        
+        html += `
+            <div style="${isDark ? 'background-color: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.2);' : 'background-color: #fffafb; border: 1px solid #fee2e2;'} border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+                <div style="font-size: 12px; font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    ⚠️ CRITICAL VISIBILITY GAPS (<50% COVERAGE)
+                </div>
+                ${items}
+                <div style="font-size: 11px; color: ${isDark ? '#fca5a5' : '#7f1d1d'}; margin-top: 10px; font-style: italic;">
+                    <strong>Recommendation:</strong> Prioritize immediate deployment of threat hunts in these sectors to minimize active blindspots.
+                </div>
+            </div>
+        `;
+    }
+    
+    // Moderate Coverage Panel
+    if (mediumCoverage.length > 0) {
+        const items = mediumCoverage.map(t => {
+            const tacticName = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            return `
+                <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; ${isDark ? 'background-color: rgba(217, 119, 6, 0.05); border: 1px solid rgba(217, 119, 6, 0.2);' : 'background-color: #ffffff; border: 1px solid #fef3c7;'} border-radius: 6px; padding: 8px 12px; font-size: 12px;">
+                    <div>
+                        <strong style="color: ${isDark ? '#fcd34d' : '#92400e'};">${tacticName}</strong>
+                        <span style="color: #64748b; margin-left: 6px;">(${t.withQueries}/${t.total} techniques)</span>
+                    </div>
+                    <span style="font-weight: 700; color: ${isDark ? '#fbbf24' : '#d97706'}; background-color: ${isDark ? 'rgba(217, 119, 6, 0.15)' : '#fef3c7'}; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${t.coverage.toFixed(1)}% Coverage</span>
+                </div>
+            `;
+        }).join('');
+        
+        html += `
+            <div style="${isDark ? 'background-color: rgba(217, 119, 6, 0.03); border: 1px solid rgba(217, 119, 6, 0.2);' : 'background-color: #fffdf5; border: 1px solid #fef3c7;'} border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+                <div style="font-size: 12px; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    ⚡ MODERATE DEPLOYMENTS (50% - 80% COVERAGE)
+                </div>
+                ${items}
+                <div style="font-size: 11px; color: ${isDark ? '#fcd34d' : '#78350f'}; margin-top: 10px; font-style: italic;">
+                    <strong>Recommendation:</strong> Scale query variety and test behavioral triggers to push coverage beyond 80%.
+                </div>
+            </div>
+        `;
+    }
+    
+    // Action Plan Panel
+    html += `
+        <div style="${isDark ? 'background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);' : 'background-color: #f8fafc; border: 1px solid #e2e8f0;'} border-radius: 8px; padding: 14px;">
+            <div style="font-size: 12px; font-weight: 700; color: ${isDark ? '#ffffff' : '#475569'}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                🎯 PRIORITIZED STRATEGIC ROADMAP
+            </div>
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 11px; margin: 0;">
+                <tr>
+                    <td style="width: 30px; vertical-align: top; padding: 4px 0; border: none;">
+                        <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; background-color: #ef4444; color: #ffffff; text-align: center; font-weight: 700;">1</span>
+                    </td>
+                    <td style="vertical-align: top; padding: 4px 0 8px 6px; border: none; color: ${isDark ? '#cbd5e1' : '#334155'};">
+                        <strong>Immediate Defense:</strong> Target and close critical gaps in low-coverage tactics (${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(', ')}).
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 30px; vertical-align: top; padding: 4px 0; border: none;">
+                        <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; background-color: #fbbf24; color: #ffffff; text-align: center; font-weight: 700;">2</span>
+                    </td>
+                    <td style="vertical-align: top; padding: 4px 0 8px 6px; border: none; color: ${isDark ? '#cbd5e1' : '#334155'};">
+                        <strong>Query Optimization:</strong> Refine detection query logic in Moderate sectors to raise them to Strong standards.
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 30px; vertical-align: top; padding: 4px 0; border: none;">
+                        <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; background-color: #3b82f6; color: #ffffff; text-align: center; font-weight: 700;">3</span>
+                    </td>
+                    <td style="vertical-align: top; padding: 4px 0 4px 6px; border: none; color: ${isDark ? '#cbd5e1' : '#334155'};">
+                        <strong>Continuous Validation:</strong> Maintain systematic test-runs against established Strong tactics to prevent detection decay.
+                    </td>
+                </tr>
+            </table>
+        </div>
+    `;
+    
+    html += `</div>`;
+    return html;
+}
+
+function buildEmailHTML(report, isDark = false) {
     const fullStats = report.fullStats || getFullCoverageStats();
     const tactics = report.coverageByTactic || getCoverageByTactic();
     const theme = BANNER_THEMES[report.bannerTheme || 'blue'] || BANNER_THEMES.blue;
+    const hexToRgb = (hex) => {
+        const bigint = parseInt(hex.replace('#', ''), 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `${r}, ${g}, ${b}`;
+    };
+    const accentRgb = hexToRgb(theme.accent);
     
     // Month stats for stats bar
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
-    const byMonth = getTechniquesByMonth();
-    const monthTechniques = byMonth[month] || [];
-    const existingIds = getExistingTechniqueIds(month);
-    const newThisMonth = monthTechniques.filter(t => !existingIds.has(t.techniqueID));
-    const monthNewTechs = newThisMonth.filter(t => !isSubTechnique(t.techniqueID)).length;
-    const monthNewSubs = newThisMonth.filter(t => isSubTechnique(t.techniqueID)).length;
-    const monthQueries = newThisMonth.reduce((s, a) => s + (a.queries?.length || 0), 0);
     
     const execSummary = report.executiveSummary || generateDynamicExecutiveSummary(report);
     const monthlyFocus = report.monthlyFocus || generateDynamicMonthlyFocus(report);
     const gapAnalysis = report.gapAnalysis || generateDynamicGapAnalysis(report);
     const leadership = report.leadershipOverview || generateLeadershipOverview(report);
+    
+    let gapAnalysisHtml = '';
+    if (gapAnalysis) {
+        if (!report.gapAnalysis || report.gapAnalysis.trim() === '' || report.gapAnalysis === generateDynamicGapAnalysis(report)) {
+            gapAnalysisHtml = buildGapAnalysisVisual(report, theme, isDark);
+        } else {
+            gapAnalysisHtml = `
+                <div class="section" style="page-break-inside: avoid;">
+                    <h3>Gap Analysis & Prioritization</h3>
+                    <div style="${isDark ? 'background-color: #0f1123; border: 1px solid rgba(168,85,247,0.2); color: #cbd5e1;' : 'background-color: #f8fafc; border: 1px solid #e2e8f0; color: #334155;'} border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6;">
+                        ${markdownToHtml(gapAnalysis)}
+                    </div>
+                </div>
+            `;
+        }
+    }
     
     // Methodology & Scope with descriptions
     let methodScopeHtml = '';
@@ -2154,7 +2850,12 @@ function buildEmailHTML(report) {
                 ann.queries.forEach(q => {
                     if (!seenIds.has(q.id)) {
                         seenIds.add(q.id);
-                        newQueries.push({ name: q.name, techniqueID: ann.techniqueID, language: q.language });
+                        newQueries.push({ 
+                            name: q.name, 
+                            techniqueID: ann.techniqueID, 
+                            language: q.language,
+                            description: q.description
+                        });
                     }
                 });
             }
@@ -2164,33 +2865,84 @@ function buildEmailHTML(report) {
             const queryList = newQueries.map(q => {
                 const techName = getTechniqueName(q.techniqueID);
                 const queryName = q.name || 'Unnamed Query';
-                return `<li><strong>${queryName}</strong><br><span style="color: #64748b; font-size: 12px;">${q.language} | ${q.techniqueID}${techName ? ' - ' + techName : ''}</span></li>`;
+                return `
+                    <li style="margin-bottom: 12px; list-style-type: none;">
+                        <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${queryName}</strong>
+                        <span style="color: ${isDark ? '#cbd5e1' : '#64748b'}; font-size: 11px; margin-left: 8px;">(${q.language} | ${q.techniqueID}${techName ? ' - ' + techName : ''})</span>
+                        ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${q.description}</div>` : ''}
+                    </li>
+                `;
             }).join('');
             newQueriesHtml = `<div class="section"><h3>New Threat Hunt Queries</h3>
-                <p style="margin-bottom: 8px;">${newQueries.length} queries for this period:</p>
-                <ul style="padding-left: 20px; margin: 0;">${queryList}</ul>
+                <p style="margin-bottom: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; font-size: 13px;">${newQueries.length} queries for this period:</p>
+                <ul style="padding-left: 0; margin: 0;">${queryList}</ul>
             </div>`;
         }
     }
     
-    // Tactics Graph
+    // Tactics Graph Revamp: Column Gap Triage
     let tacticsGraphHtml = '';
     if (tactics.length > 0) {
-        const topTactics = tactics.slice(0, 8);
-        tacticsGraphHtml = `<div class="section"><h3>Top Tactics by Coverage</h3>
-            ${topTactics.map(t => {
-                const name = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                const color = t.coverage >= 80 ? '#22c55e' : t.coverage >= 50 ? '#eab308' : '#ef4444';
-                const pct = t.coverage % 1 === 0 ? t.coverage : t.coverage.toFixed(1);
-                return `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                    <span style="width: 120px; font-size: 13px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</span>
-                    <div style="flex: 1; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${t.coverage}%; height: 100%; background: ${color}; border-radius: 4px;"></div>
-                    </div>
-                    <span style="width: 40px; font-size: 13px; font-weight: 600; color: #334155; text-align: right;">${pct}%</span>
-                </div>`;
-            }).join('')}
-        </div>`;
+        const criticalGaps = [];
+        const moderateCoverage = [];
+        const strongCoverage = [];
+        
+        tactics.forEach(t => {
+            const pct = t.coverage;
+            const name = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const item = { ...t, displayName: name };
+            if (pct < 50) {
+                criticalGaps.push(item);
+            } else if (pct < 80) {
+                moderateCoverage.push(item);
+            } else {
+                strongCoverage.push(item);
+            }
+        });
+        
+        const renderListEmail = (list, color) => {
+            if (list.length === 0) return '<div style="color: #94a3b8; font-size: 11px; font-style: italic; text-align: center; padding: 8px 0;">No tactics</div>';
+            return list.map(item => `
+                <div style="display: flex; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; background-color: #f8fafc; border-radius: 4px; font-size: 11px;">
+                    <span style="font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">${item.displayName}</span>
+                    <span style="font-weight: 700; color: ${color};">${item.coverage % 1 === 0 ? item.coverage : item.coverage.toFixed(1)}%</span>
+                </div>
+            `).join('');
+        };
+
+        tacticsGraphHtml = `
+            <div class="section">
+                <h3>Tactic Gap Triage Radar</h3>
+                <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <tr>
+                        <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top;">
+                            <div style="border: 1px solid #fee2e2; background-color: #fffafb; border-radius: 8px; padding: 12px; min-height: 180px;">
+                                <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #fee2e2; padding-bottom: 4px;">
+                                    ⚠️ Critical (<50%) [${criticalGaps.length}]
+                                </div>
+                                ${renderListEmail(criticalGaps, '#ef4444')}
+                            </div>
+                        </td>
+                        <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top;">
+                            <div style="border: 1px solid #fef3c7; background-color: #fffdf5; border-radius: 8px; padding: 12px; min-height: 180px;">
+                                <div style="font-size: 11px; font-weight: 700; color: #d97706; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #fef3c7; padding-bottom: 4px;">
+                                    ⚡ Moderate (50%-80%) [${moderateCoverage.length}]
+                                </div>
+                                ${renderListEmail(moderateCoverage, '#d97706')}
+                            </div>
+                        </td>
+                        <td valign="top" style="width: 32%; vertical-align: top;">
+                            <div style="border: 1px solid #dcfce7; background-color: #f5fdf8; border-radius: 8px; padding: 12px; min-height: 180px;">
+                                <div style="font-size: 11px; font-weight: 700; color: #16a34a; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #dcfce7; padding-bottom: 4px;">
+                                    ✅ Strong (&ge;80%) [${strongCoverage.length}]
+                                </div>
+                                ${renderListEmail(strongCoverage, '#16a34a')}
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        `;
     }
     
     // Coverage Breakdown/Changes
@@ -2206,25 +2958,18 @@ function buildEmailHTML(report) {
             <table><thead><tr><th>Tactic</th><th>Coverage</th><th>Progress</th></tr></thead><tbody>${rows}</tbody></table>
         </div>`;
     } else {
-        const sortedReports = [...(state._cachedReports || [])].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
-        const reportIdx = sortedReports.findIndex(r => r.id === report.id);
-        const currentMonthKey = report.reportMonth || report.generatedAt?.slice(0, 7);
-        let lastReport = null;
-        for (let i = reportIdx + 1; i < sortedReports.length; i++) {
-            const candidate = sortedReports[i];
-            const candidateMonthKey = candidate.reportMonth || candidate.generatedAt?.slice(0, 7);
-            if (candidateMonthKey !== currentMonthKey) {
-                lastReport = candidate;
-                break;
-            }
-        }
-        if (lastReport && lastReport.coverageByTactic && lastReport.coverageByTactic.length > 0 && lastReport.id !== report.id) {
-            const lastTactics = lastReport.coverageByTactic;
-            const lastMonthLabel = lastReport.reportMonth || lastReport.generatedDate || 'Previous';
-            const allTactics = new Set([...liveTactics.map(t => t.tactic), ...lastTactics.map(t => t.tactic)]);
+        const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+        const availableMonths = getAvailableMonths().sort((a, b) => b.localeCompare(a));
+        const currentIdx = availableMonths.indexOf(currentMonth);
+        const prevMonth = currentIdx !== -1 && currentIdx + 1 < availableMonths.length ? availableMonths[currentIdx + 1] : null;
+        
+        if (prevMonth) {
+            const currentTactics = getCoverageByTacticUpToMonth(currentMonth);
+            const lastTactics = getCoverageByTacticUpToMonth(prevMonth);
+            const allTactics = new Set([...currentTactics.map(t => t.tactic), ...lastTactics.map(t => t.tactic)]);
             let rows = '';
             allTactics.forEach(tactic => {
-                const cur = liveTactics.find(t => t.tactic === tactic);
+                const cur = currentTactics.find(t => t.tactic === tactic);
                 const last = lastTactics.find(t => t.tactic === tactic);
                 const curPct = cur?.coverage || 0;
                 const lastPct = last?.coverage || 0;
@@ -2232,11 +2977,15 @@ function buildEmailHTML(report) {
                 const icon = change > 0 ? '↑' : change < 0 ? '↓' : '→';
                 const color = change > 0 ? '#22c55e' : change < 0 ? '#ef4444' : '#64748b';
                 const badgeClass = curPct >= 80 ? 'coverage-high' : curPct >= 50 ? 'coverage-mid' : 'coverage-low';
-                rows += `<tr><td>${tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td><td>${fmtCov(lastPct)}%</td><td><span class="coverage-badge ${badgeClass}">${fmtCov(curPct)}%</span></td><td style="color: ${color}; font-weight: 600;">${icon} ${change > 0 ? '+' : ''}${change % 1 === 0 ? change : change.toFixed(1)}%</td></tr>`;
+                const changeText = change === 0 ? '0%' : (change > 0 ? '+' : '') + Number(change.toFixed(1)) + '%';
+                rows += `<tr><td>${tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</td><td>${fmtCov(lastPct)}%</td><td><span class="coverage-badge ${badgeClass}">${fmtCov(curPct)}%</span></td><td style="color: ${color}; font-weight: 600;">${icon} ${changeText}</td></tr>`;
             });
+            const lastMonthLabel = getMonthLabel(prevMonth);
             coverageHtml = `<div class="section"><h3>Coverage Changes <span style="font-size:12px;font-weight:400;color:#64748b;">(vs ${lastMonthLabel})</span></h3>
                 <table><thead><tr><th>Tactic</th><th>Previous</th><th>Current</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table>
             </div>`;
+        } else {
+            coverageHtml = `<div class="section"><h3>Coverage Changes</h3><p style="color:#64748b; font-size:13px; margin: 0;">No previous month data to compare against.</p></div>`;
         }
     }
     
@@ -2254,13 +3003,222 @@ function buildEmailHTML(report) {
         }
     }
     
-    return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
+    // Dynamic Milestone Board Metrics for Stats Bar Table
+    const targetMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const stats = getMonthStats(targetMonth);
+    const coverageStats = getOverallCoverageStatsUpToMonth(targetMonth);
+    
+    const frameworkCoverage = coverageStats.pct; 
+    const techniquesCovered = stats.techIds.size; 
+    const threatsDisrupted = getThreatsDisruptedCount(targetMonth); 
+
+    const availableMonthsSorted = getAvailableMonths().sort((a, b) => b.localeCompare(a));
+    const currentIdx = availableMonthsSorted.indexOf(targetMonth);
+    const prevMonth = currentIdx !== -1 && currentIdx + 1 < availableMonthsSorted.length ? availableMonthsSorted[currentIdx + 1] : null;
+    
+    let deltaHtml = '';
+    if (prevMonth) {
+        const prevCoverageStats = getOverallCoverageStatsUpToMonth(prevMonth);
+        const pctDiff = frameworkCoverage - prevCoverageStats.pct;
+        const color = pctDiff > 0 ? '#22c55e' : pctDiff < 0 ? '#ef4444' : '#64748b';
+        const sign = pctDiff > 0 ? '+' : '';
+        deltaHtml = `<div style="font-size: 10px; color: ${color}; font-weight: 600; margin-top: 2px;">${pctDiff > 0 ? '↑' : pctDiff < 0 ? '↓' : '→'} ${sign}${pctDiff.toFixed(1)}% vs last month</div>`;
+    } else {
+        deltaHtml = `<div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">Initial baseline</div>`;
+    }
+
+    const totalQueries = getTotalUniqueActiveQueriesUpToMonth(targetMonth);
+
+    const getMaturityGrade = (pct) => {
+        if (pct >= 80) return 'A+ Excellent';
+        if (pct >= 70) return 'A Strong';
+        if (pct >= 60) return 'B+ Capable';
+        if (pct >= 50) return 'B Good';
+        if (pct >= 40) return 'C+ Developing';
+        if (pct >= 30) return 'C Baseline';
+        if (pct >= 20) return 'D Lacking';
+        return 'F Critical Gaps';
+    };
+
+    const getGradeColor = (pct) => {
+        if (pct >= 70) return '#22c55e'; // Green for A
+        if (pct >= 50) return '#eab308'; // Golden yellow for B
+        if (pct >= 30) return '#f97316'; // Orange for C
+        return '#ef4444'; // Red for D/F
+    };
+
+    const maturityGrade = getMaturityGrade(frameworkCoverage);
+    const gradeColor = getGradeColor(frameworkCoverage);
+
+    const statsBarHtml = isDark ? `
+        <div style="background-color: #0f1123; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td width="50%" style="padding: 0 10px 14px 0; border: none; vertical-align: top;">
+                        <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.02) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Framework Coverage</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #ffffff; margin-top: 4px; line-height: 1;">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
+                            ${deltaHtml}
+                            <div style="font-size: 9px; color: #94a3b8; margin-top: 6px; font-weight: 500;">
+                                Parent: ${coverageStats.parents.covered}/${coverageStats.parents.total} • Sub: ${coverageStats.subs.covered}/${coverageStats.subs.total}
+                            </div>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 0 0 14px 10px; border: none; vertical-align: top;">
+                        <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0.02) 100%); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Active Detections</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #38bdf8; margin-top: 4px; line-height: 1;">${totalQueries}</div>
+                            <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">threat hunt queries deployed</div>
+                            <div style="font-size: 9px; color: ${stats.queries > 0 ? '#34d399' : '#94a3b8'}; margin-top: 4px; font-weight: 500;">
+                                ${stats.queries > 0 ? `↑ +${stats.queries} deployed this period` : 'No new queries this period'}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="50%" style="padding: 10px 10px 0 0; border: none; vertical-align: top;">
+                        <div style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(52, 211, 153, 0.02) 100%); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Tactical Gaps Filled</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #34d399; margin-top: 4px; line-height: 1;">${techniquesCovered}</div>
+                            <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">techniques covered this period</div>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
+                        <div style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%;">
+                                <tr>
+                                    <td style="vertical-align: middle; border: none; padding: 0;">
+                                        <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Security Posture Grade</div>
+                                        <div style="font-size: 18px; font-weight: 800; color: ${gradeColor}; margin-top: 6px; line-height: 1.2;">${maturityGrade}</div>
+                                        <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 4px;">standard framework grade</div>
+                                    </td>
+                                    <td width="55" style="vertical-align: middle; text-align: right; border: none; padding: 0 0 0 5px;">
+                                        <svg width="50" height="50" viewBox="0 0 120 120" style="display: inline-block;">
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12" />
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="${gradeColor}" stroke-width="12"
+                                                    stroke-dasharray="314.15" stroke-dashoffset="${314.15 - (314.15 * Math.min(frameworkCoverage, 100)) / 100}"
+                                                    stroke-linecap="round" transform="rotate(-90 60 60)" />
+                                            <text x="60" y="68" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="900" font-size="28" fill="#ffffff">${maturityGrade.split(' ')[0]}</text>
+                                        </svg>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <div style="margin-top: 14px; padding: 10px 14px; background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-size: 11px; color: #a2a6cc; text-align: center; line-height: 1.4;">
+                ℹ️ <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
+                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || 'the Security Operations Team'}</strong>.
+            </div>
+        </div>
+    ` : `
+        <div style="background-color: #f8fafc; padding: 20px 24px; border-bottom: 2px solid #e2e8f0;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td width="50%" style="padding: 0 10px 14px 0; border: none; vertical-align: top;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Framework Coverage</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 4px; line-height: 1;">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
+                            ${deltaHtml}
+                            <div style="font-size: 9px; color: #64748b; margin-top: 6px; font-weight: 500;">
+                                Parent: ${coverageStats.parents.covered}/${coverageStats.parents.total} • Sub: ${coverageStats.subs.covered}/${coverageStats.subs.total}
+                            </div>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 0 0 14px 10px; border: none; vertical-align: top;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Active Detections</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #0284c7; margin-top: 4px; line-height: 1;">${totalQueries}</div>
+                            <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">threat hunt queries deployed</div>
+                            <div style="font-size: 9px; color: ${stats.queries > 0 ? '#16a34a' : '#64748b'}; margin-top: 4px; font-weight: 500;">
+                                ${stats.queries > 0 ? `↑ +${stats.queries} deployed this period` : 'No new queries this period'}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="50%" style="padding: 10px 10px 0 0; border: none; vertical-align: top;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Tactical Gaps Filled</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #16a34a; margin-top: 4px; line-height: 1;">${techniquesCovered}</div>
+                            <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">techniques covered this period</div>
+                        </div>
+                    </td>
+                    <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%;">
+                                <tr>
+                                    <td style="vertical-align: middle; border: none; padding: 0;">
+                                        <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Security Posture Grade</div>
+                                        <div style="font-size: 18px; font-weight: 800; color: ${gradeColor}; margin-top: 6px; line-height: 1.2;">${maturityGrade}</div>
+                                        <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 4px;">standard framework grade</div>
+                                    </td>
+                                    <td width="55" style="vertical-align: middle; text-align: right; border: none; padding: 0 0 0 5px;">
+                                        <svg width="50" height="50" viewBox="0 0 120 120" style="display: inline-block;">
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="12" />
+                                            <circle cx="60" cy="60" r="50" fill="none" stroke="${gradeColor}" stroke-width="12"
+                                                    stroke-dasharray="314.15" stroke-dashoffset="${314.15 - (314.15 * Math.min(frameworkCoverage, 100)) / 100}"
+                                                    stroke-linecap="round" transform="rotate(-90 60 60)" />
+                                            <text x="60" y="68" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="900" font-size="28" fill="#0f172a">${maturityGrade.split(' ')[0]}</text>
+                                        </svg>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <div style="margin-top: 14px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 11px; color: #64748b; text-align: center; line-height: 1.4;">
+                ℹ️ <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
+                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || 'the Security Operations Team'}</strong>.
+            </div>
+        </div>
+    `;
+
+    const stylesHtml = isDark ? `
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #cbd5e1; background-color: #070814; }
+        * { box-sizing: border-box; }
+        .email-wrapper { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
+        .container { background-color: #0f1123; border: 1px solid rgba(${accentRgb}, 0.2); border-radius: 12px; overflow: hidden; box-shadow: 0 0 30px rgba(${accentRgb}, 0.1); }
+        .header { background: linear-gradient(135deg, #070814 0%, #0d0f1f 60%, ${theme.accent}1a 100%); color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; border-bottom: 2px solid ${theme.accent}; }
+        .header .logo { max-height: 40px; margin-bottom: 14px; filter: brightness(0) invert(1); }
+        .header h1 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
+        .header .subtitle { font-size: 13px; font-weight: 400; color: #94a3b8; margin: 0 0 12px 0; }
+        .header .report-type { display: inline-block; background: rgba(${accentRgb}, 0.15); border: 1px solid rgba(${accentRgb}, 0.3); padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffffcc; margin-bottom: 10px; }
+        .header .report-date { font-size: 13px; color: #cbd5e1; margin: 0; }
+        .header .attck-version { font-size: 11px; color: #64748b; margin: 3px 0 0; }
+        .header .author { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+        .content { padding: 24px 28px; }
+        .section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .section h3 { font-size: 15px; font-weight: 700; color: #ffffff; margin: 0 0 10px 0; padding-left: 10px; border-left: 3px solid ${theme.accent}; text-shadow: 0 0 10px rgba(${accentRgb}, 0.25); }
+        .section p { margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.65; }
+        .subsection { margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .subsection h4 { font-size: 13px; font-weight: 600; color: ${theme.accent}; margin: 0 0 6px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+        th { background-color: rgba(255, 255, 255, 0.03); padding: 8px 10px; text-align: left; font-weight: 600; color: #94a3b8; border-bottom: 2px solid rgba(255, 255, 255, 0.1); font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+        td { padding: 8px 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; }
+        tr:last-child td { border-bottom: none; }
+        .coverage-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; }
+        .coverage-high { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
+        .coverage-mid { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
+        .coverage-low { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .footer { background-color: #070814; padding: 16px 28px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .footer p { margin: 0; font-size: 11px; color: #64748b; }
+        .footer .tool-info { font-size: 10px; color: #475569; margin-top: 3px; }
+        .footer .confidential { font-size: 10px; color: #7f1d1d; margin-top: 2px; }
+        strong { font-weight: 600; color: #ffffff; }
+        em { font-style: italic; color: #cbd5e1; }
+        .section { page-break-inside: avoid; }
+        table { page-break-inside: auto; }
+        tr { page-break-inside: avoid; }
+        @media only screen and (max-width: 600px) {
+            .email-wrapper { padding: 8px; }
+            .header { padding: 24px 16px; }
+            .content { padding: 16px; }
+        }
+    ` : `
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; }
         * { box-sizing: border-box; }
         .email-wrapper { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
@@ -2274,11 +3232,6 @@ function buildEmailHTML(report) {
         .header .report-date { font-size: 13px; color: #cbd5e1; margin: 0; }
         .header .attck-version { font-size: 11px; color: #64748b; margin: 3px 0 0; }
         .header .author { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-        .stats-bar { display: flex; background-color: #ffffff; border-bottom: 1px solid #e2e8f0; }
-        .stat-item { flex: 1; text-align: center; padding: 18px 10px; border-right: 1px solid #f1f5f9; }
-        .stat-item:last-child { border-right: none; }
-        .stat-value { font-size: 24px; font-weight: 700; color: #0f172a; line-height: 1; margin-bottom: 3px; }
-        .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; font-weight: 600; }
         .content { padding: 24px 28px; }
         .section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #f1f5f9; }
         .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
@@ -2294,26 +3247,6 @@ function buildEmailHTML(report) {
         .coverage-high { background: #dcfce7; color: #15803d; }
         .coverage-mid { background: #fef3c7; color: #a16207; }
         .coverage-low { background: #fee2e2; color: #b91c1c; }
-        .changes-list { list-style: none; padding: 0; margin: 0; }
-        .changes-list li { padding: 10px; margin-bottom: 6px; background: #f8fafc; border-radius: 6px; border-left: 3px solid ${theme.accent}; font-size: 12px; }
-        .changes-list li:last-child { margin-bottom: 0; }
-        .changes-list li.status { border-left-color: #eab308; }
-        .changes-list li.new { border-left-color: #22c55e; }
-        .changes-list li.hunt { border-left-color: #ec4899; }
-        .changes-list li strong { color: #0f172a; }
-        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
-        .badge-blue { background: #dbeafe; color: #1d4ed8; }
-        .badge-green { background: #dcfce7; color: #15803d; }
-        .badge-yellow { background: #fef3c7; color: #a16207; }
-        .badge-red { background: #fee2e2; color: #b91c1c; }
-        .detection-item { padding: 10px; background: #f8fafc; border-radius: 6px; margin-bottom: 6px; border: 1px solid #e2e8f0; }
-        .detection-item:last-child { margin-bottom: 0; }
-        .detection-item strong { color: #0f172a; font-size: 13px; }
-        .detection-item .notes { color: #64748b; font-size: 12px; margin-top: 3px; }
-        .attachment-notice { background: linear-gradient(135deg, ${theme.accent}11 0%, ${theme.accent}22 100%); border: 1px solid ${theme.accent}44; border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center; }
-        .attachment-notice .icon { font-size: 28px; margin-bottom: 6px; }
-        .attachment-notice h4 { color: ${theme.accent}; margin: 0 0 4px 0; font-size: 14px; font-weight: 700; }
-        .attachment-notice p { color: #475569; font-size: 12px; margin: 0; line-height: 1.5; }
         .footer { background-color: #f8fafc; padding: 16px 28px; text-align: center; border-top: 1px solid #e2e8f0; }
         .footer p { margin: 0; font-size: 11px; color: #94a3b8; }
         .footer .tool-info { font-size: 10px; color: #cbd5e1; margin-top: 3px; }
@@ -2327,10 +3260,17 @@ function buildEmailHTML(report) {
             .email-wrapper { padding: 8px; }
             .header { padding: 24px 16px; }
             .content { padding: 16px; }
-            .stats-bar { flex-direction: column; }
-            .stat-item { border-right: none; border-bottom: 1px solid #f1f5f9; padding: 14px; }
-            .stat-item:last-child { border-bottom: none; }
         }
+    `;
+
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        ${stylesHtml}
     </style>
 </head>
 <body>
@@ -2346,61 +3286,52 @@ function buildEmailHTML(report) {
                 ${report.author ? `<p class="author">Prepared by: ${escapeHtml(report.author)}</p>` : ''}
             </div>
 
-            <div class="stats-bar">
-                <div class="stat-item">
-                    <div class="stat-value">${fullStats.pct % 1 === 0 ? fullStats.pct : fullStats.pct.toFixed(1)}%</div>
-                    <div class="stat-label">Coverage</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${fullStats.covered}</div>
-                    <div class="stat-label">With Queries</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${fullStats.total}</div>
-                    <div class="stat-label">Total Techniques</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${monthNewTechs + monthNewSubs}</div>
-                    <div class="stat-label">New This Month (${monthQueries} queries)</div>
-                </div>
-            </div>
+            ${statsBarHtml}
 
             <div class="content">
                 ${execSummary ? `<div class="section"><h3>Executive Summary</h3><p>${markdownToHtml(execSummary)}</p></div>` : ''}
-
+ 
                 ${leadership ? `<div class="section"><h3>Leadership Overview</h3><p>${markdownToHtml(leadership)}</p></div>` : ''}
-
+ 
                 ${methodScopeHtml}
-
+ 
                 ${tacticsGraphHtml}
-
-                ${buildEmailMonthlyActivity(report, theme)}
-
+ 
+                ${buildEmailMonthlyActivity(report, theme, isDark)}
+ 
                 ${newQueriesHtml}
-
-                ${buildThreatsSectionEmail(report)}
-
-                ${buildTechniquesAtRiskEmail(report)}
-
+ 
+                ${buildThreatsSectionEmail(report, isDark)}
+ 
+                ${buildTechniquesAtRiskEmail(report, isDark)}
+ 
                 ${report.detectionResults?.length > 0 ? `<div class="section"><h3>Detection Results</h3>${report.detectionResults.map(r => `<div class="detection-item"><strong>${r.huntName || 'Untitled'}</strong>${r.sirTicket ? ` <span class="badge badge-yellow">SIR: ${r.sirTicket}</span>` : ''}${r.notes ? `<div class="notes">${r.notes}</div>` : ''}</div>`).join('')}</div>` : ''}
-
+ 
                 ${monthlyFocus ? `<div class="section"><h3>Monthly Focus Areas</h3><p>${markdownToHtml(monthlyFocus)}</p></div>` : ''}
-
-                ${gapAnalysis ? `<div class="section"><h3>Gap Analysis & Prioritization</h3><p style="white-space: pre-line;">${markdownToHtml(gapAnalysis)}</p></div>` : ''}
-
+ 
+                ${gapAnalysisHtml}
+ 
                 ${coverageHtml}
-
+ 
                 ${report.references?.length > 0 ? `<div class="section"><h3>References</h3><ul style="padding-left: 20px; margin: 0;">${report.references.map(r => `<li style="margin-bottom: 6px; font-size: 12px; color: #475569;">${r}</li>`).join('')}</ul></div>` : ''}
-
+ 
                 ${appendixHtml}
-
-                <div class="attachment-notice">
-                    <div class="icon">📊</div>
-                    <h4>Full MITRE ATT&CK Matrix SVG Attached</h4>
-                    <p>A complete visual representation of the MITRE ATT&CK matrix with coverage highlights is attached to this email.</p>
+ 
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 20px; padding: 14px 18px; overflow: hidden; text-align: left;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; border: none; background: transparent;">
+                        <tr>
+                            <td style="padding: 0; border: none; width: 40px; vertical-align: middle; font-size: 24px; line-height: 1; text-align: left;">
+                                📊
+                            </td>
+                            <td style="padding: 0; border: none; vertical-align: middle; text-align: left;">
+                                <h4 style="margin: 0 0 3px 0; font-size: 13px; font-weight: 700; color: #0f172a;">Full MITRE ATT&CK Matrix SVG Attached</h4>
+                                <p style="margin: 0; font-size: 11px; color: #64748b; line-height: 1.4;">A complete visual representation of the MITRE ATT&CK matrix with coverage highlights is attached to this email.</p>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
-
+ 
             <div class="footer">
                 <p>Generated by MITRE ATT&CK Coverage Tool | ${report.generatedDate || new Date().toLocaleDateString()}</p>
                 <p class="tool-info">ATT&CK v${report.attckVersion || '19.1'} | Data sourced from MITRE ATT&CK Framework</p>
@@ -2413,7 +3344,7 @@ function buildEmailHTML(report) {
     `;
 }
 
-function buildThreatsSectionEmail(report) {
+function buildThreatsSectionEmail(report, isDark = false) {
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
     if (!month) return '';
     
@@ -2481,27 +3412,58 @@ function buildThreatsSectionEmail(report) {
         return '';
     }
     
-    const sortedThreats = allThreats.sort((a, b) => b.techniques - a.techniques).slice(0, 8);
+    const sortedThreats = allThreats.sort((a, b) => b.techniques - a.techniques).slice(0, 6);
     
-    let html = `<div class="section"><h3>Top Associated Threats</h3><table>
-        <thead><tr><th>Type</th><th>Name</th><th>Techniques</th></tr></thead>
-        <tbody>`;
-    
+    let cardsHtml = '';
     sortedThreats.forEach(t => {
-        const techList = t.techniqueIds?.map(id => {
-            const techId = getTechniqueIdFromStix(id);
-            const name = getTechniqueName(techId || id);
-            return techId ? `${techId} (${name})` : id;
-        }).join(', ') || t.techniques;
+        const typeLabel = t.type === 'group' ? 'Threat Group' : t.type.toUpperCase();
+        const sideColor = t.type === 'group' ? '#38bdf8' : '#a855f7';
         
-        html += `<tr><td><span class="badge ${t.type === 'group' ? 'badge-blue' : 'badge-green'}">${t.type}</span></td><td>${t.name}</td><td>${techList}</td></tr>`;
+        let exposureLevel = 'Medium';
+        let expColor = '#38bdf8';
+        let expBg = 'rgba(56, 189, 248, 0.1)';
+        if (t.techniques >= 4) {
+            exposureLevel = 'Critical';
+            expColor = '#ef4444';
+            expBg = 'rgba(239, 68, 68, 0.1)';
+        } else if (t.techniques >= 2) {
+            exposureLevel = 'High';
+            expColor = '#fbbf24';
+            expBg = 'rgba(245, 158, 11, 0.1)';
+        }
+        
+        const techIds = t.techniqueIds?.map(id => getTechniqueIdFromStix(id) || id) || [];
+        const truncatedTechIds = techIds.slice(0, 6);
+        const extraCount = techIds.length - truncatedTechIds.length;
+        const techList = truncatedTechIds.join(', ') + (extraCount > 0 ? `, +${extraCount} more` : '');
+        
+        cardsHtml += `
+            <div style="${isDark ? 'border: 1px solid rgba(255,255,255,0.08); background-color: rgba(255,255,255,0.03);' : 'border: 1px solid #e2e8f0; background-color: #ffffff;'} border-left: 4px solid ${sideColor}; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin: 0; font-size: 13px;">
+                    <tr>
+                        <td style="padding: 0; border: none; vertical-align: middle;">
+                            <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: inline-block; margin-bottom: 2px;">${typeLabel}</span>
+                            <h4 style="font-size: 14px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'}; margin: 0 0 4px 0;">${t.name}</h4>
+                            <div style="font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">Disruption: <strong style="color: ${isDark ? '#ffffff' : '#0f172a'};">${t.techniques} technique${t.techniques > 1 ? 's' : ''}</strong></div>
+                        </td>
+                        <td align="right" style="padding: 0; border: none; vertical-align: top; text-align: right;">
+                            <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background-color: ${expBg}; color: ${expColor}; display: inline-block;">${exposureLevel} Risk</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" style="padding: 8px 0 0 0; border: none; font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; line-height: 1.4;">
+                            <strong style="color: ${isDark ? '#cbd5e1' : '#475569'};">TTPs:</strong> <span style="font-family: monospace; background-color: ${isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc'}; padding: 2px 6px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9'}; color: ${isDark ? '#ffffff' : '#334155'};">${techList}</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        `;
     });
     
-    html += '</tbody></table></div>';
-    return html;
+    return `<div class="section"><h3>Top Associated Threats</h3>${cardsHtml}</div>`;
 }
 
-function buildTechniquesAtRiskEmail(report) {
+function buildTechniquesAtRiskEmail(report, isDark = false) {
     if (!state.techniques || !state.relationships || !state.groups) return '';
     
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
@@ -2555,18 +3517,18 @@ function buildTechniquesAtRiskEmail(report) {
     if (atRisk.length === 0) return '';
     
     let html = `<div class="section"><h3>Techniques at Risk</h3>
-        <p style="margin-bottom: 8px; color: #64748b; font-size: 13px;">Zero-coverage techniques used by known threat groups active this month:</p>`;
+        <p style="margin-bottom: 8px; color: ${isDark ? '#94a3b8' : '#64748b'}; font-size: 13px;">Zero-coverage techniques used by known threat groups active this month:</p>`;
     
     atRisk.slice(0, 8).forEach(item => {
         const techList = item.techniques.map(id => {
             const name = getTechniqueName(id);
-            return `<span style="display: inline-block; padding: 2px 6px; margin: 2px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 4px; font-size: 11px; color: #991b1b;">${id}${name ? ' - ' + name : ''}</span>`;
+            return `<span style="display: inline-block; padding: 2px 6px; margin: 2px; ${isDark ? 'background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;' : 'background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;'} border-radius: 4px; font-size: 11px;">${id}${name ? ' - ' + name : ''}</span>`;
         }).join('');
         const moreText = item.count > 3 ? ` <span style="color: #64748b; font-size: 11px;">+${item.count - 3} more</span>` : '';
         
-        html += `<div style="padding: 8px 10px; margin-bottom: 6px; background: #fef2f2; border-radius: 6px; border-left: 3px solid #ef4444;">
-            <strong style="font-size: 13px; color: #991b1b;">${item.group}</strong>
-            <span style="font-size: 11px; color: #64748b; margin-left: 8px;">${item.count} techniques</span>
+        html += `<div style="padding: 8px 10px; margin-bottom: 6px; ${isDark ? 'background: rgba(239, 68, 68, 0.04); border-left: 3px solid #ef4444;' : 'background: #fef2f2; border-left: 3px solid #ef4444;'} border-radius: 6px;">
+            <strong style="font-size: 13px; color: ${isDark ? '#fca5a5' : '#991b1b'};">${item.group}</strong>
+            <span style="font-size: 11px; color: ${isDark ? '#cbd5e1' : '#64748b'}; margin-left: 8px;">${item.count} techniques</span>
             <div style="margin-top: 4px;">${techList}${moreText}</div>
         </div>`;
     });

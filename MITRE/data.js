@@ -1,5 +1,17 @@
 async function fetchReleases() {
     try {
+        const cached = localStorage.getItem('attack-explorer-releases');
+        const cachedTs = localStorage.getItem('attack-explorer-releases-timestamp');
+        if (cached && cachedTs && (Date.now() - parseInt(cachedTs, 10)) < 2 * 60 * 60 * 1000) {
+            state.releases = JSON.parse(cached);
+            populateVersionSelect();
+            return state.releases;
+        }
+    } catch (cacheErr) {
+        console.warn('Failed to read releases from cache:', cacheErr);
+    }
+
+    try {
         const resp = await fetch(`${GITHUB_API}/releases?per_page=10`);
         if (!resp.ok) throw new Error('Failed');
         const releases = await resp.json();
@@ -8,6 +20,14 @@ async function fetchReleases() {
             name: r.name,
             published: r.published_at,
         }));
+        
+        try {
+            localStorage.setItem('attack-explorer-releases', JSON.stringify(state.releases));
+            localStorage.setItem('attack-explorer-releases-timestamp', Date.now().toString());
+        } catch (cacheErr) {
+            console.warn('Failed to write releases to cache:', cacheErr);
+        }
+
         populateVersionSelect();
         return releases;
     } catch (err) {
@@ -54,6 +74,10 @@ async function loadSTIX(domain, version, layerData = null) {
         updateVersionDisplay(version);
         updateLayerToolbar();
         renderAll();
+        
+        if (window.loadReportsList) {
+            window.loadReportsList().catch(() => {});
+        }
 
         localStorage.setItem('attack-explorer-last-version', version);
         saveCurrentLayer();
@@ -64,7 +88,7 @@ async function loadSTIX(domain, version, layerData = null) {
             <div class="text-center py-5">
                 <i class="bi bi-exclamation-triangle text-warning mb-3" style="font-size: 2rem;"></i>
                 <h5>Failed to load data</h5>
-                <p class="text-muted">${err.message}</p>
+                <p class="text-on-surface-secondary">${err.message}</p>
                 <button class="btn btn-primary btn-sm" onclick="loadSTIX('${domain}', '${version}')">Retry</button>
             </div>`;
     } finally {
@@ -74,6 +98,7 @@ async function loadSTIX(domain, version, layerData = null) {
 
 function createNewLayer(domain, version) {
     return {
+        id: `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: 'Untitled Layer',
         version: LAYER_VERSION,
         domain: domain,
@@ -113,17 +138,17 @@ function updateLayerToolbar() {
     const logoImg = document.getElementById('company-logo-img');
     if (state.companyLogo) {
         logoImg.src = state.companyLogo;
-        logoContainer.classList.remove('d-none');
+        logoContainer.classList.remove('hidden');
     } else {
-        logoContainer.classList.add('d-none');
+        logoContainer.classList.add('hidden');
     }
     
     const nameDisplay = document.getElementById('company-name-display');
     if (state.companyName) {
         nameDisplay.textContent = state.companyName;
-        nameDisplay.classList.remove('d-none');
+        nameDisplay.classList.remove('hidden');
     } else {
-        nameDisplay.classList.add('d-none');
+        nameDisplay.classList.add('hidden');
     }
 }
 
@@ -135,13 +160,21 @@ function parseSTIX(bundle) {
     state.software = [];
     state.mitigations = [];
     state.relationships = [];
+    state.dataSources = [];
+    state.dataComponents = [];
     state.platforms = new Set();
 
+    state.revokedTechniques = [];
+
     for (const obj of objects) {
-        if (obj.type === 'attack-pattern' && !obj.deprecated && !obj.revoked) {
-            state.techniques.push(obj);
-            if (obj.x_mitre_platforms) {
-                obj.x_mitre_platforms.forEach(p => state.platforms.add(p));
+        if (obj.type === 'attack-pattern') {
+            if (!obj.deprecated && !obj.revoked) {
+                state.techniques.push(obj);
+                if (obj.x_mitre_platforms) {
+                    obj.x_mitre_platforms.forEach(p => state.platforms.add(p));
+                }
+            } else {
+                state.revokedTechniques.push(obj);
             }
         } else if (obj.type === 'x-mitre-tactic' && !obj.deprecated && !obj.revoked) {
             state.tactics.push(obj);
@@ -153,11 +186,15 @@ function parseSTIX(bundle) {
             state.software.push(obj);
         } else if (obj.type === 'course-of-action' && !obj.deprecated && !obj.revoked) {
             state.mitigations.push(obj);
-        } else if (obj.type === 'relationship' && !obj.deprecated && !obj.revoked) {
+        } else if (obj.type === 'relationship') {
             state.relationships.push(obj);
+        } else if (obj.type === 'x-mitre-data-source' && !obj.deprecated && !obj.revoked) {
+            state.dataSources.push(obj);
+        } else if (obj.type === 'x-mitre-data-component' && !obj.deprecated && !obj.revoked) {
+            state.dataComponents.push(obj);
         }
     }
 
     state.activePlatforms = new Set(state.platforms);
-    console.log(`Parsed: ${state.techniques.length} techniques, ${state.tactics.length} tactics, ${state.groups.length} groups, ${state.software.length} software, ${state.mitigations.length} mitigations`);
+    console.log(`Parsed: ${state.techniques.length} techniques, ${state.tactics.length} tactics, ${state.groups.length} groups, ${state.software.length} software, ${state.mitigations.length} mitigations, ${state.dataSources.length} data sources, ${state.dataComponents.length} data components`);
 }

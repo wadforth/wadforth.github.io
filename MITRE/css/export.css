@@ -1,8 +1,10 @@
 /* ============================================
-   Export Styles - Modern Clean Theme
+   Export Styles - Open PRO / Nebula Inspired
    ============================================ */
 .matrix-export-container {
-    background: var(--surface-elevated);
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 0.75rem;
 }
 
@@ -12,7 +14,7 @@
     align-items: center;
     margin-bottom: 0.35rem;
     padding-bottom: 0.35rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.5);
 }
 
 .matrix-export-header-left {
@@ -30,7 +32,10 @@
 .matrix-export-title {
     font-size: 0.88rem;
     font-weight: 700;
-    color: var(--on-surface);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     margin: 0;
 }
 
@@ -59,10 +64,12 @@
     gap: 0.55rem;
     margin-bottom: 0.35rem;
     padding: 0.35rem;
-    background: var(--surface-subtle);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-radius: var(--radius-sm);
     flex-wrap: wrap;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .matrix-export-legend-item {
@@ -76,7 +83,7 @@
     width: 8px;
     height: 8px;
     border-radius: var(--radius-xs);
-    border: 1px solid var(--border);
+    border: 1px solid rgba(55, 65, 81, 0.5);
 }
 
 .matrix-export-table {
@@ -86,33 +93,35 @@
 }
 
 .matrix-export-table th {
-    background: var(--surface-elevated);
+    background: rgba(17, 24, 39, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: var(--on-surface);
     font-weight: 600;
     text-align: center;
     padding: 0.25rem;
     min-width: 100px;
     font-size: 0.58rem;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 2px solid rgba(139, 92, 246, 0.3);
 }
 
 .matrix-export-table td {
     vertical-align: top;
     padding: 0;
-    background: var(--surface-subtle);
+    background: rgba(21, 27, 43, 0.5);
     min-width: 100px;
 }
 
 .matrix-export-cell {
     padding: 0.15rem 0.25rem;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.3);
     font-size: 0.52rem;
 }
 
 .matrix-export-cell .tech-id {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
-    color: var(--accent-blue);
+    color: var(--primary);
 }
 
 .matrix-export-cell .tech-name {
@@ -127,7 +136,7 @@
 .matrix-export-footer {
     margin-top: 0.35rem;
     padding-top: 0.25rem;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid rgba(55, 65, 81, 0.5);
     font-size: 0.48rem;
     color: var(--on-surface-tertiary);
     text-align: center;

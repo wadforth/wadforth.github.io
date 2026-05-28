@@ -1,5 +1,5 @@
 /* ============================================
-   Software Stats Bar
+   Software Stats Bar - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-stats-bar {
@@ -8,7 +8,7 @@
     padding: 0.6rem 0;
     margin-bottom: 0.5rem;
     flex-wrap: wrap;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .software-stat {
@@ -21,7 +21,10 @@
 .software-stat-value {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--primary);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     line-height: 1.2;
 }
 
@@ -34,7 +37,7 @@
 }
 
 /* ============================================
-   Software Toolbar
+   Software Toolbar - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-toolbar {
@@ -69,9 +72,11 @@
 .software-sort-select {
     font-size: 0.75rem;
     padding: 0.2rem 0.5rem;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(55, 65, 81, 0.5);
     border-radius: var(--radius-sm);
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--on-surface);
     cursor: pointer;
 }
@@ -79,7 +84,7 @@
 .software-sort-select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light);
+    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
 }
 
 .software-sort-dir {
@@ -88,7 +93,7 @@
 }
 
 /* ============================================
-   Software Grid & List
+   Software Grid & List - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-grid {
@@ -104,18 +109,19 @@
 }
 
 .software-card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-lg);
     padding: 1.25rem;
     transition: var(--transition);
     position: relative;
 }
 
 .software-card:hover {
+    background: rgba(255, 255, 255, 0.06);
     border-color: var(--primary);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-md), var(--glow-primary);
+    transform: translateY(-3px);
 }
 
 .software-card-header {
@@ -157,13 +163,13 @@
 }
 
 .software-sw-malware {
-    background: rgba(220, 53, 69, 0.12);
-    color: #dc3545;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--accent-red);
 }
 
 .software-sw-tool {
-    background: rgba(25, 135, 84, 0.12);
-    color: #198754;
+    background: rgba(74, 222, 128, 0.15);
+    color: var(--accent-green);
 }
 
 .software-card-title {
@@ -180,7 +186,7 @@
     font-size: 0.7rem;
     font-weight: 700;
     color: var(--primary);
-    background: var(--primary-lighter);
+    background: var(--primary-light);
     padding: 0.2em 0.5em;
     border-radius: var(--radius-pill);
     flex-shrink: 0;
@@ -201,7 +207,7 @@
     display: flex;
     justify-content: flex-end;
     padding-top: 0.5rem;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .software-card-link {
@@ -213,7 +219,7 @@
 }
 
 /* ============================================
-   List View
+   List View - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-card-list {
@@ -274,7 +280,7 @@
 }
 
 /* ============================================
-   Software Detail Modal
+   Software Detail Modal - Open PRO / Nebula Inspired
    ============================================ */
 
 #software-detail-modal .modal-dialog {
@@ -286,7 +292,7 @@
 }
 
 #software-detail-modal .tech-modal-scroll {
-    padding: 1.5rem;
+    padding: 2rem;
     display: block;
     overflow-y: auto;
     max-height: calc(85vh - 120px);
@@ -295,7 +301,7 @@
 #software-detail-modal .tech-modal-desc {
     padding: 0;
     border-bottom: none;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 #software-detail-modal .tech-modal-desc .desc-paragraph {
@@ -307,8 +313,8 @@
 }
 
 #software-detail-modal .software-tab-nav {
-    margin: -1.5rem -1.5rem 1.5rem;
-    padding: 0 1.5rem;
+    margin: -2rem -2rem 2rem;
+    padding: 0 2rem;
     background: var(--surface-elevated);
     border-bottom: 1px solid var(--border);
     display: flex;
@@ -338,9 +344,11 @@
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding: 0.75rem;
-    background: var(--surface-subtle);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 #software-detail-modal .software-meta-item {
@@ -368,8 +376,9 @@
 }
 
 #software-detail-modal .software-coverage-good {
-    color: #198754;
+    color: var(--accent-green);
     font-weight: 700;
+    text-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
 }
 
 #software-detail-modal .software-coverage-none {
@@ -379,9 +388,11 @@
 .software-coverage-bar-container {
     margin-bottom: 1.5rem;
     padding: 0.75rem;
-    background: var(--surface-subtle);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .software-coverage-bar-label {
@@ -393,7 +404,7 @@
 
 .software-coverage-bar-track {
     height: 8px;
-    background: var(--border-subtle);
+    background: rgba(55, 65, 81, 0.3);
     border-radius: 4px;
     overflow: hidden;
     margin-bottom: 0.4rem;
@@ -401,9 +412,10 @@
 
 .software-coverage-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #198754, #20c997);
+    background: linear-gradient(90deg, var(--accent-green), #20c997);
     border-radius: 4px;
     transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
 }
 
 .software-coverage-bar-stats {
@@ -425,7 +437,7 @@
 }
 
 .software-coverage-stat.covered {
-    color: #198754;
+    color: var(--accent-green);
 }
 
 .software-coverage-stat.uncovered {
@@ -469,7 +481,7 @@
 
 #software-detail-modal .software-tab-btn:hover {
     color: var(--on-surface);
-    background: var(--surface-subtle);
+    background: var(--primary-light);
 }
 
 #software-detail-modal .software-tab-btn.active {
@@ -480,7 +492,9 @@
 
 #software-detail-modal .software-tab-count {
     font-size: 0.65rem;
-    background: var(--surface-subtle);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 0.1em 0.45em;
     border-radius: 8px;
     font-weight: 600;
@@ -492,7 +506,7 @@
 }
 
 /* ============================================
-   Technique Chips
+   Technique Chips - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-tech-preview {
@@ -503,8 +517,10 @@
 
 .software-tech-chip {
     cursor: pointer;
-    background: var(--surface-subtle);
-    border: 1px solid var(--border);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(55, 65, 81, 0.3);
     border-radius: var(--radius-sm);
     padding: 0.4rem 0.65rem;
     display: inline-flex;
@@ -517,20 +533,22 @@
     border-color: var(--primary);
     background: var(--primary-light);
     transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .software-tech-chip-covered {
-    border-color: rgba(25, 135, 84, 0.4);
-    background: rgba(25, 135, 84, 0.08);
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.08);
 }
 
 .software-tech-chip-covered:hover {
-    border-color: #198754;
-    background: rgba(25, 135, 84, 0.15);
+    border-color: var(--accent-green);
+    background: rgba(74, 222, 128, 0.15);
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
 }
 
 .software-tech-query-indicator {
-    color: #198754;
+    color: var(--accent-green);
     font-size: 0.75rem;
 }
 
@@ -539,7 +557,7 @@
     font-size: 0.68rem;
     font-weight: 600;
     color: var(--primary);
-    background: var(--primary-lighter);
+    background: var(--primary-light);
     padding: 0.1em 0.35em;
     border-radius: var(--radius-pill);
 }
@@ -558,7 +576,7 @@
 }
 
 /* ============================================
-   Techniques Tab
+   Techniques Tab - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-tech-filters {
@@ -570,8 +588,10 @@
 
 .software-tech-filters .form-control {
     font-size: 0.78rem;
-    background: var(--surface-elevated);
-    border-color: var(--border);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-color: rgba(55, 65, 81, 0.5);
     color: var(--on-surface);
     flex: 1;
     min-width: 180px;
@@ -579,7 +599,7 @@
 
 .software-tech-filters .form-control:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-light);
+    box-shadow: 0 0 0 3px var(--primary-light), var(--glow-primary);
 }
 
 .software-tech-filter-btns {
@@ -593,9 +613,10 @@
 }
 
 .software-tech-filter-btns .btn.active {
-    background: var(--primary);
+    background: var(--gradient-primary);
     color: white;
     border-color: var(--primary);
+    box-shadow: var(--glow-primary);
 }
 
 .software-tactic-section {
@@ -608,7 +629,7 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--primary);
-    background: var(--primary-lighter);
+    background: var(--primary-light);
     padding: 0.4rem 0.65rem;
     border-radius: var(--radius-sm);
     margin-bottom: 0.5rem;
@@ -623,8 +644,10 @@
 
 .software-tech-item {
     cursor: pointer;
-    background: var(--surface-subtle);
-    border: 1px solid var(--border);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(55, 65, 81, 0.3);
     border-radius: var(--radius-sm);
     padding: 0.35rem 0.6rem;
     display: inline-flex;
@@ -637,20 +660,22 @@
     border-color: var(--primary);
     background: var(--primary-light);
     transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .software-tech-item-covered {
-    border-color: rgba(25, 135, 84, 0.4);
-    background: rgba(25, 135, 84, 0.08);
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.08);
 }
 
 .software-tech-item-covered:hover {
-    border-color: #198754;
-    background: rgba(25, 135, 84, 0.15);
+    border-color: var(--accent-green);
+    background: rgba(74, 222, 128, 0.15);
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.2);
 }
 
 .software-tech-query-icon {
-    color: #198754;
+    color: var(--accent-green);
     font-size: 0.7rem;
 }
 
@@ -659,7 +684,7 @@
     font-weight: 600;
     color: var(--primary);
     font-size: 0.68rem;
-    background: var(--primary-lighter);
+    background: var(--primary-light);
     padding: 0.1em 0.35em;
     border-radius: var(--radius-pill);
 }
@@ -670,7 +695,7 @@
 }
 
 /* ============================================
-   Groups Tab
+   Groups Tab - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-group-list {
@@ -681,8 +706,10 @@
 
 .software-group-item {
     cursor: pointer;
-    background: var(--surface-subtle);
-    border: 1px solid var(--border-subtle);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(55, 65, 81, 0.3);
     border-radius: var(--radius-sm);
     padding: 0.75rem;
     transition: var(--transition);
@@ -692,6 +719,7 @@
     border-color: var(--primary);
     background: var(--primary-light);
     transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .software-group-item-header {
@@ -733,8 +761,10 @@
 
 .software-group-chip {
     cursor: pointer;
-    background: var(--surface-subtle);
-    border: 1px solid var(--border);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(55, 65, 81, 0.3);
     border-radius: var(--radius-sm);
     padding: 0.4rem 0.65rem;
     display: inline-flex;
@@ -747,6 +777,7 @@
     border-color: var(--primary);
     background: var(--primary-light);
     transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .software-group-chip-id {
@@ -754,7 +785,7 @@
     font-size: 0.68rem;
     font-weight: 600;
     color: var(--primary);
-    background: var(--primary-lighter);
+    background: var(--primary-light);
     padding: 0.1em 0.35em;
     border-radius: var(--radius-pill);
 }
@@ -773,7 +804,7 @@
 }
 
 /* ============================================
-   Heatmap Tab
+   Heatmap Tab - Open PRO / Nebula Inspired
    ============================================ */
 
 .software-heatmap-container {
@@ -782,9 +813,11 @@
 
 .software-heatmap-scroll {
     overflow-x: auto;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(55, 65, 81, 0.3);
     border-radius: var(--radius-sm);
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .software-heatmap-table {
@@ -799,15 +832,15 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--primary);
-    background: var(--primary-lighter);
-    border-bottom: 2px solid var(--border);
+    background: rgba(139, 92, 246, 0.1);
+    border-bottom: 2px solid rgba(55, 65, 81, 0.5);
     text-align: center;
     font-size: 0.65rem;
     font-family: 'JetBrains Mono', monospace;
 }
 
 .software-heatmap-row {
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .software-heatmap-row:last-child {
@@ -816,7 +849,9 @@
 
 .software-heatmap-tech-cell {
     padding: 0.5rem 0.75rem;
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     position: sticky;
     left: 0;
     z-index: 2;
@@ -845,28 +880,29 @@
 .software-heatmap-cell {
     padding: 0.4rem;
     text-align: center;
-    border-left: 1px solid var(--border-subtle);
+    border-left: 1px solid rgba(55, 65, 81, 0.3);
     min-width: 36px;
     color: var(--on-surface-tertiary);
     font-size: 0.7rem;
 }
 
 .software-heatmap-cell-active {
-    background: rgba(0, 229, 255, 0.1);
+    background: rgba(139, 92, 246, 0.15);
     color: var(--on-surface-tertiary);
 }
 
 .software-heatmap-cell-covered {
-    background: rgba(25, 135, 84, 0.15);
-    color: #198754;
+    background: rgba(74, 222, 128, 0.15);
+    color: var(--accent-green);
     cursor: pointer;
     transition: var(--transition);
 }
 
 .software-heatmap-cell-covered:hover {
-    background: rgba(25, 135, 84, 0.3);
-    outline: 2px solid #198754;
+    background: rgba(74, 222, 128, 0.25);
+    outline: 2px solid var(--accent-green);
     outline-offset: -2px;
     z-index: 1;
     position: relative;
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
 }

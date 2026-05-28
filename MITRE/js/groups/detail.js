@@ -18,6 +18,10 @@ function showGroupModal(groupId) {
         const resourceLevel = group.resource_level || '';
         const created = group.created ? new Date(group.created).toLocaleDateString() : '';
         const modified = group.modified ? new Date(group.modified).toLocaleDateString() : '';
+        const firstSeen = group.first_seen ? new Date(group.first_seen).toLocaleDateString() : '';
+        const lastSeen = group.last_seen ? new Date(group.last_seen).toLocaleDateString() : '';
+        const goals = group.goals || [];
+        const contributors = group.x_mitre_contributors || [];
         
         const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === group.id);
         const techIds = techRels.map(r => r.target_ref);
@@ -82,6 +86,8 @@ function showGroupModal(groupId) {
                 <div class="group-meta-grid">
                     ${created ? `<div class="group-meta-item"><span class="group-meta-label">Created</span><span class="group-meta-value">${created}</span></div>` : ''}
                     ${modified ? `<div class="group-meta-item"><span class="group-meta-label">Modified</span><span class="group-meta-value">${modified}</span></div>` : ''}
+                    ${firstSeen ? `<div class="group-meta-item"><span class="group-meta-label">First Observed</span><span class="group-meta-value">${firstSeen}</span></div>` : ''}
+                    ${lastSeen ? `<div class="group-meta-item"><span class="group-meta-label">Last Observed</span><span class="group-meta-value">${lastSeen}</span></div>` : ''}
                     ${sophistication ? `<div class="group-meta-item"><span class="group-meta-label">Sophistication</span><span class="group-meta-value">${escapeHtml(sophistication)}</span></div>` : ''}
                     ${resourceLevel ? `<div class="group-meta-item"><span class="group-meta-label">Resource Level</span><span class="group-meta-value">${escapeHtml(resourceLevel)}</span></div>` : ''}
                     ${techCount > 0 ? `<div class="group-meta-item"><span class="group-meta-label">Query Coverage</span><span class="group-meta-value ${coveragePct > 0 ? 'group-coverage-good' : ''}">${coveragePct}% (${coveredCount}/${techCount})</span></div>` : ''}
@@ -103,6 +109,15 @@ function showGroupModal(groupId) {
                     </div>
                 ` : ''}
                 
+                ${goals.length ? `
+                    <div class="group-section">
+                        <h6 class="group-section-title"><i class="bi bi-target"></i> Group Goals</h6>
+                        <ul class="group-goals-list text-sm pl-4 mb-0" style="list-style-type: square; color: var(--on-surface-secondary); line-height: 1.6;">
+                            ${goals.map(g => `<li>${escapeHtml(g)}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                
                 ${domains.length ? `
                     <div class="group-section">
                         <h6 class="group-section-title"><i class="bi bi-globe"></i> Domains</h6>
@@ -121,6 +136,13 @@ function showGroupModal(groupId) {
                     <div class="group-section">
                         <h6 class="group-section-title"><i class="bi bi-heart"></i> Motivations</h6>
                         <div class="group-tags">${motivations.map(m => `<span class="group-tag group-tag-motivation">${escapeHtml(m)}</span>`).join('')}</div>
+                    </div>
+                ` : ''}
+                
+                ${contributors.length ? `
+                    <div class="group-section">
+                        <h6 class="group-section-title"><i class="bi bi-person-fill-check"></i> Contributors</h6>
+                        <div class="group-tags">${contributors.map(c => `<span class="group-tag group-tag-contributor">${escapeHtml(c)}</span>`).join('')}</div>
                     </div>
                 ` : ''}
                 
@@ -386,8 +408,8 @@ function showGroupModal(groupId) {
                 setTimeout(() => {
                     document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
                     document.querySelector('[data-view="matrix"]')?.classList.add('active');
-                    document.querySelectorAll('.view-section').forEach(s => s.classList.add('d-none'));
-                    document.getElementById('matrix-view')?.classList.remove('d-none');
+                    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                    document.getElementById('matrix-view')?.classList.remove('hidden');
                     
                     const grp = state.groups.find(g => {
                         const gid = g.external_references?.[0]?.external_id || '';

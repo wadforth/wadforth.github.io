@@ -1,9 +1,3 @@
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 let queriesSortBy = 'name';
 let queriesSortDir = 'asc';
 let queriesViewMode = 'grid';
@@ -68,16 +62,16 @@ function renderQueriesView() {
     const langFilter = document.getElementById('query-language-filter');
     
     if (queriesShowHeatmap) {
-        container.classList.add('d-none');
-        heatmapContainer.classList.remove('d-none');
-        controlsContainer.classList.add('d-none');
+        container.classList.add('hidden');
+        heatmapContainer.classList.remove('hidden');
+        controlsContainer.classList.add('hidden');
         renderQueriesHeatmap(heatmapContainer);
         return;
     }
     
-    container.classList.remove('d-none');
-    heatmapContainer.classList.add('d-none');
-    controlsContainer.classList.remove('d-none');
+    container.classList.remove('hidden');
+    heatmapContainer.classList.add('hidden');
+    controlsContainer.classList.remove('hidden');
     container.className = queriesViewMode === 'grid' ? 'queries-grid' : 'queries-list-view';
     
     const query = (searchInput?.value || '').toLowerCase().trim();
@@ -185,7 +179,7 @@ function renderQueriesView() {
         const primaryTechName = primaryTech?.name || techIds[0];
         const modifiedStr = formatTimestamp(q.lastModified || q.created);
         const techBadges = techIds.map(tid => `<span class="query-tech-ref">${tid}</span>`).join('');
-        const multiTechLabel = techIds.length > 1 ? `<span class="text-muted small">+${techIds.length - 1} more</span>` : `<span class="text-muted small">${escapeHtml(primaryTechName)}</span>`;
+        const multiTechLabel = techIds.length > 1 ? `<span class="text-on-surface-tertiary text-sm">+${techIds.length - 1} more</span>` : `<span class="text-on-surface-tertiary text-sm">${escapeHtml(primaryTechName)}</span>`;
         
         if (queriesViewMode === 'list') {
             return `
@@ -246,7 +240,7 @@ function renderQueriesView() {
                     </div>
                 </div>
                 <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
-                ${q.description ? `<p class="query-card-desc">${escapeHtml(q.description)}</p>` : ''}
+                ${q.description ? `<p class="query-card-desc" title="${escapeHtml(cleanDescription(q.description))}">${escapeHtml(truncateDescription(q.description, 150))}</p>` : ''}
                 ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
                 <div class="query-card-footer">
                     <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>

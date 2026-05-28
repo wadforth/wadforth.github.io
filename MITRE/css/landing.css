@@ -1,0 +1,532 @@
+/* ============================================
+   Landing Page Enhancements - Phase 3
+   Animated background, stats, quick actions, progress rings
+   ============================================ */
+
+/* ============================================
+   Animated Background
+   ============================================ */
+
+.landing-view {
+    position: relative;
+    overflow: hidden;
+}
+
+.landing-animated-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.landing-gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: orbFloat 20s ease-in-out infinite;
+}
+
+.landing-gradient-orb:nth-child(1) {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+    top: -10%;
+    left: -5%;
+    animation-duration: 25s;
+}
+
+.landing-gradient-orb:nth-child(2) {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.3) 0%, transparent 70%);
+    top: 60%;
+    right: -10%;
+    animation-duration: 30s;
+    animation-delay: -5s;
+}
+
+.landing-gradient-orb:nth-child(3) {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
+    bottom: -5%;
+    left: 30%;
+    animation-duration: 22s;
+    animation-delay: -10s;
+}
+
+@keyframes orbFloat {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+    25% {
+        transform: translate(30px, -40px) scale(1.1);
+    }
+    50% {
+        transform: translate(-20px, 20px) scale(0.95);
+    }
+    75% {
+        transform: translate(40px, 30px) scale(1.05);
+    }
+}
+
+/* Particle Grid */
+.landing-particles {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(circle at 1px 1px, rgba(139, 92, 246, 0.15) 1px, transparent 0);
+    background-size: 40px 40px;
+    animation: particleDrift 60s linear infinite;
+}
+
+@keyframes particleDrift {
+    from {
+        transform: translate(0, 0);
+    }
+    to {
+        transform: translate(40px, 40px);
+    }
+}
+
+/* ============================================
+   Enhanced Landing Container
+   ============================================ */
+
+.landing-container {
+    max-width: 1100px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   Enhanced Header
+   ============================================ */
+
+.landing-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.landing-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.landing-title {
+    font-size: 3rem;
+    font-weight: 800;
+    margin: 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    from {
+        filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));
+    }
+    to {
+        filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));
+    }
+}
+
+.landing-subtitle {
+    font-size: 1.15rem;
+    color: var(--on-surface-secondary);
+    margin: 0;
+    font-weight: 400;
+    max-width: 500px;
+}
+
+/* ============================================
+   Quick Stats Dashboard
+   ============================================ */
+
+.landing-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+
+.landing-stat-card {
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(55, 65, 81, 0.5);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.landing-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.landing-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+}
+
+.landing-stat-card:hover::before {
+    opacity: 1;
+}
+
+.landing-stat-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-sm);
+    margin: 0 auto 0.75rem;
+    font-size: 1.1rem;
+    color: var(--primary);
+}
+
+.landing-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 0.35rem;
+}
+
+.landing-stat-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--on-surface-tertiary);
+}
+
+/* ============================================
+   Progress Rings
+   ============================================ */
+
+.landing-progress-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+    animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+.progress-ring-card {
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(55, 65, 81, 0.5);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.progress-ring-card:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.progress-ring-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 0.75rem;
+}
+
+.progress-ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.progress-ring-bg {
+    fill: none;
+    stroke: rgba(55, 65, 81, 0.5);
+    stroke-width: 6;
+}
+
+.progress-ring-fill {
+    fill: none;
+    stroke: url(#progressGradient);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progress-ring-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--on-surface);
+}
+
+.progress-ring-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--on-surface-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ============================================
+   Enhanced Action Cards
+   ============================================ */
+
+.landing-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+    animation: fadeInUp 0.6s ease-out 0.3s both;
+}
+
+.action-card {
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: var(--radius-lg);
+    padding: 2rem 1.5rem;
+    cursor: pointer;
+    transition: var(--transition-slow);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: var(--transition-slow);
+}
+
+.action-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+    opacity: 0;
+    transition: var(--transition-slow);
+    transform: scale(0.5);
+}
+
+.action-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: var(--glow-primary);
+}
+
+.action-card:hover::before {
+    opacity: 0.1;
+}
+
+.action-card:hover::after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.action-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-md);
+    margin: 0 auto 1.25rem;
+    font-size: 1.5rem;
+    color: var(--primary);
+    position: relative;
+    z-index: 1;
+    transition: var(--transition);
+}
+
+.action-card:hover .action-icon {
+    background: var(--gradient-primary);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.action-card h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--on-surface);
+    margin: 0 0 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.action-card p {
+    font-size: 0.85rem;
+    color: var(--on-surface-tertiary);
+    margin: 0;
+    line-height: 1.5;
+    position: relative;
+    z-index: 1;
+}
+
+/* ============================================
+   Recent Layers Section
+   ============================================ */
+
+#recent-layers-section {
+    animation: fadeInUp 0.6s ease-out 0.4s both;
+}
+
+#recent-layers-section h6 {
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--on-surface-tertiary);
+    margin-bottom: 1rem;
+}
+
+.recent-layers {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.recent-layer-card {
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(55, 65, 81, 0.5);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.recent-layer-card:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+.recent-layer-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: 1.1rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.recent-layer-info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+
+.recent-layer-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.15rem;
+}
+
+.recent-layer-meta {
+    font-size: 0.72rem;
+    color: var(--on-surface-tertiary);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.recent-layer-badge {
+    padding: 0.1rem 0.35rem;
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: var(--radius-xs);
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+    .landing-title {
+        font-size: 2rem;
+    }
+    
+    .landing-actions {
+        grid-template-columns: 1fr;
+    }
+    
+    .landing-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .landing-progress-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .landing-header {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .landing-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .landing-progress-section {
+        grid-template-columns: 1fr;
+    }
+}

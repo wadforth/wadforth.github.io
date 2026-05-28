@@ -1,16 +1,18 @@
-/* Query Disclaimer */
 .query-disclaimer {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
-    padding: 0.55rem 0.85rem;
-    background: var(--surface-variant);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    gap: 0.55rem;
+    padding: 0.75rem 1rem;
+    background: rgba(168, 85, 247, 0.04);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: var(--radius-md);
     font-size: 0.75rem;
     color: var(--on-surface-secondary);
-    line-height: 1.4;
-    margin-bottom: 0.65rem;
+    line-height: 1.45;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.05);
 }
 
 .query-disclaimer i {
@@ -20,134 +22,41 @@
 }
 
 /* ============================================
-   Query Page Styles
+   Query Page Styles - Open PRO / Nebula Inspired
    ============================================ */
-
-.queries-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 0.75rem;
-}
-
-.query-card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 1rem;
-    transition: var(--transition);
-}
-
-.query-card:hover {
-    border-color: var(--on-surface-tertiary);
-    box-shadow: var(--shadow-sm);
-}
-
-.query-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.55rem;
-}
-
-.query-card-title {
-    font-weight: 600;
-    font-size: 0.88rem;
-    margin: 0;
-    color: var(--on-surface);
-}
-
-.query-card-actions {
-    display: flex;
-    gap: 0.15rem;
-}
-
-.query-card-actions .btn {
-    padding: 0.15rem 0.3rem;
-    font-size: 0.7rem;
-}
-
-.query-meta {
-    display: flex;
-    gap: 0.35rem;
-    align-items: center;
-    margin-bottom: 0.55rem;
-    flex-wrap: wrap;
-}
-
-.query-tech-ref {
-    font-size: 0.62rem;
-    font-family: var(--font-mono);
-    color: var(--accent-blue);
-    background: rgba(74, 144, 226, 0.1);
-    padding: 0.1em 0.32em;
-    border-radius: var(--radius-pill);
-    font-weight: 600;
-}
-
-.query-card-body {
-    background: var(--surface-variant);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    padding: 0.65rem;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    color: var(--on-surface-secondary);
-    overflow-x: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.45;
-}
-
-.query-card-desc {
-    font-size: 0.72rem;
-    color: var(--on-surface-tertiary);
-    margin-top: 0.35rem;
-    margin-bottom: 0;
-}
-
-.query-card-source {
-    font-size: 0.65rem;
-    color: var(--on-surface-tertiary);
-    margin-top: 0.25rem;
-}
-
-.query-card-source a {
-    color: var(--accent-blue);
-    text-decoration: none;
-}
-
-.query-card-source a:hover {
-    text-decoration: underline;
-}
 
 /* Query Editor - Technique Selector */
 .technique-select-search {
     width: 100%;
     padding: 0.4rem 0.6rem;
     font-size: 0.75rem;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(55, 65, 81, 0.5);
     border-radius: var(--radius-sm);
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--on-surface);
     margin-bottom: 0.55rem;
 }
 
 .technique-select-search:focus {
     outline: none;
-    border-color: var(--on-surface-tertiary);
-    box-shadow: 0 0 0 2px var(--primary-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
 }
 
 .technique-select-list {
     max-height: 260px;
     overflow-y: auto;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(55, 65, 81, 0.5);
     border-radius: var(--radius-sm);
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .technique-tactic-group {
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .technique-tactic-group:last-child {
@@ -159,8 +68,10 @@
     padding: 0.3rem 0.6rem;
     font-size: 0.62rem;
     font-weight: 700;
-    color: var(--accent-blue);
-    background: var(--surface-subtle);
+    color: var(--accent-cyan);
+    background: rgba(17, 24, 39, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     position: sticky;
@@ -178,7 +89,7 @@
 }
 
 .technique-checkbox-item:hover {
-    background: var(--surface-subtle);
+    background: var(--primary-light);
 }
 
 .technique-checkbox-item input[type="checkbox"] {
@@ -195,38 +106,50 @@
     font-family: var(--font-mono);
     font-size: 0.62rem;
     font-weight: 600;
-    color: var(--accent-blue);
+    color: var(--accent-cyan);
     margin-right: 0.25rem;
 }
 
 /* Query Language Filter */
 #query-language-filter {
     font-size: 0.75rem;
-    border-color: var(--border);
-    background: var(--surface-elevated);
+    border-color: rgba(55, 65, 81, 0.5);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--on-surface);
+}
+
+#query-language-filter:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
 }
 
 /* Search Container */
 .search-container .input-group-text {
-    background: transparent;
-    border-color: var(--border);
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-color: rgba(55, 65, 81, 0.5);
 }
 
 .search-container .form-control {
     font-size: 0.75rem;
-    background: var(--surface-elevated);
-    border-color: var(--border);
+    background: rgba(31, 41, 55, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-color: rgba(55, 65, 81, 0.5);
     color: var(--on-surface);
 }
 
 .search-container .form-control:focus {
-    border-color: var(--on-surface-tertiary);
-    box-shadow: 0 0 0 2px var(--primary-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
+    background: rgba(31, 41, 55, 0.8);
 }
 
 /* ============================================
-   Query Toolbar & Controls
+   Query Toolbar & Controls - Open PRO / Nebula Inspired
    ============================================ */
 
 .queries-toolbar {
@@ -261,17 +184,19 @@
 .queries-sort-select {
     font-size: 0.68rem;
     padding: 0.15rem 0.4rem;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(55, 65, 81, 0.5);
     border-radius: var(--radius-sm);
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--on-surface);
     cursor: pointer;
 }
 
 .queries-sort-select:focus {
     outline: none;
-    border-color: var(--on-surface-tertiary);
-    box-shadow: 0 0 0 2px var(--primary-light);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
 }
 
 .queries-sort-dir {
@@ -279,19 +204,8 @@
     font-size: 0.7rem;
 }
 
-.btn-ghost {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--on-surface-secondary);
-}
-
-.btn-ghost:hover {
-    background: var(--surface-subtle);
-    color: var(--on-surface);
-}
-
 /* ============================================
-   Query Stats Bar
+   Query Stats Bar - Open PRO / Nebula Inspired
    ============================================ */
 
 .queries-stats-bar {
@@ -300,7 +214,7 @@
     padding: 0.45rem 0;
     margin-bottom: 0.35rem;
     flex-wrap: wrap;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .queries-stat {
@@ -313,7 +227,10 @@
 .queries-stat-value {
     font-size: 0.95rem;
     font-weight: 700;
-    color: var(--primary);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     line-height: 1.2;
 }
 
@@ -325,7 +242,7 @@
 }
 
 /* ============================================
-   Query Cards - Grid & List
+   Query Cards - Grid & List (Updated)
    ============================================ */
 
 .queries-grid {
@@ -341,16 +258,18 @@
 }
 
 .query-card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
     transition: var(--transition);
 }
 
 .query-card:hover {
-    border-color: var(--on-surface-tertiary);
-    box-shadow: var(--shadow-sm);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md), var(--glow-primary);
+    transform: translateY(-2px);
 }
 
 .query-card-header {
@@ -384,17 +303,19 @@
 }
 
 .query-card-body {
-    background: var(--surface-variant);
-    border: 1px solid var(--border-subtle);
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-sm);
-    padding: 0.65rem;
+    padding: 0.85rem;
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     color: var(--on-surface-secondary);
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-word;
-    line-height: 1.45;
+    line-height: 1.55;
 }
 
 .query-card-desc {
@@ -411,12 +332,13 @@
 }
 
 .query-card-source a {
-    color: var(--accent-blue);
+    color: var(--accent-cyan);
     text-decoration: none;
 }
 
 .query-card-source a:hover {
     text-decoration: underline;
+    color: var(--primary);
 }
 
 .query-card-footer {
@@ -424,7 +346,7 @@
     justify-content: flex-end;
     margin-top: 0.35rem;
     padding-top: 0.25rem;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .query-modified {
@@ -436,7 +358,7 @@
 }
 
 /* ============================================
-   List View
+   List View - Open PRO / Nebula Inspired
    ============================================ */
 
 .query-card-list {
@@ -476,8 +398,8 @@
 .query-list-id {
     font-size: 0.62rem;
     font-family: var(--font-mono);
-    color: var(--accent-blue);
-    background: rgba(74, 144, 226, 0.1);
+    color: var(--primary);
+    background: rgba(139, 92, 246, 0.15);
     padding: 0.08em 0.3em;
     border-radius: var(--radius-pill);
     font-weight: 600;
@@ -501,7 +423,7 @@
 }
 
 /* ============================================
-   Favorite Button
+   Favorite Button - Open PRO / Nebula Inspired
    ============================================ */
 
 .query-fav-btn {
@@ -513,14 +435,16 @@
 
 .query-fav-btn:hover {
     color: var(--accent-amber);
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 
 .query-fav-active {
     color: var(--accent-amber) !important;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 
 /* ============================================
-   Language Badges
+   Language Badges - Open PRO / Nebula Inspired
    ============================================ */
 
 .query-lang-badge {
@@ -534,72 +458,72 @@
 }
 
 .query-lang-badge.splunk {
-    background: rgba(255, 176, 0, 0.1);
+    background: rgba(251, 191, 36, 0.15);
     color: var(--accent-amber);
 }
 
 .query-lang-badge.elastic {
-    background: rgba(56, 189, 248, 0.1);
-    color: #38bdf8;
+    background: rgba(168, 85, 247, 0.15);
+    color: var(--accent-purple);
 }
 
 .query-lang-badge.logpoint {
-    background: rgba(100, 181, 246, 0.1);
-    color: #64b5f6;
+    background: rgba(107, 139, 168, 0.15);
+    color: var(--accent-tan);
 }
 
 .query-lang-badge.azuredns {
-    background: rgba(0, 120, 212, 0.1);
-    color: #0078d4;
+    background: rgba(59, 89, 120, 0.15);
+    color: var(--primary);
 }
 
 .query-lang-badge.powershell {
-    background: rgba(50, 120, 200, 0.1);
-    color: #3278c8;
+    background: rgba(59, 89, 120, 0.15);
+    color: var(--primary);
 }
 
 .query-lang-badge.sql {
-    background: rgba(139, 69, 19, 0.1);
-    color: #a0522d;
+    background: rgba(196, 168, 107, 0.15);
+    color: var(--accent-amber);
 }
 
 .query-lang-badge.python {
-    background: rgba(55, 118, 171, 0.1);
-    color: #5a9bd5;
+    background: rgba(107, 139, 168, 0.15);
+    color: var(--accent-tan);
 }
 
 .query-lang-badge.osquery {
-    background: rgba(74, 144, 226, 0.1);
-    color: #4a90e2;
+    background: rgba(59, 89, 120, 0.15);
+    color: var(--primary);
 }
 
 .query-lang-badge.terraform {
-    background: rgba(115, 50, 180, 0.1);
-    color: #9b59b6;
+    background: rgba(168, 85, 247, 0.15);
+    color: var(--accent-purple);
 }
 
 .query-lang-badge.aws {
-    background: rgba(255, 153, 0, 0.1);
-    color: #ffb84d;
+    background: rgba(196, 168, 107, 0.15);
+    color: var(--accent-amber);
 }
 
 .query-lang-badge.m365 {
-    background: rgba(0, 120, 212, 0.1);
-    color: #0078d4;
+    background: rgba(59, 89, 120, 0.15);
+    color: var(--primary);
 }
 
 .query-lang-badge.kql {
-    background: rgba(74, 144, 226, 0.1);
+    background: rgba(59, 130, 246, 0.15);
     color: var(--accent-blue);
 }
 
 .query-lang-badge.sigma {
-    background: rgba(70, 209, 96, 0.1);
+    background: rgba(74, 222, 128, 0.15);
     color: var(--accent-green);
 }
 
 /* ============================================
-   View Toggle
+   View Toggle - Open PRO / Nebula Inspired
    ============================================ */
 
 .queries-view-toggle {
@@ -613,13 +537,14 @@
 }
 
 .queries-view-toggle .btn.active {
-    background: var(--on-surface);
-    color: var(--surface-elevated);
-    border-color: var(--on-surface);
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: var(--glow-primary);
 }
 
 /* ============================================
-   Coverage Heatmap
+   Coverage Heatmap - Open PRO / Nebula Inspired
    ============================================ */
 
 .queries-heatmap {
@@ -628,9 +553,11 @@
 
 .queries-heatmap-scroll {
     overflow-x: auto;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid rgba(55, 65, 81, 0.3);
     border-radius: var(--radius-sm);
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .queries-heatmap-table {
@@ -644,15 +571,17 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--accent-blue);
-    background: var(--surface-subtle);
-    border-bottom: 1px solid var(--border);
+    color: var(--accent-cyan);
+    background: rgba(17, 24, 39, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.5);
     text-align: center;
     font-size: 0.58rem;
 }
 
 .heatmap-row {
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .heatmap-row:last-child {
@@ -661,7 +590,9 @@
 
 .heatmap-tech-cell {
     padding: 0.35rem 0.55rem;
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     position: sticky;
     left: 0;
     z-index: 2;
@@ -672,7 +603,7 @@
 .heatmap-tech-id {
     font-family: var(--font-mono);
     font-weight: 600;
-    color: var(--accent-blue);
+    color: var(--accent-cyan);
     font-size: 0.62rem;
     display: block;
 }
@@ -692,17 +623,18 @@
     text-align: center;
     font-weight: 600;
     font-size: 0.62rem;
-    border-left: 1px solid var(--border-subtle);
+    border-left: 1px solid rgba(55, 65, 81, 0.3);
     min-width: 32px;
     transition: var(--transition);
 }
 
 .heatmap-cell:hover {
     opacity: 0.85;
-    outline: 2px solid var(--on-surface-tertiary);
+    outline: 2px solid var(--primary);
     outline-offset: -2px;
     z-index: 1;
     position: relative;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
 }
 
 .heatmap-cell-empty {
@@ -748,5 +680,35 @@
     border-radius: var(--radius-xs);
     font-size: 0.52rem;
     font-weight: 600;
-    color: var(--surface-elevated);
+    color: white;
 }
+
+.query-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+}
+
+.query-tech-ref {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.62rem;
+    font-family: var(--font-mono);
+    color: var(--primary);
+    background: rgba(139, 92, 246, 0.15);
+    padding: 0.08em 0.38em;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+}
+
+.query-card-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    margin: 0;
+    color: var(--on-surface);
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+

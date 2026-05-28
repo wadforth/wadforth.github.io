@@ -1,9 +1,3 @@
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 function parseDescription(text) {
     if (!text) return '';
     
@@ -15,7 +9,7 @@ function parseDescription(text) {
             links.push({ label, url });
             return `__L${links.length - 1}__`;
         })
-        .replace(/\(Citation: ([^)]+)\)/g, (m, content) => {
+        .replace(/[\(\[]Citation:\s*([^\]\)]+)[\)\]]/g, (m, content) => {
             citations.push(content);
             return `__C${citations.length - 1}__`;
         });
@@ -96,7 +90,10 @@ function highlightQuerySyntax(query, language) {
     const langRules = rules[language] || [];
     
     for (const rule of langRules) {
-        escaped = escaped.replace(rule.regex, `<span class="${rule.cls}">$1</span>`);
+        const flags = rule.regex.flags || '';
+        const source = rule.regex.source;
+        const safeRegex = new RegExp(`${source}(?![^<]*>)`, flags);
+        escaped = escaped.replace(safeRegex, `<span class="${rule.cls}">$1</span>`);
     }
     
     return escaped;

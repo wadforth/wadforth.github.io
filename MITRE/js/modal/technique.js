@@ -19,9 +19,9 @@ function showTechniqueModal(techniqueId, skipHistory = false) {
 
     const revokedBadge = document.getElementById('technique-modal-revoked');
     if (tech.revoked || tech.x_mitre_deprecated) {
-        revokedBadge.classList.remove('d-none');
+        revokedBadge.classList.remove('hidden');
     } else {
-        revokedBadge.classList.add('d-none');
+        revokedBadge.classList.add('hidden');
     }
 
     renderTacticBadges(tech);
@@ -45,7 +45,7 @@ function showTechniqueModal(techniqueId, skipHistory = false) {
             const icon = platformIcons[p] || 'bi-circle';
             return `<span class="platform-chip"><i class="bi ${icon}"></i>${p}</span>`;
         }).join('')
-        : '<span class="text-muted small">No platforms specified</span>';
+        : '<span class="text-on-surface-tertiary text-sm">No platforms specified</span>';
 
     const ann = getTechniqueAnnotation(techniqueId);
     const monthAdded = ann?.monthAdded || new Date().toISOString().slice(0, 7);
@@ -62,7 +62,7 @@ function showTechniqueModal(techniqueId, skipHistory = false) {
         }
         monthsEl.innerHTML = `
             <div class="month-selector">
-                <label class="text-muted small mb-1">Logged Month</label>
+                <label class="text-on-surface-tertiary text-sm mb-1">Logged Month</label>
                 <select class="form-select form-select-sm" onchange="updateTechniqueMonth('${techniqueId}', this.value)">
                     ${monthOptions.join('')}
                 </select>
@@ -296,11 +296,11 @@ function updateBreadcrumb() {
     const backBtn = document.getElementById('tech-breadcrumb-back');
     
     if (techNavHistory.length === 0) {
-        breadcrumb.classList.add('d-none');
+        breadcrumb.classList.add('hidden');
         return;
     }
     
-    breadcrumb.classList.remove('d-none');
+    breadcrumb.classList.remove('hidden');
     
     const items = techNavHistory.slice(-3).map(id => {
         const tech = state.techniques.find(t => t.external_references?.[0]?.external_id === id);
@@ -363,10 +363,34 @@ function renderTechniqueDetails(tech) {
         }
     }
     
-    if (tech.x_mitre_data_sources?.length) {
+    // Enrich Data Sources / Data Components from relationships
+    const detectsRels = state.relationships.filter(r => r.relationship_type === 'detects' && r.target_ref === tech.id);
+    if (detectsRels.length) {
+        const componentItems = detectsRels.map(r => {
+            const component = state.dataComponents.find(dc => dc.id === r.source_ref);
+            if (!component) return '';
+            const source = state.dataSources.find(ds => ds.id === component.x_mitre_data_source_ref);
+            const sourceName = source ? source.name : 'Unknown Data Source';
+            return `<div class="data-component-item border-bottom pb-2 mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="detail-tag font-semibold" style="font-size: 0.7rem; background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);">${escapeHtml(sourceName)}</span>
+                    <span class="text-on-surface text-xs font-semibold ml-1">› ${escapeHtml(component.name)}</span>
+                </div>
+                ${r.description ? `<div class="text-on-surface-secondary text-xs mt-1 pl-2 border-left italic">${parseDescription(r.description)}</div>` : ''}
+            </div>`;
+        }).filter(Boolean).join('');
+
+        if (componentItems) {
+            details.push({
+                icon: 'bi-database-check',
+                title: 'Data Sources & Components',
+                items: `<div class="data-components-list mt-2">${componentItems}</div>`
+            });
+        }
+    } else if (tech.x_mitre_data_sources?.length) {
         details.push({
             icon: 'bi-database',
-            title: 'Data Sources',
+            title: 'Data Sources (Legacy)',
             items: tech.x_mitre_data_sources.map(ds => `<span class="detail-tag">${escapeHtml(ds)}</span>`).join('')
         });
     }
@@ -376,6 +400,30 @@ function renderTechniqueDetails(tech) {
             icon: 'bi-key',
             title: 'Permissions Required',
             items: tech.x_mitre_permissions_required.map(p => `<span class="detail-tag">${escapeHtml(p)}</span>`).join('')
+        });
+    }
+    
+    if (tech.x_mitre_effective_permissions?.length) {
+        details.push({
+            icon: 'bi-shield-lock',
+            title: 'Effective Permissions',
+            items: tech.x_mitre_effective_permissions.map(p => `<span class="detail-tag tag-effective-permissions">${escapeHtml(p)}</span>`).join('')
+        });
+    }
+    
+    if (tech.x_mitre_defense_bypassed?.length) {
+        details.push({
+            icon: 'bi-shield-slash',
+            title: 'Defense Bypassed',
+            items: tech.x_mitre_defense_bypassed.map(d => `<span class="detail-tag tag-defense-bypassed">${escapeHtml(d)}</span>`).join('')
+        });
+    }
+    
+    if (tech.x_mitre_network_requirements !== undefined) {
+        details.push({
+            icon: 'bi-globe',
+            title: 'Network Requirements',
+            items: `<span class="detail-tag ${tech.x_mitre_network_requirements ? 'tag-true' : 'tag-false'}">${tech.x_mitre_network_requirements ? 'Yes' : 'No'}</span>`
         });
     }
     

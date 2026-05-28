@@ -38,8 +38,8 @@ function renderLegendEditor() {
             </div>
         `;
         
-        const techRules = state.autoColorRules.filter(r => r.type === 'query-count');
-        const subRules = state.autoColorRules.filter(r => r.type === 'sub-coverage');
+        const techRules = state.autoColorRules.filter(r => r.type === 'sub-coverage');
+        const subRules = state.autoColorRules.filter(r => r.type === 'query-count');
         
         const renderRuleSection = (title, rules) => {
             if (rules.length === 0) return '';
@@ -50,7 +50,7 @@ function renderLegendEditor() {
                     <div class="legend-item" data-rule-idx="${origIdx}">
                         <div class="legend-color-swatch-wrapper">
                             <div class="legend-color-swatch" style="background: ${rule.color}" data-rule-idx="${origIdx}"></div>
-                            <div class="legend-color-picker d-none" data-rule-idx="${origIdx}">
+                            <div class="legend-color-picker hidden" data-rule-idx="${origIdx}">
                                 <div class="legend-color-grid">
                                     ${presetColors.map(c => `<div class="legend-preset-color" style="background: ${c}" data-color="${c}"></div>`).join('')}
                                 </div>
@@ -76,11 +76,11 @@ function renderLegendEditor() {
             return sectionHtml;
         };
         
-        html += renderRuleSection('Techniques (Query Count)', techRules);
-        html += renderRuleSection('Sub-techniques (Coverage %)', subRules);
+        html += renderRuleSection('Techniques (Coverage %)', techRules);
+        html += renderRuleSection('Sub-techniques (Query Count)', subRules);
         
         html += `
-            <div class="text-muted small mt-2">
+            <div class="text-on-surface-tertiary text-sm mt-2">
                 <i class="bi bi-lock me-1"></i>Manual colors disabled. Toggle off "Auto-color by query coverage" to edit legend.
             </div>
         `;
@@ -91,9 +91,9 @@ function renderLegendEditor() {
             swatch.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const idx = parseInt(swatch.dataset.ruleIdx);
-                document.querySelectorAll('.legend-color-picker').forEach(p => p.classList.add('d-none'));
+                document.querySelectorAll('.legend-color-picker').forEach(p => p.classList.add('hidden'));
                 const picker = swatch.parentElement.querySelector('.legend-color-picker');
-                picker.classList.toggle('d-none');
+                picker.classList.toggle('hidden');
             });
         });
         
@@ -107,7 +107,7 @@ function renderLegendEditor() {
                 document.querySelector(`.legend-custom-input[data-rule-idx="${idx}"]`).value = preset.dataset.color;
                 renderMatrix();
                 saveCurrentLayer();
-                preset.closest('.legend-color-picker').classList.add('d-none');
+                preset.closest('.legend-color-picker').classList.add('hidden');
             });
         });
         
@@ -155,7 +155,7 @@ function renderLegendEditor() {
         <div class="legend-item" data-index="${i}">
             <div class="legend-color-swatch-wrapper">
                 <div class="legend-color-swatch" style="background: ${item.color}" data-index="${i}" data-color="${item.color}"></div>
-                <div class="legend-color-picker d-none" data-index="${i}">
+                <div class="legend-color-picker hidden" data-index="${i}">
                     <div class="legend-color-grid">
                         ${presetColors.map(c => `<div class="legend-preset-color" style="background: ${c}" data-color="${c}"></div>`).join('')}
                     </div>
@@ -174,9 +174,9 @@ function renderLegendEditor() {
         swatch.addEventListener('click', (e) => {
             e.stopPropagation();
             const idx = parseInt(swatch.dataset.index);
-            document.querySelectorAll('.legend-color-picker').forEach(p => p.classList.add('d-none'));
+            document.querySelectorAll('.legend-color-picker').forEach(p => p.classList.add('hidden'));
             const picker = swatch.parentElement.querySelector('.legend-color-picker');
-            picker.classList.toggle('d-none');
+            picker.classList.toggle('hidden');
         });
     });
 
@@ -205,7 +205,7 @@ function renderLegendEditor() {
                 renderMatrix();
                 saveCurrentLayer();
             }
-            picker.classList.add('d-none');
+            picker.classList.add('hidden');
         });
     });
 
@@ -256,7 +256,7 @@ function renderLegendEditor() {
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.legend-color-swatch-wrapper')) {
-        document.querySelectorAll('.legend-color-picker').forEach(p => p.classList.add('d-none'));
+        document.querySelectorAll('.legend-color-picker').forEach(p => p.classList.add('hidden'));
     }
 });
 

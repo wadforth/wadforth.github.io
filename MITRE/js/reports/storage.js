@@ -57,6 +57,29 @@ function deleteReport(reportId) {
     });
 }
 
+function deleteAllReports(layerId) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const db = await initReportsDB();
+            const tx = db.transaction(REPORTS_STORE, 'readwrite');
+            const store = tx.objectStore(REPORTS_STORE);
+            const index = store.index('layerId');
+            const request = index.openCursor(IDBKeyRange.only(layerId));
+            
+            request.onsuccess = (e) => {
+                const cursor = e.target.result;
+                if (cursor) {
+                    store.delete(cursor.primaryKey);
+                    cursor.continue();
+                }
+            };
+            
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        } catch (e) { reject(e); }
+    });
+}
+
 function logActivity(type, techniqueId, details = '') {
     if (!state.currentLayer) return;
     if (!state.currentLayer.activityLog) state.currentLayer.activityLog = [];

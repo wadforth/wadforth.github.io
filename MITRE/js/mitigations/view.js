@@ -168,7 +168,7 @@ function renderMitigationsView() {
         const techs = getMitigationTechniques(m.id);
         const status = getMitigationStatus(m.id);
         const desc = m.description || '';
-        const truncatedDesc = desc.length > 150 ? desc.substring(0, 150) + '...' : desc;
+        const truncatedDesc = truncateDescription(desc, 140);
         
         if (mitigationsViewMode === 'list') {
             return `
@@ -194,7 +194,7 @@ function renderMitigationsView() {
                             <i class="bi bi-chevron-down"></i>
                         </button>
                     </div>
-                    <div class="mitigation-list-details d-none" data-mit-details="${m.id}">
+                    <div class="mitigation-list-details hidden" data-mit-details="${m.id}">
                         <div class="mitigation-list-desc">${parseDescription(desc)}</div>
                         <div class="mitigation-list-all-techs">
                             ${techs.map(t => {
@@ -234,7 +234,7 @@ function renderMitigationsView() {
                 <button class="btn btn-sm btn-ghost mit-expand-btn" data-mit="${m.id}">
                     <i class="bi bi-chevron-down"></i> <span>View details</span>
                 </button>
-                <div class="mitigation-card-details d-none" data-mit-details="${m.id}">
+                <div class="mitigation-card-details hidden" data-mit-details="${m.id}">
                     <div class="mitigation-card-full-desc">${parseDescription(desc)}</div>
                     ${techs.length ? `
                         <div class="mitigation-card-all-techs">
@@ -319,7 +319,7 @@ function bindMitigationCardActions() {
             e.stopPropagation();
             const details = btn.nextElementSibling;
             if (details && details.classList.contains('mitigation-card-details')) {
-                details.classList.toggle('d-none');
+                details.classList.toggle('hidden');
                 const icon = btn.querySelector('i');
                 icon.classList.toggle('bi-chevron-down');
                 icon.classList.toggle('bi-chevron-up');
@@ -333,7 +333,7 @@ function bindMitigationCardActions() {
             const card = btn.closest('.mitigation-card-list');
             const details = card.querySelector('.mitigation-list-details');
             if (details) {
-                details.classList.toggle('d-none');
+                details.classList.toggle('hidden');
                 const icon = btn.querySelector('i');
                 icon.classList.toggle('bi-chevron-down');
                 icon.classList.toggle('bi-chevron-up');

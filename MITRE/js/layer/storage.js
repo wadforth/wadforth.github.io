@@ -20,6 +20,10 @@ function loadCurrentLayer() {
         state.author = layer.author || '';
         state.autoColorRules = layer.autoColorRules || state.autoColorRules;
         
+        if (!layer.id) {
+            layer.id = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+        
         if (layer.techniques) {
             const currentMonth = new Date().toISOString().slice(0, 7);
             layer.techniques.forEach(ann => {
@@ -28,6 +32,7 @@ function loadCurrentLayer() {
         }
         
         state.currentLayer = layer;
+        saveCurrentLayer();
         return layer;
     } catch {
         return null;
@@ -55,11 +60,11 @@ function renderRecentLayers() {
     const list = document.getElementById('recent-layers-list');
 
     if (recent.length === 0) {
-        section.classList.add('d-none');
+        section.classList.add('hidden');
         return;
     }
 
-    section.classList.remove('d-none');
+    section.classList.remove('hidden');
     list.innerHTML = recent.map(l => `
         <div class="recent-layer-item" data-id="${l.id}">
             <div class="recent-layer-info">
@@ -139,6 +144,9 @@ document.getElementById('btn-close-layer').addEventListener('click', async () =>
     if (confirmed) {
         state.currentLayer = null;
         localStorage.removeItem('attack-explorer-current-layer');
+        if (window.loadReportsList) {
+            window.loadReportsList().catch(() => {});
+        }
         showLanding();
     }
 });

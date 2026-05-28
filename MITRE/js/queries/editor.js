@@ -71,11 +71,15 @@ function renderTechniqueSelector(selectedIds = []) {
     document.getElementById('technique-search').addEventListener('input', (e) => {
         const q = e.target.value.toLowerCase();
         document.querySelectorAll('.technique-checkbox-item').forEach(item => {
-            const match = item.dataset.name.includes(q);
+            const match = item.dataset.name.includes(q) || item.dataset.id.toLowerCase().includes(q);
             item.style.display = match ? '' : 'none';
         });
         document.querySelectorAll('.technique-tactic-group').forEach(group => {
-            const hasVisible = group.querySelector('.technique-checkbox-item[style=""], .technique-checkbox-item:not([style])');
+            const items = group.querySelectorAll('.technique-checkbox-item');
+            let hasVisible = false;
+            items.forEach(item => {
+                if (item.style.display !== 'none') hasVisible = true;
+            });
             group.style.display = hasVisible ? '' : 'none';
         });
     });
@@ -101,16 +105,13 @@ function openQueryEditor(queryData = null, techniqueId = null) {
     const selectGroup = document.getElementById('query-technique-select-group');
     const hiddenInput = document.getElementById('query-technique-id');
     
-    if (techniqueId || queryData?.techniqueID) {
-        selectGroup.classList.add('d-none');
-        hiddenInput.value = queryData?.techniqueID || techniqueId || '';
-    } else {
-        state.currentModalTechniqueId = null;
-        selectGroup.classList.remove('d-none');
-        hiddenInput.value = '';
-        const selected = queryData ? [queryData.techniqueID] : [];
-        renderTechniqueSelector(selected);
-    }
+    state.currentModalTechniqueId = null;
+    selectGroup.classList.remove('hidden');
+    hiddenInput.value = '';
+    
+    const preselected = techniqueId || queryData?.techniqueID || null;
+    const selected = preselected ? [preselected] : (queryData ? [queryData.techniqueID] : []);
+    renderTechniqueSelector(selected);
     
     const queryModal = new bootstrap.Modal(document.getElementById('query-modal'));
     queryModal.show();
@@ -122,14 +123,7 @@ function openQueryEditor(queryData = null, techniqueId = null) {
 
 function saveQuery() {
     const editId = document.getElementById('query-edit-id').value;
-    let techniqueIds = [];
-    
-    const hiddenVal = document.getElementById('query-technique-id').value;
-    if (hiddenVal) {
-        techniqueIds = [hiddenVal];
-    } else {
-        techniqueIds = getSelectedTechniques();
-    }
+    let techniqueIds = getSelectedTechniques();
     
     const name = document.getElementById('query-name').value.trim();
     const language = document.getElementById('query-language').value;

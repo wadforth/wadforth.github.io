@@ -143,7 +143,7 @@ function renderGroupsView() {
         const groupId = g.external_references?.[0]?.external_id || '';
         const techCount = getGroupTechniqueCount(g.id);
         const desc = g.description || '';
-        const truncatedDesc = desc.length > 120 ? desc.substring(0, 120) + '...' : desc;
+        const truncatedDesc = truncateDescription(desc, 140);
         const domains = getGroupDomains(g);
         const aliases = (g.x_mitre_aliases || g.aliases || []).slice(0, 2);
         

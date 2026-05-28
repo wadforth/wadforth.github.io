@@ -1,5 +1,5 @@
 /* ============================================
-   Mitigations Stats Bar
+   Mitigations Stats Bar - Open PRO / Nebula Inspired
    ============================================ */
 
 .mitigations-stats-bar {
@@ -8,7 +8,7 @@
     padding: 0.6rem 0;
     margin-bottom: 0.5rem;
     flex-wrap: wrap;
-    border-bottom: 1px solid var(--border-subtle);
+    border-bottom: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .mitigations-stat {
@@ -21,7 +21,10 @@
 .mitigations-stat-value {
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--primary);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     line-height: 1.2;
 }
 
@@ -34,7 +37,7 @@
 }
 
 /* ============================================
-   Mitigations Toolbar
+   Mitigations Toolbar - Open PRO / Nebula Inspired
    ============================================ */
 
 .mitigations-toolbar {
@@ -69,9 +72,11 @@
 .mitigations-sort-select {
     font-size: 0.75rem;
     padding: 0.2rem 0.5rem;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(55, 65, 81, 0.5);
     border-radius: var(--radius-sm);
-    background: var(--surface-elevated);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--on-surface);
     cursor: pointer;
 }
@@ -79,7 +84,7 @@
 .mitigations-sort-select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light);
+    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
 }
 
 .mitigations-sort-dir {
@@ -88,7 +93,7 @@
 }
 
 /* ============================================
-   Mitigations Grid & List
+   Mitigations Grid & List - Open PRO / Nebula Inspired
    ============================================ */
 
 .mitigations-grid {
@@ -115,15 +120,15 @@
 
 .mitigation-card:hover {
     border-color: var(--primary);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md), var(--glow-primary);
 }
 
 .mitigation-card[data-status="implemented"] {
-    border-left-color: #198754;
+    border-left-color: var(--accent-green);
 }
 
 .mitigation-card[data-status="planned"] {
-    border-left-color: #ffc107;
+    border-left-color: var(--accent-amber);
 }
 
 .mitigation-card-header {
@@ -171,8 +176,10 @@
     font-size: 0.7rem;
     font-weight: 600;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--border);
-    background: var(--surface-subtle);
+    border: 1px solid rgba(55, 65, 81, 0.5);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     color: var(--on-surface-tertiary);
     cursor: pointer;
     transition: var(--transition);
@@ -184,20 +191,20 @@
 }
 
 .mit-status-toggle.none {
-    border-color: var(--border);
+    border-color: rgba(55, 65, 81, 0.5);
     color: var(--on-surface-tertiary);
 }
 
 .mit-status-toggle.planned {
-    border-color: #ffc107;
-    background: rgba(255, 193, 7, 0.1);
-    color: #ffc107;
+    border-color: var(--accent-amber);
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--accent-amber);
 }
 
 .mit-status-toggle.implemented {
-    border-color: #198754;
-    background: rgba(25, 135, 84, 0.1);
-    color: #198754;
+    border-color: var(--accent-green);
+    background: rgba(74, 222, 128, 0.15);
+    color: var(--accent-green);
 }
 
 .mit-status-label {
@@ -230,14 +237,16 @@
     font-size: 0.65rem;
     font-weight: 600;
     color: var(--on-surface-tertiary);
-    background: var(--surface-subtle);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     padding: 0.15em 0.5em;
     border-radius: var(--radius-pill);
 }
 
 .mitigation-no-techs {
     font-size: 0.65rem;
-    color: #ffc107;
+    color: var(--accent-amber);
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -254,7 +263,7 @@
     font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     color: var(--primary);
-    background: var(--primary-lighter);
+    background: var(--primary-light);
     padding: 0.15em 0.4em;
     border-radius: var(--radius-pill);
 }
@@ -283,7 +292,7 @@
     width: 100%;
     justify-content: center;
     padding: 0.4rem;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid rgba(55, 65, 81, 0.3);
 }
 
 .mit-expand-btn:hover {
@@ -293,7 +302,7 @@
 .mitigation-card-details {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid rgba(55, 65, 81, 0.3);
     animation: mitFadeIn 0.2s ease;
 }
 
@@ -318,12 +327,13 @@
 }
 
 .mitigation-card-full-desc a {
-    color: var(--primary);
+    color: var(--accent-cyan);
     text-decoration: none;
 }
 
 .mitigation-card-full-desc a:hover {
     text-decoration: underline;
+    color: var(--primary);
 }
 
 .mitigation-card-full-desc .citation {
@@ -352,8 +362,10 @@
     align-items: center;
     gap: 0.4rem;
     padding: 0.35rem 0.5rem;
-    background: var(--surface-subtle);
-    border: 1px solid var(--border-subtle);
+    background: rgba(21, 27, 43, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(55, 65, 81, 0.3);
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: var(--transition);
@@ -369,7 +381,7 @@
     font-size: 0.65rem;
     font-weight: 600;
     color: var(--primary);
-    background: var(--primary-lighter);
+    background: var(--primary-light);
     padding: 0.1em 0.3em;
     border-radius: var(--radius-pill);
 }
@@ -383,7 +395,7 @@
 }
 
 /* ============================================
-   List View
+   List View - Open PRO / Nebula Inspired
    ============================================ */
 
 .mitigation-card-list {
@@ -463,6 +475,6 @@
 .mitigation-list-details {
     margin-top: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid var(--border-subtle);
+    border-top: 1px solid rgba(55, 65, 81, 0.3);
     animation: mitFadeIn 0.2s ease;
 }

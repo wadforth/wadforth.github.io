@@ -11,7 +11,7 @@ function showVersionWarningModal(title, message, orphans, onProceed, onCancel) {
                         <p>${message}</p>
                         ${orphans.length ? `
                             <div class="version-warning-list">
-                                <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Affected Techniques (${orphans.length})</h6>
+                                <h6 class="text-on-surface-tertiary mb-2" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Affected Techniques (${orphans.length})</h6>
                                 <div class="version-warning-items">
                                     ${orphans.slice(0, 10).map(t => `
                                         <span class="version-warning-item">

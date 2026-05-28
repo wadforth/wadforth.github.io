@@ -91,19 +91,37 @@ function generateReport(reportType = 'initial') {
 }
 
 function generateExecutiveSummary(report) {
-    const stats = report.fullStats || getFullCoverageStats();
-    const snapshot = report.snapshot;
-    const coveragePct = stats.pct;
+    const targetMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     
-    const leadershipOverview = `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework, which is the global standard for understanding adversary behavior. Our security team has implemented ${snapshot.totalQueries} detection queries across ${stats.logged} of ${stats.total} known attack techniques, achieving ${coveragePct}% coverage. These queries represent our active detection logging efforts across the framework. Coverage percentages reflect techniques with logged queries, though individual techniques may have multiple attack vectors not yet covered. The remaining gaps highlight areas for future detection development.`;
+    // Dynamically calculate the month's stats if the functions exist
+    const stats = typeof getMonthStats === 'function' ? getMonthStats(targetMonth) : { queries: 0, mainTechs: 0, subTechs: 0, techIds: new Set() };
+    const coverageStats = typeof getOverallCoverageStatsUpToMonth === 'function' ? getOverallCoverageStatsUpToMonth(targetMonth) : { total: 0, covered: 0, pct: 0 };
+    const threatsDisrupted = typeof getThreatsDisruptedCount === 'function' ? getThreatsDisruptedCount(targetMonth) : 0;
+    
+    const coveragePct = coverageStats.pct % 1 === 0 ? coverageStats.pct : coverageStats.pct.toFixed(1);
+    const periodLabel = report.reportMonth || (typeof getMonthLabel === 'function' ? getMonthLabel(targetMonth) : 'this period');
+    
+    let statsText = '';
+    if (coverageStats.parents && coverageStats.parents.total) {
+        const allPct = coverageStats.all.pct % 1 === 0 ? coverageStats.all.pct : coverageStats.all.pct.toFixed(1);
+        statsText = `${coverageStats.parents.covered} of ${coverageStats.parents.total} known parent attack techniques (and ${coverageStats.subs.covered} sub-techniques), achieving ${coveragePct}% overall parent coverage (or ${allPct}% combined framework coverage)`;
+    } else {
+        statsText = `${coverageStats.covered} of ${coverageStats.total} known attack techniques, achieving ${coveragePct}% overall coverage`;
+    }
+    
+    const leadershipOverview = `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework for ${periodLabel}. Our security team has disrupted ${threatsDisrupted} active threat groups and tools by deploying targeted detection queries across ${statsText}. These queries represent our active detection logging efforts across the framework. Coverage percentages reflect techniques with logged queries, though individual techniques may have multiple attack vectors not yet covered. The remaining gaps highlight areas for future detection development.`;
     
     if (report.type === 'initial') {
         let summary = `This initial assessment establishes our baseline detection coverage across the MITRE ATT&CK framework. `;
-        summary += `We have implemented ${snapshot.totalQueries} detection queries covering ${stats.logged} techniques out of ${stats.total} total techniques in the framework, achieving ${coveragePct}% coverage. `;
+        if (coverageStats.parents && coverageStats.parents.total) {
+            const allPct = coverageStats.all.pct % 1 === 0 ? coverageStats.all.pct : coverageStats.all.pct.toFixed(1);
+            summary += `We have implemented detection queries covering ${coverageStats.parents.covered} parent techniques out of ${coverageStats.parents.total} (or ${allPct}% across ${coverageStats.all.covered} of ${coverageStats.all.total} total techniques and sub-techniques), achieving ${coveragePct}% overall parent coverage. `;
+        } else {
+            summary += `We have implemented detection queries covering ${coverageStats.covered} techniques out of ${coverageStats.total} total techniques in the framework, achieving ${coveragePct}% overall coverage. `;
+        }
         
-        if (snapshot.totalQueries > 0) {
-            const langBreakdown = report.coverageByLanguage?.map(l => `${l.count} ${l.language}`).join(', ') || 'none';
-            summary += `Our detection queries span multiple languages including ${langBreakdown}, providing diverse coverage across our security infrastructure. `;
+        if (stats.queries > 0) {
+            summary += `Our security team has deployed ${stats.queries} new detection queries this period, providing diverse coverage across our security infrastructure. `;
         }
         
         summary += `This report serves as our starting point for measuring detection maturity and identifying priority areas for improvement.`;
@@ -113,32 +131,26 @@ function generateExecutiveSummary(report) {
             leadershipOverview: leadershipOverview
         };
     } else {
-        const changeCount = report.changes.all.length;
-        const newTechCount = report.changes.newTechniques.length;
-        const newQueryCount = report.changes.newQueries.length;
-        const colorChangeCount = report.changes.colorChanges.length;
-        const mitigationChangeCount = report.changes.mitigationChanges.length;
+        const changeCount = report.changes?.all?.length || 0;
+        const newTechCount = report.changes?.newTechniques?.length || 0;
+        const newQueryCount = stats.queries; // dynamic queries deployed this month
         
-        let summary = `This monthly update covers detection coverage changes from ${new Date(report.periodStart).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} to ${report.generatedDate}. `;
+        let summary = `This monthly update covers detection coverage changes for ${periodLabel}. `;
         
-        if (changeCount === 0) {
-            summary += `No significant changes were detected during this reporting period. Current coverage remains at ${coveragePct}% across ${stats.total} techniques.`;
+        if (changeCount === 0 && newQueryCount === 0) {
+            if (coverageStats.parents && coverageStats.parents.total) {
+                summary += `No significant changes were detected during this reporting period. Current parent coverage remains at ${coveragePct}% across ${coverageStats.parents.total} techniques.`;
+            } else {
+                summary += `No significant changes were detected during this reporting period. Current coverage remains at ${coveragePct}% across ${coverageStats.total} techniques.`;
+            }
         } else {
-            summary += `During this period, we made ${changeCount} improvements: `;
-            const parts = [];
-            if (newTechCount > 0) parts.push(`added ${newTechCount} new technique(s)`);
-            if (newQueryCount > 0) parts.push(`implemented ${newQueryCount} new detection query/queries`);
-            if (colorChangeCount > 0) parts.push(`updated ${colorChangeCount} detection priority level(s)`);
-            if (mitigationChangeCount > 0) parts.push(`updated ${mitigationChangeCount} mitigation status(es)`);
-            summary += parts.join(', ') + '. ';
+            summary += `During this period, we made progress by implementing ${newQueryCount} new detection queries across ${newTechCount} techniques. `;
             
             const prevCoverage = report.fullStats?.prevPct || coveragePct;
             if (coveragePct > prevCoverage) {
-                summary += `Overall coverage improved from ${prevCoverage}% to ${coveragePct}%, representing a ${coveragePct - prevCoverage}% increase in our detection capabilities.`;
-            } else if (coveragePct < prevCoverage) {
-                summary += `Overall coverage decreased from ${prevCoverage}% to ${coveragePct}%, representing a ${prevCoverage - coveragePct}% decrease that requires attention.`;
+                summary += `Overall parent coverage improved from ${prevCoverage}% to ${coveragePct}%, representing a ${(coveragePct - prevCoverage).toFixed(1)}% increase in our detection capabilities.`;
             } else {
-                summary += `Overall coverage remains stable at ${coveragePct}%.`;
+                summary += `Overall parent coverage remains stable at ${coveragePct}%.`;
             }
         }
         
@@ -278,16 +290,78 @@ function getLayerSnapshot() {
 }
 
 function getFullCoverageStats() {
-    if (!state.techniques || !state.currentLayer?.techniques) return { total: 0, covered: 0, pct: 0 };
+    if (!state.techniques || !state.currentLayer?.techniques) {
+        return {
+            total: 0, covered: 0, pct: 0,
+            parents: { total: 0, covered: 0, pct: 0 },
+            subs: { total: 0, covered: 0, pct: 0 },
+            all: { total: 0, covered: 0, pct: 0 }
+        };
+    }
     
-    const totalTechniques = state.techniques.filter(t => !t.x_mitre_is_subtechnique).length;
-    const layerTechIds = new Set(state.currentLayer.techniques.map(t => t.techniqueID));
-    const coveredCount = state.currentLayer.techniques.filter(t => t.queries && t.queries.length > 0).length;
+    const parentTechniques = state.techniques.filter(t => !t.x_mitre_is_subtechnique);
+    const subTechniques = state.techniques.filter(t => t.x_mitre_is_subtechnique);
+    const totalTechniques = parentTechniques.length;
+    
+    let coveredCount = 0;
+    const coveredIds = new Set();
+    
+    state.currentLayer.techniques.forEach(lt => {
+        if (lt.queries && lt.queries.length > 0) {
+            coveredIds.add(lt.techniqueID);
+        }
+    });
+    
+    parentTechniques.forEach(parentTech => {
+        const parentId = parentTech.external_references?.[0]?.external_id;
+        if (!parentId) return;
+        
+        if (coveredIds.has(parentId)) {
+            coveredCount++;
+            return;
+        }
+        
+        const hasCoveredSub = [...coveredIds].some(id => id.startsWith(parentId + '.'));
+        if (hasCoveredSub) {
+            coveredCount++;
+        }
+    });
+    
+    let coveredSubsCount = 0;
+    subTechniques.forEach(subTech => {
+        const subId = subTech.external_references?.[0]?.external_id;
+        if (subId && coveredIds.has(subId)) {
+            coveredSubsCount++;
+        }
+    });
+    
+    const totalParents = parentTechniques.length;
+    const totalSubs = subTechniques.length;
+    const totalAll = totalParents + totalSubs;
+    
+    const coveredAll = [...coveredIds].filter(id => {
+        return state.techniques.some(t => t.external_references?.[0]?.external_id === id);
+    }).length;
     
     return {
         total: totalTechniques,
-        logged: layerTechIds.size,
+        logged: state.currentLayer.techniques.length,
         covered: coveredCount,
-        pct: totalTechniques > 0 ? Math.round((coveredCount / totalTechniques) * 1000) / 10 : 0
+        pct: totalTechniques > 0 ? Math.round((coveredCount / totalTechniques) * 1000) / 10 : 0,
+        parents: {
+            total: totalParents,
+            covered: coveredCount,
+            pct: totalParents > 0 ? Math.round((coveredCount / totalParents) * 1000) / 10 : 0
+        },
+        subs: {
+            total: totalSubs,
+            covered: coveredSubsCount,
+            pct: totalSubs > 0 ? Math.round((coveredSubsCount / totalSubs) * 1000) / 10 : 0
+        },
+        all: {
+            total: totalAll,
+            covered: coveredAll,
+            pct: totalAll > 0 ? Math.round((coveredAll / totalAll) * 1000) / 10 : 0
+        }
     };
 }
