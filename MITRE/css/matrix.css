@@ -230,7 +230,7 @@
 .platform-chips .btn {
     font-size: 0.7rem;
     padding: 0.3rem 0.65rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-sm);
     transition: var(--transition);
 }
 

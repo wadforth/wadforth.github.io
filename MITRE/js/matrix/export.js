@@ -541,10 +541,10 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
     const legendSections = isAuto ? buildAutoLegendSections() : null;
     const legendItems = isAuto ? null : (state.currentLayer?.legend || defaultLegend);
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-    const bgColor = isDark ? '#1e293b' : '#ffffff';
-    const textColor = isDark ? '#f1f5f9' : '#1a1a1a';
-    const borderColor = isDark ? '#334155' : '#e2e8f0';
-    const cellBg = isDark ? '#0f172a' : '#f8f8f8';
+    const bgColor = isDark ? '#070814' : '#ffffff';
+    const textColor = isDark ? '#f3f4f6' : '#1a1a1a';
+    const borderColor = isDark ? '#1f213d' : '#e2e8f0';
+    const cellBg = isDark ? '#0f1026' : '#f8f8f8';
     
     const tacticOrder = state.tactics
         .filter(t => t.x_mitre_shortname && selectedTactics.includes(t.x_mitre_shortname))
@@ -615,13 +615,13 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
             svg += `<image x="${padding}" y="${yPos}" width="40" height="40" href="${state.companyLogo}" preserveAspectRatio="xMidYMid meet"/>`;
         }
         const textX = state.companyLogo ? padding + 50 : padding;
-        svg += `<text x="${textX}" y="${yPos + 18}" font-family="'Inter', sans-serif" font-size="16" font-weight="700" fill="#6366f1">${escapeSvgText(domainLabel)} ATT&amp;CK Matrix</text>`;
+        svg += `<text x="${textX}" y="${yPos + 18}" font-family="'Inter', sans-serif" font-size="16" font-weight="700" fill="#7c3aed">${escapeSvgText(domainLabel)} ATT&amp;CK Matrix</text>`;
         svg += `<text x="${textX}" y="${yPos + 32}" font-family="'Inter', sans-serif" font-size="10" fill="${isDark ? '#94a3b8' : '#666'}">${escapeSvgText(state.currentLayer?.name || 'Untitled Layer')} \u2022 ATT&amp;CK ${sanitizeSvgAttr(version)}</text>`;
         if (state.companyName) {
             svg += `<text x="${width - padding}" y="${yPos + 18}" font-family="'Inter', sans-serif" font-size="12" font-weight="600" fill="${textColor}" text-anchor="end">${escapeSvgText(state.companyName)}</text>`;
         }
         svg += `<text x="${width - padding}" y="${yPos + 32}" font-family="'Inter', sans-serif" font-size="8" fill="${isDark ? '#64748b' : '#999'}" text-anchor="end">Generated ${new Date().toLocaleDateString()}</text>`;
-        svg += `<line x1="${padding}" y1="${yPos + 42}" x2="${width - padding}" y2="${yPos + 42}" stroke="#6366f1" stroke-width="2"/>`;
+        svg += `<line x1="${padding}" y1="${yPos + 42}" x2="${width - padding}" y2="${yPos + 42}" stroke="#7c3aed" stroke-width="2"/>`;
         yPos += 52;
     }
     
@@ -668,7 +668,7 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
             : techniques.filter(t => !isSub(t));
         
         const x = i * colWidth;
-        svg += `<rect x="${x}" y="0" width="${colWidth - 2}" height="${headerHeight}" fill="#6366f1" rx="3"/>`;
+        svg += `<rect x="${x}" y="0" width="${colWidth - 2}" height="${headerHeight}" fill="#7c3aed" rx="3"/>`;
         svg += `<text x="${x + colWidth / 2 - 1}" y="16" font-family="'Inter', sans-serif" font-size="9" font-weight="600" fill="white" text-anchor="middle">${escapeSvgText(tactic.name)}</text>`;
         svg += `<text x="${x + colWidth / 2 - 1}" y="26" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.7)" text-anchor="middle">${sanitizeSvgAttr(short)}</text>`;
         svg += `<text x="${x + colWidth / 2 - 1}" y="33" font-family="'Inter', sans-serif" font-size="6" fill="rgba(255,255,255,0.5)" text-anchor="middle">${filtered.length}</text>`;

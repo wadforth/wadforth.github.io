@@ -1443,6 +1443,31 @@ function generateLeadershipOverview(report) {
     }
     
     return `This report provides a comprehensive overview of our organization's detection capabilities against the MITRE ATT&CK framework for ${periodLabel}. Our security team has disrupted ${threatsDisrupted} active threat groups and tools by deploying targeted detection queries across ${statsText}. These queries represent our active detection logging efforts across the framework. Coverage percentages reflect techniques with logged queries, though individual techniques may have multiple attack vectors not yet covered. The remaining gaps highlight areas for future detection development.`;
+}function getQueryAssociations(q, layerTechs) {
+    const assoc = [];
+    layerTechs.forEach(lt => {
+        if (lt.queries?.some(lq => lq.id === q.id || (lq.name === q.name && lq.language === q.language))) {
+            assoc.push({
+                id: lt.techniqueID,
+                name: getTechniqueName(lt.techniqueID) || lt.name || '',
+                isSub: lt.techniqueID.includes('.')
+            });
+        }
+    });
+    const seen = new Set();
+    const unique = [];
+    assoc.forEach(item => {
+        if (!seen.has(item.id)) {
+            seen.add(item.id);
+            unique.push(item);
+        }
+    });
+    unique.sort((a, b) => {
+        if (a.isSub && !b.isSub) return 1;
+        if (!a.isSub && b.isSub) return -1;
+        return a.id.localeCompare(b.id);
+    });
+    return unique;
 }
 
 function buildNewQueriesSection(report) {
@@ -1460,6 +1485,7 @@ function buildNewQueriesSection(report) {
                 if (!seenIds.has(q.id)) {
                     seenIds.add(q.id);
                     allQueries.push({
+                        id: q.id,
                         name: q.name,
                         techniqueID: ann.techniqueID,
                         language: q.language,
@@ -1473,10 +1499,7 @@ function buildNewQueriesSection(report) {
     
     if (allQueries.length === 0) return '';
     
-    const techNameMap = {};
-    techniques.forEach(ann => {
-        techNameMap[ann.techniqueID] = getTechniqueName(ann.techniqueID);
-    });
+    const layerTechs = report.snapshot?.techniques || state.currentLayer?.techniques || [];
     
     let html = '<div class="report-section"><h4><i class="bi bi-search"></i> New Threat Hunt Queries</h4>';
     html += `<p class="text-on-surface-secondary mb-3">${allQueries.length} queries for ${getMonthLabel(month)}:</p>`;
@@ -1484,18 +1507,38 @@ function buildNewQueriesSection(report) {
     
     allQueries.forEach(q => {
         const queryName = q.name || 'Unnamed Query';
-        const techName = techNameMap[q.techniqueID] || '';
+        const assoc = getQueryAssociations(q, layerTechs);
+        const parents = assoc.filter(x => !x.isSub);
+        const subs = assoc.filter(x => x.isSub);
+        
+        let badgesHtml = '<div style="margin-top: 6px; font-size: 11px; line-height: 1.6; display: flex; flex-direction: column; gap: 4px;">';
+        if (parents.length > 0) {
+            badgesHtml += `<div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;"><span style="font-weight: 700; color: var(--on-surface-tertiary); text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em; margin-right: 6px; display: inline-block; min-width: 90px;">Techniques:</span>`;
+            badgesHtml += parents.map(p => {
+                return `<span class="badge" style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 10px; margin-right: 4px;" title="${escapeHtml(p.name)}">${p.id}</span>`;
+            }).join('');
+            badgesHtml += `</div>`;
+        }
+        if (subs.length > 0) {
+            badgesHtml += `<div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;"><span style="font-weight: 700; color: var(--on-surface-tertiary); text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em; margin-right: 6px; display: inline-block; min-width: 90px;">Sub-techniques:</span>`;
+            badgesHtml += subs.map(s => {
+                return `<span class="badge" style="background: rgba(52, 211, 153, 0.1); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 10px; margin-right: 4px;" title="${escapeHtml(s.name)}">${s.id}</span>`;
+            }).join('');
+            badgesHtml += `</div>`;
+        }
+        badgesHtml += '</div>';
+        
         html += `
             <li class="mb-3" style="list-style-type: none; border-bottom: 1px solid var(--report-border); padding-bottom: 8px;">
-                <strong class="text-on-surface">${escapeHtml(queryName)}</strong> 
-                <span class="text-on-surface-secondary text-sm" style="margin-left: 8px;">(${q.language} | ${q.techniqueID}${techName ? ' - ' + techName : ''})</span>
-                ${q.description ? `<p class="text-on-surface-secondary text-sm mt-1 mb-0" style="font-style: italic; line-height: 1.4;">${escapeHtml(q.description)}</p>` : ''}
+                <strong class="text-on-surface" style="font-size: 14px;">${escapeHtml(queryName)}</strong> 
+                <span class="badge bg-secondary text-xs" style="margin-left: 8px; vertical-align: middle;">${q.language}</span>
+                ${q.description ? `<p class="text-on-surface-secondary text-sm mt-1 mb-2" style="font-style: italic; line-height: 1.4;">${escapeHtml(q.description)}</p>` : ''}
+                ${badgesHtml}
             </li>
         `;
     });
     
     html += '</ul></div>';
-    return html;
     return html;
 }
 
@@ -1920,6 +1963,7 @@ function buildCoverageChanges(report) {
     });
     
     html += '</tbody></table>';
+    html += '<p class="text-on-surface-tertiary text-xs mt-2" style="font-style: italic;"><i class="bi bi-info-circle"></i> Tactic-level coverage incorporates both parent techniques and sub-techniques mapped to each tactical phase.</p>';
     return html;
 }
 
@@ -2823,18 +2867,51 @@ function buildEmailHTML(report, isDark = false) {
     const selectedMethods = report.methodology ? Object.entries(report.methodology).filter(([, v]) => v).map(([k]) => {
         const name = k.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         const desc = methodDescriptions[k] || '';
-        return desc ? `<strong>${name}:</strong> ${desc}` : name;
+        return desc ? `<strong style="color: ${isDark ? '#e2e8f0' : '#1e293b'};">${name}:</strong> ${desc}` : name;
     }) : [];
     const selectedScopes = report.scope ? Object.entries(report.scope).filter(([, v]) => v).map(([k]) => {
         const name = k.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         const desc = scopeDescriptions[k] || '';
-        return desc ? `<strong>${name}:</strong> ${desc}` : name;
+        return desc ? `<strong style="color: ${isDark ? '#e2e8f0' : '#1e293b'};">${name}:</strong> ${desc}` : name;
     }) : [];
     
     if (selectedMethods.length > 0 || selectedScopes.length > 0) {
-        methodScopeHtml = `<div class="section"><h3>Methodology & Scope</h3>
-            ${selectedMethods.length ? `<p>${selectedMethods.join('<br>')}</p>` : ''}
-            ${selectedScopes.length ? `<p style="margin-top: 12px;">${selectedScopes.join('<br>')}</p>` : ''}
+        methodScopeHtml = `<div class="section" style="page-break-inside: avoid;">
+            <h3>Methodology & Scope</h3>
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <tr>
+                    <td valign="top" style="width: 48%; padding-right: 4%; vertical-align: top;">
+                        <div style="background: ${isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; border-radius: 12px; padding: 16px; min-height: 220px; box-shadow: ${isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 8px 20px 0 rgba(0, 0, 0, 0.03)'};">
+                            <h4 style="margin-top: 0; margin-bottom: 12px; color: ${isDark ? '#a855f7' : '#7c3aed'}; font-size: 14px; font-weight: 700; border-bottom: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding-bottom: 6px;">
+                                🎯 Hunting Methodology
+                            </h4>
+                            ${selectedMethods.length ? selectedMethods.map(m => `
+                                <div style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; display: table; width: 100%;">
+                                    <div style="display: table-cell; width: 16px; vertical-align: top; color: #10b981; font-weight: bold; font-size: 13px;">✓</div>
+                                    <div style="display: table-cell; padding-left: 6px; vertical-align: top;">
+                                        ${m}
+                                    </div>
+                                </div>
+                            `).join('') : `<p style="color: ${isDark ? '#6b709c' : '#94a3b8'}; font-size: 12px; font-style: italic; margin: 0;">No specific methodologies specified.</p>`}
+                        </div>
+                    </td>
+                    <td valign="top" style="width: 48%; vertical-align: top;">
+                        <div style="background: ${isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; border-radius: 12px; padding: 16px; min-height: 220px; box-shadow: ${isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 8px 20px 0 rgba(0, 0, 0, 0.03)'};">
+                            <h4 style="margin-top: 0; margin-bottom: 12px; color: ${isDark ? '#06b6d4' : '#0284c7'}; font-size: 14px; font-weight: 700; border-bottom: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding-bottom: 6px;">
+                                🛡️ Defensive Telemetry Scope
+                            </h4>
+                            ${selectedScopes.length ? selectedScopes.map(s => `
+                                <div style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; display: table; width: 100%;">
+                                    <div style="display: table-cell; width: 16px; vertical-align: top; color: #06b6d4; font-weight: bold; font-size: 13px;">•</div>
+                                    <div style="display: table-cell; padding-left: 6px; vertical-align: top;">
+                                        ${s}
+                                    </div>
+                                </div>
+                            `).join('') : `<p style="color: ${isDark ? '#6b709c' : '#94a3b8'}; font-size: 12px; font-style: italic; margin: 0;">No specific data scopes specified.</p>`}
+                        </div>
+                    </td>
+                </tr>
+            </table>
         </div>`;
     }
     
@@ -2851,6 +2928,7 @@ function buildEmailHTML(report, isDark = false) {
                     if (!seenIds.has(q.id)) {
                         seenIds.add(q.id);
                         newQueries.push({ 
+                            id: q.id,
                             name: q.name, 
                             techniqueID: ann.techniqueID, 
                             language: q.language,
@@ -2862,14 +2940,42 @@ function buildEmailHTML(report, isDark = false) {
         });
         
         if (newQueries.length > 0) {
+            const layerTechs = report.snapshot?.techniques || state.currentLayer?.techniques || [];
             const queryList = newQueries.map(q => {
-                const techName = getTechniqueName(q.techniqueID);
                 const queryName = q.name || 'Unnamed Query';
+                const assoc = getQueryAssociations(q, layerTechs);
+                const parents = assoc.filter(x => !x.isSub);
+                const subs = assoc.filter(x => x.isSub);
+                
+                let badgesHtml = '<div style="margin-top: 6px; font-size: 10px; line-height: 1.6;">';
+                if (parents.length > 0) {
+                    badgesHtml += `<div style="margin-bottom: 2px;"><span style="font-weight: 700; color: ${isDark ? '#94a3b8' : '#64748b'}; text-transform: uppercase; font-size: 8px; letter-spacing: 0.05em; margin-right: 6px; display: inline-block; min-width: 90px;">Techniques:</span>`;
+                    badgesHtml += parents.map(p => {
+                        const bg = isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(14, 165, 233, 0.08)';
+                        const text = isDark ? '#38bdf8' : '#0369a1';
+                        const border = isDark ? 'rgba(56, 189, 248, 0.3)' : 'rgba(14, 165, 233, 0.2)';
+                        return `<span style="background: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(p.name)}">${p.id}</span>`;
+                    }).join(' ');
+                    badgesHtml += `</div>`;
+                }
+                if (subs.length > 0) {
+                    badgesHtml += `<div><span style="font-weight: 700; color: ${isDark ? '#94a3b8' : '#64748b'}; text-transform: uppercase; font-size: 8px; letter-spacing: 0.05em; margin-right: 6px; display: inline-block; min-width: 90px;">Sub-techniques:</span>`;
+                    badgesHtml += subs.map(s => {
+                        const bg = isDark ? 'rgba(52, 211, 153, 0.15)' : 'rgba(16, 185, 129, 0.08)';
+                        const text = isDark ? '#34d399' : '#047857';
+                        const border = isDark ? 'rgba(52, 211, 153, 0.3)' : 'rgba(16, 185, 129, 0.2)';
+                        return `<span style="background: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(s.name)}">${s.id}</span>`;
+                    }).join(' ');
+                    badgesHtml += `</div>`;
+                }
+                badgesHtml += '</div>';
+                
                 return `
-                    <li style="margin-bottom: 12px; list-style-type: none;">
+                    <li style="margin-bottom: 12px; list-style-type: none; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px;">
                         <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${queryName}</strong>
-                        <span style="color: ${isDark ? '#cbd5e1' : '#64748b'}; font-size: 11px; margin-left: 8px;">(${q.language} | ${q.techniqueID}${techName ? ' - ' + techName : ''})</span>
+                        <span style="background: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle;">${q.language}</span>
                         ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${q.description}</div>` : ''}
+                        ${badgesHtml}
                     </li>
                 `;
             }).join('');
@@ -2956,6 +3062,7 @@ function buildEmailHTML(report, isDark = false) {
         }).join('');
         coverageHtml = `<div class="section"><h3>Coverage Breakdown</h3>
             <table><thead><tr><th>Tactic</th><th>Coverage</th><th>Progress</th></tr></thead><tbody>${rows}</tbody></table>
+            <p style="margin-top: 8px; color: #64748b; font-size: 11px; font-style: italic; line-height: 1.4;">ℹ️ Tactic coverage percentages incorporate both parent techniques and sub-techniques mapped to each tactical phase.</p>
         </div>`;
     } else {
         const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
@@ -2983,6 +3090,7 @@ function buildEmailHTML(report, isDark = false) {
             const lastMonthLabel = getMonthLabel(prevMonth);
             coverageHtml = `<div class="section"><h3>Coverage Changes <span style="font-size:12px;font-weight:400;color:#64748b;">(vs ${lastMonthLabel})</span></h3>
                 <table><thead><tr><th>Tactic</th><th>Previous</th><th>Current</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table>
+                <p style="margin-top: 8px; color: #64748b; font-size: 11px; font-style: italic; line-height: 1.4;">ℹ️ Tactic coverage changes evaluate both parent and sub-techniques mapped to each tactical phase.</p>
             </div>`;
         } else {
             coverageHtml = `<div class="section"><h3>Coverage Changes</h3><p style="color:#64748b; font-size:13px; margin: 0;">No previous month data to compare against.</p></div>`;

@@ -105,7 +105,7 @@
     font-weight: 600;
     color: var(--on-surface-secondary);
     padding: 0.45rem 1.1rem;
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-sm);
     transition: var(--transition);
     border: 1px solid transparent;
     position: relative;
@@ -126,6 +126,14 @@
     border-color: transparent !important;
     font-weight: 700;
     box-shadow: var(--glow-primary);
+}
+
+.top-nav-pills .nav-link.active:hover {
+    background: var(--gradient-primary) !important;
+    color: #FFFFFF !important;
+    opacity: 0.95;
+    border-color: rgba(168, 85, 247, 0.4) !important;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 /* Landing Page - Hero section with gradient background */

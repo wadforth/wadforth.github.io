@@ -9,7 +9,7 @@
     justify-content: center;
     font-weight: 700;
     transition: var(--transition);
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-sm);
     cursor: pointer;
     border: 1px solid transparent;
     padding: 0.5rem 1.1rem;
@@ -348,7 +348,7 @@
 }
 
 .nav-pills .nav-link {
-    border-radius: var(--radius-pill);
+    border-radius: var(--radius-sm);
 }
 
 .nav-pills .nav-link.active {

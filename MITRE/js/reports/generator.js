@@ -289,8 +289,9 @@ function getLayerSnapshot() {
     };
 }
 
-function getFullCoverageStats() {
-    if (!state.techniques || !state.currentLayer?.techniques) {
+function getFullCoverageStats(snapshotTechniques) {
+    const layerTechs = snapshotTechniques || state.currentLayer?.techniques;
+    if (!state.techniques || !layerTechs) {
         return {
             total: 0, covered: 0, pct: 0,
             parents: { total: 0, covered: 0, pct: 0 },
@@ -306,7 +307,7 @@ function getFullCoverageStats() {
     let coveredCount = 0;
     const coveredIds = new Set();
     
-    state.currentLayer.techniques.forEach(lt => {
+    layerTechs.forEach(lt => {
         if (lt.queries && lt.queries.length > 0) {
             coveredIds.add(lt.techniqueID);
         }
@@ -345,7 +346,7 @@ function getFullCoverageStats() {
     
     return {
         total: totalTechniques,
-        logged: state.currentLayer.techniques.length,
+        logged: layerTechs.length,
         covered: coveredCount,
         pct: totalTechniques > 0 ? Math.round((coveredCount / totalTechniques) * 1000) / 10 : 0,
         parents: {

@@ -69,8 +69,9 @@ function calculateReportCoverage(report) {
             percentage: Math.round(report.fullStats.pct || report.fullStats.percentage || 0)
         };
     }
+    const snapshotTechs = report?.snapshot?.techniques || report?.techniques;
     if (typeof getFullCoverageStats === 'function') {
-        const stats = getFullCoverageStats();
+        const stats = getFullCoverageStats(snapshotTechs);
         return {
             covered: stats.covered || 0,
             total: stats.total || 0,
@@ -286,39 +287,39 @@ function calculateReportDiff(report1, report2) {
    ============================================ */
 
 function generateReportInsights(report) {
-    if (!state.currentLayer?.techniques) return [];
+    const snapshotTechs = report?.snapshot?.techniques || report?.techniques;
+    const coverageStats = getFullCoverageStats(snapshotTechs);
+    const coveragePct = coverageStats.pct;
+    const totalParents = coverageStats.parents.total;
+    const coveredParents = coverageStats.parents.covered;
+    const uncoveredParents = totalParents - coveredParents;
     
     const insights = [];
-    const techniques = state.currentLayer.techniques;
-    const covered = techniques.filter(t => t.queries && t.queries.length > 0);
-    const uncovered = techniques.filter(t => !t.queries || t.queries.length === 0);
     
-    const coveragePct = techniques.length > 0 ? Math.round((covered.length / techniques.length) * 100) : 0;
-    
-    if (coveragePct >= 80) {
+    if (coveragePct >= 70) {
         insights.push({
             type: 'success',
             icon: 'bi-shield-check',
             title: 'Excellent Coverage',
-            description: `Your detection coverage is at ${coveragePct}%, which is above the recommended 80% threshold.`
+            description: `Your parent technique coverage is at ${coveragePct % 1 === 0 ? coveragePct : coveragePct.toFixed(1)}% (${coveredParents}/${totalParents} parent techniques). Your defensive posture is robust.`
         });
-    } else if (coveragePct >= 60) {
+    } else if (coveragePct >= 40) {
         insights.push({
             type: 'warning',
             icon: 'bi-exclamation-triangle',
             title: 'Moderate Coverage',
-            description: `Your detection coverage is at ${coveragePct}%. Consider adding queries for the ${uncovered.length} uncovered techniques.`
+            description: `Your parent technique coverage is at ${coveragePct % 1 === 0 ? coveragePct : coveragePct.toFixed(1)}%. Consider adding queries for the ${uncoveredParents} remaining parent techniques.`
         });
     } else {
         insights.push({
             type: 'error',
             icon: 'bi-x-circle',
             title: 'Low Coverage',
-            description: `Your detection coverage is at ${coveragePct}%. ${uncovered.length} techniques are uncovered. Prioritize adding detection queries.`
+            description: `Your parent technique coverage is at ${coveragePct % 1 === 0 ? coveragePct : coveragePct.toFixed(1)}% (${coveredParents}/${totalParents} covered). ${uncoveredParents} parent techniques remain uncovered. Prioritize adding detection queries.`
         });
     }
     
-    const tactics = getTacticsWithLowestCoverage();
+    const tactics = getTacticsWithLowestCoverage(snapshotTechs);
     if (tactics.length > 0) {
         insights.push({
             type: 'info',
@@ -328,21 +329,22 @@ function generateReportInsights(report) {
         });
     }
     
-    const topTechniques = getTopTechniquesByQueries();
+    const topTechniques = getTopTechniquesByQueries(snapshotTechs);
     if (topTechniques.length > 0) {
         insights.push({
             type: 'info',
             icon: 'bi-bar-chart',
             title: 'Most Detected Techniques',
-            description: `Your top detected techniques are: ${topTechniques.map(t => `${t.id} (${t.queries} queries)`).join(', ')}.`
+            description: `Your top covered techniques by query count are: ${topTechniques.map(t => `${t.id} (${t.queries} queries)`).join(', ')}.`
         });
     }
     
     return insights;
 }
 
-function getTacticsWithLowestCoverage() {
+function getTacticsWithLowestCoverage(snapshotTechs) {
     const tacticCoverage = {};
+    const layerTechs = snapshotTechs || state.currentLayer?.techniques || [];
     
     state.tactics.forEach(tactic => {
         const shortname = tactic.x_mitre_shortname;
@@ -352,7 +354,7 @@ function getTacticsWithLowestCoverage() {
         
         const covered = techniques.filter(t => {
             const techId = t.external_references?.[0]?.external_id;
-            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === techId);
+            const ann = layerTechs.find(a => a.techniqueID === techId);
             return ann?.queries && ann.queries.length > 0;
         }).length;
         
@@ -371,10 +373,11 @@ function getTacticsWithLowestCoverage() {
         .slice(0, 3);
 }
 
-function getTopTechniquesByQueries() {
-    if (!state.currentLayer?.techniques) return [];
+function getTopTechniquesByQueries(snapshotTechs) {
+    const layerTechs = snapshotTechs || state.currentLayer?.techniques;
+    if (!layerTechs) return [];
     
-    return state.currentLayer.techniques
+    return layerTechs
         .filter(t => t.queries && t.queries.length > 0)
         .sort((a, b) => b.queries.length - a.queries.length)
         .slice(0, 5)
