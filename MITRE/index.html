@@ -128,6 +128,9 @@
                     <button class="btn btn-sm btn-ghost" id="btn-legend-editor" title="Edit Legend">
                         <i class="bi bi-palette mr-1"></i>Legend
                     </button>
+                    <button class="btn btn-sm btn-ghost" id="btn-coverage-simulator" title="What-If Coverage Simulator">
+                        <i class="bi bi-calculator mr-1"></i>Simulator
+                    </button>
                     <button class="btn btn-sm btn-ghost" id="btn-export-layer" title="Export Layer">
                         <i class="bi bi-download mr-1"></i>Export
                     </button>
@@ -573,60 +576,117 @@
     </div>
 
     <div class="modal fade" id="export-options-modal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content export-options-modal">
                 <div class="modal-header">
                     <h5 class="modal-title"><i class="bi bi-camera mr-2"></i>Export Matrix Options</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="export-option-group">
-                        <label>Include Tactics</label>
-                        <div class="flex gap-2 mb-2">
-                            <button class="btn btn-sm btn-outline-primary" id="btn-select-all-tactics">Select All</button>
-                            <button class="btn btn-sm btn-outline-secondary" id="btn-deselect-all-tactics">Deselect All</button>
-                        </div>
-                        <div class="tactic-checkbox-grid" id="tactic-checkbox-grid"></div>
-                    </div>
-                    
-                    <div class="export-option-group">
-                        <label>Display Options</label>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="export-expand-subs" checked>
-                            <label class="form-check-label text-sm" for="export-expand-subs">Expand all sub-techniques</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="export-only-annotated">
-                            <label class="form-check-label text-sm" for="export-only-annotated">Only show annotated techniques</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="export-include-legend" checked>
-                            <label class="form-check-label text-sm" for="export-include-legend">Include legend</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="export-include-header" checked>
-                            <label class="form-check-label text-sm" for="export-include-header">Include header (logo, company, version)</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="export-include-footer" checked>
-                            <label class="form-check-label text-sm" for="export-include-footer">Include footer</label>
-                        </div>
-                    </div>
+                    <div class="row">
+                        <!-- Left Column: Options + Color/Tint Picker -->
+                        <div class="col-md-7 border-end" style="border-color: var(--border) !important;">
+                            <div class="export-option-group">
+                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Include Tactics</label>
+                                <div class="flex gap-2 mb-2">
+                                    <button class="btn btn-xs btn-outline-primary" id="btn-select-all-tactics" style="font-size: 10px; padding: 2px 8px;">Select All</button>
+                                    <button class="btn btn-xs btn-outline-secondary" id="btn-deselect-all-tactics" style="font-size: 10px; padding: 2px 8px;">Deselect All</button>
+                                </div>
+                                <div class="tactic-checkbox-grid" id="tactic-checkbox-grid" style="max-height: 140px; overflow-y: auto; padding-right: 4px; border: 1px solid var(--border); border-radius: 6px; padding: 8px; background: var(--surface);"></div>
+                            </div>
+                            
+                            <div class="export-option-group mt-3">
+                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Display Options</label>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="export-expand-subs" checked>
+                                    <label class="form-check-label text-xs" for="export-expand-subs" style="color: var(--on-surface-secondary);">Expand all sub-techniques</label>
+                                </div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="export-only-annotated">
+                                    <label class="form-check-label text-xs" for="export-only-annotated" style="color: var(--on-surface-secondary);">Only show annotated techniques</label>
+                                </div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="export-include-legend" checked>
+                                    <label class="form-check-label text-xs" for="export-include-legend" style="color: var(--on-surface-secondary);">Include legend</label>
+                                </div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="export-include-header" checked>
+                                    <label class="form-check-label text-xs" for="export-include-header" style="color: var(--on-surface-secondary);">Include header (logo, company, version)</label>
+                                </div>
+                                <div class="form-check form-switch mb-1">
+                                    <input class="form-check-input" type="checkbox" id="export-include-footer" checked>
+                                    <label class="form-check-label text-xs" for="export-include-footer" style="color: var(--on-surface-secondary);">Include footer</label>
+                                </div>
+                            </div>
 
-                    <div class="export-option-group">
-                        <label>Output Format</label>
-                        <div class="btn-group w-100" role="group">
-                            <input type="radio" class="btn-check" name="export-format" id="format-png" value="png" checked>
-                            <label class="btn btn-outline-primary" for="format-png">PNG</label>
-                            <input type="radio" class="btn-check" name="export-format" id="format-svg" value="svg">
-                            <label class="btn btn-outline-primary" for="format-svg">SVG</label>
-                            <input type="radio" class="btn-check" name="export-format" id="format-pdf" value="pdf">
-                            <label class="btn btn-outline-primary" for="format-pdf">PDF</label>
-                        </div>
-                    </div>
+                            <div class="export-option-group mt-3">
+                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Export Styling & Theme Accent</label>
+                                <div class="mb-2">
+                                    <label class="form-label text-xs mb-1" style="color: var(--on-surface-secondary);">Accent Color Picker</label>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="color" class="form-control form-control-color border-0 p-0" id="export-banner-hue" value="#7c3aed" title="Choose Accent Color" style="width: 32px; height: 32px; border-radius: 6px; cursor: pointer; background: transparent;">
+                                        <div class="flex-grow-1">
+                                            <input type="text" class="form-control form-control-sm text-xs font-monospace" id="export-banner-hue-text" value="#7c3aed" readonly style="background: var(--surface-variant); color: var(--on-surface); border-color: var(--border);">
+                                        </div>
+                                    </div>
+                                    <div class="form-check form-switch mt-2">
+                                        <input class="form-check-input" type="checkbox" id="export-use-nebula-tint" checked>
+                                        <label class="form-check-label text-xs" for="export-use-nebula-tint" style="color: var(--on-surface-secondary);">Apply Cyber-Nebula gradient tinting</label>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div class="export-preview-info" id="export-preview-info">
-                        <strong>Preview:</strong> <span id="export-tactic-count">0</span> tactics, <span id="export-tech-count">0</span> techniques
+                            <div class="export-option-group mt-3">
+                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Output Format</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="export-format" id="format-png" value="png" checked>
+                                    <label class="btn btn-outline-primary btn-sm" for="format-png">PNG</label>
+                                    <input type="radio" class="btn-check" name="export-format" id="format-svg" value="svg">
+                                    <label class="btn btn-outline-primary btn-sm" for="format-svg">SVG</label>
+                                    <input type="radio" class="btn-check" name="export-format" id="format-pdf" value="pdf">
+                                    <label class="btn btn-outline-primary btn-sm" for="format-pdf">PDF</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Live Vector Preview -->
+                        <div class="col-md-5 d-flex flex-column justify-content-between p-3" style="background: var(--surface-variant); border-radius: 0 0 8px 0;">
+                            <div>
+                                <h6 class="text-xs font-bold uppercase tracking-wider mb-2 text-on-surface-secondary flex align-items-center gap-2">
+                                    <i class="bi bi-eye-fill text-primary"></i> Cover Page Preview
+                                </h6>
+                                <div id="export-live-preview-container" style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-md); aspect-ratio: 1 / 1.414; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+                                    <div id="export-preview-header" style="height: 40px; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); border-radius: 6px; padding: 6px 10px; color: white; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s ease;">
+                                        <div style="display: flex; align-items: center; gap: 4px;">
+                                            <i class="bi bi-shield-check" style="font-size: 12px;"></i>
+                                            <span style="font-size: 8px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">ATT&CK Matrix</span>
+                                        </div>
+                                        <span id="preview-logo-placeholder" style="font-size: 6px; font-weight: bold; background: rgba(255,255,255,0.15); padding: 2px 4px; border-radius: 3px;">LOGO</span>
+                                    </div>
+                                    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 10px 0;">
+                                        <div id="preview-title" style="font-size: 11px; font-weight: 800; color: var(--on-surface); line-height: 1.2; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">Untitled Layer</div>
+                                        <div id="preview-subtitle" style="font-size: 7px; color: var(--on-surface-secondary);">Enterprise ATT&CK Matrix</div>
+                                    </div>
+                                    <div id="preview-stats-panel" style="background: var(--surface-variant); border-radius: 6px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px;">
+                                        <div style="text-align: center; border-right: 1px solid var(--border);">
+                                            <div id="preview-stats-coverage" style="font-size: 9px; font-weight: bold; color: var(--accent-green);">0%</div>
+                                            <div style="font-size: 5.5px; color: var(--on-surface-tertiary); text-transform: uppercase;">Coverage</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div id="preview-stats-queries" style="font-size: 9px; font-weight: bold; color: var(--primary);">0</div>
+                                            <div style="font-size: 5.5px; color: var(--on-surface-tertiary); text-transform: uppercase;">Queries</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 4px; font-size: 5.5px; color: var(--on-surface-tertiary);">
+                                        <span id="preview-author" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%;">Author: Kieran Wadforth</span>
+                                        <span id="preview-date">May 2026</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="export-preview-info mt-2" id="export-preview-info" style="font-size: 11px; color: var(--on-surface-secondary);">
+                                <strong>Selected:</strong> <span id="export-tactic-count">0</span> tactics, <span id="export-tech-count">0</span> techniques
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -637,6 +697,111 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="modal fade" id="coverage-simulator-modal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content technique-modal">
+                <div class="tech-modal-header">
+                    <button type="button" class="btn-close tech-modal-close" data-bs-dismiss="modal"></button>
+                    <div class="tech-modal-header-content">
+                        <div class="tech-modal-badges">
+                            <span class="tech-badge-id"><i class="bi bi-cpu"></i> What-If</span>
+                            <span class="tech-badge-type">Coverage Simulator</span>
+                        </div>
+                        <h3 class="tech-modal-title">Real-Time Coverage "What-If" Simulator</h3>
+                        <p class="text-on-surface-secondary text-sm mt-1" style="margin-bottom: 0;">Check or uncheck parent and sub-techniques to simulate shifts in coverage scores and maturity grades in real-time before applying changes to your matrix.</p>
+                    </div>
+                </div>
+                <div class="tech-modal-body">
+                    <div class="row">
+                        <!-- Left Column: Search + Scrollable Techniques Toggles -->
+                        <div class="col-md-7 border-end" style="border-color: var(--border) !important; display: flex; flex-direction: column; height: 500px;">
+                            <div class="p-2">
+                                <div class="input-group input-group-sm mb-2">
+                                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
+                                    <input type="text" id="sim-tech-search" class="form-control border-start-0" placeholder="Filter techniques by name or ID...">
+                                </div>
+                                <div class="d-flex gap-2 mb-2">
+                                    <button class="btn btn-xs btn-outline-primary" id="sim-btn-select-all">Select All</button>
+                                    <button class="btn btn-xs btn-outline-secondary" id="sim-btn-deselect-all">Clear Checked</button>
+                                    <button class="btn btn-xs btn-outline-info ms-auto" id="sim-btn-only-covered">Only Covered</button>
+                                    <button class="btn btn-xs btn-outline-secondary" id="sim-btn-all-types">All Types</button>
+                                </div>
+                            </div>
+                            <div id="sim-techniques-scroll" style="flex-grow: 1; overflow-y: auto; padding-right: 8px;">
+                                <!-- Dynamically populated list of techniques by tactic -->
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Live SVG Dial & Maturity Dashboard -->
+                        <div class="col-md-5 d-flex flex-column justify-content-between p-3" style="background: var(--surface-variant); border-radius: 0 0 12px 0; height: 500px;">
+                            <div class="text-center mb-3">
+                                <h6 class="text-xs font-bold uppercase tracking-wider mb-2 style-label" style="color: var(--on-surface-secondary);">Dynamic Maturity Grade</h6>
+                                <div style="position: relative; display: inline-block; width: 140px; height: 140px;">
+                                    <!-- Circular SVG Dial Progress Gauge -->
+                                    <svg width="140" height="140" viewBox="0 0 140 140" style="transform: rotate(-90deg);">
+                                        <circle cx="70" cy="70" r="58" fill="none" stroke="var(--border)" stroke-width="10"></circle>
+                                        <circle id="sim-dial-progress" cx="70" cy="70" r="58" fill="none" stroke="var(--primary)" stroke-width="10" stroke-dasharray="364.4" stroke-dashoffset="364.4" style="transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease;"></circle>
+                                    </svg>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                                        <span id="sim-dial-grade" style="font-size: 32px; font-weight: 800; color: var(--on-surface); line-height: 1;">D</span>
+                                        <span id="sim-dial-percentage" style="font-size: 14px; font-weight: 700; color: var(--on-surface-secondary); margin-top: 2px;">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; box-shadow: var(--shadow-sm);">
+                                <h6 class="text-xs font-bold uppercase tracking-wider mb-2 text-on-surface-secondary flex align-items-center gap-1">
+                                    <i class="bi bi-bar-chart-fill text-primary"></i> Simulated Metrics
+                                </h6>
+                                <div class="d-flex justify-content-between mb-1 text-xs">
+                                    <span style="color: var(--on-surface-secondary);">Parent Techniques Covered:</span>
+                                    <span id="sim-stat-parents" style="font-weight: 700; color: var(--on-surface);">0 / 0</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1 text-xs">
+                                    <span style="color: var(--on-surface-secondary);">Sub-techniques Covered:</span>
+                                    <span id="sim-stat-subs" style="font-weight: 700; color: var(--on-surface);">0 / 0</span>
+                                </div>
+                                <div class="d-flex justify-content-between text-xs">
+                                    <span style="color: var(--on-surface-secondary);">Total Annotated Checklist:</span>
+                                    <span id="sim-stat-total" style="font-weight: 700; color: var(--on-surface);">0 / 0</span>
+                                </div>
+                            </div>
+
+                            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 11px; color: var(--on-surface-secondary);">
+                                <div style="font-weight: bold; margin-bottom: 4px; color: var(--on-surface);">ℹ️ Maturity Grading Scale:</div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Grade A (≥70% Coverage):</span>
+                                    <span style="color: var(--accent-green); font-weight: bold;">Robust Posture</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Grade B (50% - 70%):</span>
+                                    <span style="color: var(--accent-tan); font-weight: bold;">Moderate Posture</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Grade C (30% - 50%):</span>
+                                    <span style="color: #f59e0b; font-weight: bold;">Basic Posture</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Grade D/F (<30%):</span>
+                                    <span style="color: var(--accent-red); font-weight: bold;">Defensive Gaps</span>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2 mt-3 pt-2" style="border-top: 1px solid var(--border);">
+                                <button class="btn btn-sm btn-outline-secondary w-50" id="sim-btn-reset">Revert / Reset</button>
+                                <button class="btn btn-sm btn-primary w-50" id="sim-btn-commit">
+                                    <i class="bi bi-check-circle mr-1"></i>Apply Changes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="migration-modal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -698,6 +863,7 @@
     <script src="js/reports/generator.js"></script>
     <script src="js/reports/view.js"></script>
     <script src="js/reports/enhancements.js"></script>
+    <script src="js/reports/simulator.js"></script>
     <script src="js/landing/enhancements.js"></script>
     <script src="app.js"></script>
 </body>

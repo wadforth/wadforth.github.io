@@ -926,8 +926,8 @@ function viewReport(reportId) {
             ${newQueriesHtml}
 
             <div class="report-section">
-                <h4><i class="bi bi-shield-exclamation"></i> Top Associated Threats</h4>
-                <p class="text-on-surface-secondary mb-3">Threat actors and tools associated with recently added or modified techniques.</p>
+                <h4><i class="bi bi-shield-slash"></i> Adversary Group Defensive Gap Mapper</h4>
+                <p class="text-on-surface-secondary mb-3">Defensive readiness index scorecards and gaps against key threat actors in the wild.</p>
                 ${threatsHtml}
             </div>
 
@@ -1733,97 +1733,49 @@ function buildChangesSection(changes) {
 }
 
 function buildThreatsSection(report) {
-    const month = report?.selectedMonth || report?.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
-    const byMonth = getTechniquesByMonth();
-    const techniques = byMonth[month] || [];
-    const changedTechIds = new Set();
-    const changedTechStixIds = new Set();
-    
-    // Get all techniques added this month - map to both short ID and STIX ID
-    techniques.forEach(ann => {
-        changedTechIds.add(ann.techniqueID);
-        const stixId = getTechniqueStixId(ann.techniqueID);
-        if (stixId) changedTechStixIds.add(stixId);
-    });
-    
-    if (changedTechIds.size === 0) {
-        return '<p class="text-on-surface-secondary">No techniques added this month.</p>';
-    }
-    
-    if (!state.groups || state.groups.length === 0 || !state.software || state.software.length === 0) {
+    if (!state.groups || state.groups.length === 0) {
         return '<p class="text-on-surface-secondary">Threat intelligence data not loaded. Please ensure ATT&CK data is loaded.</p>';
     }
     
-    if (!state.relationships || state.relationships.length === 0) {
-        return '<p class="text-on-surface-secondary">No threat associations found in the loaded data.</p>';
-    }
-    
-    const threatMap = { groups: [], software: [] };
-    
-    // Find all relationships where groups/software use techniques from this month
-    state.relationships.forEach(rel => {
-        if (rel.relationship_type !== 'uses') return;
+    // Sort all groups by total techniques used in ATT&CK to find the top threats overall
+    const allGroups = state.groups.map(group => {
+        const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === group.id);
+        const relatedTechs = techRels.map(r => state.techniques.find(tech => tech.id === r.target_ref)).filter(Boolean);
         
-        const targetId = rel.target_ref;
-        if (!changedTechStixIds.has(targetId)) return;
+        const coveredCount = relatedTechs.filter(tech => {
+            const tid = tech.external_references?.[0]?.external_id || '';
+            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid) || report?.snapshot?.techniques?.find(a => a.techniqueID === tid);
+            return ann?.queries && ann.queries.length > 0;
+        }).length;
         
-        const sourceId = rel.source_ref;
+        const techCount = relatedTechs.length;
+        const coveragePct = techCount > 0 ? Math.round((coveredCount / techCount) * 100) : 0;
+        const gaps = techCount - coveredCount;
         
-        // Check if source is a group
-        const group = state.groups.find(g => g.id === sourceId);
-        if (group) {
-            let existing = threatMap.groups.find(g => g.id === group.id);
-            if (!existing) {
-                existing = { id: group.id, name: group.name, techniques: [] };
-                threatMap.groups.push(existing);
-            }
-            if (!existing.techniques.includes(targetId)) {
-                existing.techniques.push(targetId);
-            }
-            return;
-        }
-        
-        // Check if source is software
-        const software = state.software.find(s => s.id === sourceId);
-        if (software) {
-            let existing = threatMap.software.find(s => s.id === software.id);
-            if (!existing) {
-                existing = { id: software.id, name: software.name, type: software.x_mitre_type || 'tool', techniques: [] };
-                threatMap.software.push(existing);
-            }
-            if (!existing.techniques.includes(targetId)) {
-                existing.techniques.push(targetId);
-            }
-        }
-    });
+        return {
+            id: group.id,
+            name: group.name,
+            techCount: techCount,
+            coveredCount: coveredCount,
+            coveragePct: coveragePct,
+            gaps: gaps,
+            techniqueIds: techRels.map(r => r.target_ref)
+        };
+    }).sort((a, b) => b.techCount - a.techCount).slice(0, 5); // Take top 5 overall threat groups
     
-    const allThreats = [];
-    threatMap.groups.forEach(g => {
-        allThreats.push({ type: 'group', name: g.name, techniques: g.techniques.length, techniqueIds: g.techniques });
-    });
-    threatMap.software.forEach(s => {
-        allThreats.push({ type: s.type, name: s.name, techniques: s.techniques.length, techniqueIds: s.techniques });
-    });
+    let html = '<div class="threat-roi-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">';
     
-    if (allThreats.length === 0) {
-        return '<p class="text-on-surface-secondary">No threat actors or tools associated with this month\'s techniques.</p>';
-    }
-    
-    const sortedThreats = allThreats.sort((a, b) => b.techniques - a.techniques).slice(0, 8);
-    
-    let html = '<div class="threat-roi-grid">';
-    
-    sortedThreats.forEach(t => {
-        const typeLabel = t.type === 'group' ? 'Threat Group' : t.type.toUpperCase();
-        const icon = t.type === 'group' ? 'bi-people-fill' : 'bi-cpu-fill';
+    allGroups.forEach(t => {
+        const typeLabel = 'Threat Group';
+        const icon = 'bi-people-fill';
         
         // Determine exposure risk based on count of techniques used
         let exposureLevel = 'Medium';
         let exposureClass = 'medium';
-        if (t.techniques >= 4) {
+        if (t.techCount >= 40) {
             exposureLevel = 'Critical';
             exposureClass = 'critical';
-        } else if (t.techniques >= 2) {
+        } else if (t.techCount >= 20) {
             exposureLevel = 'High';
             exposureClass = 'high';
         }
@@ -1837,27 +1789,47 @@ function buildThreatsSection(report) {
         const moreCount = t.techniqueIds?.length > 6 ? t.techniqueIds.length - 6 : 0;
         const moreTechsHtml = moreCount > 0 ? `<span class="roi-tech-chip more">+${moreCount} more</span>` : '';
         
-        html += `
-            <div class="threat-roi-card ${t.type === 'group' ? 'group' : 'software'}">
-                <div class="roi-card-left">
-                    <span class="roi-card-type"><i class="bi ${icon} mr-1"></i>${typeLabel}</span>
-                    <h5 class="roi-card-title" style="margin: 0.15rem 0;">${t.name}</h5>
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        const readinessHtml = `
+            <div class="roi-card-readiness mt-2" style="border-top: 1px solid ${isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}; padding-top: 8px; font-size: 0.72rem; width: 100%;">
+                <div class="d-flex justify-content-between mb-1" style="color: var(--on-surface-secondary); font-size: 11px;">
+                    <span>🛡️ Defensive Readiness against <strong>${escapeHtml(t.name)}</strong>:</span>
+                    <span style="font-weight: 700; color: ${t.coveragePct >= 70 ? 'var(--accent-green)' : t.coveragePct >= 40 ? 'var(--accent-tan)' : 'var(--accent-red)'};">${t.coveragePct}%</span>
                 </div>
-                <div class="roi-card-mid">
-                    <div class="roi-card-metric" style="margin-bottom: 0.35rem;">
-                        <i class="bi bi-shield-check"></i> Disruption Impact: <strong>${t.techniques} technique${t.techniques > 1 ? 's' : ''}</strong>
+                <div class="progress" style="height: 5px; background: ${isDarkTheme ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
+                    <div class="progress-bar" style="width: ${t.coveragePct}%; height: 100%; background: ${t.coveragePct >= 70 ? 'var(--accent-green)' : t.coveragePct >= 40 ? 'var(--accent-tan)' : 'var(--accent-red)'}; border-radius: 3px;"></div>
+                </div>
+                <div class="d-flex justify-content-between text-xs" style="color: var(--on-surface-tertiary); font-size: 10px;">
+                    <span>✓ ${t.coveredCount} / ${t.techCount} Covered Techniques</span>
+                    <span style="color: ${t.gaps > 0 ? 'var(--accent-red)' : 'var(--accent-green)'}; font-weight: 600;">
+                        ${t.gaps > 0 ? `⚠️ ${t.gaps} Gaps` : '🛡️ 100% Covered'}
+                    </span>
+                </div>
+            </div>
+        `;
+        
+        html += `
+            <div class="threat-roi-card group" style="display: flex; flex-direction: column; gap: 8px;">
+                <div class="d-flex align-items-start justify-content-between w-100">
+                    <div class="roi-card-left">
+                        <span class="roi-card-type"><i class="bi ${icon} mr-1"></i>${typeLabel}</span>
+                        <h5 class="roi-card-title" style="margin: 0.15rem 0;">${t.name}</h5>
                     </div>
+                    <div class="roi-card-right">
+                        <span class="roi-exposure-badge ${exposureClass}">${exposureLevel} Risk</span>
+                    </div>
+                </div>
+                <div class="roi-card-mid" style="width: 100%;">
                     <div class="roi-tech-chips">
                         ${techListHtml}${moreTechsHtml}
                     </div>
                 </div>
-                <div class="roi-card-right">
-                    <span class="roi-exposure-badge ${exposureClass}">${exposureLevel} Risk</span>
-                </div>
+                ${readinessHtml}
             </div>
         `;
     });
-    
+        
     html += '</div>';
     return html;
 }
@@ -3007,10 +2979,10 @@ function buildEmailHTML(report, isDark = false) {
         });
         
         const renderListEmail = (list, color) => {
-            if (list.length === 0) return '<div style="color: #94a3b8; font-size: 11px; font-style: italic; text-align: center; padding: 8px 0;">No tactics</div>';
+            if (list.length === 0) return `<div style="color: ${isDark ? '#94a3b8' : '#94a3b8'}; font-size: 11px; font-style: italic; text-align: center; padding: 8px 0;">No tactics</div>`;
             return list.map(item => `
-                <div style="display: flex; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; background-color: #f8fafc; border-radius: 4px; font-size: 11px;">
-                    <span style="font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">${item.displayName}</span>
+                <div style="display: flex; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc'}; border-radius: 4px; font-size: 11px;">
+                    <span style="font-weight: 600; color: ${isDark ? '#e2e8f0' : '#1e293b'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">${item.displayName}</span>
                     <span style="font-weight: 700; color: ${color};">${item.coverage % 1 === 0 ? item.coverage : item.coverage.toFixed(1)}%</span>
                 </div>
             `).join('');
@@ -3022,27 +2994,27 @@ function buildEmailHTML(report, isDark = false) {
                 <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <tr>
                         <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top;">
-                            <div style="border: 1px solid #fee2e2; background-color: #fffafb; border-radius: 8px; padding: 12px; min-height: 180px;">
-                                <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #fee2e2; padding-bottom: 4px;">
+                            <div style="border: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'}; background-color: ${isDark ? 'rgba(239, 68, 68, 0.05)' : '#fffafb'}; border-radius: 8px; padding: 12px; min-height: 180px;">
+                                <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2'}; padding-bottom: 4px;">
                                     ⚠️ Critical (<50%) [${criticalGaps.length}]
                                 </div>
                                 ${renderListEmail(criticalGaps, '#ef4444')}
                             </div>
                         </td>
                         <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top;">
-                            <div style="border: 1px solid #fef3c7; background-color: #fffdf5; border-radius: 8px; padding: 12px; min-height: 180px;">
-                                <div style="font-size: 11px; font-weight: 700; color: #d97706; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #fef3c7; padding-bottom: 4px;">
+                            <div style="border: 1px solid ${isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7'}; background-color: ${isDark ? 'rgba(245, 158, 11, 0.05)' : '#fffdf5'}; border-radius: 8px; padding: 12px; min-height: 180px;">
+                                <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#fbbf24' : '#d97706'}; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7'}; padding-bottom: 4px;">
                                     ⚡ Moderate (50%-80%) [${moderateCoverage.length}]
                                 </div>
-                                ${renderListEmail(moderateCoverage, '#d97706')}
+                                ${renderListEmail(moderateCoverage, isDark ? '#fbbf24' : '#d97706')}
                             </div>
                         </td>
                         <td valign="top" style="width: 32%; vertical-align: top;">
-                            <div style="border: 1px solid #dcfce7; background-color: #f5fdf8; border-radius: 8px; padding: 12px; min-height: 180px;">
-                                <div style="font-size: 11px; font-weight: 700; color: #16a34a; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #dcfce7; padding-bottom: 4px;">
+                            <div style="border: 1px solid ${isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7'}; background-color: ${isDark ? 'rgba(16, 185, 129, 0.05)' : '#f5fdf8'}; border-radius: 8px; padding: 12px; min-height: 180px;">
+                                <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#34d399' : '#16a34a'}; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(16, 185, 129, 0.1)' : '#dcfce7'}; padding-bottom: 4px;">
                                     ✅ Strong (&ge;80%) [${strongCoverage.length}]
                                 </div>
-                                ${renderListEmail(strongCoverage, '#16a34a')}
+                                ${renderListEmail(strongCoverage, isDark ? '#34d399' : '#16a34a')}
                             </div>
                         </td>
                     </tr>
@@ -3453,97 +3425,94 @@ function buildEmailHTML(report, isDark = false) {
 }
 
 function buildThreatsSectionEmail(report, isDark = false) {
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
-    if (!month) return '';
-    
-    const byMonth = getTechniquesByMonth();
-    const techniques = byMonth[month] || [];
-    const changedTechStixIds = new Set();
-    
-    techniques.forEach(ann => {
-        const stixId = getTechniqueStixId(ann.techniqueID);
-        if (stixId) changedTechStixIds.add(stixId);
-    });
-    
-    if (changedTechStixIds.size === 0 || !state.groups || state.groups.length === 0 || !state.software || state.software.length === 0 || !state.relationships || state.relationships.length === 0) {
+    if (!state.groups || state.groups.length === 0) {
         return '';
     }
     
-    const threatMap = { groups: [], software: [] };
-    
-    // Find all relationships where groups/software use techniques from this month
-    state.relationships.forEach(rel => {
-        if (rel.relationship_type !== 'uses') return;
+    // Sort all groups by total techniques used in ATT&CK to find the top threats overall (same as buildThreatsSection)
+    const allGroups = state.groups.map(group => {
+        const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === group.id);
+        const relatedTechs = techRels.map(r => state.techniques.find(tech => tech.id === r.target_ref)).filter(Boolean);
         
-        const targetId = rel.target_ref;
-        if (!changedTechStixIds.has(targetId)) return;
+        const coveredCount = relatedTechs.filter(tech => {
+            const tid = tech.external_references?.[0]?.external_id || '';
+            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid) || report?.snapshot?.techniques?.find(a => a.techniqueID === tid);
+            return ann?.queries && ann.queries.length > 0;
+        }).length;
         
-        const sourceId = rel.source_ref;
+        const techCount = relatedTechs.length;
+        const coveragePct = techCount > 0 ? Math.round((coveredCount / techCount) * 100) : 0;
+        const gaps = techCount - coveredCount;
         
-        // Check if source is a group
-        const group = state.groups.find(g => g.id === sourceId);
-        if (group) {
-            let existing = threatMap.groups.find(g => g.id === group.id);
-            if (!existing) {
-                existing = { id: group.id, name: group.name, techniques: [] };
-                threatMap.groups.push(existing);
-            }
-            if (!existing.techniques.includes(targetId)) {
-                existing.techniques.push(targetId);
-            }
-            return;
-        }
-        
-        // Check if source is software
-        const software = state.software.find(s => s.id === sourceId);
-        if (software) {
-            let existing = threatMap.software.find(s => s.id === software.id);
-            if (!existing) {
-                existing = { id: software.id, name: software.name, type: software.x_mitre_type || 'tool', techniques: [] };
-                threatMap.software.push(existing);
-            }
-            if (!existing.techniques.includes(targetId)) {
-                existing.techniques.push(targetId);
-            }
-        }
-    });
-    
-    const allThreats = [];
-    threatMap.groups.forEach(g => {
-        allThreats.push({ type: 'group', name: g.name, techniques: g.techniques.length, techniqueIds: g.techniques });
-    });
-    threatMap.software.forEach(s => {
-        allThreats.push({ type: s.type, name: s.name, techniques: s.techniques.length, techniqueIds: s.techniques });
-    });
-    
-    if (allThreats.length === 0) {
-        return '';
-    }
-    
-    const sortedThreats = allThreats.sort((a, b) => b.techniques - a.techniques).slice(0, 6);
+        return {
+            id: group.id,
+            name: group.name,
+            techCount: techCount,
+            coveredCount: coveredCount,
+            coveragePct: coveragePct,
+            gaps: gaps,
+            techniqueIds: techRels.map(r => r.target_ref)
+        };
+    }).sort((a, b) => b.techCount - a.techCount).slice(0, 5); // Take top 5 overall threat groups
     
     let cardsHtml = '';
-    sortedThreats.forEach(t => {
-        const typeLabel = t.type === 'group' ? 'Threat Group' : t.type.toUpperCase();
-        const sideColor = t.type === 'group' ? '#38bdf8' : '#a855f7';
+    allGroups.forEach(t => {
+        const typeLabel = 'Threat Group';
+        const sideColor = '#38bdf8'; // Periwinkle/blue accent
         
+        // Determine exposure risk based on count of techniques used
         let exposureLevel = 'Medium';
         let expColor = '#38bdf8';
         let expBg = 'rgba(56, 189, 248, 0.1)';
-        if (t.techniques >= 4) {
+        if (t.techCount >= 40) {
             exposureLevel = 'Critical';
             expColor = '#ef4444';
             expBg = 'rgba(239, 68, 68, 0.1)';
-        } else if (t.techniques >= 2) {
+        } else if (t.techCount >= 20) {
             exposureLevel = 'High';
             expColor = '#fbbf24';
             expBg = 'rgba(245, 158, 11, 0.1)';
         }
         
+        // Truncate techniques list to top 6 elements
         const techIds = t.techniqueIds?.map(id => getTechniqueIdFromStix(id) || id) || [];
         const truncatedTechIds = techIds.slice(0, 6);
         const extraCount = techIds.length - truncatedTechIds.length;
         const techList = truncatedTechIds.join(', ') + (extraCount > 0 ? `, +${extraCount} more` : '');
+        
+        const progressColor = t.coveragePct >= 70 ? '#10b981' : t.coveragePct >= 40 ? '#f59e0b' : '#ef4444';
+        
+        const readinessEmailHtml = `
+            <tr>
+                <td colspan="2" style="padding: 10px 0 0 0; border: none; border-top: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}; font-size: 11px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin: 0;">
+                        <tr>
+                            <td style="padding: 0 0 4px 0; border: none; font-size: 11px; color: ${isDark ? '#cbd5e1' : '#475569'};">
+                                🛡️ Defensive Readiness against <strong>${escapeHtml(t.name)}</strong>:
+                            </td>
+                            <td align="right" style="padding: 0 0 4px 0; border: none; font-size: 11px; text-align: right; font-weight: 700; color: ${progressColor};">
+                                ${t.coveragePct}%
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding: 0; border: none;">
+                                <div style="height: 5px; background-color: ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}; border-radius: 3px; overflow: hidden;">
+                                    <div style="width: ${t.coveragePct}%; height: 100%; background-color: ${progressColor}; border-radius: 3px;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0 0 0; border: none; font-size: 10px; color: ${isDark ? '#94a3b8' : '#64748b'};">
+                                ✓ ${t.coveredCount} / ${t.techCount} Covered Techniques
+                            </td>
+                            <td align="right" style="padding: 4px 0 0 0; border: none; font-size: 10px; text-align: right; font-weight: 600; color: ${t.gaps > 0 ? '#ef4444' : '#10b981'};">
+                                ${t.gaps > 0 ? `⚠️ ${t.gaps} Gaps` : '🛡️ 100% Covered'}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        `;
         
         cardsHtml += `
             <div style="${isDark ? 'border: 1px solid rgba(255,255,255,0.08); background-color: rgba(255,255,255,0.03);' : 'border: 1px solid #e2e8f0; background-color: #ffffff;'} border-left: 4px solid ${sideColor}; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
@@ -3552,23 +3521,24 @@ function buildThreatsSectionEmail(report, isDark = false) {
                         <td style="padding: 0; border: none; vertical-align: middle;">
                             <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; display: inline-block; margin-bottom: 2px;">${typeLabel}</span>
                             <h4 style="font-size: 14px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'}; margin: 0 0 4px 0;">${t.name}</h4>
-                            <div style="font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">Disruption: <strong style="color: ${isDark ? '#ffffff' : '#0f172a'};">${t.techniques} technique${t.techniques > 1 ? 's' : ''}</strong></div>
+                            <div style="font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">Techniques Used: <strong style="color: ${isDark ? '#ffffff' : '#0f172a'};">${t.techCount}</strong></div>
                         </td>
                         <td align="right" style="padding: 0; border: none; vertical-align: top; text-align: right;">
                             <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; background-color: ${expBg}; color: ${expColor}; display: inline-block;">${exposureLevel} Risk</span>
                         </td>
                     </tr>
                     <tr>
-                        <td colspan="2" style="padding: 8px 0 0 0; border: none; font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; line-height: 1.4;">
+                        <td colspan="2" style="padding: 8px 0 6px 0; border: none; font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; line-height: 1.4;">
                             <strong style="color: ${isDark ? '#cbd5e1' : '#475569'};">TTPs:</strong> <span style="font-family: monospace; background-color: ${isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc'}; padding: 2px 6px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.05)' : '#f1f5f9'}; color: ${isDark ? '#ffffff' : '#334155'};">${techList}</span>
                         </td>
                     </tr>
+                    ${readinessEmailHtml}
                 </table>
             </div>
         `;
     });
     
-    return `<div class="section"><h3>Top Associated Threats</h3>${cardsHtml}</div>`;
+    return `<div class="section"><h3>Adversary Group Defensive Gap Mapper</h3>${cardsHtml}</div>`;
 }
 
 function buildTechniquesAtRiskEmail(report, isDark = false) {

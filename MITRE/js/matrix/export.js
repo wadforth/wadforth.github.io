@@ -37,8 +37,12 @@ document.getElementById('btn-export-matrix')?.addEventListener('click', () => {
         cb.addEventListener('change', updateExportPreview);
     });
     
-    ['export-expand-subs', 'export-only-annotated', 'export-include-legend', 'export-include-header', 'export-include-footer'].forEach(id => {
-        document.getElementById(id)?.addEventListener('change', updateExportPreview);
+    ['export-expand-subs', 'export-only-annotated', 'export-include-legend', 'export-include-header', 'export-include-footer', 'export-banner-hue', 'export-use-nebula-tint'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', updateExportPreview);
+            el.addEventListener('input', updateExportPreview);
+        }
     });
     
     updateExportPreview();
@@ -64,6 +68,71 @@ function updateExportPreview() {
     
     document.getElementById('export-tactic-count').textContent = selectedTactics.length;
     document.getElementById('export-tech-count').textContent = filtered.length;
+
+    // Apply Premium Accent and Nebula Live Preview
+    const accentColor = document.getElementById('export-banner-hue')?.value || '#7c3aed';
+    const textInput = document.getElementById('export-banner-hue-text');
+    if (textInput) textInput.value = accentColor.toUpperCase();
+
+    const useNebula = document.getElementById('export-use-nebula-tint')?.checked;
+    const previewHeader = document.getElementById('export-preview-header');
+    if (previewHeader) {
+        if (useNebula) {
+            previewHeader.style.background = `linear-gradient(135deg, #7c3aed 0%, ${accentColor} 100%)`;
+            previewHeader.style.boxShadow = `0 4px 12px ${accentColor}30, 0 0 6px ${accentColor}20`;
+        } else {
+            previewHeader.style.background = accentColor;
+            previewHeader.style.boxShadow = 'none';
+        }
+    }
+
+    const domainLabel = state.currentDomain 
+        ? (state.currentDomain.replace('-attack', '').charAt(0).toUpperCase() + state.currentDomain.replace('-attack', '').slice(1))
+        : 'Enterprise';
+
+    // Update cover page preview elements dynamically
+    const titleEl = document.getElementById('preview-title');
+    if (titleEl && state.currentLayer) {
+        titleEl.textContent = state.currentLayer.name || 'Untitled Layer';
+    }
+    const subtitleEl = document.getElementById('preview-subtitle');
+    if (subtitleEl) {
+        subtitleEl.textContent = `${domainLabel} ATT&CK Matrix`;
+    }
+    const authorEl = document.getElementById('preview-author');
+    if (authorEl) {
+        authorEl.textContent = `Author: ${state.author || 'Kieran Wadforth'}`;
+    }
+    const dateEl = document.getElementById('preview-date');
+    if (dateEl) {
+        dateEl.textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    }
+
+    // Dynamic stats calculations
+    const layerTechs = state.currentLayer?.techniques || [];
+    const totalQueries = layerTechs.reduce((sum, t) => sum + (t.queries ? t.queries.length : 0), 0);
+    const stats = typeof getFullCoverageStats === 'function' ? getFullCoverageStats() : { pct: 0 };
+    const coveragePct = stats.pct;
+
+    const coverageStat = document.getElementById('preview-stats-coverage');
+    if (coverageStat) {
+        coverageStat.textContent = `${coveragePct % 1 === 0 ? coveragePct : coveragePct.toFixed(1)}%`;
+    }
+    const queriesStat = document.getElementById('preview-stats-queries');
+    if (queriesStat) {
+        queriesStat.textContent = totalQueries;
+    }
+
+    const logoPlaceholder = document.getElementById('preview-logo-placeholder');
+    if (logoPlaceholder) {
+        if (state.companyLogo) {
+            logoPlaceholder.innerHTML = `<img src="${state.companyLogo}" style="height: 100%; max-height: 14px; object-fit: contain;">`;
+        } else if (state.companyName) {
+            logoPlaceholder.textContent = state.companyName.substring(0, 8).toUpperCase();
+        } else {
+            logoPlaceholder.textContent = 'LOGO';
+        }
+    }
 }
 
 document.getElementById('btn-confirm-export')?.addEventListener('click', async () => {
@@ -81,14 +150,16 @@ document.getElementById('btn-confirm-export')?.addEventListener('click', async (
     const includeHeader = document.getElementById('export-include-header')?.checked;
     const includeFooter = document.getElementById('export-include-footer')?.checked;
     const format = document.querySelector('input[name="export-format"]:checked')?.value || 'png';
+    const accentColor = document.getElementById('export-banner-hue')?.value || '#7c3aed';
+    const useNebula = document.getElementById('export-use-nebula-tint')?.checked;
     
     try {
         if (format === 'pdf') {
-            await exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter);
+            await exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor, useNebula);
         } else if (format === 'svg') {
-            await exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter);
+            await exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor, useNebula);
         } else {
-            await exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter);
+            await exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor, useNebula);
         }
         showToast('Matrix exported successfully', 'success');
     } catch (err) {
@@ -99,7 +170,7 @@ document.getElementById('btn-confirm-export')?.addEventListener('click', async (
     }
 });
 
-async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter) {
+async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const exportBg = isDark ? '#0f172a' : '#ffffff';
     const exportSurface = isDark ? '#1e293b' : '#ffffff';
@@ -148,58 +219,25 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
     const isSub = (t) => t.x_mitre_is_subtechnique;
     const parentId = (t) => t.external_references?.[0]?.external_id?.split('.')[0];
     
-    let totalCells = 0;
-    for (const tactic of tacticOrder) {
-        const short = tactic.x_mitre_shortname;
-        const techniques = techniqueMap[short] || [];
-        const parentTechs = (onlyAnnotated 
-            ? techniques.filter(t => {
-                const id = t.external_references?.[0]?.external_id || '';
-                const ann = getTechniqueAnnotation(id);
-                return !isSub(t) && (ann?.color || ann?.queries?.length > 0);
-            })
-            : techniques.filter(t => !isSub(t))
-        );
-        totalCells += parentTechs.length;
-        if (expandSubs) {
-            for (const tech of parentTechs) {
-                const id = tech.external_references?.[0]?.external_id || '';
-                const subs = techniques.filter(s => isSub(s) && parentId(s) === id);
-                totalCells += subs.length;
-            }
-        }
-    }
-    
-    const estimatedWidth = tacticOrder.length * 140;
-    const willOverflow = estimatedWidth > 1600;
-    
-    if (willOverflow) {
-        const confirmed = await showConfirm('Wide Export Warning', 
-            `This export has ${tacticOrder.length} tactics (~${estimatedWidth}px wide). Columns may be compressed. Consider using PDF export or selecting fewer tactics.`);
-        if (!confirmed) {
-            document.body.removeChild(exportContainer);
-            const btn = document.getElementById('btn-export-matrix');
-            btn.innerHTML = '<i class="bi bi-camera me-1"></i>Export Image';
-            btn.disabled = false;
-            return;
-        }
-    }
-    
+    const headerBackground = useNebula 
+        ? `linear-gradient(135deg, #7c3aed 0%, ${accentColor} 100%)` 
+        : accentColor;
+
     let html = '';
     
     if (includeHeader) {
         html += `
-            <div class="matrix-export-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #6366f1;">
+            <div class="matrix-export-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 12px; border-radius: 6px; background: ${headerBackground}; color: white; box-shadow: ${useNebula ? `0 4px 15px ${accentColor}25` : 'none'};">
                 <div class="matrix-export-header-left" style="display: flex; align-items: center; gap: 1rem;">
-                    ${state.companyLogo ? `<img src="${state.companyLogo}" class="matrix-export-logo" style="height: 30px; max-width: 120px; object-fit: contain;" alt="Logo">` : ''}
+                    ${state.companyLogo ? `<img src="${state.companyLogo}" class="matrix-export-logo" style="height: 30px; max-width: 120px; object-fit: contain; border-radius: 4px;" alt="Logo">` : ''}
                     <div>
-                        <h1 class="matrix-export-title" style="font-size: 1rem; font-weight: 700; color: #6366f1; margin: 0;">${domainLabel} ATT&CK Matrix</h1>
-                        <p class="matrix-export-subtitle" style="font-size: 0.7rem; color: ${exportTextSec}; margin: 0.15rem 0 0;">${state.currentLayer?.name || 'Untitled Layer'} • ATT&CK ${version}</p>
+                        <h1 class="matrix-export-title" style="font-size: 1.15rem; font-weight: 700; color: white; margin: 0; text-shadow: 0 1px 2px rgba(0,0,0,0.15);">${domainLabel} ATT&CK Matrix</h1>
+                        <p class="matrix-export-subtitle" style="font-size: 0.7rem; color: rgba(255,255,255,0.85); margin: 0.15rem 0 0;">${state.currentLayer?.name || 'Untitled Layer'} • ATT&CK ${version}</p>
                     </div>
                 </div>
                 <div class="matrix-export-header-right" style="text-align: right;">
-                    ${state.companyName ? `<div class="matrix-export-company" style="font-size: 0.85rem; font-weight: 600; color: ${exportText};">${escapeHtml(state.companyName)}</div>` : ''}
-                    <div class="matrix-export-meta" style="font-size: 0.6rem; color: ${exportTextTer};">Generated ${new Date().toLocaleDateString()}</div>
+                    ${state.companyName ? `<div class="matrix-export-company" style="font-size: 0.9rem; font-weight: 600; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.15);">${escapeHtml(state.companyName)}</div>` : ''}
+                    <div class="matrix-export-meta" style="font-size: 0.6rem; color: rgba(255,255,255,0.7);">Generated ${new Date().toLocaleDateString()}</div>
                 </div>
             </div>
         `;
@@ -210,7 +248,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
             html += `<div class="matrix-export-legend" style="display: flex; gap: 1.5rem; margin-bottom: 0.5rem; padding: 0.5rem; background: ${exportLegend}; border-radius: 4px; flex-wrap: wrap;">`;
             for (const section of legendSections) {
                 html += '<div>';
-                html += `<div class="matrix-export-legend-section-title" style="font-size: 0.6rem; font-weight: 700; color: ${exportTechId}; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(section.title)}</div>`;
+                html += `<div class="matrix-export-legend-section-title" style="font-size: 0.6rem; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(section.title)}</div>`;
                 html += '<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.25rem;">';
                 for (const item of section.items) {
                     html += `<div class="matrix-export-legend-item" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: ${exportTextSec};"><span class="matrix-export-legend-color" style="background: ${item.color}; width: 12px; height: 12px; border-radius: 3px; border: 1px solid ${exportBorder};"></span>${escapeHtml(item.label)}</div>`;
@@ -227,7 +265,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
         }
     }
     
-    html += `<table class="matrix-export-table" style="border-spacing: 1px;"><thead><tr>`;
+    html += `<table class="matrix-export-table" style="border-spacing: 1px; width: 100%;"><thead><tr>`;
     for (const tactic of tacticOrder) {
         const short = tactic.x_mitre_shortname;
         const techniques = techniqueMap[short] || [];
@@ -239,7 +277,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
             })
             : techniques.filter(t => !isSub(t));
         const count = filtered.length;
-        html += `<th style="background: #6366f1; color: white; font-weight: 600; text-align: center; padding: 0.35rem; min-width: 120px; font-size: 0.65rem;"><div>${tactic.name}</div><div style="opacity:0.7;font-size:0.65rem">${short}</div><div style="opacity:0.6;font-size:0.6rem">${count}</div></th>`;
+        html += `<th style="background: ${accentColor}; color: white; font-weight: 600; text-align: center; padding: 0.35rem; min-width: 120px; font-size: 0.65rem;"><div>${tactic.name}</div><div style="opacity:0.8;font-size:0.6rem">${short}</div><div style="opacity:0.7;font-size:0.65rem">${count}</div></th>`;
     }
     html += '</tr></thead><tbody><tr>';
     
@@ -271,7 +309,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
             const bgColor = effectiveColor ? `background: ${effectiveColor}${isAutoColor ? '' : 'cc'}; color: ${getContrastColor(effectiveColor.replace(/80$/, ''))};` : '';
             
             html += `<div class="matrix-export-cell" style="${bgColor} padding: 0.2rem 0.35rem; border-bottom: 1px solid ${exportBorder}; font-size: 0.6rem;">
-                <div class="tech-id" style="font-family: monospace; font-weight: 600; color: ${effectiveColor ? getContrastColor(effectiveColor.replace(/80$/, '')) : exportTechId};">${id}</div>
+                <div class="tech-id" style="font-family: monospace; font-weight: 600; color: ${effectiveColor ? getContrastColor(effectiveColor.replace(/80$/, '')) : (isDark ? '#818cf8' : '#4f46e5')};">${id}</div>
                 <div class="tech-name" style="color: ${effectiveColor ? getContrastColor(effectiveColor.replace(/80$/, '')) : exportTechName}; font-size: 0.55rem;">${escapeHtml(name)}</div>
             </div>`;
             
@@ -284,7 +322,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
                     const isSubAuto = state.autoColorByQueries && subColor;
                     const subBgColor = subColor ? `background: ${subColor}${isSubAuto ? '' : 'cc'}; color: ${getContrastColor(subColor.replace(/80$/, ''))}; margin-left: 0.5rem;` : `margin-left: 0.5rem; color: ${exportTextSec};`;
                     html += `<div class="matrix-export-cell sub-technique" style="${subBgColor} padding: 0.2rem 0.35rem; border-bottom: 1px solid ${exportBorder}; font-size: 0.6rem;">
-                        <div class="tech-id" style="font-family: monospace; font-weight: 600; font-size: 0.6rem; color: ${subColor ? getContrastColor(subColor.replace(/80$/, '')) : exportTechId};">${subId}</div>
+                        <div class="tech-id" style="font-family: monospace; font-weight: 600; font-size: 0.6rem; color: ${subColor ? getContrastColor(subColor.replace(/80$/, '')) : (isDark ? '#818cf8' : '#4f46e5')};">${subId}</div>
                         <div class="tech-name" style="font-size: 0.55rem; color: ${subColor ? getContrastColor(subColor.replace(/80$/, '')) : exportTechName};">${escapeHtml(subName)}</div>
                     </div>`;
                 }
@@ -304,7 +342,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
     }
     
     exportContainer.innerHTML = html;
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 150));
     
     const canvas = await html2canvas(exportContainer, {
         scale: 2,
@@ -324,7 +362,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
     link.click();
 }
 
-async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter) {
+async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
     const domainLabel = state.currentDomain.replace('-attack', '').charAt(0).toUpperCase() + state.currentDomain.replace('-attack', '').slice(1);
     const version = state.currentVersion || 'master';
     const isAuto = state.autoColorByQueries;
@@ -362,6 +400,9 @@ async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, inclu
     }
     
     const printWindow = window.open('', '_blank');
+    const headerBackground = useNebula 
+        ? `linear-gradient(135deg, #7c3aed 0%, ${accentColor} 100%)` 
+        : accentColor;
     
     let html = `
 <!DOCTYPE html>
@@ -373,23 +414,23 @@ async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, inclu
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; color: #1a1a1a; }
         .page { page-break-after: always; padding: 1rem; }
         .page:last-child { page-break-after: auto; }
-        .matrix-export-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 2px solid #6366f1; }
+        .matrix-export-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 12px; border-radius: 6px; background: ${headerBackground}; color: white; }
         .matrix-export-header-left { display: flex; align-items: center; gap: 1rem; }
-        .matrix-export-logo { height: 30px; max-width: 120px; object-fit: contain; }
-        .matrix-export-title { font-size: 1rem; font-weight: 700; color: #6366f1; margin: 0; }
-        .matrix-export-subtitle { font-size: 0.7rem; color: #666; margin: 0.15rem 0 0; }
+        .matrix-export-logo { height: 30px; max-width: 120px; object-fit: contain; border-radius: 4px; }
+        .matrix-export-title { font-size: 1.15rem; font-weight: 700; color: white; margin: 0; }
+        .matrix-export-subtitle { font-size: 0.7rem; color: rgba(255,255,255,0.85); margin: 0.15rem 0 0; }
         .matrix-export-header-right { text-align: right; }
-        .matrix-export-company { font-size: 0.85rem; font-weight: 600; }
-        .matrix-export-meta { font-size: 0.6rem; color: #999; }
+        .matrix-export-company { font-size: 0.9rem; font-weight: 600; color: white; }
+        .matrix-export-meta { font-size: 0.6rem; color: rgba(255,255,255,0.7); }
         .matrix-export-legend { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; padding: 0.5rem; background: #f5f5f5; border-radius: 4px; }
-        .matrix-export-legend-section-title { font-size: 0.6rem; font-weight: 700; color: #6366f1; text-transform: uppercase; letter-spacing: 0.05em; }
+        .matrix-export-legend-section-title { font-size: 0.6rem; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 0.05em; }
         .matrix-export-legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; }
         .matrix-export-legend-color { width: 12px; height: 12px; border-radius: 3px; border: 1px solid #ddd; }
         .matrix-export-table { width: 100%; border-collapse: separate; border-spacing: 1px; }
-        .matrix-export-table th { background: #6366f1; color: white; font-weight: 600; text-align: center; padding: 0.35rem; min-width: 120px; font-size: 0.65rem; }
+        .matrix-export-table th { background: ${accentColor}; color: white; font-weight: 600; text-align: center; padding: 0.35rem; min-width: 120px; font-size: 0.65rem; }
         .matrix-export-table td { vertical-align: top; padding: 0; background: #f8f8f8; min-width: 120px; }
         .matrix-export-cell { padding: 0.2rem 0.35rem; border-bottom: 1px solid #eee; font-size: 0.6rem; }
-        .matrix-export-cell .tech-id { font-family: monospace; font-weight: 600; color: #6366f1; }
+        .matrix-export-cell .tech-id { font-family: monospace; font-weight: 600; color: ${accentColor}; }
         .matrix-export-cell .tech-name { color: #333; font-size: 0.55rem; }
         .matrix-export-cell.sub-technique { margin-left: 0.35rem; }
         .matrix-export-footer { margin-top: 0.5rem; padding-top: 0.35rem; border-top: 1px solid #ddd; font-size: 0.55rem; color: #999; text-align: center; }
@@ -454,12 +495,12 @@ async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, inclu
                     return !isSub(t) && (ann?.color || ann?.queries?.length > 0);
                 })
                 : techniques.filter(t => !isSub(t));
-            html += `<th><div>${tactic.name}</div><div style="opacity:0.7">${short}</div><div style="opacity:0.6">${filtered.length}</div></th>`;
+            html += `<th><div>${tactic.name}</div><div style="opacity:0.8">${short}</div><div style="opacity:0.7">${filtered.length}</div></th>`;
         }
         html += '</tr></thead><tbody><tr>';
         
-        for (const tactic of pageTactics) {
-            const short = tactic.x_mitre_shortname;
+        for (const pageTacticsItem of pageTactics) {
+            const short = pageTacticsItem.x_mitre_shortname;
             const techniques = techniqueMap[short] || [];
             const parentTechs = (onlyAnnotated 
                 ? techniques.filter(t => {
@@ -485,7 +526,7 @@ async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, inclu
                 const isAutoColor = state.autoColorByQueries && effectiveColor;
                 const cleanColor = effectiveColor ? effectiveColor.replace(/80$/, '') : '';
                 const bgColor = effectiveColor ? `background-color: ${effectiveColor}${isAutoColor ? '' : 'cc'}; color: ${getContrastColor(cleanColor)};` : '';
-                const idColor = effectiveColor ? `color: ${getContrastColor(cleanColor)};` : '';
+                const idColor = effectiveColor ? `color: ${getContrastColor(cleanColor)};` : `color: ${accentColor};`;
                 const nameColor = effectiveColor ? `color: ${getContrastColor(cleanColor)};` : '';
                 
                 html += `<div class="matrix-export-cell" style="${bgColor}">
@@ -502,7 +543,7 @@ async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, inclu
                         const isSubAuto = state.autoColorByQueries && subColor;
                         const subCleanColor = subColor ? subColor.replace(/80$/, '') : '';
                         const subBgColor = subColor ? `background-color: ${subColor}${isSubAuto ? '' : 'cc'}; color: ${getContrastColor(subCleanColor)}; margin-left: 0.35rem;` : 'margin-left: 0.35rem;';
-                        const subIdColor = subColor ? `color: ${getContrastColor(subCleanColor)};` : '';
+                        const subIdColor = subColor ? `color: ${getContrastColor(subCleanColor)};` : `color: ${accentColor};`;
                         const subNameColor = subColor ? `color: ${getContrastColor(subCleanColor)};` : '';
                         html += `<div class="matrix-export-cell sub-technique" style="${subBgColor}">
                             <div class="tech-id" style="font-size:0.5rem;${subIdColor}">${subId}</div>
@@ -534,7 +575,7 @@ async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, inclu
     printWindow.document.close();
 }
 
-async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter) {
+async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
     const domainLabel = state.currentDomain.replace('-attack', '').charAt(0).toUpperCase() + state.currentDomain.replace('-attack', '').slice(1);
     const version = state.currentVersion || 'master';
     const isAuto = state.autoColorByQueries;
@@ -605,24 +646,42 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
     const height = marginTop + legendHeight + headerHeight + matrixHeight + footerHeight + 20;
     
     let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${sanitizeSvgAttr(width)}" height="${sanitizeSvgAttr(height)}" viewBox="0 0 ${sanitizeSvgAttr(width)} ${sanitizeSvgAttr(height)}">`;
-    svg += `<defs><style type="text/css">@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap');</style></defs>`;
+    svg += `<defs>`;
+    svg += `<style type="text/css">@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap');</style>`;
+    if (useNebula) {
+        svg += `
+            <linearGradient id="nebula-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7c3aed"/>
+                <stop offset="100%" stop-color="${accentColor}"/>
+            </linearGradient>
+        `;
+    }
+    svg += `</defs>`;
     svg += `<rect width="${sanitizeSvgAttr(width)}" height="${sanitizeSvgAttr(height)}" fill="${bgColor}"/>`;
     
     let yPos = marginTop;
     
+    const svgHeaderBackground = useNebula ? 'url(#nebula-grad)' : accentColor;
+
     if (includeHeader) {
+        // Draw decorative banner instead of raw text line
+        svg += `<rect x="${padding}" y="${yPos}" width="${width - padding * 2}" height="48" fill="${svgHeaderBackground}" rx="6"/>`;
+        
+        let logoX = padding + 12;
         if (state.companyLogo) {
-            svg += `<image x="${padding}" y="${yPos}" width="40" height="40" href="${state.companyLogo}" preserveAspectRatio="xMidYMid meet"/>`;
+            svg += `<image x="${logoX}" y="${yPos + 9}" width="30" height="30" href="${state.companyLogo}" preserveAspectRatio="xMidYMid meet"/>`;
+            logoX += 40;
         }
-        const textX = state.companyLogo ? padding + 50 : padding;
-        svg += `<text x="${textX}" y="${yPos + 18}" font-family="'Inter', sans-serif" font-size="16" font-weight="700" fill="#7c3aed">${escapeSvgText(domainLabel)} ATT&amp;CK Matrix</text>`;
-        svg += `<text x="${textX}" y="${yPos + 32}" font-family="'Inter', sans-serif" font-size="10" fill="${isDark ? '#94a3b8' : '#666'}">${escapeSvgText(state.currentLayer?.name || 'Untitled Layer')} \u2022 ATT&amp;CK ${sanitizeSvgAttr(version)}</text>`;
+        
+        svg += `<text x="${logoX}" y="${yPos + 22}" font-family="'Inter', sans-serif" font-size="13" font-weight="700" fill="white">${escapeSvgText(domainLabel)} ATT&amp;CK Matrix</text>`;
+        svg += `<text x="${logoX}" y="${yPos + 36}" font-family="'Inter', sans-serif" font-size="8.5" fill="rgba(255,255,255,0.85)">${escapeSvgText(state.currentLayer?.name || 'Untitled Layer')} \u2022 ATT&amp;CK ${sanitizeSvgAttr(version)}</text>`;
+        
         if (state.companyName) {
-            svg += `<text x="${width - padding}" y="${yPos + 18}" font-family="'Inter', sans-serif" font-size="12" font-weight="600" fill="${textColor}" text-anchor="end">${escapeSvgText(state.companyName)}</text>`;
+            svg += `<text x="${width - padding - 12}" y="${yPos + 22}" font-family="'Inter', sans-serif" font-size="10.5" font-weight="600" fill="white" text-anchor="end">${escapeSvgText(state.companyName)}</text>`;
         }
-        svg += `<text x="${width - padding}" y="${yPos + 32}" font-family="'Inter', sans-serif" font-size="8" fill="${isDark ? '#64748b' : '#999'}" text-anchor="end">Generated ${new Date().toLocaleDateString()}</text>`;
-        svg += `<line x1="${padding}" y1="${yPos + 42}" x2="${width - padding}" y2="${yPos + 42}" stroke="#7c3aed" stroke-width="2"/>`;
-        yPos += 52;
+        svg += `<text x="${width - padding - 12}" y="${yPos + 36}" font-family="'Inter', sans-serif" font-size="7.5" fill="rgba(255,255,255,0.7)" text-anchor="end">Generated ${new Date().toLocaleDateString()}</text>`;
+        
+        yPos += 58;
     }
     
     if (includeLegend) {
@@ -655,6 +714,8 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
     
     svg += `<g transform="translate(${padding}, ${yPos})">`;
     
+    const tacticBgFill = useNebula ? 'url(#nebula-grad)' : accentColor;
+
     for (let i = 0; i < tacticOrder.length; i++) {
         const tactic = tacticOrder[i];
         const short = tactic.x_mitre_shortname;
@@ -668,10 +729,10 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
             : techniques.filter(t => !isSub(t));
         
         const x = i * colWidth;
-        svg += `<rect x="${x}" y="0" width="${colWidth - 2}" height="${headerHeight}" fill="#7c3aed" rx="3"/>`;
+        svg += `<rect x="${x}" y="0" width="${colWidth - 2}" height="${headerHeight}" fill="${tacticBgFill}" rx="3"/>`;
         svg += `<text x="${x + colWidth / 2 - 1}" y="16" font-family="'Inter', sans-serif" font-size="9" font-weight="600" fill="white" text-anchor="middle">${escapeSvgText(tactic.name)}</text>`;
-        svg += `<text x="${x + colWidth / 2 - 1}" y="26" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.7)" text-anchor="middle">${sanitizeSvgAttr(short)}</text>`;
-        svg += `<text x="${x + colWidth / 2 - 1}" y="33" font-family="'Inter', sans-serif" font-size="6" fill="rgba(255,255,255,0.5)" text-anchor="middle">${filtered.length}</text>`;
+        svg += `<text x="${x + colWidth / 2 - 1}" y="26" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.8)" text-anchor="middle">${sanitizeSvgAttr(short)}</text>`;
+        svg += `<text x="${x + colWidth / 2 - 1}" y="33" font-family="'Inter', sans-serif" font-size="6" fill="rgba(255,255,255,0.6)" text-anchor="middle">${filtered.length}</text>`;
     }
     
     for (let i = 0; i < tacticOrder.length; i++) {
@@ -712,7 +773,7 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
             
             svg += `<rect x="${x + 1}" y="${cellY}" width="${colWidth - 4}" height="${rowHeight - 1}" fill="${cellFill}"${cellOpacity} rx="2"/>`;
             if (hasQueries) {
-                svg += `<rect x="${x + 2}" y="${cellY + 2}" width="2.5" height="${rowHeight - 5}" fill="#a855f7" rx="1.25"/>`;
+                svg += `<rect x="${x + 2}" y="${cellY + 2}" width="2.5" height="${rowHeight - 5}" fill="${accentColor}" rx="1.25"/>`;
             }
             svg += `<text x="${textX}" y="${cellY + 10}" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="600" fill="${cellText}">${id}</text>`;
             svg += `<text x="${textX}" y="${cellY + 18}" font-family="'Inter', sans-serif" font-size="6" fill="${cellText}">${escapeSvgText(name).substring(0, 22)}</text>`;
@@ -736,7 +797,7 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
                     
                     svg += `<rect x="${x + 8}" y="${cellY}" width="${colWidth - 12}" height="${rowHeight - 2}" fill="${subFill}"${subOpacity} rx="2"/>`;
                     if (subHasQueries) {
-                        svg += `<rect x="${x + 9}" y="${cellY + 2}" width="2.5" height="${rowHeight - 6}" fill="#a855f7" rx="1.25"/>`;
+                        svg += `<rect x="${x + 9}" y="${cellY + 2}" width="2.5" height="${rowHeight - 6}" fill="${accentColor}" rx="1.25"/>`;
                     }
                     svg += `<text x="${subTextX}" y="${cellY + 9}" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="600" fill="${subText}">${subId}</text>`;
                     svg += `<text x="${subTextX}" y="${cellY + 16}" font-family="'Inter', sans-serif" font-size="5" fill="${subText}">${escapeSvgText(subName).substring(0, 18)}</text>`;

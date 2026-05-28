@@ -70,6 +70,10 @@ function showGroupModal(groupId) {
                 <button class="group-tab-btn" data-group-tab="techniques">
                     <i class="bi bi-grid"></i> Techniques <span class="group-tab-count">${techCount}</span>
                 </button>
+                <button class="group-tab-btn" data-group-tab="gap-mapper" style="position: relative;">
+                    <i class="bi bi-shield-slash"></i> Gap Mapper 
+                    ${techCount - coveredCount > 0 ? `<span class="group-tab-count" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); font-weight: 700; font-size: 10px;">${techCount - coveredCount} Gaps</span>` : `<span class="group-tab-count" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); font-weight: 700; font-size: 10px;">100% Ready</span>`}
+                </button>
                 <button class="group-tab-btn" data-group-tab="heatmap">
                     <i class="bi bi-grid-3x3-gap"></i> Heatmap
                 </button>
@@ -292,6 +296,67 @@ function showGroupModal(groupId) {
         
         heatmapHtml += `</div></div>`;
         
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        
+        let gapMapperHtml = `
+            <div class="group-tab-pane" id="group-tab-gap-mapper">
+                <div class="group-coverage-bar-container mb-4" style="background: ${isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; border-radius: 12px; padding: 20px; box-shadow: var(--shadow-md);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <div>
+                            <h5 style="margin: 0; font-size: 15px; font-weight: 700; color: ${isDark ? '#f3f4f6' : '#1f2937'};">Defensive Readiness Index against ${escapeHtml(group.name)}</h5>
+                            <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--on-surface-secondary);">Measures your active coverage against this specific threat actor's known techniques.</p>
+                        </div>
+                        <div style="width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; background: ${coveragePct >= 70 ? 'rgba(16, 185, 129, 0.1)' : coveragePct >= 40 ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; border: 2px solid ${coveragePct >= 70 ? 'var(--accent-green)' : coveragePct >= 40 ? 'var(--accent-tan)' : 'var(--accent-red)'}; border-radius: 50%; font-weight: 800; font-size: 15px; color: ${coveragePct >= 70 ? 'var(--accent-green)' : coveragePct >= 40 ? 'var(--accent-tan)' : 'var(--accent-red)'}; box-shadow: 0 0 10px ${coveragePct >= 70 ? 'rgba(16, 185, 129, 0.2)' : coveragePct >= 40 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)'};">
+                            ${coveragePct}%
+                        </div>
+                    </div>
+                    <div class="group-coverage-bar-track" style="height: 8px; border-radius: 4px; background: ${isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)'}; overflow: hidden; position: relative;">
+                        <div class="group-coverage-bar-fill" style="width: ${coveragePct}%; height: 100%; border-radius: 4px; background: ${coveragePct >= 70 ? 'var(--accent-green)' : coveragePct >= 40 ? 'var(--accent-tan)' : 'var(--accent-red)'}; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div class="d-flex text-xs mt-2" style="font-weight: 600; color: var(--on-surface-secondary);">
+                        <span>✓ ${coveredCount} Covered Techniques</span>
+                        <span class="ms-auto" style="color: ${techCount - coveredCount > 0 ? 'var(--accent-red)' : 'var(--accent-green)'};">
+                            ${techCount - coveredCount > 0 ? `⚠️ ${techCount - coveredCount} Critical Blindspots` : '🛡️ Fully Ready'}
+                        </span>
+                    </div>
+                </div>
+
+                <h6 style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--on-surface-tertiary); letter-spacing: 0.05em; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-shield-slash" style="color: var(--accent-red); font-size: 14px;"></i> Threat Actor Gap Coverage Details
+                </h6>
+                <div class="gap-mapper-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 380px; overflow-y: auto; padding-right: 4px; margin-bottom: 10px;">
+                    ${relatedTechniques.map(tech => {
+                        const techId = tech.external_references?.[0]?.external_id || '';
+                        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === techId);
+                        const hasQuery = ann?.queries && ann.queries.length > 0;
+                        return `
+                            <div style="background: ${isDark ? 'rgba(255, 255, 255, 0.01)' : 'rgba(0, 0, 0, 0.005)'}; border: 1px solid ${hasQuery ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.2s ease;">
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span style="font-family: monospace; font-size: 9px; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: ${hasQuery ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; color: ${hasQuery ? 'var(--accent-green)' : 'var(--accent-red)'};">
+                                            ${techId}
+                                        </span>
+                                        <span class="text-xs" style="font-weight: 700; font-size: 9px; letter-spacing: 0.03em; color: ${hasQuery ? 'var(--accent-green)' : 'var(--accent-red)'};">
+                                            ${hasQuery ? '✓ COVERED' : '⚠️ GAP BLINDSPOT'}
+                                        </span>
+                                    </div>
+                                    <h6 style="margin: 6px 0; font-size: 12px; font-weight: 600; color: var(--on-surface); line-height: 1.4;">${escapeHtml(tech.name)}</h6>
+                                </div>
+                                <div class="d-flex align-items-center mt-3 pt-2" style="border-top: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)'};">
+                                    <span style="font-size: 10px; color: var(--on-surface-tertiary);">
+                                        ${hasQuery ? `${ann.queries.length} active quer${ann.queries.length === 1 ? 'y' : 'ies'}` : '0 queries deployed'}
+                                    </span>
+                                    <button class="btn btn-xs ${hasQuery ? 'btn-outline-secondary' : 'btn-outline-primary'} ms-auto ${hasQuery ? 'view-tech-btn' : 'create-hunt-btn'}" data-tech-id="${techId}" style="font-size: 9px; padding: 2px 8px; font-weight: bold; height: 22px;">
+                                        ${hasQuery ? '<i class="bi bi-eye mr-1"></i>View' : '<i class="bi bi-plus-lg mr-1"></i>Create Hunt'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+        
         const modalHtml = `
             <div class="modal fade" id="group-detail-modal" tabindex="-1">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -313,6 +378,7 @@ function showGroupModal(groupId) {
                                 ${techniquesHtml}
                                 ${softwareHtml}
                                 ${heatmapHtml}
+                                ${gapMapperHtml}
                             </div>
                         </div>
                     </div>
@@ -366,6 +432,31 @@ function showGroupModal(groupId) {
                 const gModal = bootstrap.Modal.getInstance(document.getElementById('group-detail-modal'));
                 if (gModal) gModal.hide();
                 setTimeout(() => showSoftwareModal(item.dataset.swId), 300);
+            });
+        });
+
+        document.querySelectorAll('#group-detail-modal .create-hunt-btn, #group-detail-modal .view-tech-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const gModal = bootstrap.Modal.getInstance(document.getElementById('group-detail-modal'));
+                if (gModal) gModal.hide();
+                
+                const techId = btn.dataset.techId;
+                const isCreate = btn.classList.contains('create-hunt-btn');
+                
+                setTimeout(() => {
+                    document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
+                    document.querySelector('[data-view="matrix"]')?.classList.add('active');
+                    document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+                    document.getElementById('matrix-view')?.classList.remove('hidden');
+                    
+                    showTechniqueModal(techId);
+                    
+                    if (isCreate) {
+                        setTimeout(() => {
+                            document.getElementById('btn-add-query-modal')?.click();
+                        }, 500);
+                    }
+                }, 350);
             });
         });
         
