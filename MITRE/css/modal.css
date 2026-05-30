@@ -74,23 +74,21 @@
 }
 
 .modal-content {
-    background: rgba(15, 16, 38, 0.7);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), var(--shadow-xl), var(--glow-primary);
+    box-shadow: var(--shadow-xl);
     pointer-events: auto;
     transition: var(--transition);
 }
 
 .modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border);
     padding: 1.1rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(25, 27, 56, 0.3);
+    background: var(--surface-elevated);
 }
 
 .modal-header.border-0 {
@@ -100,10 +98,7 @@
 .modal-title {
     font-size: 1.1rem;
     font-weight: 600;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--on-surface);
     letter-spacing: -0.01em;
 }
 
@@ -112,9 +107,9 @@
 }
 
 .modal-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border);
     padding: 1rem 1.5rem;
-    background: rgba(25, 27, 56, 0.3);
+    background: var(--surface-elevated);
 }
 
 .modal-footer.border-0 {
@@ -124,24 +119,29 @@
 /* Form Controls */
 .form-label {
     font-size: 0.78rem;
-    font-weight: 600;
-    color: var(--on-surface);
-    margin-bottom: 0.3rem;
+    font-weight: 500;
+    color: var(--on-surface-secondary);
+    margin-bottom: 0.35rem;
+    display: block;
 }
 
 .form-control, .form-select {
     font-size: 0.82rem;
+    font-family: var(--font-sans);
     padding: 0.45rem 0.7rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--surface);
+    background: var(--surface-subtle);
     color: var(--on-surface);
+    transition: var(--transition);
+    width: 100%;
 }
 
 .form-control:focus, .form-select:focus {
+    outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
-    background: rgba(21, 27, 43, 0.8);
+    box-shadow: 0 0 0 2px var(--primary-light);
+    background: var(--surface-elevated);
 }
 
 .form-text {
@@ -161,12 +161,10 @@
 }
 
 .technique-modal {
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), var(--shadow-xl), var(--glow-primary);
-    background: rgba(15, 16, 38, 0.7);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: var(--shadow-xl);
+    background: var(--surface-elevated);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -174,13 +172,13 @@
 }
 
 .tech-modal-header {
-    background: rgba(25, 27, 56, 0.35);
+    background: var(--surface-elevated);
     padding: 1.75rem 2.25rem 1.5rem;
     color: var(--on-surface);
     position: relative;
     overflow: visible;
     flex-shrink: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--border);
 }
 
 .tech-modal-header-content {
@@ -331,12 +329,10 @@
     border-radius: 2px;
     transition: width 0.6s ease;
     background: var(--accent-green);
-    box-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
 }
 
 .tech-coverage-fill.partial {
     background: var(--accent-amber);
-    box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 
 .tech-coverage-fill.none {
@@ -368,12 +364,10 @@
 
 .tech-coverage-dot.has-queries {
     background: var(--accent-green);
-    box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
 }
 
 .tech-coverage-dot.partial-queries {
     background: var(--accent-amber);
-    box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
 }
 
 .tech-modal-platforms {
@@ -390,7 +384,7 @@
     gap: 0.35rem;
     font-size: 0.72rem;
     font-weight: 500;
-    background: var(--surface);
+    background: var(--surface-variant);
     padding: 0.28em 0.6rem;
     border-radius: var(--radius-pill);
     color: var(--on-surface-secondary);
@@ -424,18 +418,20 @@
 }
 
 .tech-modal-months .month-selector select {
-    background-color: var(--surface);
+    background-color: var(--surface-subtle);
     border: 1px solid var(--border);
     color: var(--on-surface);
     font-size: 0.78rem;
     padding: 0.25rem 0.5rem;
     border-radius: var(--radius-sm);
     min-width: 130px;
+    transition: var(--transition);
 }
 
 .tech-modal-months .month-selector select:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+    outline: none;
 }
 
 .tech-modal-close {
@@ -450,7 +446,6 @@
 .tech-modal-close:hover {
     opacity: 1;
     color: var(--primary);
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
 }
 
 .tech-modal-title {
@@ -1189,31 +1184,340 @@
     overflow-y: auto;
 }
 
+.export-options-modal {
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.export-options-modal .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: transparent;
+    padding: 1.25rem 1.75rem;
+}
+
+.export-options-modal .modal-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    display: flex;
+    align-items: center;
+}
+
+.export-options-modal .modal-title i {
+    color: var(--primary);
+    text-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
+}
+
+.export-options-modal .modal-body {
+    padding: 1.75rem;
+}
+
+.export-options-modal .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: transparent;
+    padding: 1.25rem 1.75rem;
+}
+
+/* Include Tactics check grid styling */
+.tactic-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+    gap: 0.35rem;
+    max-height: 150px !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px !important;
+    padding: 0.75rem !important;
+}
+
+.tactic-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.55rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.tactic-checkbox-item:hover {
+    background: rgba(124, 58, 237, 0.06);
+    border-color: rgba(124, 58, 237, 0.3);
+    transform: translateY(-1px);
+}
+
+.tactic-checkbox-item input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    margin: 0;
+}
+
+.tactic-checkbox-item label {
+    font-size: 0.72rem;
+    color: var(--on-surface-secondary) !important;
+    cursor: pointer;
+    margin: 0;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+/* Premium Switches */
+.export-options-modal .form-switch .form-check-input {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23ffffff'/%3e%3c/svg%3e");
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+    height: 1.15rem;
+    width: 2.1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.export-options-modal .form-switch .form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.4));
+}
+
+.export-options-modal .form-switch .form-check-input:focus {
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.25);
+    border-color: var(--primary);
+}
+
+.export-options-modal .form-check-label {
+    padding-left: 0.25rem;
+    user-select: none;
+    cursor: pointer;
+}
+
+/* Segmented Output Format Controller */
+.export-options-modal .btn-group {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.export-options-modal .btn-group .btn-check + .btn-outline-primary {
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--on-surface-secondary) !important;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.4rem 1rem;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.export-options-modal .btn-group .btn-check:checked + .btn-outline-primary {
+    background: var(--gradient-primary);
+    color: white !important;
+    box-shadow: var(--shadow-sm), var(--glow-primary);
+}
+
+.export-options-modal .btn-group .btn-check + .btn-outline-primary:hover {
+    color: var(--on-surface) !important;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.export-options-modal .btn-group .btn-check:checked + .btn-outline-primary:hover {
+    background: var(--gradient-primary);
+    color: white !important;
+}
+
+/* Color Picker sleekness */
+.export-options-modal input[type="color"] {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 6px !important;
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+
+.export-options-modal input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 2px;
+}
+
+.export-options-modal input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+/* Live Preview Column Sleekness */
+.export-options-modal .col-md-5 {
+    background: rgba(0, 0, 0, 0.15) !important;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+#export-live-preview-container {
+    background: rgba(15, 23, 42, 0.7) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Premium Buttons inside Modal */
+.export-options-modal .modal-footer .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--on-surface-secondary);
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius-pill);
+    transition: all 0.2s ease;
+}
+
+.export-options-modal .modal-footer .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--on-surface);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.export-options-modal .modal-footer .btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    color: white !important;
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-md), var(--glow-primary);
+    transition: all 0.25s ease;
+}
+
+.export-options-modal .modal-footer .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg), var(--glow-primary), 0 0 15px rgba(124, 58, 237, 0.4);
+}
+
+.export-options-modal .export-option-group {
+    margin-bottom: 1.15rem;
+}
+
+.export-options-modal .export-option-group label.text-sm {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--on-surface) !important;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.export-preview-info {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 8px !important;
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.75rem;
+    color: var(--on-surface-secondary);
+}
+
 /* ============================================
-   Query Modal - Layout Fixes
+   Query Modal - Modern SaaS Redesign
    ============================================ */
 #query-modal .modal-dialog {
     max-width: 780px;
 }
 
+#query-modal .modal-content {
+    background: rgba(15, 23, 42, 0.95) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    border-radius: var(--radius-lg) !important;
+}
+
+#query-modal .modal-header {
+    background: rgba(255, 255, 255, 0.01) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 1.1rem 1.5rem !important;
+}
+
+#query-modal .modal-title {
+    font-family: 'LINE Seed JP', 'LINE Seed Sans', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    color: var(--on-surface) !important;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
 #query-modal .modal-body {
     overflow-y: auto;
     max-height: 75vh;
-    padding: 1.5rem;
+    padding: 1.5rem !important;
+}
+
+#query-modal .modal-footer {
+    background: rgba(255, 255, 255, 0.01) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    padding: 0.85rem 1.5rem !important;
 }
 
 #query-modal .mb-3 {
-    margin-bottom: 1rem !important;
+    margin-bottom: 1.15rem !important;
 }
 
 #query-modal .form-label {
     display: block;
-    margin-bottom: 0.4rem;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    color: var(--on-surface-secondary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 0.4rem !important;
 }
 
 #query-modal .form-control,
 #query-modal .form-select {
-    width: 100%;
+    width: 100% !important;
+    background: rgba(4, 5, 7, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--on-surface) !important;
+    font-size: 0.8rem !important;
+    padding: 0.55rem 0.75rem !important;
+    transition: all 0.2s ease !important;
+}
+
+#query-modal .form-control:focus,
+#query-modal .form-select:focus {
+    background: rgba(4, 5, 7, 0.75) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(88, 76, 244, 0.25) !important;
+    color: #ffffff !important;
+    outline: none !important;
+}
+
+#query-modal textarea#query-text {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+    font-size: 0.78rem !important;
+    line-height: 1.55 !important;
+    background: rgba(4, 5, 7, 0.75) !important;
+    color: #a7f3d0 !important; /* Soft emerald for high-readability query console */
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+#query-modal textarea#query-text:focus {
+    color: #34d399 !important; /* Glow green when typing */
+    border-color: var(--primary) !important;
 }
 
 #query-modal .row {
@@ -1236,19 +1540,38 @@
 }
 
 .technique-select-list {
-    max-height: 220px;
+    max-height: 200px;
     overflow-y: auto;
-    border: 1px solid rgba(55, 65, 81, 0.5);
-    border-radius: var(--radius-sm);
-    background: rgba(21, 27, 43, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: var(--radius-md) !important;
+    background: rgba(4, 5, 7, 0.45) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.technique-select-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.technique-select-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
 }
 
 .technique-tactic-label {
     position: sticky;
     top: 0;
     z-index: 2;
+    background: rgba(15, 23, 42, 0.98) !important;
+    color: var(--primary) !important;
+    padding: 0.4rem 0.75rem !important;
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .export-option-group {

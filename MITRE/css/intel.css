@@ -1,0 +1,659 @@
+/* ============================================
+   Threat Intelligence Hub - 2-Column Split Workspace with Top Bar
+   ============================================ */
+
+.intel-layout-container {
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 0.5rem;
+    height: calc(100vh - 275px);
+    overflow: hidden;
+}
+
+/* --------------------------------------------
+   Top Bar Control Panel
+   -------------------------------------------- */
+.intel-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.intel-top-bar-left,
+.intel-top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.intel-search-wrapper {
+    position: relative;
+    width: 350px;
+    display: flex;
+    align-items: center;
+}
+
+.intel-search-wrapper i {
+    position: absolute;
+    left: 0.75rem;
+    color: var(--on-surface-tertiary);
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+
+.intel-search-wrapper input {
+    width: 100%;
+    padding: 0.4rem 0.6rem 0.4rem 2.2rem;
+    font-size: 0.82rem;
+    font-family: var(--font-sans);
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--on-surface);
+    transition: var(--transition);
+}
+
+.intel-search-wrapper input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
+    background: var(--surface-elevated);
+}
+
+/* Dropdown styling */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.intel-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1050;
+    margin-top: 0.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
+    box-shadow: var(--shadow-lg);
+    padding: 0.5rem;
+}
+
+.intel-dropdown-menu.show {
+    display: block !important;
+}
+
+.intel-dropdown-menu .dropdown-header {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--on-surface-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0;
+}
+
+/* Checkboxes */
+.intel-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--on-surface-secondary);
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.intel-checkbox-row:hover {
+    color: var(--on-surface);
+    background: var(--surface-variant);
+}
+
+.intel-checkbox-row input {
+    cursor: pointer;
+}
+
+/* --------------------------------------------
+   Sector Row Filter Panel
+   -------------------------------------------- */
+.intel-sector-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    flex-wrap: wrap;
+}
+
+.intel-sector-row-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--on-surface-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+}
+
+.intel-sector-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+/* Badges */
+.intel-sector-badge {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: var(--radius-pill);
+    background: var(--surface-variant);
+    border: 1px solid var(--border);
+    color: var(--on-surface-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+
+.intel-sector-badge:hover {
+    border-color: var(--primary);
+    color: var(--on-surface);
+}
+
+.intel-sector-badge.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white !important;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+}
+
+/* --------------------------------------------
+   Column 1: Streamlined Feed List
+   -------------------------------------------- */
+.intel-feed-grid-wrapper {
+    width: 400px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+    border-right: 1px solid var(--border);
+}
+
+.intel-feed-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.intel-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.intel-card:hover {
+    background: var(--surface-variant);
+    border-color: var(--border);
+}
+
+.intel-card.active {
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
+.intel-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.intel-card-source {
+    font-size: 0.6rem;
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.intel-card-date {
+    font-size: 0.62rem;
+    color: var(--on-surface-tertiary);
+}
+
+.intel-card-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--on-surface);
+    line-height: 1.35;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.intel-card.active .intel-card-title {
+    color: var(--primary);
+}
+
+.intel-card-desc {
+    font-size: 0.72rem;
+    color: var(--on-surface-tertiary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
+
+.intel-card-sectors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.2rem;
+}
+
+.intel-card-sector-tag {
+    font-size: 0.58rem;
+    font-weight: 600;
+    padding: 0.1em 0.4em;
+    border-radius: var(--radius-pill);
+    background: var(--surface-variant);
+    border: 1px solid var(--border);
+    color: var(--on-surface-secondary);
+}
+
+/* Custom Tag Motifs */
+.intel-tag-finance { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+.intel-tag-healthcare { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.2); color: var(--accent-red); }
+.intel-tag-government { background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.2); color: var(--accent-cyan); }
+.intel-tag-energy { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); color: var(--accent-tan); }
+.intel-tag-nuclear { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.2); color: #f87171; }
+.intel-tag-tech { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+.intel-tag-aviation { background: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.2); color: #38bdf8; }
+
+/* --------------------------------------------
+   Column 3: Rich Details Workspace
+   -------------------------------------------- */
+.intel-details-panel {
+    flex-grow: 1;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Empty State Details */
+.intel-details-empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 80%;
+    color: var(--on-surface-tertiary);
+}
+
+.intel-details-empty i {
+    font-size: 3.5rem;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    opacity: 0.6;
+    animation: pulse 3s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.04); }
+}
+
+.intel-details-empty h5 {
+    font-weight: 700;
+    color: var(--on-surface);
+    margin-bottom: 0.5rem;
+}
+
+/* Active Advisory Styling */
+.intel-details-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.intel-details-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.7rem;
+    color: var(--on-surface-tertiary);
+    font-family: var(--font-mono);
+}
+
+.intel-details-source-badge {
+    color: var(--primary);
+    background: var(--primary-light);
+    font-weight: 600;
+    padding: 0.1em 0.5em;
+    border-radius: var(--radius-xs);
+    border: 1px solid var(--primary);
+    text-transform: uppercase;
+}
+
+.intel-details-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    line-height: 1.35;
+    margin: 0;
+}
+
+.intel-details-sectors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+}
+
+.intel-details-body {
+    font-size: 0.82rem;
+    color: var(--on-surface-secondary);
+    line-height: 1.65;
+}
+
+.intel-details-link-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* Mapped Pivots Dashboard */
+.intel-details-mappings-section {
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.intel-details-mapping-heading {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--on-surface);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.intel-mapping-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+/* Rich Pivot Cards */
+.intel-pivot-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: var(--transition);
+}
+
+.intel-pivot-card:hover {
+    border-color: var(--primary);
+    background: var(--surface-variant);
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.intel-pivot-card.pivot-actor {
+    border-color: var(--border);
+}
+
+.intel-pivot-card.pivot-actor:hover {
+    border-color: var(--accent-cyan);
+    background: var(--surface-variant);
+}
+
+.intel-pivot-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.35rem;
+}
+
+.intel-pivot-id {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-light);
+    border: 1px solid var(--primary);
+    padding: 0.1em 0.4em;
+    border-radius: var(--radius-xs);
+}
+
+.intel-pivot-card.pivot-actor .intel-pivot-id {
+    color: var(--accent-cyan);
+    background: rgba(6, 182, 212, 0.1);
+    border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.intel-pivot-status {
+    font-size: 0.65rem;
+    font-weight: 600;
+}
+
+.intel-pivot-status.covered { color: var(--accent-green); }
+.intel-pivot-status.gap { color: var(--accent-red); }
+
+.intel-pivot-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--on-surface);
+    line-height: 1.3;
+    margin: 0.25rem 0 0.5rem 0;
+}
+
+.intel-pivot-action-btn {
+    font-size: 0.68rem;
+    padding: 0.2rem 0.5rem;
+    font-weight: 600;
+    width: 100%;
+}
+
+/* Empty Mappings */
+.intel-mappings-empty {
+    font-size: 0.72rem;
+    color: var(--on-surface-tertiary);
+    text-align: center;
+    padding: 1.5rem 0;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+}
+
+/* Empty / Loading feed */
+.intel-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 1rem;
+    text-align: center;
+    color: var(--on-surface-tertiary);
+}
+
+.intel-empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.3;
+}
+
+/* --------------------------------------------
+   Advanced Threat Intel Hub Enhancements
+   -------------------------------------------- */
+
+/* Chronological Date Headers */
+.intel-date-header {
+    font-size: 0.65rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--on-surface-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 0.25rem 0.25rem 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 0.75rem;
+    margin-bottom: 0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.intel-date-header:first-of-type {
+    margin-top: 0;
+}
+
+/* Pulsating Notification Dot */
+.intel-nav-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--accent-red);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    animation: intel-pulse-dot 1.5s infinite;
+}
+
+@keyframes intel-pulse-dot {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
+/* Custom Feed Row Layout */
+.intel-custom-feed-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.6rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    transition: var(--transition);
+    width: 100%;
+}
+
+.intel-custom-feed-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.intel-custom-feed-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+    flex-grow: 1;
+}
+
+.intel-custom-feed-name {
+    font-weight: 500;
+    color: var(--on-surface-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.intel-custom-feed-url {
+    font-size: 0.58rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--on-surface-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.intel-custom-feed-delete-btn {
+    background: none;
+    border: none;
+    color: var(--on-surface-tertiary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0.2rem;
+    border-radius: var(--radius-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+}
+
+.intel-custom-feed-delete-btn:hover {
+    color: var(--accent-red);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Fix for checkbox layout in dropdown */
+#intel-feed-checkboxes, #intel-custom-feed-list {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+}
+
+.intel-checkbox-row {
+    width: 100%;
+}

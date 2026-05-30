@@ -94,7 +94,7 @@ function openQueryEditor(queryData = null, techniqueId = null) {
     document.getElementById('query-modal-title').textContent = queryData ? 'Edit Query' : 'Add Query';
     document.getElementById('query-edit-id').value = queryData?.id || '';
     document.getElementById('query-name').value = queryData?.name || '';
-    document.getElementById('query-language').value = queryData?.language || 'splunk';
+    document.getElementById('query-language').value = queryData?.language || 'kql';
     document.getElementById('query-text').value = queryData?.query || '';
     document.getElementById('query-description').value = queryData?.description || '';
     document.getElementById('query-source').value = queryData?.source || '';

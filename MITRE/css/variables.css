@@ -2,94 +2,99 @@
    CSS Variables - Space-Nebula Dark Theme
    ============================================ */
 :root {
-    /* Premium space-purple/nebula dark palette */
-    --surface: #070814;          /* Rich space obsidian deep indigo background */
-    --surface-elevated: #0f1026; /* Elevated glassmorphic slate-purple card background */
-    --surface-variant: #191b38;  /* Glassmorphic border/highlight/active surface */
-    --surface-subtle: #0b0c1b;   /* Muted deep indigo background for inputs/controls */
-    --on-surface: #f3f4f6;       /* Clean silver white text */
-    --on-surface-secondary: #a2a6cc; /* Periwinkle-slate silver text */
-    --on-surface-tertiary: #6b709c;  /* Muted space-indigo text */
-    --border: rgba(255, 255, 255, 0.08); /* Sophisticated thin white periwinkle border */
-    --border-subtle: rgba(255, 255, 255, 0.04); /* Sub-border */
+    /* Premium Enterprise SaaS Obsidian-Slate Dark Palette */
+    --surface: #08090d;          /* Rich deep obsidian dark slate background */
+    --surface-elevated: #111219; /* Elevated solid card background */
+    --surface-variant: #191b26;  /* Muted active hover background */
+    --surface-subtle: #0c0d15;   /* Very dark backing for input fields */
+    --on-surface: #ffffff;       /* Pure high-contrast white text */
+    --on-surface-secondary: #9ea4b4; /* Complementary periwinkle slate text */
+    --on-surface-tertiary: #64748b;  /* Muted slate text */
+    --border: rgba(255, 255, 255, 0.05); /* Thin elegant border */
+    --border-subtle: rgba(255, 255, 255, 0.02);
     
-    /* Cyber Violet, Magenta, & Nebula Cyan gradients */
-    --primary: #a855f7;          /* Bright cyber-purple/violet primary accent */
-    --primary-hover: #c084fc;    /* Lighter violet on hover */
-    --primary-light: rgba(168, 85, 247, 0.15);
-    --primary-lighter: rgba(168, 85, 247, 0.08);
+    /* Royal Violet Enterprise Accents */
+    --primary: #584cf4;          /* Vibrant royal violet primary */
+    --primary-hover: #4a3ee3;    /* Royal violet hover state */
+    --primary-light: rgba(88, 76, 244, 0.12);
+    --primary-lighter: rgba(88, 76, 244, 0.06);
     
-    --secondary: #06b6d4;        /* Nebula cyan secondary accent */
-    --secondary-hover: #22d3ee;  /* Lighter cyan on hover */
+    --secondary: #06b6d4;        /* Cyan secondary */
+    --secondary-hover: #22d3ee;  /* Lighter cyan */
     --secondary-light: rgba(6, 182, 212, 0.15);
     
-    --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%); /* Magenta-to-Purple Nebula */
-    --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #7c3aed 100%);  /* Cyan-to-Blue-to-Purple */
-    --gradient-card: linear-gradient(145deg, rgba(20, 21, 38, 0.7) 0%, rgba(13, 14, 28, 0.4) 100%); /* Glassmorphic card back */
+    --gradient-primary: linear-gradient(135deg, #584cf4 0%, #8b5cf6 100%);
+    --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+    --gradient-page: linear-gradient(180deg, #08090d 0%, #050608 100%);
     
-    /* Tech Accent colors */
-    --accent-tan: #f59e0b;       /* Amber */
-    --accent-peach: #f97316;     /* Orange */
-    --accent-mint: #14b8a6;      /* Teal */
-    --accent-green: #10b981;     /* Emerald */
-    --accent-amber: #f59e0b;     /* Amber */
-    --accent-red: #ef4444;       /* Red */
-    --accent-purple: #a855f7;    /* Violet */
-    --accent-cyan: #06b6d4;      /* Cyan */
-    --accent-blue: #3b82f6;      /* Blue */
+    /* Technical status indicators */
+    --accent-tan: #d97706;
+    --accent-peach: #ea580c;
+    --accent-mint: #0d9488;
+    --accent-green: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-red: #ef4444;
+    --accent-purple: #8b5cf6;
+    --accent-cyan: #06b6d4;
+    --accent-blue: #3b82f6;
     
-    /* Shadows with neon purple and cyan glows */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-    --shadow-md: 0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 2px 8px -1px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 5px 15px -3px rgba(0, 0, 0, 0.4);
-    --shadow-xl: 0 20px 50px -10px rgba(0, 0, 0, 0.6), 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    /* Shadows with neon violet overlays damped for professional look */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
     
-    --glow-primary: 0 0 20px rgba(168, 85, 247, 0.3);
-    --glow-accent: 0 0 20px rgba(6, 182, 212, 0.3);
-    --glow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    --glow-primary: 0 0 16px rgba(88, 76, 244, 0.15);
+    --glow-accent: 0 0 16px rgba(6, 182, 212, 0.1);
     
-    /* Soft premium rounded corners (12px standard, matching modern templates) */
-    --radius: 12px;
-    --radius-lg: 16px;
-    --radius-md: 10px;
+    /* SaaS Minimalist Rounded Corners */
+    --radius: 8px;
+    --radius-lg: 12px;
+    --radius-md: 8px;
     --radius-sm: 6px;
     --radius-xs: 4px;
     --radius-pill: 9999px;
     
     /* Transitions */
-    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     
-    /* Typography */
+    /* Typography - Geometric LINE Seed优先 */
     --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-    --font-sans: 'Outfit', 'Inter', -apple-system, sans-serif;
+    --font-sans: 'LINE Seed JP', 'LINE Seed Sans', 'LINE Seed', 'Outfit', 'Inter', -apple-system, sans-serif;
 }
 
-/* Light Theme Override - Sophisticated Clean Light Nebula */
+/* Light Theme Override - Clean Enterprise Slate Light */
 [data-theme="light"] {
-    --surface: #f6f8fc;          /* Clean slate-50 light background */
+    --surface: #f8fafc;          /* Off-white slate background */
     --surface-elevated: #ffffff; /* Pure white containers */
-    --surface-variant: #eef2f6;  /* Muted slate-100 highlight surface */
+    --surface-variant: #f1f5f9;  /* Muted slate-100 hover */
     --surface-subtle: #f8fafc;
-    --on-surface: #0a0e20;       /* Dark space-indigo text */
-    --on-surface-secondary: #3f4770; /* Muted periwinkle text */
-    --on-surface-tertiary: #6b7280;  /* Slate gray */
-    --border: rgba(15, 23, 42, 0.08); /* Clean slate border */
-    --border-subtle: rgba(15, 23, 42, 0.04);
+    --on-surface: #0f172a;       /* Dark slate primary text */
+    --on-surface-secondary: #475569; /* Slate gray secondary text */
+    --on-surface-tertiary: #64748b;  /* Muted text */
+    --border: #e2e8f0;           /* Crisp light border */
+    --border-subtle: #f1f5f9;
     
-    --primary: #7c3aed;
-    --primary-hover: #6d28d9;
-    --primary-light: rgba(124, 58, 237, 0.08);
-    --primary-lighter: rgba(124, 58, 237, 0.04);
+    --primary: #584cf4;          /* Modern SaaS violet */
+    --primary-hover: #4a3ee3;
+    --primary-light: rgba(88, 76, 244, 0.08);
+    --primary-lighter: rgba(88, 76, 244, 0.04);
+    --on-primary-active: #ffffff;
     
-    --gradient-primary: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-    --gradient-accent: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-    --gradient-card: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    --secondary: #0891b2;
+    --secondary-hover: #0e7490;
+    --secondary-light: rgba(8, 145, 178, 0.08);
     
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
-    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.04);
-    --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.05);
-    --shadow-xl: 0 20px 40px rgba(15, 23, 42, 0.06);
-    --glow-primary: 0 0 16px rgba(124, 58, 237, 0.15);
-    --glow-accent: 0 0 16px rgba(6, 182, 212, 0.15);
+    --gradient-primary: linear-gradient(135deg, #584cf4 0%, #7c3aed 100%);
+    --gradient-accent: linear-gradient(135deg, #0891b2 0%, #0284c7 100%);
+    --gradient-page: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+    
+    --glow-primary: 0 0 16px rgba(88, 76, 244, 0.05);
+    --glow-accent: 0 0 16px rgba(8, 145, 178, 0.05);
 }

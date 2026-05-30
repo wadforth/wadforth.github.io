@@ -170,36 +170,65 @@ function renderMitigationsView() {
         const desc = m.description || '';
         const truncatedDesc = truncateDescription(desc, 140);
         
+        // Pre-calculate real-time query coverage maturity grade for the mitigation
+        const coveredTechs = techs.filter(t => {
+            const tid = t.external_references?.[0]?.external_id || '';
+            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+            return ann?.queries && ann.queries.length > 0;
+        }).length;
+        const maturityPct = techs.length > 0 ? Math.round((coveredTechs / techs.length) * 100) : 0;
+        const progressColor = maturityPct >= 70 ? '#10b981' : maturityPct >= 40 ? '#f59e0b' : '#584cf4';
+        
+        const maturityBarHtml = techs.length > 0 ? `
+            <div class="mitigation-maturity-bar" style="margin-top: 0.65rem; display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.15); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.02);">
+                <div style="font-size: 0.62rem; color: var(--on-surface-tertiary); font-weight: 700; min-width: 90px; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Maturity Grade:</div>
+                <div style="flex: 1; height: 5px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; width: ${maturityPct}%; background: ${progressColor}; border-radius: 3px; transition: width 0.3s ease;"></div>
+                </div>
+                <div style="font-size: 0.65rem; font-weight: 700; color: ${progressColor}; min-width: 30px; text-align: right; font-family: 'JetBrains Mono', monospace;">${maturityPct}%</div>
+            </div>
+        ` : '';
+        
         if (mitigationsViewMode === 'list') {
+            const listMaturityBar = techs.length > 0 ? `
+                <div style="display: flex; align-items: center; gap: 0.35rem; width: 110px; flex-shrink: 0; background: rgba(0,0,0,0.15); padding: 3px 6px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.02);">
+                    <div style="flex: 1; height: 4px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden;">
+                        <div style="height: 100%; width: ${maturityPct}%; background: ${progressColor}; border-radius: 2px;"></div>
+                    </div>
+                    <span style="font-size: 0.62rem; font-weight: 700; color: ${progressColor}; font-family: 'JetBrains Mono', monospace;">${maturityPct}%</span>
+                </div>
+            ` : `<div style="width: 110px; flex-shrink: 0; font-size: 0.62rem; color: var(--on-surface-tertiary); font-style: italic;">No techniques</div>`;
+
             return `
-                <div class="mitigation-card mitigation-card-list" data-mit-id="${m.id}">
-                    <div class="mitigation-list-row">
-                        <button class="btn btn-sm mit-status-toggle ${status}" data-mit="${m.id}" title="Toggle status">
+                <div class="mitigation-card mitigation-card-list" data-mit-id="${m.id}" data-status="${status}">
+                    <div class="mitigation-list-row" style="display: grid !important; grid-template-columns: 28px minmax(200px, 2.5fr) minmax(130px, 1.2fr) 110px minmax(150px, 1.5fr) 20px !important; align-items: center; gap: 1rem !important; width: 100%;">
+                        <button class="btn btn-sm mit-status-toggle ${status}" data-mit="${m.id}" title="Toggle status" style="flex-shrink: 0;">
                             <i class="bi ${status === 'implemented' ? 'bi-check-circle-fill' : status === 'planned' ? 'bi-clock-fill' : 'bi-circle'}"></i>
                         </button>
-                        <div class="mitigation-list-info">
-                            <span class="mitigation-list-name">${escapeHtml(m.name)}</span>
-                            <span class="mitigation-list-id">${mitId}</span>
+                        <div class="mitigation-list-info" style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
+                            <span class="mitigation-list-name" style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.name)}</span>
+                            <span class="mitigation-list-id" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px; flex-shrink: 0;">${mitId}</span>
                         </div>
-                        <span class="mitigation-tech-count">${techs.length} technique${techs.length === 1 ? '' : 's'}</span>
-                        ${techs.length === 0 ? '<span class="mitigation-no-techs"><i class="bi bi-exclamation-triangle"></i> No mappings</span>' : ''}
-                        <div class="mitigation-list-techs">
+                        <span class="mitigation-tech-count" style="font-size: 0.72rem; font-weight: 600; white-space: nowrap;">${techs.length} technique${techs.length === 1 ? '' : 's'}</span>
+                        ${listMaturityBar}
+                        <div class="mitigation-list-techs" style="display: flex; align-items: center; gap: 0.25rem; overflow: hidden;">
+                            ${techs.length === 0 ? '<span class="mitigation-no-techs" style="font-size: 0.68rem; color: var(--on-surface-tertiary); display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-exclamation-triangle"></i> No mappings</span>' : ''}
                             ${techs.slice(0, 3).map(t => {
                                 const tid = t.external_references?.[0]?.external_id || '';
-                                return `<span class="mitigation-tech-tag">${tid}</span>`;
+                                return `<span class="mitigation-tech-tag clickable" data-tech-id="${tid}" style="font-size: 0.65rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: var(--on-surface-secondary); font-family: 'JetBrains Mono', monospace;">${tid}</span>`;
                             }).join('')}
-                            ${techs.length > 3 ? `<span class="mitigation-tech-more">+${techs.length - 3}</span>` : ''}
+                            ${techs.length > 3 ? `<span class="mitigation-tech-more" style="font-size: 0.65rem; color: var(--on-surface-tertiary); font-weight: 600;">+${techs.length - 3}</span>` : ''}
                         </div>
-                        <button class="btn btn-sm btn-ghost mit-expand-btn" data-mit="${m.id}" title="Expand details">
+                        <button class="btn btn-sm btn-ghost mit-expand-btn" data-mit="${m.id}" title="Expand details" style="justify-self: end;">
                             <i class="bi bi-chevron-down"></i>
                         </button>
                     </div>
                     <div class="mitigation-list-details hidden" data-mit-details="${m.id}">
-                        <div class="mitigation-list-desc">${parseDescription(desc)}</div>
-                        <div class="mitigation-list-all-techs">
+                        <div class="mitigation-list-desc" style="padding: 1rem 0 0.5rem; border-top: 1px solid rgba(255,255,255,0.04); font-size: 0.8rem; line-height: 1.6; color: var(--on-surface-secondary);">${parseDescription(desc)}</div>
+                        <div class="mitigation-list-all-techs" style="display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem;">
                             ${techs.map(t => {
                                 const tid = t.external_references?.[0]?.external_id || '';
-                                return `<span class="mitigation-tech-tag clickable" data-tech-id="${tid}">${tid} ${escapeHtml(t.name)}</span>`;
+                                return `<span class="mitigation-tech-tag clickable" data-tech-id="${tid}" style="font-size: 0.68rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 3px 8px; border-radius: var(--radius-sm); font-family: 'JetBrains Mono', monospace; color: var(--primary); font-weight: 600;">${tid} <span style="font-family: var(--font-sans); color: var(--on-surface-secondary); font-weight: 500; margin-left: 2px;">${escapeHtml(t.name)}</span></span>`;
                             }).join('')}
                         </div>
                     </div>
@@ -208,11 +237,11 @@ function renderMitigationsView() {
         }
         
         return `
-            <div class="mitigation-card" data-mit-id="${m.id}">
+            <div class="mitigation-card" data-mit-id="${m.id}" data-status="${status}">
                 <div class="mitigation-card-header">
                     <div class="mitigation-card-header-left">
-                        <span class="mitigation-id-badge">${mitId}</span>
-                        <h6 class="mitigation-card-title">${escapeHtml(m.name)}</h6>
+                        <span class="mitigation-id-badge" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${mitId}</span>
+                        <h6 class="mitigation-card-title" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</h6>
                     </div>
                     <button class="btn btn-sm mit-status-toggle ${status}" data-mit="${m.id}" title="Click to cycle: None → Planned → Implemented">
                         <i class="bi ${status === 'implemented' ? 'bi-check-circle-fill' : status === 'planned' ? 'bi-clock-fill' : 'bi-circle'}"></i>
@@ -220,31 +249,34 @@ function renderMitigationsView() {
                     </button>
                 </div>
                 <p class="mitigation-card-desc">${escapeHtml(truncatedDesc)}</p>
-                <div class="mitigation-card-techs">
-                    <span class="mitigation-tech-count-badge">${techs.length} techniques</span>
-                    ${techs.length === 0 ? '<span class="mitigation-no-techs"><i class="bi bi-exclamation-triangle"></i> No technique mappings</span>' : ''}
-                    <div class="mitigation-tech-tags">
+                <div class="mitigation-card-techs" style="margin-top: 0.75rem;">
+                    <span class="mitigation-tech-count-badge" style="font-size: 0.7rem; font-weight: 700; color: var(--on-surface-secondary); text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">${techs.length} Techniques Covered</span>
+                    ${techs.length === 0 ? '<div class="mitigation-no-techs" style="font-size: 0.68rem; color: var(--on-surface-tertiary); margin-top: 0.25rem;"><i class="bi bi-exclamation-triangle"></i> No technique mappings</div>' : ''}
+                    <div class="mitigation-tech-tags" style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem;">
                         ${techs.slice(0, 5).map(t => {
                             const tid = t.external_references?.[0]?.external_id || '';
-                            return `<span class="mitigation-tech-tag clickable" data-tech-id="${tid}">${tid}</span>`;
+                            return `<span class="mitigation-tech-tag clickable" data-tech-id="${tid}" style="font-size: 0.65rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: var(--on-surface-secondary); font-family: 'JetBrains Mono', monospace;">${tid}</span>`;
                         }).join('')}
-                        ${techs.length > 5 ? `<span class="mitigation-tech-more">+${techs.length - 5} more</span>` : ''}
+                        ${techs.length > 5 ? `<span class="mitigation-tech-more" style="font-size: 0.65rem; color: var(--on-surface-tertiary); font-weight: 600; line-height: 1.8;">+${techs.length - 5} more</span>` : ''}
                     </div>
                 </div>
-                <button class="btn btn-sm btn-ghost mit-expand-btn" data-mit="${m.id}">
-                    <i class="bi bi-chevron-down"></i> <span>View details</span>
-                </button>
-                <div class="mitigation-card-details hidden" data-mit-details="${m.id}">
-                    <div class="mitigation-card-full-desc">${parseDescription(desc)}</div>
+                ${maturityBarHtml}
+                <div style="border-top: 1px solid rgba(255,255,255,0.04); margin-top: 0.75rem; padding-top: 0.5rem; display: flex; justify-content: flex-end;">
+                    <button class="btn btn-sm btn-ghost mit-expand-btn" data-mit="${m.id}" style="color: var(--primary); font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 4px;">
+                        <i class="bi bi-chevron-down"></i> <span>View details</span>
+                    </button>
+                </div>
+                <div class="mitigation-card-details hidden" data-mit-details="${m.id}" style="margin-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 0.75rem;">
+                    <div class="mitigation-card-full-desc" style="font-size: 0.8rem; line-height: 1.6; color: var(--on-surface-secondary); margin-bottom: 0.75rem;">${parseDescription(desc)}</div>
                     ${techs.length ? `
                         <div class="mitigation-card-all-techs">
-                            <h6 class="mitigation-detail-section-title"><i class="bi bi-grid"></i> Mitigated Techniques</h6>
-                            <div class="mitigation-tech-grid">
+                            <h6 class="mitigation-detail-section-title" style="font-size: 0.7rem; font-weight: 700; color: var(--on-surface-secondary); text-transform: uppercase; font-family: 'JetBrains Mono', monospace; margin-bottom: 0.5rem;"><i class="bi bi-grid"></i> Mitigated Techniques</h6>
+                            <div class="mitigation-tech-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.35rem;">
                                 ${techs.map(t => {
                                     const tid = t.external_references?.[0]?.external_id || '';
-                                    return `<div class="mitigation-tech-item" data-tech-id="${tid}">
-                                        <span class="mitigation-tech-item-id">${tid}</span>
-                                        <span class="mitigation-tech-item-name">${escapeHtml(t.name)}</span>
+                                    return `<div class="mitigation-tech-item clickable" data-tech-id="${tid}" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: var(--radius-sm); padding: 0.4rem; cursor: pointer; transition: var(--transition);">
+                                        <span class="mitigation-tech-item-id" style="display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; color: var(--primary);">${tid}</span>
+                                        <span class="mitigation-tech-item-name" style="display: block; font-size: 0.62rem; color: var(--on-surface-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px;">${escapeHtml(t.name)}</span>
                                     </div>`;
                                 }).join('')}
                             </div>
@@ -314,15 +346,22 @@ function bindMitigationCardActions() {
         });
     });
     
-    document.querySelectorAll('.mitigation-card .mit-expand-btn').forEach(btn => {
+    document.querySelectorAll('.mitigation-card:not(.mitigation-card-list) .mit-expand-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const details = btn.nextElementSibling;
-            if (details && details.classList.contains('mitigation-card-details')) {
+            const card = btn.closest('.mitigation-card');
+            const details = card ? card.querySelector('.mitigation-card-details') : null;
+            if (details) {
                 details.classList.toggle('hidden');
                 const icon = btn.querySelector('i');
-                icon.classList.toggle('bi-chevron-down');
-                icon.classList.toggle('bi-chevron-up');
+                if (icon) {
+                    icon.classList.toggle('bi-chevron-down');
+                    icon.classList.toggle('bi-chevron-up');
+                }
+                const textSpan = btn.querySelector('span');
+                if (textSpan) {
+                    textSpan.textContent = details.classList.contains('hidden') ? 'View details' : 'Hide details';
+                }
             }
         });
     });
@@ -331,12 +370,14 @@ function bindMitigationCardActions() {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const card = btn.closest('.mitigation-card-list');
-            const details = card.querySelector('.mitigation-list-details');
+            const details = card ? card.querySelector('.mitigation-list-details') : null;
             if (details) {
                 details.classList.toggle('hidden');
                 const icon = btn.querySelector('i');
-                icon.classList.toggle('bi-chevron-down');
-                icon.classList.toggle('bi-chevron-up');
+                if (icon) {
+                    icon.classList.toggle('bi-chevron-down');
+                    icon.classList.toggle('bi-chevron-up');
+                }
             }
         });
     });

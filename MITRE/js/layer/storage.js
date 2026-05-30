@@ -65,17 +65,31 @@ function renderRecentLayers() {
     }
 
     section.classList.remove('hidden');
-    list.innerHTML = recent.map(l => `
-        <div class="recent-layer-item" data-id="${l.id}">
-            <div class="recent-layer-info">
-                <h6>${l.name}</h6>
-                <small>${l.domain} • ${l.attackVersion} • ${new Date(l.timestamp).toLocaleDateString()}</small>
+    list.className = 'recent-layers';
+    list.innerHTML = recent.map(l => {
+        const domainLabel = l.domain ? (l.domain.replace('-attack', '').charAt(0).toUpperCase() + l.domain.replace('-attack', '').slice(1)) : 'Enterprise';
+        return `
+            <div class="recent-layer-card" data-id="${l.id}">
+                <div class="recent-layer-icon">
+                    <i class="bi bi-layers"></i>
+                </div>
+                <div class="recent-layer-info">
+                    <div class="recent-layer-name">${escapeHtml(l.name)}</div>
+                    <div class="recent-layer-meta">
+                        <span class="recent-layer-badge">${domainLabel}</span>
+                        <span>v${l.attackVersion}</span>
+                        <span>&bull;</span>
+                        <span>${new Date(l.timestamp).toLocaleDateString()}</span>
+                    </div>
+                </div>
+                <button class="recent-layer-delete" data-id="${l.id}" title="Delete Saved Layer">
+                    <i class="bi bi-trash"></i>
+                </button>
             </div>
-            <span class="recent-layer-delete" data-id="${l.id}"><i class="bi bi-trash"></i></span>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
-    list.querySelectorAll('.recent-layer-item').forEach(item => {
+    list.querySelectorAll('.recent-layer-card').forEach(item => {
         item.addEventListener('click', (e) => {
             if (e.target.closest('.recent-layer-delete')) return;
             const layer = recent.find(l => l.id === item.dataset.id);

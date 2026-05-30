@@ -1,3 +1,5 @@
+
+
 function showGroupModal(groupId) {
     const group = state.groups.find(g => g.id === groupId);
     if (!group) return;
@@ -10,6 +12,8 @@ function showGroupModal(groupId) {
     }
     
     setTimeout(() => {
+        const theme = getAttributionTheme(group);
+        const avatarSvg = getProceduralAvatarSVG(group.id, group.name);
         const groupId_display = group.external_references?.[0]?.external_id || 'N/A';
         const domains = group.x_mitre_domains || [];
         const aliases = group.x_mitre_aliases || group.aliases || [];
@@ -83,6 +87,64 @@ function showGroupModal(groupId) {
             </div>
         `;
         
+        // Search the global live feeds for mentions of this threat group
+        const matchedArticles = [];
+        if (window.intelArticles && window.intelArticles.length > 0) {
+            const groupNameLower = group.name.toLowerCase();
+            const aliasNames = (group.x_mitre_aliases || group.aliases || []).map(a => a.toLowerCase());
+            
+            window.intelArticles.forEach(art => {
+                const searchTarget = (art.title + ' ' + art.description).toLowerCase();
+                const isMatch = searchTarget.includes(groupNameLower) || aliasNames.some(alias => searchTarget.includes(alias));
+                if (isMatch) {
+                    matchedArticles.push(art);
+                }
+            });
+        }
+        
+        let liveFeedHtml = '';
+        if (matchedArticles.length === 0) {
+            liveFeedHtml = `
+                <div class="group-live-feed-container">
+                    <div class="group-live-feed-header" style="color: var(--on-surface-secondary);">
+                        <i class="bi bi-shield-radar text-primary animate-pulse" style="animation: pulse 2s infinite;"></i> Live Intelligence Trackings
+                    </div>
+                    <div class="text-xs text-on-surface-tertiary" style="background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.05); border-radius: 6px; padding: 15px; text-align: center; font-size: 0.72rem;">
+                        No active in-the-wild campaigns or news mentions currently recorded in Aggregated Feeds for this actor.
+                    </div>
+                </div>
+            `;
+        } else {
+            liveFeedHtml = `
+                <div class="group-live-feed-container">
+                    <div class="group-live-feed-header" style="color: ${theme.accentHex};">
+                        <i class="bi bi-shield-radar text-primary animate-pulse" style="color: ${theme.accentHex} !important; animation: pulse 2s infinite;"></i> Active Campaign Alerts (${matchedArticles.length})
+                    </div>
+                    <div style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+                        ${matchedArticles.map(art => {
+                            const dateStr = art.pubDate ? new Date(art.pubDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                            const sourcesStr = art.sources ? art.sources.map(s => s.name).join(', ') : 'Intel Source';
+                            return `
+                                <div class="group-live-card">
+                                    <div class="d-flex align-items-center justify-content-between mb-1" style="font-size: 10px;">
+                                        <span style="color: ${theme.accentHex}; font-weight: 700;">${escapeHtml(sourcesStr)}</span>
+                                        <span class="text-on-surface-tertiary"><i class="bi bi-calendar3"></i> ${dateStr}</span>
+                                    </div>
+                                    <h6 style="font-size: 12px; font-weight: 700; margin: 4px 0; color: var(--on-surface-primary);">${escapeHtml(art.title)}</h6>
+                                    <p style="font-size: 11px; color: var(--on-surface-secondary); line-height: 1.4; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(art.description)}</p>
+                                    <div class="d-flex align-items-center mt-2" style="border-top: 1px solid rgba(255,255,255,0.03); padding-top: 4px;">
+                                        <a href="${art.link}" target="_blank" class="btn btn-xs btn-outline-primary" style="font-size: 8.5px; height: 18px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 3px;">
+                                            <i class="bi bi-box-arrow-up-right"></i> Read Report
+                                        </a>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        
         let overviewHtml = `
             <div class="group-tab-pane active" id="group-tab-overview">
                 <div class="group-detail-desc">${parseDescription(group.description || 'No description available.')}</div>
@@ -94,17 +156,17 @@ function showGroupModal(groupId) {
                     ${lastSeen ? `<div class="group-meta-item"><span class="group-meta-label">Last Observed</span><span class="group-meta-value">${lastSeen}</span></div>` : ''}
                     ${sophistication ? `<div class="group-meta-item"><span class="group-meta-label">Sophistication</span><span class="group-meta-value">${escapeHtml(sophistication)}</span></div>` : ''}
                     ${resourceLevel ? `<div class="group-meta-item"><span class="group-meta-label">Resource Level</span><span class="group-meta-value">${escapeHtml(resourceLevel)}</span></div>` : ''}
-                    ${techCount > 0 ? `<div class="group-meta-item"><span class="group-meta-label">Query Coverage</span><span class="group-meta-value ${coveragePct > 0 ? 'group-coverage-good' : ''}">${coveragePct}% (${coveredCount}/${techCount})</span></div>` : ''}
+                    ${techCount > 0 ? `<div class="group-meta-item"><span class="group-meta-label">Query Coverage</span><span class="group-meta-value" style="color: ${theme.accentHex}; font-weight: bold; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.2);">${coveragePct}% (${coveredCount}/${techCount})</span></div>` : ''}
                 </div>
                 
                 ${techCount > 0 ? `
-                    <div class="group-coverage-bar-container">
+                    <div class="group-coverage-bar-container" style="border-color: rgba(${theme.accentRGB}, 0.15);">
                         <div class="group-coverage-bar-label">Technique Query Coverage</div>
                         <div class="group-coverage-bar-track">
-                            <div class="group-coverage-bar-fill" style="width: ${coveragePct}%"></div>
+                            <div class="group-coverage-bar-fill" style="width: ${coveragePct}%; background: ${theme.accentHex}; box-shadow: 0 0 10px rgba(${theme.accentRGB}, 0.35);"></div>
                         </div>
                         <div class="group-coverage-bar-stats">
-                            <span class="group-coverage-stat covered"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
+                            <span class="group-coverage-stat covered" style="color: ${theme.accentHex};"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
                             <span class="group-coverage-stat uncovered"><i class="bi bi-x-circle"></i> ${techCount - coveredCount} uncovered</span>
                             <button class="btn btn-sm btn-outline-primary ms-auto group-view-matrix-btn" data-group-id="${groupId_display}">
                                 <i class="bi bi-grid-3x2"></i> View in Matrix
@@ -139,7 +201,7 @@ function showGroupModal(groupId) {
                 ${motivations.length ? `
                     <div class="group-section">
                         <h6 class="group-section-title"><i class="bi bi-heart"></i> Motivations</h6>
-                        <div class="group-tags">${motivations.map(m => `<span class="group-tag group-tag-motivation">${escapeHtml(m)}</span>`).join('')}</div>
+                        <div class="group-tags">${motivations.map(m => `<span class="group-tag group-tag-motivation" style="background: rgba(${theme.accentRGB}, 0.08); border-color: rgba(${theme.accentRGB}, 0.2); color: ${theme.accentHex};">${escapeHtml(m)}</span>`).join('')}</div>
                     </div>
                 ` : ''}
                 
@@ -160,7 +222,7 @@ function showGroupModal(groupId) {
                                 const hasQuery = ann?.queries && ann.queries.length > 0;
                                 return `<div class="group-tech-chip entity-chip-clickable ${hasQuery ? 'group-tech-chip-covered' : ''}" data-tech-id="${techId}">
                                     ${hasQuery ? '<i class="bi bi-check-circle-fill group-tech-query-indicator"></i>' : ''}
-                                    <span class="group-tech-chip-id">${techId}</span>
+                                    <span class="group-tech-chip-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex};">${techId}</span>
                                     <span class="group-tech-chip-name">${escapeHtml(tech.name)}</span>
                                 </div>`;
                             }).join('')}
@@ -168,6 +230,8 @@ function showGroupModal(groupId) {
                         </div>
                     </div>
                 ` : ''}
+                
+                ${liveFeedHtml}
             </div>
         `;
         
@@ -360,15 +424,23 @@ function showGroupModal(groupId) {
         const modalHtml = `
             <div class="modal fade" id="group-detail-modal" tabindex="-1">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                    <div class="modal-content technique-modal">
-                        <div class="tech-modal-header">
+                    <div class="modal-content technique-modal" style="border: 1px solid rgba(${theme.accentRGB}, 0.2); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(${theme.accentRGB}, 0.1);">
+                        <div class="tech-modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
                             <button type="button" class="btn-close tech-modal-close" data-bs-dismiss="modal"></button>
-                            <div class="tech-modal-header-content">
-                                <div class="tech-modal-badges">
-                                    <span class="tech-badge-id">${groupId_display}</span>
-                                    <span class="tech-badge-type">Threat Group</span>
+                            <div class="group-detail-header-wrap" style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="detail-modal-avatar" style="width: 58px; height: 58px; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
+                                    ${avatarSvg}
                                 </div>
-                                <h3 class="tech-modal-title">${escapeHtml(group.name)}</h3>
+                                <div class="tech-modal-header-content" style="flex: 1; min-width: 0;">
+                                    <div class="tech-modal-badges" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                        <span class="tech-badge-id" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-weight: bold; border-radius: 4px; padding: 2px 6px; font-size: 0.72rem;">${groupId_display}</span>
+                                        <span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
+                                    </div>
+                                    <h3 class="tech-modal-title" style="margin: 0; font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; gap: 6px; color: var(--on-surface-primary);">
+                                        ${escapeHtml(group.name)} 
+                                        <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="font-size: 1.15rem; margin: 0; color: ${theme.accentHex}; text-shadow: 0 0 10px rgba(${theme.accentRGB}, 0.85); vertical-align: middle;"></i>
+                                    </h3>
+                                </div>
                             </div>
                         </div>
                         <div class="tech-modal-body">

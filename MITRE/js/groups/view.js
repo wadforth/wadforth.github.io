@@ -2,6 +2,8 @@ let groupsSortBy = 'name';
 let groupsSortDir = 'asc';
 let groupsViewMode = 'grid';
 
+
+
 function getGroupTechniqueCount(groupId) {
     return state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === groupId).length;
 }
@@ -147,30 +149,76 @@ function renderGroupsView() {
         const domains = getGroupDomains(g);
         const aliases = (g.x_mitre_aliases || g.aliases || []).slice(0, 2);
         
+        const theme = getAttributionTheme(g);
+        const themeClass = `group-theme-${theme.id}`;
+        const avatarSvg = getProceduralAvatarSVG(g.id, g.name);
+        
+        // Retrieve techniques related to this group
+        const groupTechniques = state.relationships
+            .filter(r => r.relationship_type === 'uses' && r.source_ref === g.id)
+            .map(r => state.techniques.find(t => t.id === r.target_ref))
+            .filter(Boolean);
+            
+        // Build 12-block tactical sparkline indicators representing covered/gap status
+        const sparklineBlocks = groupTechniques.slice(0, 12).map(tech => {
+            const tid = tech.external_references?.[0]?.external_id || '';
+            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+            const hasQuery = ann?.queries && ann.queries.length > 0;
+            return `<div class="group-spark-block ${hasQuery ? 'covered' : 'uncovered'}" title="${tid}: ${escapeHtml(tech.name)} (${hasQuery ? 'Covered' : 'Gap Blindspot'})"></div>`;
+        }).join('');
+        
+        const fillerCount = Math.max(0, 12 - groupTechniques.length);
+        const sparklineFiller = Array.from({ length: fillerCount }).map(() => {
+            return `<div class="group-spark-block" style="background: rgba(255,255,255,0.02); cursor: default;" title="No Technique link"></div>`;
+        }).join('');
+        
+        const sparklineHtml = `<div class="group-sparkline" title="Defensive Sparkline Preview (Covered vs Gaps)">
+            ${sparklineBlocks}
+            ${sparklineFiller}
+        </div>`;
+        
         if (groupsViewMode === 'list') {
             return `
-                <div class="group-card group-card-list" data-group-id="${g.id}" style="cursor: pointer;">
+                <div class="group-card group-card-list group-card-glass ${themeClass}" data-group-id="${g.id}" style="cursor: pointer;">
                     <div class="group-list-row">
-                        <div class="group-list-info">
-                            <span class="group-list-name">${escapeHtml(g.name)}</span>
-                            <span class="group-list-id">${groupId}</span>
+                        <div class="group-avatar-container" style="width: 26px; height: 26px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
+                            ${avatarSvg}
                         </div>
-                        <span class="group-tech-count">${techCount} technique${techCount === 1 ? '' : 's'}</span>
-                        ${domains.length ? `<span class="group-domain-badge">${escapeHtml(domains[0])}</span>` : ''}
-                        <i class="bi bi-chevron-right group-list-arrow"></i>
+                        <div class="group-list-info">
+                            <span class="group-list-name" style="font-weight: 700;">${escapeHtml(g.name)} <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="font-size: 0.7rem; margin-left: 2px; color: ${theme.accentHex}; text-shadow: 0 0 6px rgba(${theme.accentRGB}, 0.8);"></i></span>
+                            <span class="group-list-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; border-radius: 4px; font-weight: bold; font-size: 0.65rem; padding: 2px 6px;">${groupId}</span>
+                            <span class="${theme.badgeClass}" style="transform: scale(0.9); transform-origin: left center; margin-left: 4px;"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 170px;">
+                            <span class="group-tech-count" style="font-weight: 600; font-size: 0.72rem; min-width: 65px; margin: 0; white-space: nowrap;">${techCount} tech${techCount === 1 ? '' : 's'}</span>
+                            ${sparklineHtml}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.25rem; overflow: hidden;">
+                            ${domains.length ? `<span class="group-domain-badge" style="margin: 0; font-size: 0.68rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="bi bi-globe mr-1"></i>${escapeHtml(domains[0])}</span>` : `<span class="text-on-surface-tertiary text-xs">—</span>`}
+                        </div>
+                        <i class="bi bi-chevron-right group-list-arrow" style="color: ${theme.accentHex}; font-size: 0.85rem; justify-self: end;"></i>
                     </div>
                 </div>
             `;
         }
         
         return `
-            <div class="group-card" data-group-id="${g.id}" style="cursor: pointer;">
-                <div class="group-card-header">
-                    <div class="group-card-header-left">
-                        <span class="group-id-badge">${groupId}</span>
-                        <h6 class="group-card-title">${escapeHtml(g.name)}</h6>
+            <div class="group-card group-card-glass ${themeClass}" data-group-id="${g.id}" style="cursor: pointer;">
+                <div class="group-card-avatar-row" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem;">
+                    <div class="group-avatar-container" style="width: 42px; height: 42px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
+                        ${avatarSvg}
                     </div>
-                    <span class="group-tech-badge">${techCount}</span>
+                    <div class="group-card-header-left" style="display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span class="group-id-badge" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${groupId}</span>
+                            <span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
+                        </div>
+                        <h6 class="group-card-title" style="margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--on-surface); display: flex; align-items: center; gap: 4px;">
+                            ${escapeHtml(g.name)}
+                            <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="color: ${theme.accentHex}; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.8); margin: 0; font-size: 0.8rem; vertical-align: middle;"></i>
+                        </h6>
+                    </div>
+                    <span class="group-tech-badge" style="background: rgba(${theme.accentRGB}, 0.08); color: ${theme.accentHex}; border: 1px solid rgba(${theme.accentRGB}, 0.15); border-radius: 6px; font-weight: 800; font-size: 0.75rem; padding: 3px 7px;">${techCount}</span>
                 </div>
                 ${aliases.length ? `
                     <div class="group-aliases">
@@ -178,9 +226,10 @@ function renderGroupsView() {
                     </div>
                 ` : ''}
                 <p class="group-card-desc">${escapeHtml(truncatedDesc)}</p>
-                <div class="group-card-footer">
+                ${sparklineHtml}
+                <div class="group-card-footer" style="border-top: 1px solid rgba(255,255,255,0.04); padding-top: 0.6rem;">
                     ${domains.length ? `<span class="group-domain-badge"><i class="bi bi-globe"></i> ${escapeHtml(domains.join(', '))}</span>` : ''}
-                    <span class="group-card-link"><i class="bi bi-arrow-right"></i> View details</span>
+                    <span class="group-card-link" style="color: ${theme.accentHex};"><i class="bi bi-arrow-right"></i> View details</span>
                 </div>
             </div>
         `;

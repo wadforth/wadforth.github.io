@@ -111,45 +111,33 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 2.5rem;
+    gap: 0.75rem;
+    margin-bottom: 3.5rem;
     animation: fadeInDown 0.6s ease-out;
 }
 
 .landing-brand-row {
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 1rem;
 }
 
 .landing-title {
-    font-size: 3rem;
-    font-weight: 800;
+    font-size: 2.25rem;
+    font-weight: 700;
     margin: 0;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: -0.04em;
-    line-height: 1.1;
-    animation: titleGlow 3s ease-in-out infinite alternate;
-}
-
-@keyframes titleGlow {
-    from {
-        filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.3));
-    }
-    to {
-        filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.5));
-    }
+    color: var(--on-surface);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
 }
 
 .landing-subtitle {
-    font-size: 1.15rem;
+    font-size: 1rem;
     color: var(--on-surface-secondary);
-    margin: 0;
+    margin: 0.25rem 0 0;
     font-weight: 400;
-    max-width: 500px;
+    max-width: 550px;
+    line-height: 1.5;
 }
 
 /* ============================================
@@ -165,15 +153,14 @@
 }
 
 .landing-stat-card {
-    background: rgba(31, 41, 55, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(55, 65, 81, 0.5);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 1.25rem;
     transition: var(--transition);
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
 }
 
 .landing-stat-card::before {
@@ -182,16 +169,15 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: var(--gradient-primary);
+    height: 2px;
+    background: var(--primary);
     opacity: 0;
     transition: var(--transition);
 }
 
 .landing-stat-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(139, 92, 246, 0.4);
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+    border-color: var(--primary);
+    box-shadow: 0 0 16px var(--primary-light), var(--shadow-md);
 }
 
 .landing-stat-card:hover::before {
@@ -204,7 +190,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(139, 92, 246, 0.15);
+    background: var(--primary-light);
     border-radius: var(--radius-sm);
     margin: 0 auto 0.75rem;
     font-size: 1.1rem;
@@ -214,7 +200,7 @@
 .landing-stat-value {
     font-size: 1.75rem;
     font-weight: 700;
-    background: var(--gradient-primary);
+    background: linear-gradient(135deg, var(--on-surface) 0%, var(--primary) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -243,19 +229,18 @@
 }
 
 .progress-ring-card {
-    background: rgba(31, 41, 55, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(55, 65, 81, 0.5);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 1.25rem;
     text-align: center;
     transition: var(--transition);
+    box-shadow: var(--shadow-sm);
 }
 
 .progress-ring-card:hover {
-    border-color: rgba(139, 92, 246, 0.4);
-    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: 0 0 16px var(--primary-light), var(--shadow-md);
 }
 
 .progress-ring-container {
@@ -273,13 +258,13 @@
 
 .progress-ring-bg {
     fill: none;
-    stroke: rgba(55, 65, 81, 0.5);
+    stroke: var(--surface-variant);
     stroke-width: 6;
 }
 
 .progress-ring-fill {
     fill: none;
-    stroke: url(#progressGradient);
+    stroke: var(--primary);
     stroke-width: 6;
     stroke-linecap: round;
     transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
@@ -316,23 +301,23 @@
 }
 
 .action-card {
-    background: rgba(31, 41, 55, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 2rem 1.5rem;
+    padding: 1.75rem;
     cursor: pointer;
     transition: var(--transition-slow);
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    text-align: left;
 }
 
 .action-card::before {
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--gradient-primary);
+    background: var(--primary-light);
     opacity: 0;
     transition: var(--transition-slow);
 }
@@ -344,20 +329,19 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
     opacity: 0;
     transition: var(--transition-slow);
     transform: scale(0.5);
 }
 
 .action-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(139, 92, 246, 0.5);
-    box-shadow: var(--glow-primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 20px var(--primary-light), var(--shadow-lg);
 }
 
 .action-card:hover::before {
-    opacity: 0.1;
+    opacity: 0.5;
 }
 
 .action-card:hover::after {
@@ -366,15 +350,16 @@
 }
 
 .action-icon {
-    width: 56px;
-    height: 56px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(139, 92, 246, 0.15);
+    background: var(--surface-variant);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    margin: 0 auto 1.25rem;
-    font-size: 1.5rem;
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
     color: var(--primary);
     position: relative;
     z-index: 1;
@@ -382,24 +367,24 @@
 }
 
 .action-card:hover .action-icon {
-    background: var(--gradient-primary);
-    color: white;
-    transform: scale(1.1);
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary) !important;
+    transform: scale(1.03);
 }
 
 .action-card h5 {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--on-surface);
-    margin: 0 0 0.5rem;
+    margin: 0 0 0.4rem;
     position: relative;
     z-index: 1;
 }
 
 .action-card p {
-    font-size: 0.85rem;
-    color: var(--on-surface-tertiary);
+    font-size: 0.82rem;
+    color: var(--on-surface-secondary);
     margin: 0;
     line-height: 1.5;
     position: relative;
@@ -430,10 +415,8 @@
 }
 
 .recent-layer-card {
-    background: rgba(31, 41, 55, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(55, 65, 81, 0.5);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 1rem;
     cursor: pointer;
@@ -441,12 +424,12 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    box-shadow: var(--shadow-sm);
 }
 
 .recent-layer-card:hover {
-    border-color: rgba(139, 92, 246, 0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+    border-color: var(--primary);
+    box-shadow: 0 0 16px var(--primary-light), var(--shadow-md);
 }
 
 .recent-layer-icon {
@@ -455,7 +438,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(139, 92, 246, 0.15);
+    background: var(--surface-variant);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font-size: 1.1rem;
     color: var(--primary);
@@ -487,11 +471,31 @@
 
 .recent-layer-badge {
     padding: 0.1rem 0.35rem;
-    background: rgba(139, 92, 246, 0.15);
+    background: var(--primary-light);
     border-radius: var(--radius-xs);
     font-size: 0.62rem;
     font-weight: 600;
     color: var(--primary);
+}
+
+.recent-layer-delete {
+    background: none;
+    border: none;
+    color: var(--on-surface-tertiary);
+    cursor: pointer;
+    padding: 0.35rem;
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    z-index: 2;
+    position: relative;
+}
+
+.recent-layer-delete:hover {
+    color: var(--accent-red);
+    background: rgba(239, 68, 68, 0.15);
 }
 
 /* ============================================

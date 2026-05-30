@@ -1,3 +1,5 @@
+
+
 function showSoftwareModal(softwareId) {
     const software = state.software.find(s => {
         const sid = s.external_references?.[0]?.external_id || '';
@@ -14,13 +16,14 @@ function showSoftwareModal(softwareId) {
     
     setTimeout(() => {
         const swId_display = software.external_references?.[0]?.external_id || 'N/A';
-        const swType = software.type === 'malware' ? 'Malware' : 'Tool';
-        const swTypeIcon = software.type === 'malware' ? 'bi-bug' : 'bi-wrench';
         const created = software.created ? new Date(software.created).toLocaleDateString() : '';
         const modified = software.modified ? new Date(software.modified).toLocaleDateString() : '';
         const aliases = software.x_mitre_aliases || software.aliases || [];
         const platforms = software.x_mitre_platforms || [];
         const contributors = software.x_mitre_contributors || [];
+        
+        const theme = getSoftwareTheme(software);
+        const avatarSvg = getProceduralSoftwareAvatarSVG(software.id, software.name, software.type);
         
         const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === software.id);
         const relatedTechniques = techRels.map(r => {
@@ -57,13 +60,34 @@ function showSoftwareModal(softwareId) {
         }).length;
         const coveragePct = techCount > 0 ? Math.round((coveredCount / techCount) * 100) : 0;
         
+        // Render beautiful OS platform badges with custom styling
+        const platformBadgesHtml = platforms.map(p => {
+            let pClass = '';
+            let pIcon = 'bi-laptop';
+            const pLower = p.toLowerCase();
+            if (pLower.includes('windows')) {
+                pClass = 'platform-windows';
+                pIcon = 'bi-windows';
+            } else if (pLower.includes('macos') || pLower.includes('mac')) {
+                pClass = 'platform-macos';
+                pIcon = 'bi-apple';
+            } else if (pLower.includes('linux')) {
+                pClass = 'platform-linux';
+                pIcon = 'bi-terminal';
+            } else {
+                pClass = 'platform-other';
+                pIcon = 'bi-cpu';
+            }
+            return `<span class="software-platform-badge ${pClass}" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px;" title="Platform: ${escapeHtml(p)}"><i class="bi ${pIcon} mr-1"></i>${escapeHtml(p)}</span>`;
+        }).join('');
+        
         let tabsHtml = `
-            <div class="software-tab-nav">
-                <button class="software-tab-btn active" data-sw-tab="overview">
+            <div class="software-tab-nav" style="border-bottom: 1px solid rgba(${theme.accentRGB}, 0.15) !important;">
+                <button class="software-tab-btn active" data-sw-tab="overview" style="border-bottom-color: ${theme.accentHex} !important; color: ${theme.accentHex} !important;">
                     <i class="bi bi-info-circle"></i> Overview
                 </button>
                 <button class="software-tab-btn" data-sw-tab="techniques">
-                    <i class="bi bi-grid"></i> Techniques <span class="software-tab-count">${techCount}</span>
+                    <i class="bi bi-grid"></i> Techniques <span class="software-tab-count" style="background: rgba(${theme.accentRGB}, 0.1) !important; color: ${theme.accentHex} !important;">${techCount}</span>
                 </button>
                 <button class="software-tab-btn" data-sw-tab="heatmap">
                     <i class="bi bi-grid-3x3-gap"></i> Heatmap
@@ -74,6 +98,8 @@ function showSoftwareModal(softwareId) {
             </div>
         `;
         
+        const coverageValueStyle = coveragePct > 0 ? `color: ${theme.accentHex}; font-weight: 700; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.3);` : '';
+        
         let overviewHtml = `
             <div class="software-tab-pane active" id="software-tab-overview">
                 <div class="software-detail-desc">${parseDescription(software.description || 'No description available.')}</div>
@@ -81,20 +107,20 @@ function showSoftwareModal(softwareId) {
                 <div class="software-meta-grid">
                     ${created ? `<div class="software-meta-item"><span class="software-meta-label">Created</span><span class="software-meta-value">${created}</span></div>` : ''}
                     ${modified ? `<div class="software-meta-item"><span class="software-meta-label">Modified</span><span class="software-meta-value">${modified}</span></div>` : ''}
-                    <div class="software-meta-item"><span class="software-meta-label">Type</span><span class="software-meta-value"><i class="bi ${swTypeIcon}"></i> ${swType}</span></div>
-                    <div class="software-meta-item"><span class="software-meta-label">Query Coverage</span><span class="software-meta-value ${coveragePct > 0 ? 'software-coverage-good' : 'software-coverage-none'}">${coveragePct}% (${coveredCount}/${techCount})</span></div>
+                    <div class="software-meta-item"><span class="software-meta-label">Type</span><span class="software-meta-value"><span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span></span></div>
+                    <div class="software-meta-item"><span class="software-meta-label">Query Coverage</span><span class="software-meta-value ${coveragePct > 0 ? 'software-coverage-good' : 'software-coverage-none'}" style="${coverageValueStyle}">${coveragePct}% (${coveredCount}/${techCount})</span></div>
                 </div>
                 
                 ${techCount > 0 ? `
-                    <div class="software-coverage-bar-container">
+                    <div class="software-coverage-bar-container" style="border-color: rgba(${theme.accentRGB}, 0.15) !important;">
                         <div class="software-coverage-bar-label">Technique Query Coverage</div>
                         <div class="software-coverage-bar-track">
-                            <div class="software-coverage-bar-fill" style="width: ${coveragePct}%"></div>
+                            <div class="software-coverage-bar-fill" style="width: ${coveragePct}%; background: linear-gradient(90deg, ${theme.accentHex}, #20c997); box-shadow: 0 0 10px rgba(${theme.accentRGB}, 0.35);"></div>
                         </div>
                         <div class="software-coverage-bar-stats">
-                            <span class="software-coverage-stat covered"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
+                            <span class="software-coverage-stat covered" style="color: ${theme.accentHex} !important; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
                             <span class="software-coverage-stat uncovered"><i class="bi bi-x-circle"></i> ${techCount - coveredCount} uncovered</span>
-                            <button class="btn btn-sm btn-outline-primary ms-auto software-view-matrix-btn" data-sw-id="${swId_display}">
+                            <button class="btn btn-sm btn-outline-primary ms-auto software-view-matrix-btn" style="color: ${theme.accentHex} !important; border-color: rgba(${theme.accentRGB}, 0.4) !important;" data-sw-id="${swId_display}">
                                 <i class="bi bi-grid-3x2"></i> View in Matrix
                             </button>
                         </div>
@@ -111,7 +137,7 @@ function showSoftwareModal(softwareId) {
                 ${platforms.length ? `
                     <div class="software-section">
                         <h6 class="software-section-title"><i class="bi bi-laptop"></i> Platforms</h6>
-                        <div class="software-tags flex flex-wrap gap-2">${platforms.map(p => `<span class="detail-tag tag-true"><i class="bi bi-hdd-network mr-1"></i>${escapeHtml(p)}</span>`).join('')}</div>
+                        <div class="software-tags flex flex-wrap gap-2">${platformBadgesHtml}</div>
                     </div>
                 ` : ''}
                 
@@ -132,7 +158,7 @@ function showSoftwareModal(softwareId) {
                                 const hasQuery = ann?.queries && ann.queries.length > 0;
                                 return `<div class="software-tech-chip entity-chip-clickable ${hasQuery ? 'software-tech-chip-covered' : ''}" data-tech-id="${techId}">
                                     ${hasQuery ? '<i class="bi bi-check-circle-fill software-tech-query-indicator"></i>' : ''}
-                                    <span class="software-tech-chip-id">${techId}</span>
+                                    <span class="software-tech-chip-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex}; font-weight: 700;">${techId}</span>
                                     <span class="software-tech-chip-name">${escapeHtml(tech.name)}</span>
                                 </div>`;
                             }).join('')}
@@ -148,7 +174,7 @@ function showSoftwareModal(softwareId) {
                             ${relatedGroups.slice(0, 8).map(g => {
                                 const gId = g.external_references?.[0]?.external_id || '';
                                 return `<div class="software-group-chip entity-chip-clickable" data-group-id="${g.id}">
-                                    <span class="software-group-chip-id">${gId}</span>
+                                    <span class="software-group-chip-id" style="background: rgba(${theme.accentRGB}, 0.08); color: ${theme.accentHex}; font-weight: 700;">${gId}</span>
                                     <span class="software-group-chip-name">${escapeHtml(g.name)}</span>
                                 </div>`;
                             }).join('')}
@@ -179,7 +205,7 @@ function showSoftwareModal(softwareId) {
             
             techniquesHtml += `
                 <div class="software-tactic-section" data-tactic="${escapeHtml(tacticName)}">
-                    <h6 class="software-tactic-header">${escapeHtml(tacticName)}</h6>
+                    <h6 class="software-tactic-header" style="background: rgba(${theme.accentRGB}, 0.1) !important; color: ${theme.accentHex} !important; border-left: 3px solid ${theme.accentHex};">${escapeHtml(tacticName)}</h6>
                     <div class="software-tactic-techs">
                         ${techs.map(tech => {
                             const techId = tech.external_references?.[0]?.external_id || '';
@@ -187,7 +213,7 @@ function showSoftwareModal(softwareId) {
                             const hasQuery = ann?.queries && ann.queries.length > 0;
                             return `<div class="software-tech-item entity-chip-clickable ${hasQuery ? 'software-tech-item-covered' : ''}" data-tech-id="${techId}" data-covered="${hasQuery}">
                                 ${hasQuery ? '<i class="bi bi-check-circle-fill software-tech-query-icon"></i>' : ''}
-                                <span class="software-tech-item-id">${techId}</span>
+                                <span class="software-tech-item-id" style="background: rgba(${theme.accentRGB}, 0.1) !important; color: ${theme.accentHex} !important;">${techId}</span>
                                 <span class="software-tech-item-name">${escapeHtml(tech.name)}</span>
                             </div>`;
                         }).join('')}
@@ -218,10 +244,10 @@ function showSoftwareModal(softwareId) {
             });
             
             heatmapHtml += `<div class="software-heatmap-scroll"><table class="software-heatmap-table">`;
-            heatmapHtml += `<thead><tr><th class="software-heatmap-header" style="min-width:200px; position:sticky; left:0; z-index:3;">Technique</th>`;
+            heatmapHtml += `<thead><tr><th class="software-heatmap-header" style="min-width:200px; position:sticky; left:0; z-index:3; background: rgba(${theme.accentRGB}, 0.12) !important; color: ${theme.accentHex} !important;">Technique</th>`;
             
             for (const tactic of heatmapTactics) {
-                heatmapHtml += `<th class="software-heatmap-header">${escapeHtml(tactic.name)}</th>`;
+                heatmapHtml += `<th class="software-heatmap-header" style="background: rgba(${theme.accentRGB}, 0.08) !important; color: ${theme.accentHex} !important;">${escapeHtml(tactic.name)}</th>`;
             }
             heatmapHtml += `</tr></thead><tbody>`;
             
@@ -234,14 +260,14 @@ function showSoftwareModal(softwareId) {
                 
                 heatmapHtml += `<tr class="software-heatmap-row">`;
                 heatmapHtml += `<td class="software-heatmap-tech-cell">
-                    <span class="software-heatmap-tech-id">${techId}</span>
+                    <span class="software-heatmap-tech-id" style="color: ${theme.accentHex} !important;">${techId}</span>
                     <span class="software-heatmap-tech-name">${escapeHtml(tech.name)}</span>
                 </td>`;
                 
                 for (const tactic of heatmapTactics) {
                     const shortname = tactic.x_mitre_shortname;
                     if (techTactics.has(shortname)) {
-                        heatmapHtml += `<td class="software-heatmap-cell ${hasQuery ? 'software-heatmap-cell-covered' : 'software-heatmap-cell-active'}" data-tech-id="${techId}" title="${techId}: ${escapeHtml(tech.name)}${hasQuery ? ' (Has queries)' : ''}">
+                        heatmapHtml += `<td class="software-heatmap-cell ${hasQuery ? 'software-heatmap-cell-covered' : 'software-heatmap-cell-active'}" data-tech-id="${techId}" title="${techId}: ${escapeHtml(tech.name)}${hasQuery ? ' (Has queries)' : ''}" style="${!hasQuery ? `background: rgba(${theme.accentRGB}, 0.04) !important;` : ''}">
                             ${hasQuery ? '<i class="bi bi-check-circle-fill"></i>' : '<i class="bi bi-circle"></i>'}
                         </td>`;
                     } else {
@@ -269,8 +295,8 @@ function showSoftwareModal(softwareId) {
                 groupsHtml += `
                     <div class="software-group-item entity-chip-clickable" data-group-id="${g.id}">
                         <div class="software-group-item-header">
-                            <span class="software-group-id">${gId}</span>
-                            <span class="software-group-name">${escapeHtml(g.name)}</span>
+                            <span class="software-group-id" style="background: rgba(${theme.accentRGB}, 0.1) !important; color: ${theme.accentHex} !important;">${gId}</span>
+                            <span class="software-group-name" style="font-weight: 700;">${escapeHtml(g.name)}</span>
                         </div>
                         ${g.description ? `<p class="software-group-desc">${escapeHtml(g.description.substring(0, 120))}${g.description.length > 120 ? '...' : ''}</p>` : ''}
                     </div>
@@ -284,15 +310,20 @@ function showSoftwareModal(softwareId) {
         const modalHtml = `
             <div class="modal fade" id="software-detail-modal" tabindex="-1">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                    <div class="modal-content technique-modal">
-                        <div class="tech-modal-header software-modal-header">
+                    <div class="modal-content technique-modal" style="border: 1px solid rgba(${theme.accentRGB}, 0.2) !important; box-shadow: 0 5px 30px rgba(0,0,0,0.5), 0 0 25px rgba(${theme.accentRGB}, 0.1) !important;">
+                        <div class="tech-modal-header software-modal-header" style="border-bottom: 1px solid rgba(${theme.accentRGB}, 0.15) !important; background: rgba(${theme.accentRGB}, 0.03) !important;">
                             <button type="button" class="btn-close tech-modal-close" data-bs-dismiss="modal"></button>
-                            <div class="tech-modal-header-content">
-                                <div class="tech-modal-badges">
-                                    <span class="tech-badge-id">${swId_display}</span>
-                                    <span class="tech-badge-type"><i class="bi ${swTypeIcon}"></i> ${swType}</span>
+                            <div class="software-detail-header-wrap" style="display: flex; align-items: center; gap: 1rem;">
+                                <div class="detail-modal-avatar" style="width: 52px; height: 52px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: none; padding: 0; border: 1px solid rgba(${theme.accentRGB}, 0.3); box-shadow: 0 0 15px rgba(${theme.accentRGB}, 0.2);">
+                                    ${avatarSvg}
                                 </div>
-                                <h3 class="tech-modal-title">${escapeHtml(software.name)}</h3>
+                                <div class="tech-modal-header-content" style="display: flex; flex-direction: column; gap: 0.25rem;">
+                                    <div class="tech-modal-badges" style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <span class="tech-badge-id" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${swId_display}</span>
+                                        <span class="${theme.badgeClass}"><i class="bi ${theme.icon}"></i> ${theme.name}</span>
+                                    </div>
+                                    <h3 class="tech-modal-title" style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--on-surface); text-shadow: 0 0 12px rgba(${theme.accentRGB}, 0.15);">${escapeHtml(software.name)}</h3>
+                                </div>
                             </div>
                         </div>
                         <div class="tech-modal-body">
@@ -327,9 +358,25 @@ function showSoftwareModal(softwareId) {
         
         document.querySelectorAll('#software-detail-modal .software-tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('#software-detail-modal .software-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('#software-detail-modal .software-tab-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.borderBottomColor = 'transparent';
+                    b.style.color = 'var(--on-surface-secondary)';
+                    const countSpan = b.querySelector('.software-tab-count');
+                    if (countSpan) {
+                        countSpan.style.background = 'rgba(21, 27, 43, 0.6)';
+                        countSpan.style.color = 'inherit';
+                    }
+                });
                 document.querySelectorAll('#software-detail-modal .software-tab-pane').forEach(p => p.classList.remove('active'));
                 btn.classList.add('active');
+                btn.style.borderBottomColor = theme.accentHex;
+                btn.style.color = theme.accentHex;
+                const activeCountSpan = btn.querySelector('.software-tab-count');
+                if (activeCountSpan) {
+                    activeCountSpan.style.background = `rgba(${theme.accentRGB}, 0.12)`;
+                    activeCountSpan.style.color = theme.accentHex;
+                }
                 document.getElementById(`software-tab-${btn.dataset.swTab}`).classList.add('active');
             });
         });

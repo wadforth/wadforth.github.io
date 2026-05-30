@@ -20,14 +20,12 @@
 
 /* Matrix Wrapper */
 .matrix-wrapper {
-    background: rgba(15, 16, 38, 0.45);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     overflow: auto;
     max-height: 100%;
-    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05), var(--shadow-xl);
+    box-shadow: var(--shadow-sm);
     flex: 1;
     min-height: 0;
 }
@@ -43,27 +41,25 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(15, 16, 38, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--border);
     color: var(--on-surface);
-    padding: 0.75rem 0.6rem;
+    padding: 0.75rem 0.65rem;
     text-align: center;
     font-size: 0.75rem;
-    font-weight: 700;
+    font-weight: 600;
     min-width: 120px;
     vertical-align: bottom;
-    border-bottom: 2px solid var(--primary);
-    box-shadow: inset 0 -1px 0 0 rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 -1px 0 0 var(--border);
 }
 
 .matrix-table th .tactic-short {
     display: block;
-    font-size: 0.6rem;
+    font-size: 0.62rem;
     opacity: 0.8;
     font-weight: 500;
     margin-top: 0.2rem;
-    color: var(--accent-cyan);
+    color: var(--primary);
 }
 
 .matrix-table th .tactic-count {
@@ -78,7 +74,7 @@
 .matrix-table td {
     vertical-align: top;
     padding: 0;
-    background: rgba(255, 255, 255, 0.01);
+    background: var(--surface-elevated);
     min-width: 120px;
 }
 
@@ -86,28 +82,27 @@
 .technique-cell {
     padding: 0.45rem 0.65rem;
     cursor: pointer;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid var(--border);
     transition: var(--transition);
     position: relative;
-    background: rgba(255, 255, 255, 0.01);
+    background: transparent;
 }
 
 .technique-cell:last-child { border-bottom: none; }
 
 .technique-cell:hover {
-    background: rgba(255, 255, 255, 0.05);
-    box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.3), var(--glow-primary);
+    background: var(--surface-variant);
     z-index: 2;
 }
 
 .technique-cell.has-children {
-    background: rgba(255, 255, 255, 0.02);
+    background: transparent;
     border-left: 3px solid var(--primary);
     padding-left: calc(0.65rem - 3px);
 }
 
 .technique-cell.has-children:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--surface-variant);
 }
 
 .technique-cell.annotated {
@@ -132,9 +127,9 @@
 }
 
 .expand-btn:hover {
-    background: rgba(139, 92, 246, 0.2);
+    background: var(--surface-variant);
     color: var(--primary);
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+    border: 1px solid var(--border);
 }
 
 .technique-cell.annotated .expand-btn {
@@ -148,8 +143,8 @@
 .tech-id {
     font-family: var(--font-mono);
     font-size: 0.6rem;
-    font-weight: 700;
-    color: var(--accent-cyan);
+    font-weight: 600;
+    color: var(--primary);
 }
 
 .tech-name {
@@ -165,7 +160,7 @@
 /* Sub-techniques */
 .sub-techniques-container {
     margin-left: 0.4rem;
-    border-left: 1px solid rgba(139, 92, 246, 0.3);
+    border-left: 1px solid var(--border);
     padding-left: 0.4rem;
 }
 
@@ -182,18 +177,18 @@
 }
 
 .sub-toggle:hover {
-    background: rgba(139, 92, 246, 0.15);
+    background: var(--surface-variant);
     color: var(--primary);
 }
 
 .technique-cell.sub-technique {
     padding: 0.2rem 0.4rem;
     font-size: 0.6rem;
-    border-left: 2px solid rgba(139, 92, 246, 0.3);
+    border-left: 2px solid var(--border);
 }
 
 .technique-cell.sub-technique:hover {
-    background: rgba(139, 92, 246, 0.15);
+    background: var(--surface-variant);
 }
 
 .technique-cell.sub-technique .tech-id {
@@ -208,7 +203,7 @@
     display: inline-block;
     width: 6px;
     height: 1px;
-    background: rgba(139, 92, 246, 0.4);
+    background: var(--border);
     margin-right: 3px;
     vertical-align: middle;
 }
@@ -221,17 +216,27 @@
 }
 
 .platform-chips .btn-check:checked + .btn {
-    background: var(--gradient-primary);
-    color: white;
-    border-color: var(--primary);
-    box-shadow: var(--glow-primary);
+    background: var(--primary-light);
+    color: var(--primary) !important;
+    border-color: rgba(88, 76, 244, 0.3);
+    box-shadow: none;
 }
 
 .platform-chips .btn {
     font-size: 0.7rem;
-    padding: 0.3rem 0.65rem;
+    padding: 0.25rem 0.6rem;
     border-radius: var(--radius-sm);
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    color: var(--on-surface-secondary);
+    font-weight: 500;
     transition: var(--transition);
+}
+
+.platform-chips .btn:hover {
+    background: var(--surface-variant);
+    color: var(--on-surface);
+    border-color: var(--on-surface-tertiary);
 }
 
 /* Matrix Search */
@@ -240,25 +245,21 @@
 }
 
 .matrix-search .input-group-text {
-    background: rgba(31, 41, 55, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-color: rgba(55, 65, 81, 0.5);
+    background: var(--surface-subtle);
+    border-color: var(--border);
 }
 
 .matrix-search .form-control {
     font-size: 0.8rem;
-    background: rgba(31, 41, 55, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-color: rgba(55, 65, 81, 0.5);
+    background: var(--surface-subtle);
+    border-color: var(--border);
     color: var(--on-surface);
 }
 
 .matrix-search .form-control:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light), var(--glow-primary);
-    background: rgba(31, 41, 55, 0.8);
+    box-shadow: 0 0 0 2px var(--primary-light);
+    background: var(--surface-elevated);
 }
 
 /* Matrix No Results */
@@ -269,10 +270,7 @@
 #matrix-no-results i {
     font-size: 2.5rem;
     opacity: 0.3;
-    background: var(--gradient-primary);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--primary);
 }
 
 #matrix-no-results h5 {
@@ -281,4 +279,86 @@
 
 #matrix-no-results p {
     color: var(--on-surface-tertiary);
+}
+
+/* Custom Dropdown for Platform Filters */
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 6px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 0.75rem;
+    z-index: 1050;
+    box-shadow: var(--shadow-xl), 0 0 20px rgba(0, 0, 0, 0.4);
+    min-width: 200px;
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.custom-dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Vertical items inside custom dropdown */
+.custom-dropdown .platform-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.custom-dropdown .platform-chips .btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    color: var(--on-surface-secondary) !important;
+    text-align: left;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.custom-dropdown .platform-chips .btn:hover {
+    background: var(--surface-variant) !important;
+    color: var(--on-surface) !important;
+}
+
+/* Custom Checkbox icons using pseudo-elements */
+.custom-dropdown .platform-chips .btn::before {
+    content: '\F272'; /* bi-square in Bootstrap Icons */
+    font-family: 'bootstrap-icons' !important;
+    margin-right: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--on-surface-tertiary);
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.custom-dropdown .platform-chips .btn-check:checked + .btn {
+    background: var(--primary-lighter) !important;
+    color: var(--primary) !important;
+}
+
+.custom-dropdown .platform-chips .btn-check:checked + .btn::before {
+    content: '\F26E'; /* bi-check-square-fill in Bootstrap Icons */
+    color: var(--primary);
 }

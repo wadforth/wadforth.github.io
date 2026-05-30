@@ -54,6 +54,8 @@ document.querySelectorAll('[data-view]').forEach(link => {
             renderMitigationsView();
         } else if (link.dataset.view === 'reports') {
             loadReportsList();
+        } else if (link.dataset.view === 'intel') {
+            renderIntelView();
         }
     });
 });
