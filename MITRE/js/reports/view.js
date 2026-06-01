@@ -42,9 +42,22 @@ function getTechniquesByMonth() {
             });
         }
         
-        // Strict filtering: Sub-techniques and standalone techniques must have a color
-        // or have logged queries to be considered "active" for the report.
-        if (!hasSubs && !ann.color && !(ann.queries && ann.queries.length > 0)) return;
+        // Strict filtering:
+        // A technique (whether main or sub) is only active if:
+        // 1. It has logged queries: ann.queries.length > 0
+        // 2. OR it has a custom color annotation: ann.color
+        // 3. OR (if it's a parent) at least one of its sub-techniques in this layer has queries or color
+        const hasActiveQueriesOrColor = (ann.queries && ann.queries.length > 0) || ann.color;
+        
+        let hasActiveSubInLayer = false;
+        if (hasSubs) {
+            hasActiveSubInLayer = state.currentLayer.techniques.some(subAnn => {
+                return subAnn.techniqueID.startsWith(techId + '.') && 
+                       ((subAnn.queries && subAnn.queries.length > 0) || subAnn.color);
+            });
+        }
+        
+        if (!hasActiveQueriesOrColor && !hasActiveSubInLayer) return;
         
         if (ann.queries && ann.queries.length > 0) {
             ann.queries.forEach(q => {
@@ -61,7 +74,7 @@ function getTechniquesByMonth() {
         } else {
             // According to user requirements: sub-techniques and standalone techniques 
             // should only show up in the report if they have logged queries.
-            // Parent techniques (which have sub-techniques) can be included under baseMonth if annotated.
+            // Parent techniques (which have sub-techniques) can be included under baseMonth if annotated and active.
             if (hasSubs) {
                 if (!byMonth[baseMonth]) byMonth[baseMonth] = [];
                 byMonth[baseMonth].push(ann);
@@ -319,6 +332,30 @@ function renderMonthChangelogHTML(month) {
                 const queryCount = ann.queries?.length || 0;
                 const threatHunts = getThreatHuntsForTechnique(ann.techniqueID);
                 
+                const relatedSubs = newSubs.filter(s => s.techniqueID.startsWith(ann.techniqueID + '.'));
+                let subsHtml = '';
+                if (relatedSubs.length > 0) {
+                    subsHtml = `
+                        <div class="changelog-item-subtechniques mt-2 pl-3" style="border-left: 2px solid rgba(56, 189, 248, 0.3); font-size: 0.76rem; margin-top: 0.5rem;">
+                            <div style="font-weight: 700; color: #38bdf8; font-size: 0.72rem; text-transform: uppercase; margin-bottom: 0.25rem;">
+                                Related Sub-techniques Deployed:
+                            </div>
+                            <ul style="list-style: none; padding-left: 0; margin-bottom: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                                ${relatedSubs.map(s => {
+                                    const sName = getTechniqueName(s.techniqueID);
+                                    const sQueries = (s.queries && s.queries.length > 0) ? s.queries.map(q => `<span class="query-chip" style="font-size: 0.65rem; padding: 1px 4px; margin-right: 2px; margin-top: 1px;">${escapeHtml(q.name)}</span>`).join('') : '<span style="color: var(--report-text-muted);">No queries</span>';
+                                    return `<li>
+                                        <strong>${s.techniqueID}</strong> - ${sName}
+                                        <div style="margin-top: 2px; display: flex; flex-wrap: wrap; gap: 2px; align-items: center;">
+                                            ${sQueries}
+                                        </div>
+                                    </li>`;
+                                }).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
                 html += `
                     <div class="changelog-item new">
                         <div class="changelog-item-icon"><i class="bi bi-plus-circle"></i></div>
@@ -335,6 +372,7 @@ function renderMonthChangelogHTML(month) {
                                     ${threatHunts.map(h => `"${h}"`).join(', ')}
                                 </div>
                             ` : ''}
+                            ${subsHtml}
                         </div>
                     </div>
                 `;
@@ -897,7 +935,10 @@ function viewReport(reportId) {
                 <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
                 <div class="report-date">${escapeHtml(report.reportMonth) || escapeHtml(report.generatedDate)}</div>
                 ${report.layerName ? `<div class="report-date"><i class="bi bi-layers mr-1"></i>Layer: ${escapeHtml(report.layerName)}</div>` : ''}
-                ${report.author ? `<div class="report-date">Prepared by: ${escapeHtml(report.author)}</div>` : ''}
+                <div class="report-date" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="bi bi-person mr-1"></i>Prepared by: 
+                    <input type="text" class="report-author-input border-0 bg-transparent text-white fw-semibold px-1 py-0" style="outline: none; border-bottom: 1px dashed rgba(255, 255, 255, 0.3) !important; color: rgba(255, 255, 255, 0.85) !important; font-size: inherit; width: 180px;" value="${escapeHtml(report.author || state.author || '')}" onchange="updateReportField('${report.id}', 'author', this.value)" placeholder="Enter author name...">
+                </div>
             </div>
 
             ${milestoneBoardHtml}
@@ -979,6 +1020,26 @@ function viewReport(reportId) {
                 ${appendixHtml}
             </div>
 
+            <div class="report-export-settings-card mb-3 p-3" style="background: var(--report-bg-secondary); border: 1px solid var(--report-border); border-radius: var(--radius-md);">
+                <h6 style="margin: 0 0 12px 0; font-size: 0.8rem; font-weight: 700; color: var(--report-text); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-envelope-fill text-info"></i> EML Export Configuration
+                </h6>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="text-xs font-semibold mb-1 d-block" style="font-size: 0.72rem; color: var(--report-text-muted);">Sender Name</label>
+                        <input type="text" id="eml-sender-name" class="form-control form-control-sm" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--report-border); color: var(--report-text);" placeholder="Sender Name" value="${escapeHtml(report.author || state.author || 'MITRE ATT&CK Coverage Tool')}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-xs font-semibold mb-1 d-block" style="font-size: 0.72rem; color: var(--report-text-muted);">Sender Email</label>
+                        <input type="text" id="eml-sender-email" class="form-control form-control-sm" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--report-border); color: var(--report-text);" placeholder="Sender Email" value="noreply@mitre-attack-explorer">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-xs font-semibold mb-1 d-block" style="font-size: 0.72rem; color: var(--report-text-muted);">Recipient Email</label>
+                        <input type="text" id="eml-recipient-email" class="form-control form-control-sm" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--report-border); color: var(--report-text);" placeholder="Recipient Email" value="recipient@example.com">
+                    </div>
+                </div>
+            </div>
+
             <div class="report-export-options mb-3" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--report-bg-secondary); border-radius: var(--radius-pill); border: 1px solid var(--report-border);">
                 <div class="form-check form-switch" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
                     <input class="form-check-input" type="checkbox" id="export-dark-mode-toggle" style="cursor: pointer; margin: 0;">
@@ -997,6 +1058,9 @@ function viewReport(reportId) {
                 </button>
                 <button class="btn btn-outline-primary" onclick="exportReportEmail('${report.id}')">
                     <i class="bi bi-file-earmark-html mr-2"></i>Export HTML
+                </button>
+                <button class="btn btn-outline-secondary" onclick="copyReportHTML('${report.id}')" title="Copy report HTML to clipboard">
+                    <i class="bi bi-clipboard mr-2"></i>Copy HTML
                 </button>
                 <button class="btn btn-outline-info" onclick="exportReportEML('${report.id}')">
                     <i class="bi bi-envelope mr-2"></i>Export EML
@@ -1125,6 +1189,30 @@ window.filterTimeline = function(filterType, btn) {
             const techTactics = getTechniqueTactics(ann.techniqueID);
             const queryNames = (ann.queries && ann.queries.length > 0) ? ann.queries.map(q => q.name).join(', ') : 'No queries (Check sub-techniques)';
             
+            const relatedSubs = subTechniques.filter(s => s.techniqueID.startsWith(ann.techniqueID + '.'));
+            let subsHtml = '';
+            if (relatedSubs.length > 0) {
+                subsHtml = `
+                    <div class="activity-card-subtechniques mt-2 pl-3" style="border-left: 2px solid rgba(56, 189, 248, 0.3); margin-top: 0.5rem; font-size: 0.74rem;">
+                        <div style="font-weight: 700; color: #38bdf8; font-size: 0.7rem; text-transform: uppercase; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 4px;">
+                            <i class="bi bi-grid-3x3-gap"></i> Related Sub-techniques Deployed:
+                        </div>
+                        <ul style="list-style: none; padding-left: 0; margin-bottom: 0; display: flex; flex-direction: column; gap: 0.3rem;">
+                            ${relatedSubs.map(s => {
+                                const sName = getTechniqueName(s.techniqueID);
+                                const sQueries = (s.queries && s.queries.length > 0) ? s.queries.map(q => q.name).join(', ') : 'No queries';
+                                return `<li style="line-height: 1.3;">
+                                    <strong style="color: var(--report-text); font-weight: 600;">${s.techniqueID}</strong> - ${sName}
+                                    <div style="color: var(--report-text-muted); font-size: 0.7rem; font-style: italic; padding-left: 0.5rem;">
+                                        <i class="bi bi-code-slash" style="font-size: 0.65rem;"></i> Queries: "${sQueries}"
+                                    </div>
+                                </li>`;
+                            }).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
             html += `
                 <div class="timeline-event event-new">
                     <div class="timeline-node new" title="New Technique"></div>
@@ -1137,6 +1225,7 @@ window.filterTimeline = function(filterType, btn) {
                         ${techTactics.length > 0 ? `<div class="activity-card-body mb-1" style="font-size: 0.76rem; color: var(--report-text-muted);"><i class="bi bi-diagram-3 mr-1"></i> Tactics: ${techTactics.join(', ')}</div>` : ''}
                         <div class="activity-card-footer" style="margin-top: 0.25rem; padding-top: 0.25rem;">
                             <i class="bi bi-code-slash"></i> Queries implemented: "${queryNames}"
+                            ${subsHtml}
                         </div>
                     </div>
                 </div>
@@ -1196,6 +1285,7 @@ function buildMethodology(report) {
         { id: 'sig-based', label: 'Signature-Based Detection', desc: 'Rule-based matching against known patterns' },
         { id: 'behavioral', label: 'Behavioral Analysis', desc: 'Anomaly detection based on behavior patterns' },
         { id: 'threat-intel', label: 'Threat Intelligence Driven', desc: 'Hunting based on threat actor TTPs' },
+        { id: 'lolbins', label: 'LOLBINs/Living off the Land', desc: 'Detecting abuse of trusted system binaries and administrative tools' },
         { id: 'hypothesis', label: 'Hypothesis-Driven', desc: 'Testing specific hypotheses about attacker behavior' },
         { id: 'data-driven', label: 'Data-Driven', desc: 'Exploratory analysis of telemetry data' },
         { id: 'compliance', label: 'Compliance-Driven', desc: 'Meeting regulatory or framework requirements' }
@@ -1942,7 +2032,7 @@ function buildCoverageChanges(report) {
 function buildDetectionResults(report) {
     const results = report.detectionResults || [];
     
-    let html = '<div id="detection-results-container">';
+    let html = '<div id="detection-results-container" class="detection-results-grid">';
     
     if (results.length === 0) {
         html += '<p class="text-on-surface-secondary mb-3">No tangible results for this update.</p>';
@@ -1950,22 +2040,37 @@ function buildDetectionResults(report) {
     
     results.forEach((result, idx) => {
         html += `
-            <div class="detection-result-item mb-3 p-3">
-                <div class="d-flex justify-content-between align-iteml-center mb-2">
-                    <input type="text" class="form-control form-control-sm mr-2" placeholder="Threat Hunt Name" value="${result.huntName || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'huntName', this.value)">
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeDetectionResult('${report.id}', ${idx})">
-                        <i class="bi bi-trash"></i>
+            <div class="detection-result-card mb-3">
+                <div class="detection-result-card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 mr-3">
+                        <i class="bi bi-crosshair text-primary fs-5"></i>
+                        <input type="text" class="form-control form-control-sm border-0 bg-transparent text-white fw-bold px-0 focus-ring-none" placeholder="Enter Hunt Name..." value="${result.huntName || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'huntName', this.value)" style="box-shadow: none; font-size: 0.95rem;">
+                    </div>
+                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeDetectionResult('${report.id}', ${idx})" title="Remove Result">
+                        <i class="bi bi-trash3 fs-6"></i>
                     </button>
                 </div>
-                <input type="text" class="form-control form-control-sm" placeholder="SIR Ticket (optional)" value="${result.sirTicket || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'sirTicket', this.value)">
-                <textarea class="form-control form-control-sm mt-2" rows="2" placeholder="Results notes..." onchange="updateDetectionResult('${report.id}', ${idx}, 'notes', this.value)">${result.notes || ''}</textarea>
+                <div class="detection-result-card-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-ticket-perforated"></i></span>
+                                <input type="text" class="form-control border-start-0" placeholder="SIR Ticket (optional)" value="${result.sirTicket || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'sirTicket', this.value)">
+                            </div>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <label class="text-xs text-on-surface-tertiary font-semibold mb-1 d-block"><i class="bi bi-card-text mr-1"></i>Hunt Notes & Key Findings</label>
+                            <textarea class="form-control form-control-sm" rows="3" placeholder="Describe the outcome, detections triggered, log sources verified, or key observations..." onchange="updateDetectionResult('${report.id}', ${idx}, 'notes', this.value)">${result.notes || ''}</textarea>
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     });
     
     html += `
-        <button class="btn btn-sm btn-outline-primary" onclick="addDetectionResult('${report.id}')">
-            <i class="bi bi-plus mr-1"></i>Add Detection Result
+        <button class="btn btn-sm btn-outline-primary w-100 py-2 border-dashed mt-2" onclick="addDetectionResult('${report.id}')">
+            <i class="bi bi-plus-lg mr-1"></i>Add Detection Result Card
         </button>
     </div>`;
     
@@ -2409,10 +2514,54 @@ function exportReportEmail(reportId) {
     showToast('Email HTML exported', 'success');
 }
 
+function copyReportHTML(reportId) {
+    const report = state._cachedReports?.find(r => r.id === reportId);
+    if (!report) {
+        showToast('Report not found', 'error');
+        return;
+    }
+
+    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const htmlContent = buildEmailHTML(report, isDark);
+    
+    navigator.clipboard.writeText(htmlContent)
+        .then(() => {
+            showToast('HTML content copied to clipboard', 'success');
+        })
+        .catch(err => {
+            console.error('Failed to copy HTML: ', err);
+            showToast('Failed to copy HTML', 'error');
+        });
+}
+
 function exportReportEML(reportId) {
     const report = state._cachedReports?.find(r => r.id === reportId);
     if (!report) {
         showToast('Report not found', 'error');
+        return;
+    }
+
+    const senderNameInput = document.getElementById('eml-sender-name');
+    const senderEmailInput = document.getElementById('eml-sender-email');
+    const recipientEmailInput = document.getElementById('eml-recipient-email');
+
+    const senderName = senderNameInput ? senderNameInput.value.trim() : (report.author || state.author || 'MITRE ATT&CK Coverage Tool');
+    const senderEmail = senderEmailInput ? senderEmailInput.value.trim() : 'noreply@mitre-attack-explorer';
+    const recipientEmail = recipientEmailInput ? recipientEmailInput.value.trim() : 'recipient@example.com';
+
+    if (!senderName) {
+        showToast('EML Export: Sender Name is required', 'warning');
+        senderNameInput?.focus();
+        return;
+    }
+    if (!senderEmail || !senderEmail.includes('@')) {
+        showToast('EML Export: Valid Sender Email is required', 'warning');
+        senderEmailInput?.focus();
+        return;
+    }
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+        showToast('EML Export: Valid Recipient Email is required', 'warning');
+        recipientEmailInput?.focus();
         return;
     }
 
@@ -2432,8 +2581,9 @@ function exportReportEML(reportId) {
     const formattedBase64 = base64Content.match(/.{1,76}/g).join('\r\n');
     
     const emlContent = [
-        'From: MITRE ATT&CK Coverage Tool <noreply@mitre-attack-explorer>',
-        `To: recipient@example.com`,
+        'X-Unsent: 1',
+        `From: "${senderName.replace(/"/g, '')}" <${senderEmail}>`,
+        `To: <${recipientEmail}>`,
         `Subject: ${subject}`,
         `Date: ${new Date().toUTCString()}`,
         'MIME-Version: 1.0',
@@ -2449,7 +2599,7 @@ function exportReportEML(reportId) {
     link.href = URL.createObjectURL(blob);
     link.click();
     URL.revokeObjectURL(link.href);
-    showToast('EML file exported', 'success');
+    showToast('EML file exported successfully', 'success');
 }
 
 async function exportReportSVG(reportId) {
@@ -2514,7 +2664,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
     const mainTechniques = newTechniques.filter(t => !isSubTechnique(t.techniqueID));
     const subTechniques = newTechniques.filter(t => isSubTechnique(t.techniqueID));
     
-    let html = `<div class="section"><h3>Monthly Activity Timeline</h3>
+    let html = `<div class="section"><h3>Monthly Activity Feed</h3>
         <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">`;
     
     const renderTimelineRow = (color, typeLabel, title, details, footerText) => {
@@ -2530,10 +2680,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
 
         return `
             <tr>
-                <td style="width: 24px; vertical-align: top; padding-top: 12px; text-align: center; position: relative;">
-                    <div style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 3px solid ${color}; background-color: ${isDark ? '#070814' : '#ffffff'}; box-shadow: ${isDark ? '0 0 10px ' + color + '40' : 'none'}; z-index: 2; position: relative;"></div>
-                </td>
-                <td style="padding: 0 0 16px 12px; vertical-align: top;">
+                <td style="padding: 0 0 12px 0; vertical-align: top;">
                     <div style="background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.8) 0%, rgba(13, 14, 28, 0.5) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}; border-left: 4px solid ${color}; border-radius: 10px; padding: 14px; box-shadow: ${isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(15, 23, 42, 0.03)'}; transition: all 0.3s ease;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                             <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
@@ -2558,7 +2705,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
     if (colorChanges.length > 0) {
         html += `
             <tr>
-                <td colspan="2" style="padding: 12px 0 8px 0; border: none;">
+                <td style="padding: 12px 0 8px 0; border: none;">
                     <div style="font-size: 11px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding-bottom: 3px;">
                         🔄 Status & Coverage Changes (${colorChanges.length})
                     </div>
@@ -2580,10 +2727,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
             
             html += `
                 <tr>
-                    <td style="width: 24px; vertical-align: top; padding-top: 10px; text-align: center;">
-                        <div style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 54, 0.4); z-index: 2; position: relative;"></div>
-                    </td>
-                    <td style="padding: 0 0 10px 12px; vertical-align: top;">
+                    <td style="padding: 0 0 10px 0; vertical-align: top;">
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; flex-wrap: wrap; gap: 8px; background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.7) 0%, rgba(13, 14, 28, 0.4) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0'}; border-left: 3px solid #fbbf24; padding: 10px 14px; border-radius: 8px; box-shadow: ${isDark ? '0 4px 12px rgba(0,0,0,0.15)' : '0 2px 6px rgba(15, 23, 42, 0.02)'};">
                             <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
                                 <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${isDark ? '#f3f4f6' : '#1e293b'}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'};">${change.techniqueID}</span>
@@ -2604,7 +2748,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
     if (mainTechniques.length > 0) {
         html += `
             <tr>
-                <td colspan="2" style="padding: 16px 0 8px 0; border: none;">
+                <td style="padding: 16px 0 8px 0; border: none;">
                     <div style="font-size: 11px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding-bottom: 3px;">
                         🛡️ New Main Techniques Deployed (${mainTechniques.length})
                     </div>
@@ -2623,12 +2767,31 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
             let details = techDesc ? `<div style="margin-bottom: 4px;">${techDesc}</div>` : '';
             if (techTactics.length > 0) details += `<div style="font-size: 10px; color: ${theme.accent};">Tactics: ${techTactics.join(', ')}</div>`;
             
+            const relatedSubs = subTechniques.filter(s => s.techniqueID.startsWith(ann.techniqueID + '.'));
+            let footerText = `Queries implemented: "${queryNames}"`;
+            if (relatedSubs.length > 0) {
+                const subDetails = relatedSubs.map(s => {
+                    const sName = getTechniqueName(s.techniqueID);
+                    const sQueries = (s.queries && s.queries.length > 0) ? s.queries.map(q => q.name).join(', ') : 'No queries';
+                    return `<div style="margin-top: 6px; padding-left: 8px; border-left: 2px solid ${isDark ? 'rgba(56, 189, 248, 0.4)' : '#0284c7'}; font-family: sans-serif; font-size: 10px;">
+                        <strong style="color: ${isDark ? '#e5e7eb' : '#0f172a'};">${s.techniqueID}</strong> - ${sName}
+                        <div style="font-size: 9px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 2px;">
+                            • Queries: "${sQueries}"
+                        </div>
+                    </div>`;
+                }).join('');
+                footerText += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; width: 100%;">
+                    <div style="font-weight: 700; color: ${isDark ? '#38bdf8' : '#0284c7'}; font-size: 9px; text-transform: uppercase; margin-bottom: 4px; font-family: sans-serif;">Related Sub-techniques Deployed:</div>
+                    ${subDetails}
+                </div>`;
+            }
+
             html += renderTimelineRow(
                 '#34d399', 
                 'Technique', 
                 `${ann.techniqueID} - ${techName}`, 
                 details,
-                `Queries implemented: "${queryNames}"`
+                footerText
             );
         });
     }
@@ -2637,7 +2800,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
     if (subTechniques.length > 0) {
         html += `
             <tr>
-                <td colspan="2" style="padding: 16px 0 8px 0; border: none;">
+                <td style="padding: 16px 0 8px 0; border: none;">
                     <div style="font-size: 11px; font-weight: 700; color: #0284c7; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}; padding-bottom: 3px;">
                         🧩 New Sub-techniques Deployed (${subTechniques.length})
                     </div>
@@ -2823,6 +2986,7 @@ function buildEmailHTML(report, isDark = false) {
         'sig-based': 'Signature-based detection using rule matching against known patterns and indicators.',
         'behavioral': 'Behavioral analysis focusing on anomaly detection and deviation from normal baselines.',
         'threat-intel': 'Threat intelligence driven hunting based on known adversary TTPs and campaigns.',
+        'lolbins': 'Detecting abuse of trusted system binaries and administrative tools (Living Off the Land).',
         'hypothesis': 'Hypothesis-driven testing of specific assumptions about potential attacker behavior.',
         'data-driven': 'Data-driven exploratory analysis of telemetry to uncover hidden threats.',
         'compliance': 'Compliance-driven detection aligned with regulatory and framework requirements.'
@@ -2848,6 +3012,15 @@ function buildEmailHTML(report, isDark = false) {
     }) : [];
     
     if (selectedMethods.length > 0 || selectedScopes.length > 0) {
+        let notesHtml = '';
+        if (report.methodologyNotes) {
+            notesHtml = `
+                <div style="margin-top: 14px; padding: 12px; background: ${isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'}; border-radius: 8px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; width: 100%;">
+                    <strong style="color: ${isDark ? '#ffffff' : '#0f172a'}; display: block; margin-bottom: 4px;">📝 Additional Methodology & Scope Notes:</strong>
+                    ${markdownToHtml(report.methodologyNotes)}
+                </div>
+            `;
+        }
         methodScopeHtml = `<div class="section" style="page-break-inside: avoid;">
             <h3>Methodology & Scope</h3>
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
@@ -2884,6 +3057,7 @@ function buildEmailHTML(report, isDark = false) {
                     </td>
                 </tr>
             </table>
+            ${notesHtml}
         </div>`;
     }
     
@@ -3189,7 +3363,7 @@ function buildEmailHTML(report, isDark = false) {
             </table>
             <div style="margin-top: 14px; padding: 10px 14px; background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-size: 11px; color: #a2a6cc; text-align: center; line-height: 1.4;">
                 ℹ️ <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
-                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || 'the Security Operations Team'}</strong>.
+                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || state.author || 'the Security Operations Team'}</strong>.
             </div>
         </div>
     ` : `
@@ -3251,7 +3425,7 @@ function buildEmailHTML(report, isDark = false) {
             </table>
             <div style="margin-top: 14px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 11px; color: #64748b; text-align: center; line-height: 1.4;">
                 ℹ️ <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
-                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || 'the Security Operations Team'}</strong>.
+                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || state.author || 'the Security Operations Team'}</strong>.
             </div>
         </div>
     `;
@@ -3298,6 +3472,39 @@ function buildEmailHTML(report, isDark = false) {
             .header { padding: 24px 16px; }
             .content { padding: 16px; }
         }
+        .detection-item {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            border-left: 4px solid #7c3aed !important;
+            border-radius: 8px !important;
+            padding: 14px 18px !important;
+            margin-bottom: 12px !important;
+        }
+        .detection-item strong {
+            font-size: 14px !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+        .detection-item .badge-yellow {
+            background-color: rgba(251, 191, 36, 0.15) !important;
+            color: #fbbf24 !important;
+            border: 1px solid rgba(251, 191, 36, 0.3) !important;
+            font-size: 9px !important;
+            font-weight: 700 !important;
+            padding: 2px 8px !important;
+            border-radius: 9999px !important;
+            margin-left: 8px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+        .detection-item .notes {
+            margin-top: 8px !important;
+            font-size: 12.5px !important;
+            color: #a2a6cc !important;
+            line-height: 1.6 !important;
+        }
     ` : `
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; }
         * { box-sizing: border-box; }
@@ -3341,6 +3548,39 @@ function buildEmailHTML(report, isDark = false) {
             .header { padding: 24px 16px; }
             .content { padding: 16px; }
         }
+        .detection-item {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-left: 4px solid #7c3aed !important;
+            border-radius: 8px !important;
+            padding: 14px 18px !important;
+            margin-bottom: 12px !important;
+        }
+        .detection-item strong {
+            font-size: 14px !important;
+            color: #0f172a !important;
+            font-weight: 700 !important;
+        }
+        .detection-item .badge-yellow {
+            background-color: #fef3c7 !important;
+            color: #b45309 !important;
+            border: 1px solid #fde68a !important;
+            font-size: 9px !important;
+            font-weight: 700 !important;
+            padding: 2px 8px !important;
+            border-radius: 9999px !important;
+            margin-left: 8px !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+        .detection-item .notes {
+            margin-top: 8px !important;
+            font-size: 12.5px !important;
+            color: #475569 !important;
+            line-height: 1.6 !important;
+        }
     `;
 
     return `
@@ -3363,7 +3603,7 @@ function buildEmailHTML(report, isDark = false) {
                 <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
                 <p class="report-date">${escapeHtml(report.reportMonth) || escapeHtml(report.generatedDate)}</p>
                 ${report.attckVersion ? `<p class="attck-version">ATT&CK Framework v${escapeHtml(report.attckVersion)}</p>` : ''}
-                ${report.author ? `<p class="author">Prepared by: ${escapeHtml(report.author)}</p>` : ''}
+                ${report.author || state.author ? `<p class="author">Prepared by: ${escapeHtml(report.author || state.author)}</p>` : ''}
             </div>
 
             ${statsBarHtml}
@@ -3385,7 +3625,15 @@ function buildEmailHTML(report, isDark = false) {
  
                 ${buildTechniquesAtRiskEmail(report, isDark)}
  
-                ${report.detectionResults?.length > 0 ? `<div class="section"><h3>Detection Results</h3>${report.detectionResults.map(r => `<div class="detection-item"><strong>${r.huntName || 'Untitled'}</strong>${r.sirTicket ? ` <span class="badge badge-yellow">SIR: ${r.sirTicket}</span>` : ''}${r.notes ? `<div class="notes">${r.notes}</div>` : ''}</div>`).join('')}</div>` : ''}
+                ${report.detectionResults?.length > 0 ? `<div class="section"><h3>Detection Results</h3>${report.detectionResults.map(r => `
+                    <div class="detection-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong>${r.huntName || 'Untitled'}</strong>
+                            ${r.sirTicket ? `<span class="badge-yellow">SIR: ${r.sirTicket}</span>` : ''}
+                        </div>
+                        ${r.notes ? `<div class="notes">${r.notes}</div>` : ''}
+                    </div>
+                `).join('')}</div>` : ''}
  
                 ${monthlyFocus ? `<div class="section"><h3>Monthly Focus Areas</h3><p>${markdownToHtml(monthlyFocus)}</p></div>` : ''}
  
@@ -3393,7 +3641,13 @@ function buildEmailHTML(report, isDark = false) {
  
                 ${coverageHtml}
  
-                ${report.references?.length > 0 ? `<div class="section"><h3>References</h3><ul style="padding-left: 20px; margin: 0;">${report.references.map(r => `<li style="margin-bottom: 6px; font-size: 12px; color: #475569;">${r}</li>`).join('')}</ul></div>` : ''}
+                ${report.references?.length > 0 ? `<div class="section"><h3>References</h3><ul style="padding-left: 20px; margin: 0;">${report.references.map(r => {
+                    const isUrl = r.startsWith('http://') || r.startsWith('https://');
+                    const displayHtml = isUrl 
+                        ? `<a href="${escapeHtml(r)}" target="_blank" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: underline;">${escapeHtml(r)}</a>` 
+                        : escapeHtml(r);
+                    return `<li style="margin-bottom: 6px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">${displayHtml}</li>`;
+                }).join('')}</ul></div>` : ''}
  
                 ${appendixHtml}
  

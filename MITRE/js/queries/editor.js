@@ -109,8 +109,8 @@ function openQueryEditor(queryData = null, techniqueId = null) {
     selectGroup.classList.remove('hidden');
     hiddenInput.value = '';
     
-    const preselected = techniqueId || queryData?.techniqueID || null;
-    const selected = preselected ? [preselected] : (queryData ? [queryData.techniqueID] : []);
+    const preselected = techniqueId || null;
+    const selected = preselected ? [preselected] : (queryData ? (queryData.techniqueIDs || [queryData.techniqueID]) : []);
     renderTechniqueSelector(selected);
     
     const queryModal = new bootstrap.Modal(document.getElementById('query-modal'));

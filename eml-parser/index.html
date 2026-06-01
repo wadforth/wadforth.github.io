@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EML Sentinel - Enterprise Forensics</title>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <span class="logo-text">Sentinel Shield</span>
+        </div>
+        
+        <div class="nav-label">Forensic Workspace</div>
+        <ul class="nav-menu">
+            <li>
+                <button class="nav-item active">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i> EML Threat Scanner
+                </button>
+            </li>
+        </ul>
+        
+        <div class="nav-label">Controls</div>
+        <ul class="nav-menu">
+            <li>
+                <button id="theme-toggle-btn" class="nav-item" onclick="toggleTheme()">
+                    <i class="fa-solid fa-moon"></i> <span id="theme-btn-text">Dark Mode</span>
+                </button>
+            </li>
+            <li>
+                <a href="../index.html" class="nav-item">
+                    <i class="fa-solid fa-arrow-left"></i> SOC Portfolio
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+        <div class="dashboard-header">
+            <div>
+                <div class="breadcrumb">Workspace / Security Operations / EML Shield</div>
+                <h2 class="page-title">Diagnostic Overview</h2>
+            </div>
+            <button class="btn btn-primary" onclick="openRawModal()" id="btn-view-raw" style="display: none;">
+                <i class="fa-solid fa-code"></i> View Raw Headers
+            </button>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">Verdict Index</div>
+                    <div class="stat-value" id="stat-verdict">Awaiting</div>
+                </div>
+                <div class="stat-icon blue" id="stat-verdict-icon"><i class="fa-solid fa-shield"></i></div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">SPF Policy</div>
+                    <div class="stat-value" id="stat-spf">--</div>
+                </div>
+                <div class="stat-icon blue" id="stat-spf-icon"><i class="fa-solid fa-server"></i></div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">DKIM Crypt</div>
+                    <div class="stat-value" id="stat-dkim">--</div>
+                </div>
+                <div class="stat-icon blue" id="stat-dkim-icon"><i class="fa-solid fa-key"></i></div>
+            </div>
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label">DMARC Align</div>
+                    <div class="stat-value" id="stat-dmarc">--</div>
+                </div>
+                <div class="stat-icon blue" id="stat-dmarc-icon"><i class="fa-solid fa-file-contract"></i></div>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-grid">
+            
+            <!-- Left Column (Upload & Score) -->
+            <div>
+                <div class="card text-center">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-gauge-high"></i> Threat Meter</div>
+                    </div>
+                    
+                    <div class="dial-wrapper">
+                        <svg class="dial-svg" viewBox="0 0 100 100">
+                            <circle class="dial-bg" cx="50" cy="50" r="40"></circle>
+                            <circle class="dial-path" id="threat-dial" cx="50" cy="50" r="40"></circle>
+                        </svg>
+                        <div class="dial-content">
+                            <div class="dial-score" id="threat-score">0</div>
+                            <div class="dial-label">Score</div>
+                        </div>
+                    </div>
+                    
+                    <div class="badge badge-gray mt-4 mb-4" id="threat-badge">AWAITING UPLOAD</div>
+                </div>
+
+                <div class="card upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" class="hidden" accept=".eml">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <h4 class="mb-4">Upload Forensic EML</h4>
+                    <span class="text-xs text-muted font-mono">Processed locally in browser</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.5rem; border: none;">
+                        <div class="card-title text-sm"><i class="fa-solid fa-flask"></i> Preloaded Scenarios</div>
+                    </div>
+                    <div class="scenarios-list">
+                        <div class="scenario-item" onclick="injectScenario('legitimate')">
+                            <span class="text-sm font-600">Citibank Alert</span>
+                            <span class="badge badge-clean">CLEAN</span>
+                        </div>
+                        <div class="scenario-item" onclick="injectScenario('phishing')">
+                            <span class="text-sm font-600">Netflix Notice</span>
+                            <span class="badge badge-warn">PHISH</span>
+                        </div>
+                        <div class="scenario-item" onclick="injectScenario('malware')">
+                            <span class="text-sm font-600">FedEx Receipt</span>
+                            <span class="badge badge-danger">MALWARE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column (Telemetry & Data) -->
+            <div>
+                <!-- Verdict Banner -->
+                <div class="verdict-banner clean" id="main-verdict-banner">
+                    <div class="flex items-center gap-2">
+                        <div class="stat-icon green" id="banner-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <div>
+                            <h3 id="banner-title">Diagnostics Initializing...</h3>
+                            <p class="text-sm text-secondary mt-4" id="banner-subtitle" style="margin-top: 4px;">Please upload an email source file to begin multi-layered forensic scans.</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" id="btn-view-email" onclick="openEmailModal()" style="display: none;">
+                        <i class="fa-regular fa-envelope-open"></i> View Content
+                    </button>
+                </div>
+
+                <!-- Advanced Technical Envelope -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-envelope-open-text"></i> Technical Envelope</div>
+                    </div>
+                    <div class="tech-grid">
+                        <div class="tech-box">
+                            <div class="tech-label">Sender Address (From) <i class="fa-solid fa-circle-info tooltip-icon" title="The displaying sender address. Often forged."></i></div>
+                            <div class="tech-value" id="val-sender">--</div>
+                        </div>
+                        <div class="tech-box">
+                            <div class="tech-label">Subject Line <i class="fa-solid fa-circle-info tooltip-icon" title="Email subject line."></i></div>
+                            <div class="tech-value" id="val-subject">--</div>
+                        </div>
+                        <div class="tech-box">
+                            <div class="tech-label">Return-Path <i class="fa-solid fa-circle-info tooltip-icon" title="The underlying return address where bounces are sent."></i></div>
+                            <div class="tech-value" id="val-return">--</div>
+                        </div>
+                        <div class="tech-box">
+                            <div class="tech-label">Reply-To <i class="fa-solid fa-circle-info tooltip-icon" title="The address configured to receive replies."></i></div>
+                            <div class="tech-value" id="val-reply">--</div>
+                        </div>
+                        <div class="tech-box full">
+                            <div class="tech-label">Message-ID <i class="fa-solid fa-circle-info tooltip-icon" title="Unique identifier assigned by the sending server."></i></div>
+                            <div class="tech-value font-mono text-xs" id="val-msgid">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Authentication Deep Dive -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-fingerprint"></i> Authentication & Routing Details</div>
+                    </div>
+                    <div class="tech-grid">
+                        <div class="tech-box full">
+                            <div class="tech-label">SPF Telemetry <i class="fa-solid fa-circle-info tooltip-icon" title="Extracted from Received-SPF header."></i></div>
+                            <div class="tech-value text-sm" id="auth-spf-detail" style="color: var(--text-secondary); font-family: monospace; white-space: pre-wrap;">Awaiting file upload...</div>
+                        </div>
+                        <div class="tech-box full">
+                            <div class="tech-label">DKIM Telemetry <i class="fa-solid fa-circle-info tooltip-icon" title="Extracted from Authentication-Results and DKIM-Signature headers."></i></div>
+                            <div class="tech-value text-sm" id="auth-dkim-detail" style="color: var(--text-secondary); font-family: monospace; white-space: pre-wrap;">Awaiting file upload...</div>
+                        </div>
+                        <div class="tech-box full">
+                            <div class="tech-label">DMARC Telemetry <i class="fa-solid fa-circle-info tooltip-icon" title="Extracted from Authentication-Results."></i></div>
+                            <div class="tech-value text-sm" id="auth-dmarc-detail" style="color: var(--text-secondary); font-family: monospace; white-space: pre-wrap;">Awaiting file upload...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Incidents Scanned -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-bug"></i> Forensic Indicators</div>
+                    </div>
+                    <div id="indicators-container">
+                        <div class="text-center py-5 text-muted text-sm italic">
+                            No incident findings compiled. File input required.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Links & Attachments -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="fa-solid fa-link"></i> Hyperlinks & Attachments</div>
+                    </div>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table class="mb-4">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Target / Filename</th>
+                                    <th>Audit Result</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assets-table-body">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted text-sm italic py-4">No data available.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Raw Source Modal -->
+    <div class="modal-overlay" id="modal-raw">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="flex items-center gap-2"><i class="fa-solid fa-code text-accent"></i> Raw Email Stream</h3>
+                <button class="btn btn-outline" onclick="closeModals()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-secondary mb-4">Complete raw email stream. Do not share this openly as it may contain PII.</p>
+                <div class="pre-code" id="raw-eml-view"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Content Modal -->
+    <div class="modal-overlay" id="modal-email">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="flex items-center gap-2"><i class="fa-regular fa-envelope-open text-accent"></i> Content Preview</h3>
+                <button class="btn btn-outline" onclick="closeModals()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="email-preview-body" class="p-4 bg-white text-black border rounded-md min-h-[300px]">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Script -->
+    <script src="script.js"></script>
+</body>
+</html>

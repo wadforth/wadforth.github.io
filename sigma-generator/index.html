@@ -224,10 +224,26 @@
                 </a>
             </div>
 
-            <h1 class="text-4xl font-bold text-white mb-4">
-                <i class="fa-solid fa-shield-halved text-accent"></i>
-                <span class="text-gradient">SIGMA Rule Generator</span>
-            </h1>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                <h1 class="text-4xl font-bold text-white">
+                    <i class="fa-solid fa-shield-halved text-accent"></i>
+                    <span class="text-gradient">SIGMA Rule Generator</span>
+                </h1>
+                <div class="flex items-center gap-2.5 self-start md:self-auto">
+                    <button id="open-changelog-btn" class="px-4 py-2.5 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-slate-400 rounded-xl text-slate-300 text-sm font-semibold transition-all flex items-center gap-2 shadow-lg relative overflow-visible">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Changelog</span>
+                        <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
+                        </span>
+                    </button>
+                    <button id="open-import-btn" class="px-4 py-2.5 bg-accent/10 border border-accent/20 hover:bg-accent/20 hover:border-accent/40 rounded-xl text-accent hover:bg-accent/20 text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-accent/5">
+                        <i class="fa-solid fa-file-import"></i>
+                        Import YAML
+                    </button>
+                </div>
+            </div>
             <p class="text-secondary max-w-3xl text-lg">
                 Create platform-independent detection rules following the <span class="text-accent font-semibold">Sigma
                     2.0</span>
@@ -462,7 +478,7 @@
                                 <div class="tooltip-content">MITRE ATT&CK IDs (e.g., T1059) or other relevant tags.
                                 </div>
                             </div>
-                            <input type="text" id="rule-tags"
+                            <input type="text" id="rule-tags" list="mitre-techniques"
                                 class="w-full px-4 py-2 bg-dark border border-white/10 rounded-lg text-white focus:border-accent focus:outline-none text-sm font-mono"
                                 placeholder="attack.t1059, attack.execution">
                         </div>
@@ -494,15 +510,15 @@
                                     class="w-full max-w-xs px-3 py-2 rounded-lg bg-[#0c0c0c] border border-white/10 hover:border-accent/50 text-slate-200 text-sm font-medium transition-all cursor-pointer focus:outline-none focus:border-accent">
                                     <option value="" class="bg-dark text-slate-400">📋 Select Template...</option>
                                     <option value="powershell" class="bg-dark text-white">⚡ PowerShell</option>
-                                    <option value="privilege_esc" class="bg-dark text-white">🔐 Privilege Escalation
-                                    </option>
-                                    <option value="suspicious_network" class="bg-dark text-white">🌐 Suspicious Network
-                                    </option>
-                                    <option value="malware_process" class="bg-dark text-white">🦠 Malware Process
-                                    </option>
-                                    <option value="lateral_movement" class="bg-dark text-white">↔️ Lateral Movement
-                                    </option>
+                                    <option value="privilege_esc" class="bg-dark text-white">🔐 Privilege Escalation</option>
+                                    <option value="suspicious_network" class="bg-dark text-white">🌐 Suspicious Network</option>
+                                    <option value="malware_process" class="bg-dark text-white">🦠 Malware Process</option>
+                                    <option value="lateral_movement" class="bg-dark text-white">↔️ Lateral Movement</option>
                                     <option value="data_exfil" class="bg-dark text-white">📤 Data Exfiltration</option>
+                                    <option value="lsass_dump" class="bg-dark text-white">🔐 ProcDump LSASS Dump</option>
+                                    <option value="webshell_spawn" class="bg-dark text-white">🌐 Webshell Server Invocation</option>
+                                    <option value="shadow_delete" class="bg-dark text-white">💾 Vssadmin Shadow Deletion</option>
+                                    <option value="registry_run" class="bg-dark text-white">🔑 Registry Run Persistence</option>
                                 </select>
                                 <span id="current-template-badge"
                                     class="hidden px-2 py-1 bg-accent/10 border border-accent/20 rounded text-accent text-xs font-mono whitespace-nowrap"></span>
@@ -520,6 +536,7 @@
                             <div class="flex items-center gap-2">
                                 <i class="fa-solid fa-file-code text-accent"></i>
                                 <span class="font-mono text-sm text-slate-400">rule.yml</span>
+                                <span id="schema-validator-badge" class="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 animate-pulse">INCOMPLETE</span>
                             </div>
                             <div class="flex gap-2">
                                 <button id="save-rule-btn"
@@ -568,32 +585,67 @@
                             <select id="target-platform"
                                 class="bg-dark border border-white/10 rounded px-2 py-1 text-xs text-slate-300 focus:border-accent focus:outline-none">
                                 <option value="defender">Microsoft Defender (KQL)</option>
-                                <option value="crowdstrike">CrowdStrike (FQL)</option>
                                 <option value="sentinel">Microsoft Sentinel (KQL)</option>
+                                <option value="crowdstrike">CrowdStrike (FQL)</option>
+                                <option value="splunk">Splunk (SPL)</option>
+                                <option value="elastic">Elasticsearch (Lucene/ECS)</option>
                             </select>
-                            <button id="convert-btn"
-                                class="px-2 py-1 text-xs bg-accent/10 text-accent border border-accent/20 rounded hover:bg-accent/20 transition-all">
-                                Generate
-                            </button>
+                             <button id="convert-btn"
+                                 class="px-2 py-1 text-xs bg-accent/10 text-accent border border-accent/20 rounded hover:bg-accent/20 transition-all">
+                                 Generate
+                             </button>
+                             <button id="toggle-query-settings-btn"
+                                 class="px-2 py-1 text-xs bg-white/5 text-slate-300 border border-white/10 rounded hover:bg-white/10 transition-all font-mono" title="Customize Mappings & Base Table">
+                                 <i class="fa-solid fa-cog"></i> Settings
+                             </button>
                         </div>
                     </div>
                     <div class="p-4 relative group">
                         <!-- Column Selector -->
-                        <div id="query-options" class="mb-3 hidden">
+                        <div id="query-options" class="mb-3 hidden animate-enter">
                             <label class="block text-xs text-slate-500 mb-2 font-mono">Display Columns
                                 (Projection):</label>
-                            <div id="column-checkboxes" class="flex flex-wrap gap-2">
+                            <div id="column-checkboxes" class="flex flex-wrap gap-2 mb-3">
                                 <!-- Populated by JS -->
+                            </div>
+
+                            <!-- Advanced Query Customizer Panel -->
+                            <div id="query-settings-panel" class="hidden mt-3 p-3 bg-dark/60 border border-white/5 rounded-lg space-y-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] text-slate-500 font-mono mb-1">BASE TABLE / SEARCH PREFIX:</label>
+                                        <input type="text" id="custom-base-table" class="w-full px-2.5 py-1.5 bg-dark border border-white/10 rounded text-xs text-slate-200 focus:outline-none focus:border-accent font-mono" placeholder="e.g. DeviceProcessEvents">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-slate-500 font-mono mb-1">ADDITIONAL PROJECTIONS:</label>
+                                        <input type="text" id="custom-projections" class="w-full px-2.5 py-1.5 bg-dark border border-white/10 rounded text-xs text-slate-200 focus:outline-none focus:border-accent font-mono" placeholder="e.g. AdditionalCol1, Col2">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-500 font-mono mb-1 flex items-center justify-between">
+                                        <span>FIELD MAPPINGS (SIGMA_FIELD: TARGET_FIELD):</span>
+                                        <span class="text-[9px] text-slate-600">One mapping per line</span>
+                                    </label>
+                                    <textarea id="custom-field-mappings" rows="3" class="w-full px-2.5 py-1.5 bg-dark border border-white/10 rounded text-xs text-slate-200 focus:outline-none focus:border-accent font-mono custom-scrollbar" placeholder="Image: NewProcessName&#10;CommandLine: CommandLine"></textarea>
+                                </div>
                             </div>
                         </div>
 
                         <pre id="query-output"
-                            class="font-mono text-sm text-slate-400 whitespace-pre-wrap break-all min-h-[60px]">Select a platform and click Generate...</pre>
-                        <button id="copy-query-btn"
-                            class="absolute top-4 right-4 text-slate-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                            title="Copy Query">
-                            <i class="fa-solid fa-copy"></i>
-                        </button>
+                            class="font-mono text-sm text-slate-400 whitespace-pre-wrap break-all min-h-[60px] p-3 rounded-lg bg-dark/30 border border-white/5">Select a platform and click Generate...</pre>
+                        <div class="absolute top-4 right-4 flex gap-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button id="copy-query-btn" class="text-slate-500 hover:text-white transition-colors" title="Copy Query">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                            <button id="download-query-btn" class="text-slate-500 hover:text-white transition-colors" title="Download Query">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                        </div>
+
+                        <!-- Query Syntax Alerts Container -->
+                        <div id="query-syntax-alerts" class="mt-3 hidden animate-enter">
+                            <!-- Alert rows dynamically generated by JS -->
+                        </div>
                     </div>
                 </div>
                 <!-- History Panel -->
@@ -613,26 +665,6 @@
         </div>
     </div>
 
-    <!-- Sticky Support Footer -->
-    <div id="support-footer"
-        class="fixed bottom-6 left-6 right-6 md:left-auto md:right-8 md:w-auto bg-[#1a1a1a]/90 backdrop-blur-md border border-yellow-500/20 rounded-xl p-4 shadow-2xl z-40 flex items-center justify-between md:justify-start gap-4 transform transition-all duration-300 slide-up-animation">
-        <div class="flex items-center gap-3">
-            <div class="p-2 bg-yellow-500/10 rounded-lg shrink-0">
-                <i class="fa-solid fa-mug-hot text-yellow-500 text-lg"></i>
-            </div>
-            <div>
-                <p class="text-white font-medium text-sm">Enjoying my work?</p>
-                <a href="https://buymeacoffee.com/kierxn" target="_blank"
-                    class="text-xs text-yellow-500 hover:text-yellow-400 transition-colors font-medium">
-                    Buy me a coffee <i class="fa-solid fa-arrow-up-right-from-square ml-1 text-[10px]"></i>
-                </a>
-            </div>
-        </div>
-        <button onclick="this.parentElement.style.opacity='0'; setTimeout(() => this.parentElement.remove(), 300)"
-            class="text-slate-500 hover:text-white transition-colors p-1 rounded-md hover:bg-white/5">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
-    </div>
 
     <!-- Scroll to Top -->
     <button id="scroll-to-top"
@@ -668,6 +700,110 @@
         <option value="QueryName">
         <option value="Hashes">
     </datalist>
+
+    <!-- MITRE ATT&CK Auto-Suggest techniques datalist -->
+    <datalist id="mitre-techniques">
+        <option value="attack.t1059.001">PowerShell (T1059.001)</option>
+        <option value="attack.t1059.003">Windows Command Shell (T1059.003)</option>
+        <option value="attack.t1003.001">LSASS Memory Dump (T1003.001)</option>
+        <option value="attack.t1003.002">Security Account Manager (T1003.002)</option>
+        <option value="attack.t1027">Obfuscated Files/Info (T1027)</option>
+        <option value="attack.t1105">Ingress Tool Transfer (T1105)</option>
+        <option value="attack.t1546.008">Accessibility Features Sticky Keys (T1546.008)</option>
+        <option value="attack.t1563.002">RDP Session Hijacking (T1563.002)</option>
+        <option value="attack.t1048.003">DNS Tunneling (T1048.003)</option>
+        <option value="attack.t1204.002">Malicious File Attachment (T1204.002)</option>
+        <option value="attack.t1490">Inhibit System Recovery Shadow Copies (T1490)</option>
+        <option value="attack.t1053.005">Scheduled Task (T1053.005)</option>
+        <option value="attack.t1078">Valid Accounts (T1078)</option>
+        <option value="attack.t1547.001">Registry Run Keys / Startup (T1547.001)</option>
+        <option value="attack.t1190">Exploit Public-Facing Application (T1190)</option>
+    </datalist>
+
+    <!-- Changelog Modal -->
+    <div id="changelog-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-card rounded-2xl p-6 w-full max-w-lg max-h-[85vh] flex flex-col border border-white/10 shadow-2xl relative scale-95 transition-all duration-300">
+            <button id="close-changelog-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors" aria-label="Close">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+            <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-accent"></i> Sigma Generator Changelog
+            </h3>
+            
+            <div class="flex-1 overflow-y-auto pr-1 space-y-5 custom-scrollbar text-sm leading-relaxed">
+                <!-- v2.1.5 -->
+                <div class="border-l-2 border-accent pl-4 relative">
+                    <div class="absolute w-3 h-3 rounded-full bg-accent -left-[7px] top-1 shadow-lg shadow-accent/55"></div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-white font-bold font-mono text-sm">v2.1.5 (Enterprise Overhaul)</span>
+                        <span class="text-[10px] font-mono bg-accent-dim text-accent border border-accent/20 px-1.5 py-0.5 rounded animate-pulse">LATEST</span>
+                    </div>
+                    <ul class="space-y-1.5 text-xs text-slate-400 list-disc list-inside">
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Splunk SPL Compiler</strong>: Advanced engine to compile Splunk Search Processing Language (SPL) including EventCode indices, wildcard maps, and regex pipelines.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Elastic Lucene Compiler</strong>: Compiles logic into standard Elastic Common Schema (ECS) process fields.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Advanced Mappings Customizer</strong>: Fully editable Settings cog-panel letting analysts override default base tables, custom projection lists, and raw field mapping text blocks in real time.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Real-Time SIEM Syntax Checker</strong>: Embedded parser highlighting unbalanced parentheses, odd quotes, KQL single `=` assignments, KQL operators in Splunk/Elastic, and Splunk index double-equals.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Expert Telemetry Templates</strong>: Loads credential ProcDumps, server webshell commands, ransomware shadow copy deletes, and Run key persistent autoruns.</li>
+                        <li><span class="text-accent font-semibold">[Fix]</span> <strong class="text-white">Timeline Markdown Render</strong>: Replaced all unparsed raw `**` syntax markers with styled HTML elements.</li>
+                    </ul>
+                </div>
+
+                <!-- v2.1.0 -->
+                <div class="border-l-2 border-slate-700 pl-4 relative">
+                    <div class="absolute w-3 h-3 rounded-full bg-slate-700 -left-[7px] top-1"></div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-slate-200 font-bold font-mono text-sm">v2.1.0 (Core Features)</span>
+                        <span class="text-[10px] font-mono text-slate-500">2026-05-31</span>
+                    </div>
+                    <ul class="space-y-1.5 text-xs text-slate-400 list-disc list-inside">
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Dynamic YAML Importer</strong>: Pasting standard Sigma YAML rules rebuilds form fields and selectors instantly.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Full History Form restorer</strong>: Saves inputsState in LocalStorage, enabling true saved-rule edits directly.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Condition logical query compiler</strong>: Ingests advanced boolean grouping filters (AND, OR, NOT) for KQL & FQL.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">MITRE ATT&CK Auto-Suggest</strong>: Connected tags input box to techniques datalist suggestions.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Auto-MITRE reference URLs</strong>: Generates reference link arrays automatically when technique tags are selected.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Query Converter Syntax Highlighting</strong>: Colors compiled KQL & FQL query elements.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Live Sigma Schema Validator</strong>: Pulses status indicators based on required field validations.</li>
+                        <li><span class="text-accent font-semibold">[Feature]</span> <strong class="text-white">Download Compiled Query utility</strong>: Exports compiled queries straight as `.kql` or `.fql` files.</li>
+                        <li><span class="text-accent font-semibold">[Fix]</span> <strong class="text-white">Keystroke UUID Fix</strong>: Caches rule UUIDs to block continuous rotating values.</li>
+                    </ul>
+                </div>
+
+                <!-- v2.0.0 -->
+                <div class="border-l-2 border-slate-700 pl-4 relative">
+                    <div class="absolute w-3 h-3 rounded-full bg-slate-700 -left-[7px] top-1"></div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-slate-200 font-bold font-mono text-sm">v2.0.0 (Premium Redesign)</span>
+                        <span class="text-[10px] font-mono text-slate-500">2026-04-12</span>
+                    </div>
+                    <ul class="space-y-1.5 text-xs text-slate-500 list-disc list-inside">
+                        <li>Complete visual overhaul with sleeker glassmorphic neon layouts and aurora background sweeps.</li>
+                        <li>Integration of the Beta Query Converter (Defender and CrowdStrike conversions).</li>
+                        <li>Added LocalStorage history cache and keyboard shortcuts.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button id="ok-changelog-btn" class="w-full mt-5 py-2.5 bg-accent/20 border border-accent/30 rounded-xl text-accent hover:bg-accent/35 text-xs font-bold transition-all shadow-lg shadow-accent/5">Acknowledge</button>
+        </div>
+    </div>
+
+    <!-- Import YAML Modal -->
+    <div id="import-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] flex flex-col border border-white/10 shadow-2xl relative scale-95 transition-all duration-300">
+            <button id="close-import-btn" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors" aria-label="Close">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+            <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-file-import text-accent"></i> Import Sigma Rule (YAML)
+            </h3>
+            <p class="text-xs text-slate-500 mb-4 font-mono">Paste your raw Sigma YAML rule below. Our custom compiler will parse, identify category schemas, modifiers, and rebuild the form fields dynamically.</p>
+            <textarea id="import-textarea" class="w-full flex-1 min-h-[280px] p-4 bg-dark/90 border border-white/10 rounded-xl text-slate-200 font-mono text-xs focus:outline-none focus:border-accent focus:ring-0 mb-4 custom-scrollbar" placeholder="title: Suspicious PowerShell Encoded Command..."></textarea>
+            <div class="flex justify-end gap-3">
+                <button id="cancel-import-btn" class="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-slate-300 hover:bg-white/10 text-xs font-semibold transition-all">Cancel</button>
+                <button id="submit-import-btn" class="px-5 py-2 bg-accent/20 border border-accent/30 rounded-xl text-accent hover:bg-accent/35 text-xs font-bold transition-all shadow-lg shadow-accent/5">Parse & Ingest Rule</button>
+            </div>
+        </div>
+    </div>
 
     <script src="../sigma-generator.js"></script>
     <script>

@@ -2126,4 +2126,74 @@
     display: none !important;
 }
 
+/* Redesigned Activity Feed */
+.activity-timeline {
+    border-left: none !important;
+    padding-left: 0 !important;
+}
+.activity-timeline::before {
+    display: none !important;
+}
+.timeline-node {
+    display: none !important;
+}
+.timeline-event {
+    padding-left: 0 !important;
+    border-bottom: none !important;
+    margin-bottom: 0.75rem !important;
+    padding-bottom: 0 !important;
+}
+.activity-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--report-border) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: var(--transition) !important;
+}
+.activity-card:hover {
+    border-color: rgba(124, 58, 237, 0.25) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+}
+.activity-card.status-card {
+    border-left: 4px solid #fbbf24 !important;
+}
+.activity-card.new-card {
+    border-left: 4px solid #34d399 !important;
+}
+.activity-card.new-card.sub-card {
+    border-left: 4px solid #38bdf8 !important;
+}
+
+/* Redesigned Detection Results */
+.detection-result-card {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--report-border) !important;
+    border-radius: var(--radius-md) !important;
+    overflow: hidden;
+    transition: var(--transition) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+.detection-result-card:hover {
+    border-color: rgba(124, 58, 237, 0.25) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+}
+.detection-result-card-header {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid var(--report-border) !important;
+    padding: 0.6rem 1rem !important;
+}
+.detection-result-card-body {
+    padding: 1.1rem !important;
+}
+
+/* Direct inline author field styling */
+.report-author-input::placeholder {
+    color: rgba(255, 255, 255, 0.25) !important;
+}
+.report-author-input:focus {
+    border-bottom: 1px dashed #38bdf8 !important;
+}
+
+
 
