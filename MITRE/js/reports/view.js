@@ -2470,6 +2470,7 @@ async function exportReportPDF(reportId) {
     const htmlContent = buildEmailHTML(report, isDark);
     
     const container = document.createElement('div');
+    container.classList.add('is-pdf');
     container.style.cssText = isDark
         ? 'width:794px;background:#070814;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#cbd5e1;'
         : 'width:794px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;';
@@ -2664,7 +2665,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
     const mainTechniques = newTechniques.filter(t => !isSubTechnique(t.techniqueID));
     const subTechniques = newTechniques.filter(t => isSubTechnique(t.techniqueID));
     
-    let html = `<div class="section"><h3>Monthly Activity Feed</h3>
+    let html = `<div class="section" id="monthly-activity"><a name="monthly-activity"></a><h3>Monthly Activity Feed</h3>
         <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">`;
     
     const renderTimelineRow = (color, typeLabel, title, details, footerText) => {
@@ -2674,25 +2675,37 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
         const techName = isStandardTech ? parts.slice(1).join(' - ') : title;
 
         const titleHtml = isStandardTech
-            ? `<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: ${color}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'}; padding: 2px 6px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'};">${techId}</span>
+            ? `<span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: ${color}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'}; padding: 2px 6px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; display: inline-block;">${techId}</span>
                <span style="font-size: 11.5px; font-weight: 600; color: ${isDark ? '#f3f4f6' : '#1e293b'}; margin-left: 6px;">${techName}</span>`
             : `<span style="font-size: 11.5px; font-weight: 600; color: ${isDark ? '#f3f4f6' : '#1e293b'};">${title}</span>`;
 
         return `
             <tr>
                 <td style="padding: 0 0 12px 0; vertical-align: top;">
-                    <div style="background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.8) 0%, rgba(13, 14, 28, 0.5) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}; border-left: 4px solid ${color}; border-radius: 10px; padding: 14px; box-shadow: ${isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(15, 23, 42, 0.03)'}; transition: all 0.3s ease;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                                ${titleHtml}
-                            </div>
-                            <span style="font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 9999px; ${isDark ? 'background-color: rgba(255, 255, 255, 0.06); color: #a2a6cc;' : 'background-color: #f1f5f9; color: #475569;'}">${typeLabel}</span>
-                        </div>
+                    <div style="background-color: ${isDark ? '#141528' : '#ffffff'}; background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.8) 0%, rgba(13, 14, 28, 0.5) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}; border-left: 4px solid ${color}; border-radius: 10px; padding: 14px; box-shadow: ${isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(15, 23, 42, 0.03)'};">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 8px;">
+                            <tr>
+                                <td style="text-align: left; vertical-align: middle;">
+                                    ${titleHtml}
+                                </td>
+                                <td align="right" style="text-align: right; vertical-align: middle; width: 120px;">
+                                    <span style="font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 9999px; ${isDark ? 'background-color: rgba(255, 255, 255, 0.06); color: #a2a6cc;' : 'background-color: #f1f5f9; color: #475569;'}">${typeLabel}</span>
+                                </td>
+                            </tr>
+                        </table>
                         ${details ? `<div style="font-size: 11px; color: ${isDark ? '#a2a6cc' : '#475569'}; line-height: 1.5; margin-top: 6px;">${details}</div>` : ''}
                         ${footerText ? `
-                            <div style="font-size: 10px; color: ${isDark ? '#f3f4f6' : '#1e293b'}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0'}; border-radius: 6px; padding: 8px 12px; margin-top: 10px; display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace;">
-                                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: ${color}; flex-shrink: 0; box-shadow: 0 0 6px ${color};"></span>
-                                ${footerText}
+                            <div style="font-size: 10px; color: ${isDark ? '#f3f4f6' : '#1e293b'}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0'}; border-radius: 6px; padding: 8px 12px; margin-top: 10px; font-family: 'JetBrains Mono', monospace;">
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin: 0;">
+                                    <tr>
+                                        <td style="width: 14px; vertical-align: middle; padding: 0; border: none;">
+                                            <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background-color: ${color}; flex-shrink: 0; box-shadow: 0 0 6px ${color};"></span>
+                                        </td>
+                                        <td style="vertical-align: middle; padding: 0; border: none; color: ${isDark ? '#cbd5e1' : '#334155'};">
+                                            ${footerText}
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         ` : ''}
                     </div>
@@ -2728,15 +2741,19 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
             html += `
                 <tr>
                     <td style="padding: 0 0 10px 0; vertical-align: top;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; flex-wrap: wrap; gap: 8px; background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.7) 0%, rgba(13, 14, 28, 0.4) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0'}; border-left: 3px solid #fbbf24; padding: 10px 14px; border-radius: 8px; box-shadow: ${isDark ? '0 4px 12px rgba(0,0,0,0.15)' : '0 2px 6px rgba(15, 23, 42, 0.02)'};">
-                            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${isDark ? '#f3f4f6' : '#1e293b'}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'};">${change.techniqueID}</span>
-                                <span style="font-weight: 600; color: ${isDark ? '#cbd5e1' : '#475569'}; margin-left: 6px;">${techName}</span>
-                                <span style="font-size: 8px; font-weight: 700; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; background-color: ${typeBadgeBg}; color: ${typeBadgeColor}; margin-left: 6px; display: inline-block; vertical-align: middle;">${techType}</span>
-                            </div>
-                            <div style="font-size: 10px; color: ${isDark ? '#a2a6cc' : '#64748b'}; font-weight: 500; margin-left: auto;">
-                                Coverage Status: <span style="font-weight: 600; color: ${isDark ? '#fbbf24' : '#d97706'};">${fromLabel}</span> &rarr; <span style="font-weight: 600; color: ${isDark ? '#4ade80' : '#16a34a'};">${toLabel}</span>
-                            </div>
+                        <div style="background-color: ${isDark ? '#141528' : '#ffffff'}; background: ${isDark ? 'linear-gradient(145deg, rgba(20, 21, 38, 0.7) 0%, rgba(13, 14, 28, 0.4) 100%)' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.05)' : '#e2e8f0'}; border-left: 3px solid #fbbf24; padding: 10px 14px; border-radius: 8px; box-shadow: ${isDark ? '0 4px 12px rgba(0,0,0,0.15)' : '0 2px 6px rgba(15, 23, 42, 0.02)'};">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin: 0;">
+                                <tr>
+                                    <td style="text-align: left; vertical-align: middle; padding: 0; border: none;">
+                                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${isDark ? '#f3f4f6' : '#1e293b'}; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f1f5f9'}; padding: 2px 5px; border-radius: 4px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; display: inline-block;">${change.techniqueID}</span>
+                                        <span style="font-weight: 600; color: ${isDark ? '#cbd5e1' : '#475569'}; margin-left: 6px;">${techName}</span>
+                                        <span style="font-size: 8px; font-weight: 700; text-transform: uppercase; padding: 1px 6px; border-radius: 3px; background-color: ${typeBadgeBg}; color: ${typeBadgeColor}; margin-left: 6px; display: inline-block; vertical-align: middle;">${techType}</span>
+                                    </td>
+                                    <td align="right" style="text-align: right; vertical-align: middle; font-size: 10px; color: ${isDark ? '#a2a6cc' : '#64748b'}; font-weight: 500; width: 220px; padding: 0; border: none;">
+                                        Coverage Status: <span style="font-weight: 600; color: ${isDark ? '#fbbf24' : '#d97706'};">${fromLabel}</span> &rarr; <span style="font-weight: 600; color: ${isDark ? '#4ade80' : '#16a34a'};">${toLabel}</span>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </td>
                 </tr>
@@ -2843,7 +2860,7 @@ function buildGapAnalysisVisual(report, theme, isDark = false) {
     const highCoverage = tactics.filter(t => t.coverage >= 80).sort((a, b) => b.coverage - a.coverage);
     
     let html = `
-        <div class="section" style="page-break-inside: avoid;">
+        <div class="section" id="gap-analysis" style="page-break-inside: avoid;"><a name="gap-analysis"></a>
             <h3>Gap Analysis & Prioritization</h3>
             <p style="margin-bottom: 12px; font-size: 13px; color: ${isDark ? '#cbd5e1' : '#475569'};">A granular assessment of coverage across all tactics, with recommended immediate action items to address visibility gaps.</p>
     `;
@@ -2853,18 +2870,22 @@ function buildGapAnalysisVisual(report, theme, isDark = false) {
         const items = lowCoverage.map(t => {
             const tacticName = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             return `
-                <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; ${isDark ? 'background-color: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2);' : 'background-color: #ffffff; border: 1px solid #fee2e2;'} border-radius: 6px; padding: 8px 12px; font-size: 12px;">
-                    <div>
-                        <strong style="color: ${isDark ? '#fca5a5' : '#991b1b'};">${tacticName}</strong>
-                        <span style="color: #64748b; margin-left: 6px;">(${t.withQueries}/${t.total} techniques)</span>
-                    </div>
-                    <span style="font-weight: 700; color: ${isDark ? '#f87171' : '#ef4444'}; background-color: ${isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2'}; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${t.coverage.toFixed(1)}% Coverage</span>
-                </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 6px; background-color: ${isDark ? '#1a0b0b' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'}; border-radius: 6px;">
+                    <tr>
+                        <td style="padding: 8px 12px; font-size: 12px; text-align: left; vertical-align: middle; border: none;">
+                            <strong style="color: ${isDark ? '#fca5a5' : '#991b1b'};">${tacticName}</strong>
+                            <span style="color: #64748b; margin-left: 6px;">(${t.withQueries}/${t.total} techniques)</span>
+                        </td>
+                        <td align="right" style="padding: 8px 12px; font-size: 12px; text-align: right; vertical-align: middle; border: none; width: 120px;">
+                            <span style="font-weight: 700; color: ${isDark ? '#f87171' : '#ef4444'}; background-color: ${isDark ? 'rgba(239, 68, 68, 0.15)' : '#fee2e2'}; padding: 2px 8px; border-radius: 4px; font-size: 10px; display: inline-block;">${t.coverage.toFixed(1)}% Coverage</span>
+                        </td>
+                    </tr>
+                </table>
             `;
         }).join('');
         
         html += `
-            <div style="${isDark ? 'background-color: rgba(239, 68, 68, 0.03); border: 1px solid rgba(239, 68, 68, 0.2);' : 'background-color: #fffafb; border: 1px solid #fee2e2;'} border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+            <div style="background-color: ${isDark ? '#140c0c' : '#fffafb'}; border: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'}; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
                 <div style="font-size: 12px; font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
                     ⚠️ CRITICAL VISIBILITY GAPS (<50% COVERAGE)
                 </div>
@@ -2881,18 +2902,22 @@ function buildGapAnalysisVisual(report, theme, isDark = false) {
         const items = mediumCoverage.map(t => {
             const tacticName = t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             return `
-                <div style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; ${isDark ? 'background-color: rgba(217, 119, 6, 0.05); border: 1px solid rgba(217, 119, 6, 0.2);' : 'background-color: #ffffff; border: 1px solid #fef3c7;'} border-radius: 6px; padding: 8px 12px; font-size: 12px;">
-                    <div>
-                        <strong style="color: ${isDark ? '#fcd34d' : '#92400e'};">${tacticName}</strong>
-                        <span style="color: #64748b; margin-left: 6px;">(${t.withQueries}/${t.total} techniques)</span>
-                    </div>
-                    <span style="font-weight: 700; color: ${isDark ? '#fbbf24' : '#d97706'}; background-color: ${isDark ? 'rgba(217, 119, 6, 0.15)' : '#fef3c7'}; padding: 2px 8px; border-radius: 4px; font-size: 10px;">${t.coverage.toFixed(1)}% Coverage</span>
-                </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 6px; background-color: ${isDark ? '#1c150c' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(217, 119, 6, 0.2)' : '#fef3c7'}; border-radius: 6px;">
+                    <tr>
+                        <td style="padding: 8px 12px; font-size: 12px; text-align: left; vertical-align: middle; border: none;">
+                            <strong style="color: ${isDark ? '#fcd34d' : '#92400e'};">${tacticName}</strong>
+                            <span style="color: #64748b; margin-left: 6px;">(${t.withQueries}/${t.total} techniques)</span>
+                        </td>
+                        <td align="right" style="padding: 8px 12px; font-size: 12px; text-align: right; vertical-align: middle; border: none; width: 120px;">
+                            <span style="font-weight: 700; color: ${isDark ? '#fbbf24' : '#d97706'}; background-color: ${isDark ? 'rgba(217, 119, 6, 0.15)' : '#fef3c7'}; padding: 2px 8px; border-radius: 4px; font-size: 10px; display: inline-block;">${t.coverage.toFixed(1)}% Coverage</span>
+                        </td>
+                    </tr>
+                </table>
             `;
         }).join('');
         
         html += `
-            <div style="${isDark ? 'background-color: rgba(217, 119, 6, 0.03); border: 1px solid rgba(217, 119, 6, 0.2);' : 'background-color: #fffdf5; border: 1px solid #fef3c7;'} border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+            <div style="background-color: ${isDark ? '#16120d' : '#fffdf5'}; border: 1px solid ${isDark ? 'rgba(217, 119, 6, 0.2)' : '#fef3c7'}; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
                 <div style="font-size: 12px; font-weight: 700; color: #d97706; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
                     ⚡ MODERATE DEPLOYMENTS (50% - 80% COVERAGE)
                 </div>
@@ -2906,7 +2931,7 @@ function buildGapAnalysisVisual(report, theme, isDark = false) {
     
     // Action Plan Panel
     html += `
-        <div style="${isDark ? 'background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);' : 'background-color: #f8fafc; border: 1px solid #e2e8f0;'} border-radius: 8px; padding: 14px;">
+        <div style="background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'}; border-radius: 8px; padding: 14px;">
             <div style="font-size: 12px; font-weight: 700; color: ${isDark ? '#ffffff' : '#475569'}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
                 🎯 PRIORITIZED STRATEGIC ROADMAP
             </div>
@@ -2956,8 +2981,20 @@ function buildEmailHTML(report, isDark = false) {
     };
     const accentRgb = hexToRgb(theme.accent);
     
+    // Theme solid color fallbacks for Outlook background rendering
+    const THEME_SOLID_FALLBACKS = {
+        blue: '#0f172a',
+        orange: '#1a0f00',
+        green: '#052e16',
+        purple: '#1a0a2e',
+        red: '#2a0a0a',
+        teal: '#042f2e',
+        slate: '#1e293b'
+    };
+    const fallbackBg = THEME_SOLID_FALLBACKS[report.bannerTheme || 'blue'] || THEME_SOLID_FALLBACKS.blue;
+    
     // Month stats for stats bar
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     
     const execSummary = report.executiveSummary || generateDynamicExecutiveSummary(report);
     const monthlyFocus = report.monthlyFocus || generateDynamicMonthlyFocus(report);
@@ -2970,9 +3007,9 @@ function buildEmailHTML(report, isDark = false) {
             gapAnalysisHtml = buildGapAnalysisVisual(report, theme, isDark);
         } else {
             gapAnalysisHtml = `
-                <div class="section" style="page-break-inside: avoid;">
+                <div class="section" id="gap-analysis" style="page-break-inside: avoid;"><a name="gap-analysis"></a>
                     <h3>Gap Analysis & Prioritization</h3>
-                    <div style="${isDark ? 'background-color: #0f1123; border: 1px solid rgba(168,85,247,0.2); color: #cbd5e1;' : 'background-color: #f8fafc; border: 1px solid #e2e8f0; color: #334155;'} border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6;">
+                    <div style="background-color: ${isDark ? '#0f1123' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(168,85,247,0.2)' : '#e2e8f0'}; color: ${isDark ? '#cbd5e1' : '#334155'}; border-radius: 8px; padding: 16px; font-size: 13px; line-height: 1.6;">
                         ${markdownToHtml(gapAnalysis)}
                     </div>
                 </div>
@@ -3015,43 +3052,43 @@ function buildEmailHTML(report, isDark = false) {
         let notesHtml = '';
         if (report.methodologyNotes) {
             notesHtml = `
-                <div style="margin-top: 14px; padding: 12px; background: ${isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'}; border-radius: 8px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; width: 100%;">
+                <div style="margin-top: 14px; padding: 12px; background-color: ${isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'}; border-radius: 8px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; width: 100%;">
                     <strong style="color: ${isDark ? '#ffffff' : '#0f172a'}; display: block; margin-bottom: 4px;">📝 Additional Methodology & Scope Notes:</strong>
                     ${markdownToHtml(report.methodologyNotes)}
                 </div>
             `;
         }
-        methodScopeHtml = `<div class="section" style="page-break-inside: avoid;">
+        methodScopeHtml = `<div class="section" id="methodology-scope" style="page-break-inside: avoid;"><a name="methodology-scope"></a>
             <h3>Methodology & Scope</h3>
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                 <tr>
-                    <td valign="top" style="width: 48%; padding-right: 4%; vertical-align: top;">
-                        <div style="background: ${isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; border-radius: 12px; padding: 16px; min-height: 220px; box-shadow: ${isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 8px 20px 0 rgba(0, 0, 0, 0.03)'};">
+                    <td valign="top" style="width: 48%; padding-right: 4%; vertical-align: top; border: none;">
+                        <div style="background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; border-radius: 12px; padding: 16px; min-height: 220px; box-shadow: ${isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 8px 20px 0 rgba(0, 0, 0, 0.03)'};">
                             <h4 style="margin-top: 0; margin-bottom: 12px; color: ${isDark ? '#a855f7' : '#7c3aed'}; font-size: 14px; font-weight: 700; border-bottom: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding-bottom: 6px;">
                                 🎯 Hunting Methodology
                             </h4>
                             ${selectedMethods.length ? selectedMethods.map(m => `
-                                <div style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; display: table; width: 100%;">
-                                    <div style="display: table-cell; width: 16px; vertical-align: top; color: #10b981; font-weight: bold; font-size: 13px;">✓</div>
-                                    <div style="display: table-cell; padding-left: 6px; vertical-align: top;">
-                                        ${m}
-                                    </div>
-                                </div>
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; border-collapse: collapse;">
+                                    <tr>
+                                        <td valign="top" style="width: 16px; color: #10b981; font-weight: bold; font-size: 13px; border: none; padding: 0;">✓</td>
+                                        <td valign="top" style="padding-left: 6px; border: none; color: ${isDark ? '#cbd5e1' : '#475569'};">${m}</td>
+                                    </tr>
+                                </table>
                             `).join('') : `<p style="color: ${isDark ? '#6b709c' : '#94a3b8'}; font-size: 12px; font-style: italic; margin: 0;">No specific methodologies specified.</p>`}
                         </div>
                     </td>
-                    <td valign="top" style="width: 48%; vertical-align: top;">
-                        <div style="background: ${isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.01)'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; border-radius: 12px; padding: 16px; min-height: 220px; box-shadow: ${isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 8px 20px 0 rgba(0, 0, 0, 0.03)'};">
+                    <td valign="top" style="width: 48%; vertical-align: top; border: none;">
+                        <div style="background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; border-radius: 12px; padding: 16px; min-height: 220px; box-shadow: ${isDark ? '0 8px 32px 0 rgba(0, 0, 0, 0.37)' : '0 8px 20px 0 rgba(0, 0, 0, 0.03)'};">
                             <h4 style="margin-top: 0; margin-bottom: 12px; color: ${isDark ? '#06b6d4' : '#0284c7'}; font-size: 14px; font-weight: 700; border-bottom: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding-bottom: 6px;">
                                 🛡️ Defensive Telemetry Scope
                             </h4>
                             ${selectedScopes.length ? selectedScopes.map(s => `
-                                <div style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; display: table; width: 100%;">
-                                    <div style="display: table-cell; width: 16px; vertical-align: top; color: #06b6d4; font-weight: bold; font-size: 13px;">•</div>
-                                    <div style="display: table-cell; padding-left: 6px; vertical-align: top;">
-                                        ${s}
-                                    </div>
-                                </div>
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; border-collapse: collapse;">
+                                    <tr>
+                                        <td valign="top" style="width: 16px; color: #06b6d4; font-weight: bold; font-size: 13px; border: none; padding: 0;">•</td>
+                                        <td valign="top" style="padding-left: 6px; border: none; color: ${isDark ? '#cbd5e1' : '#475569'};">${s}</td>
+                                    </tr>
+                                </table>
                             `).join('') : `<p style="color: ${isDark ? '#6b709c' : '#94a3b8'}; font-size: 12px; font-style: italic; margin: 0;">No specific data scopes specified.</p>`}
                         </div>
                     </td>
@@ -3100,7 +3137,7 @@ function buildEmailHTML(report, isDark = false) {
                         const bg = isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(14, 165, 233, 0.08)';
                         const text = isDark ? '#38bdf8' : '#0369a1';
                         const border = isDark ? 'rgba(56, 189, 248, 0.3)' : 'rgba(14, 165, 233, 0.2)';
-                        return `<span style="background: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(p.name)}">${p.id}</span>`;
+                        return `<span style="background-color: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(p.name)}">${p.id}</span>`;
                     }).join(' ');
                     badgesHtml += `</div>`;
                 }
@@ -3110,7 +3147,7 @@ function buildEmailHTML(report, isDark = false) {
                         const bg = isDark ? 'rgba(52, 211, 153, 0.15)' : 'rgba(16, 185, 129, 0.08)';
                         const text = isDark ? '#34d399' : '#047857';
                         const border = isDark ? 'rgba(52, 211, 153, 0.3)' : 'rgba(16, 185, 129, 0.2)';
-                        return `<span style="background: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(s.name)}">${s.id}</span>`;
+                        return `<span style="background-color: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(s.name)}">${s.id}</span>`;
                     }).join(' ');
                     badgesHtml += `</div>`;
                 }
@@ -3119,13 +3156,13 @@ function buildEmailHTML(report, isDark = false) {
                 return `
                     <li style="margin-bottom: 12px; list-style-type: none; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px;">
                         <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${queryName}</strong>
-                        <span style="background: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle;">${q.language}</span>
+                        <span style="background-color: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle; display: inline-block;">${q.language}</span>
                         ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${q.description}</div>` : ''}
                         ${badgesHtml}
                     </li>
                 `;
             }).join('');
-            newQueriesHtml = `<div class="section"><h3>New Threat Hunt Queries</h3>
+            newQueriesHtml = `<div class="section" id="query-library"><a name="query-library"></a><h3>New Threat Hunt Queries</h3>
                 <p style="margin-bottom: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; font-size: 13px;">${newQueries.length} queries for this period:</p>
                 <ul style="padding-left: 0; margin: 0;">${queryList}</ul>
             </div>`;
@@ -3153,12 +3190,18 @@ function buildEmailHTML(report, isDark = false) {
         });
         
         const renderListEmail = (list, color) => {
-            if (list.length === 0) return `<div style="color: ${isDark ? '#94a3b8' : '#94a3b8'}; font-size: 11px; font-style: italic; text-align: center; padding: 8px 0;">No tactics</div>`;
+            if (list.length === 0) return `<div style="color: #94a3b8; font-size: 11px; font-style: italic; text-align: center; padding: 8px 0;">No tactics</div>`;
             return list.map(item => `
-                <div style="display: flex; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc'}; border-radius: 4px; font-size: 11px;">
-                    <span style="font-weight: 600; color: ${isDark ? '#e2e8f0' : '#1e293b'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px;">${item.displayName}</span>
-                    <span style="font-weight: 700; color: ${color};">${item.coverage % 1 === 0 ? item.coverage : item.coverage.toFixed(1)}%</span>
-                </div>
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 4px; background-color: ${isDark ? 'rgba(255, 255, 255, 0.04)' : '#f8fafc'}; border-radius: 4px;">
+                    <tr>
+                        <td style="padding: 6px 8px; font-size: 11px; font-weight: 600; color: ${isDark ? '#e2e8f0' : '#1e293b'}; text-align: left; vertical-align: middle; border: none;">
+                            ${item.displayName}
+                        </td>
+                        <td align="right" style="padding: 6px 8px; font-size: 11px; font-weight: 700; color: ${color}; text-align: right; vertical-align: middle; width: 60px; border: none;">
+                            ${item.coverage % 1 === 0 ? item.coverage : item.coverage.toFixed(1)}%
+                        </td>
+                    </tr>
+                </table>
             `).join('');
         };
 
@@ -3167,7 +3210,7 @@ function buildEmailHTML(report, isDark = false) {
                 <h3>Tactic Gap Triage Radar</h3>
                 <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <tr>
-                        <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top;">
+                        <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top; border: none;">
                             <div style="border: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'}; background-color: ${isDark ? 'rgba(239, 68, 68, 0.05)' : '#fffafb'}; border-radius: 8px; padding: 12px; min-height: 180px;">
                                 <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2'}; padding-bottom: 4px;">
                                     ⚠️ Critical (<50%) [${criticalGaps.length}]
@@ -3175,7 +3218,7 @@ function buildEmailHTML(report, isDark = false) {
                                 ${renderListEmail(criticalGaps, '#ef4444')}
                             </div>
                         </td>
-                        <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top;">
+                        <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top; border: none;">
                             <div style="border: 1px solid ${isDark ? 'rgba(245, 158, 11, 0.2)' : '#fef3c7'}; background-color: ${isDark ? 'rgba(245, 158, 11, 0.05)' : '#fffdf5'}; border-radius: 8px; padding: 12px; min-height: 180px;">
                                 <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#fbbf24' : '#d97706'}; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(245, 158, 11, 0.1)' : '#fef3c7'}; padding-bottom: 4px;">
                                     ⚡ Moderate (50%-80%) [${moderateCoverage.length}]
@@ -3183,7 +3226,7 @@ function buildEmailHTML(report, isDark = false) {
                                 ${renderListEmail(moderateCoverage, isDark ? '#fbbf24' : '#d97706')}
                             </div>
                         </td>
-                        <td valign="top" style="width: 32%; vertical-align: top;">
+                        <td valign="top" style="width: 32%; vertical-align: top; border: none;">
                             <div style="border: 1px solid ${isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7'}; background-color: ${isDark ? 'rgba(16, 185, 129, 0.05)' : '#f5fdf8'}; border-radius: 8px; padding: 12px; min-height: 180px;">
                                 <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#34d399' : '#16a34a'}; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(16, 185, 129, 0.1)' : '#dcfce7'}; padding-bottom: 4px;">
                                     ✅ Strong (&ge;80%) [${strongCoverage.length}]
@@ -3304,12 +3347,42 @@ function buildEmailHTML(report, isDark = false) {
     const maturityGrade = getMaturityGrade(frameworkCoverage);
     const gradeColor = getGradeColor(frameworkCoverage);
 
+    // Clickable Table of Contents Index (Outlook & EML safe using anchors)
+    const tocIndexHtml = `
+        <div style="margin-bottom: 24px; padding: 16px; background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; border-radius: 8px;">
+            <h4 style="margin: 0 0 10px 0; font-size: 12px; font-weight: 700; color: ${isDark ? '#38bdf8' : '#0284c7'}; text-transform: uppercase; letter-spacing: 0.5px; font-family: sans-serif;">📖 Report Navigation Guide</h4>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: sans-serif;">
+                <tr>
+                    <td width="50%" style="padding: 4px 0; border: none; vertical-align: top; text-align: left;">
+                        <a href="#tier-1" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">⚡ 1. Tier 1: Executive Security Posture</a>
+                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Dashboard, Maturity Grade & Unified Leadership Brief</div>
+                    </td>
+                    <td width="50%" style="padding: 4px 0; border: none; vertical-align: top; text-align: left;">
+                        <a href="#tier-3" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">🛡️ 3. Tier 3: Operational Hunt Progress</a>
+                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Activity Timeline Feed, Active Detections & Monthly Trends</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="50%" style="padding: 8px 0 0 0; border: none; vertical-align: top; text-align: left;">
+                        <a href="#tier-2" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">🎯 2. Tier 2: Threat Landscape & Strategic Gaps</a>
+                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Adversary Mapper, High-risk Zero-coverage & Priorities Roadmap</div>
+                    </td>
+                    <td width="50%" style="padding: 8px 0 0 0; border: none; vertical-align: top; text-align: left;">
+                        <a href="#tier-4" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">💻 4. Tier 4: Telemetry Proof & Appendix</a>
+                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">KQL/Sigma Queries Library, Data Scopes & Methodology</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    `;
+
+    // Redesigned Stats Bar - Nested tables to replace flexbox entirely for Outlook support
     const statsBarHtml = isDark ? `
-        <div style="background-color: #0f1123; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+        <div style="background-color: #0f1123; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);" id="posture-dashboard"><a name="posture-dashboard"></a>
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td width="50%" style="padding: 0 10px 14px 0; border: none; vertical-align: top;">
-                        <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.02) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        <div style="background-color: #141324; background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(168, 85, 247, 0.02) 100%); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                             <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Framework Coverage</div>
                             <div style="font-size: 26px; font-weight: 800; color: #ffffff; margin-top: 4px; line-height: 1;">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
                             ${deltaHtml}
@@ -3319,7 +3392,7 @@ function buildEmailHTML(report, isDark = false) {
                         </div>
                     </td>
                     <td width="50%" style="padding: 0 0 14px 10px; border: none; vertical-align: top;">
-                        <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0.02) 100%); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        <div style="background-color: #0c1424; background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0.02) 100%); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                             <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Active Detections</div>
                             <div style="font-size: 26px; font-weight: 800; color: #38bdf8; margin-top: 4px; line-height: 1;">${totalQueries}</div>
                             <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">threat hunt queries deployed</div>
@@ -3331,14 +3404,26 @@ function buildEmailHTML(report, isDark = false) {
                 </tr>
                 <tr>
                     <td width="50%" style="padding: 10px 10px 0 0; border: none; vertical-align: top;">
-                        <div style="background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(52, 211, 153, 0.02) 100%); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        <div style="background-color: #0c1c14; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(52, 211, 153, 0.02) 100%); border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                             <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Tactical Gaps Filled</div>
                             <div style="font-size: 26px; font-weight: 800; color: #34d399; margin-top: 4px; line-height: 1;">${techniquesCovered}</div>
                             <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">techniques covered this period</div>
                         </div>
                     </td>
                     <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
-                        <div style="background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                        <div style="background-color: #1a150c; background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Threats Disrupted</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #fbbf24; margin-top: 4px; line-height: 1;">${threatsDisrupted}</div>
+                            <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">threat groups & tools impacted</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <!-- Full Width Score Posture Card -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 14px;">
+                <tr>
+                    <td style="border: none;">
+                        <div style="background-color: #121324; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                             <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%;">
                                 <tr>
                                     <td style="vertical-align: middle; border: none; padding: 0;">
@@ -3347,6 +3432,7 @@ function buildEmailHTML(report, isDark = false) {
                                         <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 4px;">standard framework grade</div>
                                     </td>
                                     <td width="55" style="vertical-align: middle; text-align: right; border: none; padding: 0 0 0 5px;">
+                                        <!--[if !mso]><!-->
                                         <svg width="50" height="50" viewBox="0 0 120 120" style="display: inline-block;">
                                             <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="12" />
                                             <circle cx="60" cy="60" r="50" fill="none" stroke="${gradeColor}" stroke-width="12"
@@ -3354,6 +3440,16 @@ function buildEmailHTML(report, isDark = false) {
                                                     stroke-linecap="round" transform="rotate(-90 60 60)" />
                                             <text x="60" y="68" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="900" font-size="28" fill="#ffffff">${maturityGrade.split(' ')[0]}</text>
                                         </svg>
+                                        <!--<![endif]-->
+                                        <!--[if mso]>
+                                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; border: none; background-color: ${gradeColor}; border-radius: 4px; display: inline-block;">
+                                            <tr>
+                                                <td style="padding: 6px 14px; color: ${frameworkCoverage >= 50 ? '#0f172a' : '#ffffff'}; font-weight: 800; font-family: Arial, sans-serif; font-size: 18px; line-height: 1; text-align: center; border: none;">
+                                                    ${maturityGrade.split(' ')[0]}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <![endif]-->
                                     </td>
                                 </tr>
                             </table>
@@ -3361,13 +3457,13 @@ function buildEmailHTML(report, isDark = false) {
                     </td>
                 </tr>
             </table>
-            <div style="margin-top: 14px; padding: 10px 14px; background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-size: 11px; color: #a2a6cc; text-align: center; line-height: 1.4;">
+            <div style="margin-top: 14px; padding: 10px 14px; background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; font-size: 11px; color: #a2a6cc; text-align: center; line-height: 1.4; font-family: sans-serif;">
                 ℹ️ <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
                 For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || state.author || 'the Security Operations Team'}</strong>.
             </div>
         </div>
     ` : `
-        <div style="background-color: #f8fafc; padding: 20px 24px; border-bottom: 2px solid #e2e8f0;">
+        <div style="background-color: #f8fafc; padding: 20px 24px; border-bottom: 2px solid #e2e8f0;" id="posture-dashboard"><a name="posture-dashboard"></a>
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td width="50%" style="padding: 0 10px 14px 0; border: none; vertical-align: top;">
@@ -3401,6 +3497,18 @@ function buildEmailHTML(report, isDark = false) {
                     </td>
                     <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
                         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; min-height: 90px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Threats Disrupted</div>
+                            <div style="font-size: 26px; font-weight: 800; color: #b45309; margin-top: 4px; line-height: 1;">${threatsDisrupted}</div>
+                            <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">threat groups & tools impacted</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <!-- Full Width Score Posture Card -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 14px;">
+                <tr>
+                    <td style="border: none;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                             <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%;">
                                 <tr>
                                     <td style="vertical-align: middle; border: none; padding: 0;">
@@ -3409,6 +3517,7 @@ function buildEmailHTML(report, isDark = false) {
                                         <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 4px;">standard framework grade</div>
                                     </td>
                                     <td width="55" style="vertical-align: middle; text-align: right; border: none; padding: 0 0 0 5px;">
+                                        <!--[if !mso]><!-->
                                         <svg width="50" height="50" viewBox="0 0 120 120" style="display: inline-block;">
                                             <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="12" />
                                             <circle cx="60" cy="60" r="50" fill="none" stroke="${gradeColor}" stroke-width="12"
@@ -3416,6 +3525,16 @@ function buildEmailHTML(report, isDark = false) {
                                                     stroke-linecap="round" transform="rotate(-90 60 60)" />
                                             <text x="60" y="68" text-anchor="middle" font-family="-apple-system, sans-serif" font-weight="900" font-size="28" fill="#0f172a">${maturityGrade.split(' ')[0]}</text>
                                         </svg>
+                                        <!--<![endif]-->
+                                        <!--[if mso]>
+                                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; border: none; background-color: ${gradeColor}; border-radius: 4px; display: inline-block;">
+                                            <tr>
+                                                <td style="padding: 6px 14px; color: ${frameworkCoverage >= 50 ? '#0f172a' : '#ffffff'}; font-weight: 800; font-family: Arial, sans-serif; font-size: 18px; line-height: 1; text-align: center; border: none;">
+                                                    ${maturityGrade.split(' ')[0]}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <![endif]-->
                                     </td>
                                 </tr>
                             </table>
@@ -3423,19 +3542,20 @@ function buildEmailHTML(report, isDark = false) {
                     </td>
                 </tr>
             </table>
-            <div style="margin-top: 14px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 11px; color: #64748b; text-align: center; line-height: 1.4;">
+            <div style="margin-top: 14px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 11px; color: #64748b; text-align: center; line-height: 1.4; font-family: sans-serif;">
                 ℹ️ <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
                 For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || state.author || 'the Security Operations Team'}</strong>.
             </div>
         </div>
     `;
 
+    // Redesigned modern CSS styles
     const stylesHtml = isDark ? `
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #cbd5e1; background-color: #070814; }
         * { box-sizing: border-box; }
         .email-wrapper { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
         .container { background-color: #0f1123; border: 1px solid rgba(${accentRgb}, 0.2); border-radius: 12px; overflow: hidden; box-shadow: 0 0 30px rgba(${accentRgb}, 0.1); }
-        .header { background: linear-gradient(135deg, #070814 0%, #0d0f1f 60%, ${theme.accent}1a 100%); color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; border-bottom: 2px solid ${theme.accent}; }
+        .header { background-color: ${fallbackBg}; background: linear-gradient(135deg, #070814 0%, #0d0f1f 60%, ${theme.accent}1a 100%); color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; border-bottom: 2px solid ${theme.accent}; }
         .header .logo { max-height: 40px; margin-bottom: 14px; filter: brightness(0) invert(1); }
         .header h1 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
         .header .subtitle { font-size: 13px; font-weight: 400; color: #94a3b8; margin: 0 0 12px 0; }
@@ -3444,7 +3564,7 @@ function buildEmailHTML(report, isDark = false) {
         .header .attck-version { font-size: 11px; color: #64748b; margin: 3px 0 0; }
         .header .author { font-size: 12px; color: #94a3b8; margin-top: 4px; }
         .content { padding: 24px 28px; }
-        .section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); page-break-inside: avoid; }
         .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         .section h3 { font-size: 15px; font-weight: 700; color: #ffffff; margin: 0 0 10px 0; padding-left: 10px; border-left: 3px solid ${theme.accent}; text-shadow: 0 0 10px rgba(${accentRgb}, 0.25); }
         .section p { margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.65; }
@@ -3464,7 +3584,6 @@ function buildEmailHTML(report, isDark = false) {
         .footer .confidential { font-size: 10px; color: #7f1d1d; margin-top: 2px; }
         strong { font-weight: 600; color: #ffffff; }
         em { font-style: italic; color: #cbd5e1; }
-        .section { page-break-inside: avoid; }
         table { page-break-inside: auto; }
         tr { page-break-inside: avoid; }
         @media only screen and (max-width: 600px) {
@@ -3473,7 +3592,7 @@ function buildEmailHTML(report, isDark = false) {
             .content { padding: 16px; }
         }
         .detection-item {
-            background: rgba(255, 255, 255, 0.02) !important;
+            background-color: rgba(255, 255, 255, 0.02) !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
             border-left: 4px solid #7c3aed !important;
             border-radius: 8px !important;
@@ -3505,22 +3624,30 @@ function buildEmailHTML(report, isDark = false) {
             color: #a2a6cc !important;
             line-height: 1.6 !important;
         }
+        
+        /* PDF specific overrides for vector-sharp multi-page layouts */
+        .is-pdf .email-wrapper { max-width: 100%; width: 100%; padding: 40px; }
+        .is-pdf .pdf-page-break { page-break-before: always !important; height: 0; margin: 0; border: none; }
+        .is-pdf .section { page-break-inside: avoid !important; margin-bottom: 30px; }
+        .is-pdf tr { page-break-inside: avoid !important; }
+        .is-pdf .advisory-bar { display: none !important; }
+        .is-pdf .pdf-advisory-bar { display: block !important; }
     ` : `
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; }
         * { box-sizing: border-box; }
         .email-wrapper { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
-        .container { background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04); }
-        .header { background: ${theme.bg}; color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; }
+        .container { background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; }
+        .header { background-color: ${fallbackBg}; background: ${theme.bg}; color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; }
         .header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: ${theme.accent}; }
         .header .logo { max-height: 40px; margin-bottom: 14px; filter: brightness(0) invert(1); }
         .header h1 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
-        .header .subtitle { font-size: 13px; font-weight: 400; color: #94a3b8; margin: 0 0 12px 0; }
+        .header .subtitle { font-size: 13px; font-weight: 400; color: #cbd5e1; margin: 0 0 12px 0; }
         .header .report-type { display: inline-block; background: ${theme.accent}33; border: 1px solid ${theme.accent}55; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffffcc; margin-bottom: 10px; }
         .header .report-date { font-size: 13px; color: #cbd5e1; margin: 0; }
         .header .attck-version { font-size: 11px; color: #64748b; margin: 3px 0 0; }
-        .header .author { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+        .header .author { font-size: 12px; color: #cbd5e1; margin-top: 4px; }
         .content { padding: 24px 28px; }
-        .section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #f1f5f9; }
+        .section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #f1f5f9; page-break-inside: avoid; }
         .section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         .section h3 { font-size: 15px; font-weight: 700; color: #0f172a; margin: 0 0 10px 0; padding-left: 10px; border-left: 3px solid ${theme.accent}; }
         .section p { margin: 0; color: #475569; font-size: 13px; line-height: 1.65; }
@@ -3540,7 +3667,6 @@ function buildEmailHTML(report, isDark = false) {
         .footer .confidential { font-size: 10px; color: #e2e8f0; margin-top: 2px; }
         strong { font-weight: 600; color: #0f172a; }
         em { font-style: italic; color: #475569; }
-        .section { page-break-inside: avoid; }
         table { page-break-inside: auto; }
         tr { page-break-inside: avoid; }
         @media only screen and (max-width: 600px) {
@@ -3549,7 +3675,7 @@ function buildEmailHTML(report, isDark = false) {
             .content { padding: 16px; }
         }
         .detection-item {
-            background: #ffffff !important;
+            background-color: #ffffff !important;
             border: 1px solid #e2e8f0 !important;
             border-left: 4px solid #7c3aed !important;
             border-radius: 8px !important;
@@ -3581,6 +3707,14 @@ function buildEmailHTML(report, isDark = false) {
             color: #475569 !important;
             line-height: 1.6 !important;
         }
+        
+        /* PDF specific overrides for vector-sharp multi-page layouts */
+        .is-pdf .email-wrapper { max-width: 100%; width: 100%; padding: 40px; }
+        .is-pdf .pdf-page-break { page-break-before: always !important; height: 0; margin: 0; border: none; }
+        .is-pdf .section { page-break-inside: avoid !important; margin-bottom: 30px; }
+        .is-pdf tr { page-break-inside: avoid !important; }
+        .is-pdf .advisory-bar { display: none !important; }
+        .is-pdf .pdf-advisory-bar { display: block !important; }
     `;
 
     return `
@@ -3596,6 +3730,14 @@ function buildEmailHTML(report, isDark = false) {
 <body>
     <div class="email-wrapper">
         <div class="container">
+            <!-- Disclaimer for EML formats -->
+            <div class="advisory-bar" style="background-color: ${isDark ? '#1d1607' : '#fffbeb'}; border-bottom: 1.5px solid ${isDark ? 'rgba(251,191,36,0.15)' : '#fde68a'}; padding: 10px 16px; font-size: 11px; color: ${isDark ? '#fbbf24' : '#b45309'}; text-align: center; font-family: sans-serif; font-weight: 600; line-height: 1.4;">
+                ⚠️ Format Advisory: Replying directly to this email may break the structured column layout in thread responses.
+            </div>
+            <!-- Disclaimer for PDF formats (Pristine layout advisory) -->
+            <div class="pdf-advisory-bar" style="display: none; background-color: ${isDark ? '#16101d' : '#fcfaff'}; border-bottom: 1.5px solid ${isDark ? 'rgba(168,85,247,0.15)' : '#f5f3ff'}; padding: 10px 16px; font-size: 11px; color: ${isDark ? '#c084fc' : '#6d28d9'}; text-align: center; font-family: sans-serif; font-weight: 600; line-height: 1.4;">
+                📌 Document Snapshot: This PDF is a high-fidelity visual snapshot of the interactive dashboard. Text elements within this PDF are non-selectable. For an interactive or text-selectable format, please view the live web report.
+            </div>
             <div class="header">
                 ${report.companyLogo ? `<img src="${report.companyLogo}" class="logo" alt="Logo">` : ''}
                 <h1>THREAT HUNTING MITRE MONTHLY UPDATE</h1>
@@ -3609,60 +3751,136 @@ function buildEmailHTML(report, isDark = false) {
             ${statsBarHtml}
 
             <div class="content">
-                ${execSummary ? `<div class="section"><h3>Executive Summary</h3><p>${markdownToHtml(execSummary)}</p></div>` : ''}
- 
-                ${leadership ? `<div class="section"><h3>Leadership Overview</h3><p>${markdownToHtml(leadership)}</p></div>` : ''}
- 
-                ${methodScopeHtml}
- 
-                ${tacticsGraphHtml}
- 
-                ${buildEmailMonthlyActivity(report, theme, isDark)}
- 
-                ${newQueriesHtml}
- 
-                ${buildThreatsSectionEmail(report, isDark)}
- 
-                ${buildTechniquesAtRiskEmail(report, isDark)}
- 
-                ${report.detectionResults?.length > 0 ? `<div class="section"><h3>Detection Results</h3>${report.detectionResults.map(r => `
-                    <div class="detection-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <strong>${r.huntName || 'Untitled'}</strong>
-                            ${r.sirTicket ? `<span class="badge-yellow">SIR: ${r.sirTicket}</span>` : ''}
-                        </div>
-                        ${r.notes ? `<div class="notes">${r.notes}</div>` : ''}
+                ${tocIndexHtml}
+
+                <!-- Tier 1: Executive Security Posture Briefing -->
+                <div class="tier-container" id="tier-1" style="margin-top: 24px; margin-bottom: 30px;">
+                    <a name="tier-1"></a>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#a855f7' : '#7c3aed'}; margin-bottom: 10px;">
+                        ⚡ Tier 1: Executive Security Posture
                     </div>
-                `).join('')}</div>` : ''}
- 
-                ${monthlyFocus ? `<div class="section"><h3>Monthly Focus Areas</h3><p>${markdownToHtml(monthlyFocus)}</p></div>` : ''}
- 
-                ${gapAnalysisHtml}
- 
-                ${coverageHtml}
- 
-                ${report.references?.length > 0 ? `<div class="section"><h3>References</h3><ul style="padding-left: 20px; margin: 0;">${report.references.map(r => {
-                    const isUrl = r.startsWith('http://') || r.startsWith('https://');
-                    const displayHtml = isUrl 
-                        ? `<a href="${escapeHtml(r)}" target="_blank" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: underline;">${escapeHtml(r)}</a>` 
-                        : escapeHtml(r);
-                    return `<li style="margin-bottom: 6px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">${displayHtml}</li>`;
-                }).join('')}</ul></div>` : ''}
- 
-                ${appendixHtml}
- 
-                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 20px; padding: 14px 18px; overflow: hidden; text-align: left;">
-                    <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; border: none; background: transparent;">
-                        <tr>
-                            <td style="padding: 0; border: none; width: 40px; vertical-align: middle; font-size: 24px; line-height: 1; text-align: left;">
-                                📊
-                            </td>
-                            <td style="padding: 0; border: none; vertical-align: middle; text-align: left;">
-                                <h4 style="margin: 0 0 3px 0; font-size: 13px; font-weight: 700; color: #0f172a;">Full MITRE ATT&CK Matrix SVG Attached</h4>
-                                <p style="margin: 0; font-size: 11px; color: #64748b; line-height: 1.4;">A complete visual representation of the MITRE ATT&CK matrix with coverage highlights is attached to this email.</p>
-                            </td>
-                        </tr>
-                    </table>
+                    
+                    <div style="background-color: ${isDark ? '#121324' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; border-radius: 12px; padding: 20px; box-shadow: ${isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(15, 23, 42, 0.02)'};">
+                        <h3 style="margin-top: 0; margin-bottom: 14px; font-size: 14px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'}; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px; font-family: sans-serif;">
+                            📝 Unified Leadership Briefing
+                        </h3>
+                        
+                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%;">
+                            <tr>
+                                <td valign="top" width="48%" style="width: 48%; vertical-align: top; border: none; font-size: 12.5px; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
+                                    <strong style="color: ${isDark ? '#ffffff' : '#0f172a'}; display: block; margin-bottom: 6px; font-size: 12.5px;">Executive Summary & Context</strong>
+                                    ${execSummary ? markdownToHtml(execSummary) : '<p style="font-style:italic; color:#64748b;">No executive summary provided for this period.</p>'}
+                                    
+                                    ${leadership ? `
+                                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'};">
+                                        <strong style="color: ${isDark ? '#ffffff' : '#0f172a'}; display: block; margin-bottom: 6px; font-size: 12.5px;">Strategic Leadership Guidance</strong>
+                                        ${markdownToHtml(leadership)}
+                                    </div>
+                                    ` : ''}
+                                </td>
+                                <td width="4%" style="width: 4%; border: none; padding: 0;"></td>
+                                <td valign="top" width="48%" style="width: 48%; vertical-align: top; border: none; font-size: 12.5px; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
+                                    <div style="background-color: ${isDark ? 'rgba(255,255,255,0.01)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#e2e8f0'}; border-radius: 8px; padding: 14px; min-height: 180px;">
+                                        <strong style="color: ${isDark ? '#38bdf8' : '#0284c7'}; display: block; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-family: sans-serif;">🎯 Monthly Strategic Focus Areas</strong>
+                                        ${monthlyFocus ? markdownToHtml(monthlyFocus) : '<p style="font-style:italic; color:#64748b;">No active monthly focus areas specified.</p>'}
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="pdf-page-break"></div>
+
+                <!-- Tier 2: Threat Landscape & Strategic Gaps -->
+                <div class="tier-container" id="tier-2" style="margin-bottom: 30px;">
+                    <a name="tier-2"></a>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#fbbf24' : '#d97706'}; margin-bottom: 10px;">
+                        🎯 Tier 2: Threat Landscape & Strategic Gaps
+                    </div>
+                    
+                    ${buildThreatsSectionEmail(report, isDark) ? `<div id="adversary-mapper"><a name="adversary-mapper"></a>${buildThreatsSectionEmail(report, isDark)}</div>` : ''}
+                    
+                    ${buildTechniquesAtRiskEmail(report, isDark) ? `<div id="techniques-at-risk"><a name="techniques-at-risk"></a>${buildTechniquesAtRiskEmail(report, isDark)}</div>` : ''}
+                    
+                    ${gapAnalysisHtml}
+                </div>
+
+                <div class="pdf-page-break"></div>
+
+                <!-- Tier 3: Operational Hunt Progress -->
+                <div class="tier-container" id="tier-3" style="margin-bottom: 30px;">
+                    <a name="tier-3"></a>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#34d399' : '#16a34a'}; margin-bottom: 10px;">
+                        🛡️ Tier 3: Operational Hunt Progress
+                    </div>
+                    
+                    ${buildEmailMonthlyActivity(report, theme, isDark)}
+                    
+                    ${report.detectionResults?.length > 0 ? `
+                        <div class="section" style="page-break-inside: avoid;">
+                            <h3>Active Hunt Detections</h3>
+                            <p style="margin-bottom: 12px; font-size: 13px; color: ${isDark ? '#cbd5e1' : '#475569'};">Live alerts and indicators detected during this period's hunts:</p>
+                            ${report.detectionResults.map(r => `
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse; margin-bottom:12px;" class="detection-item">
+                                    <tr>
+                                        <td style="padding:14px 18px; border:none; vertical-align:middle; text-align:left;">
+                                            <strong>${r.huntName || 'Untitled'}</strong>
+                                            ${r.sirTicket ? `<span class="badge-yellow">SIR: ${r.sirTicket}</span>` : ''}
+                                            ${r.notes ? `<div class="notes" style="margin-top:8px;">${r.notes}</div>` : ''}
+                                        </td>
+                                    </tr>
+                                </table>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${coverageHtml}
+                </div>
+
+                <div class="pdf-page-break"></div>
+
+                <!-- Tier 4: Telemetry Proof & Appendix -->
+                <div class="tier-container" id="tier-4" style="margin-bottom: 0;">
+                    <a name="tier-4"></a>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#38bdf8' : '#0284c7'}; margin-bottom: 10px;">
+                        💻 Tier 4: Telemetry Proof & Appendix
+                    </div>
+                    
+                    ${newQueriesHtml}
+                    
+                    ${methodScopeHtml}
+                    
+                    ${report.references?.length > 0 ? `
+                        <div class="section" style="page-break-inside: avoid;">
+                            <h3>References</h3>
+                            <ul style="padding-left: 20px; margin: 0;">
+                                ${report.references.map(r => {
+                                    const isUrl = r.startsWith('http://') || r.startsWith('https://');
+                                    const displayHtml = isUrl 
+                                        ? `<a href="${escapeHtml(r)}" target="_blank" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: underline;">${escapeHtml(r)}</a>` 
+                                        : escapeHtml(r);
+                                    return `<li style="margin-bottom: 6px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">${displayHtml}</li>`;
+                                }).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    ${appendixHtml}
+                    
+                    <div style="background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; border-radius: 8px; margin-top: 20px; padding: 14px 18px; overflow: hidden; text-align: left;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; border: none; background: transparent;">
+                            <tr>
+                                <td style="padding: 0; border: none; width: 40px; vertical-align: middle; font-size: 24px; line-height: 1; text-align: left;">
+                                    📊
+                                </td>
+                                <td style="padding: 0; border: none; vertical-align: middle; text-align: left;">
+                                    <h4 style="margin: 0 0 3px 0; font-size: 13px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'};">Full MITRE ATT&CK Matrix SVG Attached</h4>
+                                    <p style="margin: 0; font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; line-height: 1.4;">A complete visual representation of the MITRE ATT&CK matrix with coverage highlights is attached to this email.</p>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
  
