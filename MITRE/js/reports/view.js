@@ -885,6 +885,26 @@ function viewReport(reportId) {
     const frameworkCoverage = coverageStats.pct; // dynamic overall coverage up to this month
     const threatsDisrupted = getThreatsDisruptedCount(currentMonth); // dynamic threat groups/software disrupted this month
 
+    // Sigma rules deployed count
+    const sigmaRulesDeployed = (() => {
+        const sigmaIds = new Set();
+        const repMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || currentMonth;
+        if (repMonth && typeof getTechniquesByMonth === 'function') {
+            const byMonth = getTechniquesByMonth();
+            const techniques = byMonth[repMonth] || [];
+            techniques.forEach(ann => {
+                if (ann.queries) {
+                    ann.queries.forEach(q => {
+                        if (q.sigmaRuleId) {
+                            q.sigmaRuleId.split('|').filter(Boolean).forEach(id => sigmaIds.add(id));
+                        }
+                    });
+                }
+            });
+        }
+        return sigmaIds.size;
+    })();
+
     const availableMonthsSorted = getAvailableMonths().sort((a, b) => b.localeCompare(a));
     const currentIdx = availableMonthsSorted.indexOf(currentMonth);
     const prevMonth = currentIdx !== -1 && currentIdx + 1 < availableMonthsSorted.length ? availableMonthsSorted[currentIdx + 1] : null;
@@ -918,6 +938,10 @@ function viewReport(reportId) {
                 <div class="milestone-value">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
                 <div class="milestone-label">Framework Coverage</div>
                 ${deltaHtml}
+            </div>
+            <div class="milestone-card">
+                <div class="milestone-value">${sigmaRulesDeployed}</div>
+                <div class="milestone-label">Sigma Rules Deployed</div>
             </div>
             <div class="milestone-card">
                 <div class="milestone-value">${threatsDisrupted}</div>
@@ -3851,20 +3875,64 @@ function buildEmailHTML(report, isDark = false) {
                     
                     ${methodScopeHtml}
                     
-                    ${report.references?.length > 0 ? `
-                        <div class="section" style="page-break-inside: avoid;">
-                            <h3>References</h3>
-                            <ul style="padding-left: 20px; margin: 0;">
-                                ${report.references.map(r => {
-                                    const isUrl = r.startsWith('http://') || r.startsWith('https://');
-                                    const displayHtml = isUrl 
-                                        ? `<a href="${escapeHtml(r)}" target="_blank" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: underline;">${escapeHtml(r)}</a>` 
-                                        : escapeHtml(r);
-                                    return `<li style="margin-bottom: 6px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">${displayHtml}</li>`;
-                                }).join('')}
-                            </ul>
-                        </div>
-                    ` : ''}
+                    ${(() => {
+                        const activeSigmaReferences = [];
+                        const seenUrls = new Set();
+                        const repMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+                        if (repMonth && typeof getTechniquesByMonth === 'function') {
+                            const byMonth = getTechniquesByMonth();
+                            const techniques = byMonth[repMonth] || [];
+                            techniques.forEach(ann => {
+                                if (ann.queries) {
+                                    ann.queries.forEach(q => {
+                                        // Handle multiple Sigma rules (pipe-delimited)
+                                        if (q.sigmaRuleUrl) {
+                                            const urls = q.sigmaRuleUrl.split('|').filter(Boolean);
+                                            const titles = q.sigmaRuleTitle ? q.sigmaRuleTitle.split('|').filter(Boolean) : [];
+                                            urls.forEach((url, i) => {
+                                                if (!seenUrls.has(url)) {
+                                                    seenUrls.add(url);
+                                                    activeSigmaReferences.push({
+                                                        title: titles[i] || q.sigmaRuleTitle?.split('|')[0] || 'SigmaHQ Rule',
+                                                        url: url
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                        const mergedReferences = [
+                            ...(report.references || []),
+                            ...activeSigmaReferences.map(sr => `[SigmaHQ] ${sr.title}: ${sr.url}`)
+                        ];
+
+                        if (mergedReferences.length === 0) return '';
+
+                        return `
+                            <div class="section" style="page-break-inside: avoid;">
+                                <h3>References & Telemetry Mappings</h3>
+                                <ul style="padding-left: 20px; margin: 0;">
+                                    ${mergedReferences.map(r => {
+                                        const isUrl = r.startsWith('http://') || r.startsWith('https://');
+                                        let displayHtml = '';
+                                        if (isUrl) {
+                                            displayHtml = `<a href="${escapeHtml(r)}" target="_blank" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: underline;">${escapeHtml(r)}</a>`;
+                                        } else if (r.includes(': http')) {
+                                            const parts = r.split(': http');
+                                            const url = 'http' + parts[1];
+                                            displayHtml = `${escapeHtml(parts[0])}: <a href="${escapeHtml(url)}" target="_blank" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: underline;">${escapeHtml(url)}</a>`;
+                                        } else {
+                                            displayHtml = escapeHtml(r);
+                                        }
+                                        return `<li style="margin-bottom: 6px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">${displayHtml}</li>`;
+                                    }).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    })()}
                     
                     ${appendixHtml}
                     

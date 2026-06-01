@@ -57,6 +57,8 @@ document.querySelectorAll('[data-view]').forEach(link => {
             loadReportsList();
         } else if (link.dataset.view === 'intel') {
             renderIntelView();
+        } else if (link.dataset.view === 'sigma') {
+            renderSigmaView();
         }
     });
 });
@@ -293,6 +295,9 @@ async function checkForUpdates() {
 async function init() {
     initTheme();
     initUI();
+    
+    // Bootstrap SigmaHQ Explorer module
+    initSigmaModule();
 
     await fetchReleases();
 

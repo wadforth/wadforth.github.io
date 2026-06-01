@@ -23,6 +23,7 @@
     <link href="css/skeletons.css" rel="stylesheet">
     <link href="css/landing.css" rel="stylesheet">
     <link href="css/intel.css" rel="stylesheet">
+    <link href="css/sigma.css" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar fixed-top">
@@ -47,6 +48,11 @@
                         <a class="nav-link" href="#" data-view="intel">
                             <i class="bi bi-rss-fill mr-1"></i>Intel Feed
                             <span id="intel-nav-dot" class="intel-nav-dot hidden"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-view="sigma">
+                            <i class="bi bi-terminal-fill mr-1"></i>Sigma Rules
                         </a>
                     </li>
                 </ul>
@@ -380,6 +386,147 @@
                     </div>
                 </div>
             </div>
+
+            <!-- SIGMA RULES EXPLORER VIEW -->
+            <div id="sigma-view" class="view-section hidden">
+                <div class="view-header mb-3">
+                    <div>
+                        <h4 class="view-title">SigmaHQ Rules Explorer</h4>
+                        <p class="view-subtitle text-on-surface-secondary">High-fidelity detection engineering catalog mapped to ATT&CK techniques, tactics, and log sources.</p>
+                    </div>
+                </div>
+
+                <!-- STATISTICS DASHBOARD -->
+                <div id="sigma-stats-dashboard" class="sigma-stats-dashboard"></div>
+
+                <!-- HYDRATION STATUS INDICATOR -->
+                <div id="sigma-hydrate-status" class="sigma-hydrate-status">
+                    <i class="bi bi-database"></i> Initializing...
+                </div>
+
+                <!-- SYNC PROGRESS BAR (hidden by default) -->
+                <div id="sigma-sync-container" class="sigma-sync-container hidden">
+                    <div class="sigma-sync-progress-wrapper">
+                        <div class="sigma-sync-details">
+                            <span class="sigma-sync-status">
+                                <i class="bi bi-arrow-repeat rotate-spin" style="font-size: 0.75rem;"></i>
+                                <span class="sigma-sync-status-text">Initializing...</span>
+                            </span>
+                            <span class="sigma-sync-pct">0%</span>
+                        </div>
+                        <div class="sigma-sync-bar-outer">
+                            <div class="sigma-sync-bar-inner"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- TOP CONTROL BAR -->
+                <div class="sigma-top-bar">
+                    <div class="sigma-top-bar-left">
+                        <div class="sigma-search-wrapper">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="sigma-search-input" placeholder="Search rules by title, keyword, ID, or technique...">
+                        </div>
+                        
+                        <select id="sigma-logsource-filter" class="sigma-select-filter">
+                            <option value="all">All Log Sources</option>
+                            <option value="process_creation">Process Creation</option>
+                            <option value="process_access">Process Access</option>
+                            <option value="registry">Registry Actions</option>
+                            <option value="registry_set">Registry Set</option>
+                            <option value="registry_add">Registry Add</option>
+                            <option value="network_connection">Network Connections</option>
+                            <option value="file_event">File Events</option>
+                            <option value="file_change">File Changes</option>
+                            <option value="file_access">File Access</option>
+                            <option value="file_delete">File Deletions</option>
+                            <option value="image_load">Image Load</option>
+                            <option value="dns_query">DNS Queries</option>
+                            <option value="pipe_created">Pipe Created</option>
+                            <option value="driver_load">Driver Load</option>
+                            <option value="authentication">Authentications</option>
+                            <option value="directory_service">Directory Services</option>
+                            <option value="ps_script">PowerShell Script</option>
+                            <option value="ps_classic_start">PS Classic Start</option>
+                        </select>
+                        
+                        <select id="sigma-tactic-filter" class="sigma-select-filter">
+                            <option value="all">All Tactics</option>
+                            <option value="Initial Access">Initial Access</option>
+                            <option value="Execution">Execution</option>
+                            <option value="Persistence">Persistence</option>
+                            <option value="Privilege Escalation">Privilege Escalation</option>
+                            <option value="Defense Evasion">Defense Evasion</option>
+                            <option value="Credential Access">Credential Access</option>
+                            <option value="Discovery">Discovery</option>
+                            <option value="Lateral Movement">Lateral Movement</option>
+                            <option value="Collection">Collection</option>
+                            <option value="Exfiltration">Exfiltration</option>
+                            <option value="Command and Control">Command and Control</option>
+                            <option value="Impact">Impact</option>
+                        </select>
+                    </div>
+                    
+                    <div class="sigma-top-bar-right">
+                        <button class="btn btn-sm btn-outline-primary" id="btn-load-live-sigma" style="margin-right: 8px;">
+                            <i class="bi bi-github mr-1"></i> Connect Live (3,000+ Rules)
+                        </button>
+                        <span id="sigma-autosync-countdown" class="sigma-autosync-countdown hidden" style="font-size: 0.72rem; color: var(--on-surface-tertiary); display: inline-flex; align-items: center; gap: 0.3rem;">
+                            <i class="bi bi-clock"></i> Next auto-sync: --
+                        </span>
+                        <span id="sigma-rules-count" class="badge bg-secondary font-monospace" style="font-size: 0.75rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border);">Rules: 0</span>
+                    </div>
+                </div>
+
+                <!-- ADDITIONAL FILTERS ROW -->
+                <div class="sigma-filters-row">
+                    <label>Refine:</label>
+                    <select id="sigma-level-filter" class="sigma-select-filter" style="width: 130px;">
+                        <option value="all">All Severity</option>
+                        <option value="informational">Informational</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                    <select id="sigma-coverage-filter" class="sigma-select-filter" style="width: 145px;">
+                        <option value="all">All Coverage</option>
+                        <option value="active">Active Coverage</option>
+                        <option value="gap">Defensive Gaps</option>
+                    </select>
+                    <select id="sigma-product-filter" class="sigma-select-filter" style="width: 130px;">
+                        <option value="all">All Products</option>
+                    </select>
+                    <select id="sigma-date-filter" class="sigma-select-filter" style="width: 140px;">
+                        <option value="all">All Dates</option>
+                        <option value="new">New Since Sync</option>
+                    </select>
+                    <select id="sigma-sort-select" class="sigma-select-filter" style="width: 155px;">
+                        <option value="default">Sort: Default</option>
+                        <option value="az">Sort: A → Z</option>
+                        <option value="za">Sort: Z → A</option>
+                        <option value="severity-desc">Sort: Critical First</option>
+                        <option value="severity-asc">Sort: Low First</option>
+                        <option value="date-desc">Sort: Newest First</option>
+                    </select>
+                </div>
+
+                <!-- MAIN WORKSPACE -->
+                <div class="sigma-layout-container">
+                    <!-- Rules List -->
+                    <div class="sigma-list-wrapper">
+                        <div id="sigma-feed-grid" class="sigma-grid"></div>
+                    </div>
+                    <!-- Rule Details Workspace -->
+                    <div class="sigma-details-panel" id="sigma-details-panel">
+                        <div class="sigma-details-empty">
+                            <i class="bi bi-terminal"></i>
+                            <h5>Sigma Rules Explorer</h5>
+                            <p class="text-sm text-on-surface-tertiary">Select a Sigma detection rule from the explorer feed to inspect details, check mapping coverages, and copy YAML rules.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
                         </div>
                     </div>
                 </div>
@@ -523,6 +670,23 @@
                     <div class="mb-3">
                         <label class="form-label text-sm font-semibold">Description</label>
                         <textarea id="query-description" class="form-control" rows="2" placeholder="What does this query detect?"></textarea>
+                    </div>
+                    
+                    <div class="sigma-attach-section">
+                        <label class="form-label text-sm font-semibold"><i class="bi bi-link-45deg text-primary"></i> Link SigmaHQ Rule References</label>
+                        <div class="sigma-attach-wrapper">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-transparent"><i class="bi bi-search text-on-surface-tertiary"></i></span>
+                                <input type="text" id="query-sigma-search" class="form-control" placeholder="Search Sigma rules by title or technique...">
+                            </div>
+                            <div id="query-sigma-search-results" class="sigma-attach-search-results"></div>
+                        </div>
+                        <input type="hidden" id="query-sigma-rule-id">
+                        <input type="hidden" id="query-sigma-rule-title">
+                        <input type="hidden" id="query-sigma-rule-url">
+                        <div id="query-sigma-attached-badge-container" class="hidden">
+                            <div id="query-sigma-attached-list" class="sigma-attached-list"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -987,6 +1151,7 @@
     <script src="js/reports/simulator.js"></script>
     <script src="js/landing/enhancements.js"></script>
     <script src="js/intel/view.js"></script>
+    <script src="js/intel/sigma.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

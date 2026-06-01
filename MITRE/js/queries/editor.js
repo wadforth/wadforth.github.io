@@ -21,7 +21,7 @@ function getTechniquesByTactic() {
     return map;
 }
 
-function renderTechniqueSelector(selectedIds = []) {
+function renderTechniqueSelector(selectedIds = [], lockedIds = []) {
     const container = document.getElementById('technique-select-container');
     const byTactic = getTechniquesByTactic();
     
@@ -45,11 +45,17 @@ function renderTechniqueSelector(selectedIds = []) {
         for (const t of sorted) {
             const id = t.external_references?.[0]?.external_id || '';
             const name = t.name;
-            const checked = selectedIds.includes(id) ? 'checked' : '';
-            html += `<div class="technique-checkbox-item" data-id="${id}" data-name="${name.toLowerCase()}">
+            const isSelected = selectedIds.includes(id);
+            const isLocked = lockedIds.includes(id);
+            const checked = isSelected ? 'checked' : '';
+            const disabled = isLocked ? 'disabled' : '';
+            const lockedClass = isLocked ? 'technique-locked' : '';
+            
+            html += `<div class="technique-checkbox-item ${lockedClass}" data-id="${id}" data-name="${name.toLowerCase()}">
                 <label class="technique-checkbox-label">
-                    <input type="checkbox" class="technique-cb" data-tech-id="${id}" value="${id}" ${checked}>
+                    <input type="checkbox" class="technique-cb" data-tech-id="${id}" value="${id}" ${checked} ${disabled}>
                     <span class="tech-id">${id}</span> ${escapeHtml(name)}
+                    ${isLocked ? '<span class="technique-locked-badge" title="Locked by linked Sigma rule"><i class="bi bi-lock-fill"></i></span>' : ''}
                 </label>
             </div>`;
         }
@@ -59,7 +65,7 @@ function renderTechniqueSelector(selectedIds = []) {
     html += '</div>';
     container.innerHTML = html;
     
-    container.querySelectorAll('.technique-cb').forEach(cb => {
+    container.querySelectorAll('.technique-cb:not([disabled])').forEach(cb => {
         cb.addEventListener('change', (e) => {
             const techId = e.target.dataset.techId;
             container.querySelectorAll(`.technique-cb[data-tech-id="${techId}"]`).forEach(other => {
@@ -90,6 +96,18 @@ function getSelectedTechniques() {
     return [...new Set(ids)];
 }
 
+function getTechniquesFromSigmaRules(sigmaRuleIds) {
+    if (!sigmaRuleIds || sigmaRuleIds.length === 0) return [];
+    const techIds = new Set();
+    for (const ruleId of sigmaRuleIds) {
+        const rule = sigmaRules.find(r => r.id === ruleId);
+        if (rule && rule.technique_id && rule.technique_id !== 'N/A') {
+            techIds.add(rule.technique_id);
+        }
+    }
+    return [...techIds];
+}
+
 function openQueryEditor(queryData = null, techniqueId = null) {
     document.getElementById('query-modal-title').textContent = queryData ? 'Edit Query' : 'Add Query';
     document.getElementById('query-edit-id').value = queryData?.id || '';
@@ -109,9 +127,48 @@ function openQueryEditor(queryData = null, techniqueId = null) {
     selectGroup.classList.remove('hidden');
     hiddenInput.value = '';
     
-    const preselected = techniqueId || null;
-    const selected = preselected ? [preselected] : (queryData ? (queryData.techniqueIDs || [queryData.techniqueID]) : []);
-    renderTechniqueSelector(selected);
+    // Parse Sigma rules (pipe-delimited for multiple)
+    let sigmaRuleIds = [];
+    if (queryData?.sigmaRuleId) {
+        sigmaRuleIds = queryData.sigmaRuleId.split('|').filter(Boolean);
+    }
+    
+    // Get technique IDs from Sigma rules (these will be locked)
+    const lockedTechIds = getTechniquesFromSigmaRules(sigmaRuleIds);
+    
+    // Preselect techniques: from queryData or techniqueId parameter, plus locked ones
+    const preselected = techniqueId ? [techniqueId] : (queryData ? (queryData.techniqueIDs || [queryData.techniqueID]) : []);
+    const allSelected = [...new Set([...preselected, ...lockedTechIds])];
+    
+    renderTechniqueSelector(allSelected, lockedTechIds);
+    
+    // Load Sigma rule metadata if exists (restore multiple badges)
+    if (sigmaRuleIds.length > 0) {
+        const sigmaTitles = queryData?.sigmaRuleTitle ? queryData.sigmaRuleTitle.split('|').filter(Boolean) : [];
+        const sigmaUrls = queryData?.sigmaRuleUrl ? queryData.sigmaRuleUrl.split('|').filter(Boolean) : [];
+        
+        // Restore badges
+        if (typeof renderAttachedSigmaBadges === 'function') {
+            renderAttachedSigmaBadges(sigmaTitles, sigmaUrls);
+        } else {
+            // Fallback: set hidden fields
+            document.getElementById('query-sigma-rule-id').value = queryData.sigmaRuleId;
+            document.getElementById('query-sigma-rule-title').value = queryData.sigmaRuleTitle || '';
+            document.getElementById('query-sigma-rule-url').value = queryData.sigmaRuleUrl || '';
+            const badgeContainer = document.getElementById('query-sigma-attached-badge-container');
+            const searchWrapper = document.getElementById('query-sigma-search').closest('.sigma-attach-wrapper');
+            if (badgeContainer) badgeContainer.classList.remove('hidden');
+            if (searchWrapper) searchWrapper.classList.add('hidden');
+        }
+    } else {
+        clearSigmaRuleFromModal();
+    }
+    
+    // Initialize Sigma Search bindings once if not done
+    if (!window.sigmaSearchInitialized) {
+        initQueryModalSigmaSearch();
+        window.sigmaSearchInitialized = true;
+    }
     
     const queryModal = new bootstrap.Modal(document.getElementById('query-modal'));
     queryModal.show();
@@ -132,6 +189,15 @@ function saveQuery() {
     const source = document.getElementById('query-source').value.trim();
     const monthAdded = document.getElementById('query-month').value || new Date().toISOString().slice(0, 7);
     const now = new Date().toISOString();
+    
+    // Parse multiple Sigma rules (pipe-delimited)
+    const sigmaRuleIdRaw = document.getElementById('query-sigma-rule-id').value;
+    const sigmaRuleTitleRaw = document.getElementById('query-sigma-rule-title').value;
+    const sigmaRuleUrlRaw = document.getElementById('query-sigma-rule-url').value;
+    
+    const sigmaRuleId = sigmaRuleIdRaw || undefined;
+    const sigmaRuleTitle = sigmaRuleTitleRaw || undefined;
+    const sigmaRuleUrl = sigmaRuleUrlRaw || undefined;
     
     if (techniqueIds.length === 0) {
         showToast('Please select at least one technique', 'error');
@@ -172,6 +238,9 @@ function saveQuery() {
             name, language, query: queryText, description, source,
             created: now, lastModified: now, favorite: false,
             monthAdded,
+            sigmaRuleId: sigmaRuleId,
+            sigmaRuleTitle: sigmaRuleTitle,
+            sigmaRuleUrl: sigmaRuleUrl
         });
     }
     
