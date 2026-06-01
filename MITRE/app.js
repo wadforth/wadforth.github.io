@@ -39,6 +39,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 document.querySelectorAll('[data-view]').forEach(link => {
     link.addEventListener('click', (e) => {
         e.preventDefault();
+        localStorage.setItem('attack-explorer-current-view', link.dataset.view);
         document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
         link.classList.add('active');
         document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
@@ -316,6 +317,13 @@ async function init() {
         document.getElementById('version-select').value = state.currentVersion;
         showWorkspace();
         await loadSTIX(state.currentDomain, state.currentVersion, savedLayer);
+        
+        // Restore last active view selection
+        const savedView = localStorage.getItem('attack-explorer-current-view') || 'matrix';
+        const targetLink = document.querySelector(`[data-view="${savedView}"]`);
+        if (targetLink) {
+            targetLink.click();
+        }
     } else {
         showLanding();
     }
