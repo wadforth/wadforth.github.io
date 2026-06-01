@@ -4,6 +4,56 @@ A comprehensive and persistent log of all reporting refactorings, visual redesig
 
 ---
 
+## [2026-06-02] Sigma Rules Overhaul, Date Grouping, Multi-Link & Auto-Sync
+
+### 🗑️ 1. Removed Hardcoded Offline Baseline Rules
+* **Change:** Deleted `data/sigma_rules.json` and all offline baseline rule loading. All rules now come directly from the SigmaHQ GitHub repository.
+* **Purge:** Existing cached offline rules are automatically purged from IndexedDB on load and during sync.
+
+### 📅 2. Month-Level Date Grouping
+* **Change:** Rules are now grouped by month (e.g., "June 2026", "May 2026") instead of relative periods.
+* **Logic:** Uses the latest of `modified` or `date` from the rule's YAML. Unhydrated rules go to "Unindexed (awaiting hydration)".
+* **Background Hydration:** After sync, a background process fetches YAML for all rules in batches (2s delay) to populate dates.
+
+### 🔗 3. Multiple Sigma Rules Per Query
+* **Change:** Users can now link multiple Sigma rules to a single query.
+* **UI:** Rules display as removable badges. Search bar stays visible after linking to add more.
+* **Storage:** Pipe-delimited format in hidden fields (`id1|id2|id3`).
+* **Fix:** Linking a Sigma rule no longer overwrites the query text, description, or source fields.
+
+### 🎯 4. Auto-Link & Lock Techniques
+* **Change:** When a Sigma rule is linked, its associated technique is automatically selected and locked (un-deselectable).
+* **UI:** Locked techniques show a lock icon badge and cannot be unchecked.
+
+### 📊 5. Real-Time Hydration Status
+* **Added:** Live status indicator below the stats dashboard showing hydration progress with ETA.
+* **States:** Running (pulsing), Partial, Complete. Updates every second.
+
+### ⏰ 6. Auto-Sync Countdown
+* **Added:** Countdown timer next to sync button showing time until next auto-sync (1st of every month).
+* **Behavior:** Automatically triggers background sync when the 1st of the month is reached.
+
+### 🏷️ 7. NEW/MODIFIED Badges
+* **Added:** Purple "NEW" badge for rules not seen before, blue "MODIFIED" badge for rules whose SHA changed.
+* **Expiry:** Badges automatically disappear after 30 days but rules remain in their month group.
+
+###  8. Folder & Filename Badges
+* **Added:** Each card shows the SigmaHQ folder (e.g., `rules/windows`) and filename (e.g., `proc_creation_win_susp.yml`).
+* **Layout:** Moved to their own row below logsource/date for better readability.
+
+###  9. Search by Filename
+* **Change:** Query modal Sigma search now matches rule filenames in addition to title, technique, and tactic.
+
+### 📈 10. Report Enhancements
+* **Added:** "Sigma Rules Deployed" stat card to the milestone board.
+* **Fixed:** Reports now correctly handle multiple Sigma rules per query and deduplicate references by URL.
+* **Added:** "View Changes" button on modified rules opens GitHub commits page for that file.
+
+###  11. Truncated Tree Handling
+* **Fix:** If GitHub's tree response is truncated, the system now fetches sub-trees for each rule directory to ensure ALL rules are retrieved.
+
+---
+
 ## [2026-06-01] Bugfix – GitHub API Sync Failure & Offline Rule URL Fix
 
 ### 🐛 1. Critical Fix: "Malformed tree response" Sync Failure
