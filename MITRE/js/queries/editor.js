@@ -99,8 +99,9 @@ function getSelectedTechniques() {
 function getTechniquesFromSigmaRules(sigmaRuleIds) {
     if (!sigmaRuleIds || sigmaRuleIds.length === 0) return [];
     const techIds = new Set();
+    const rules = window.sigmaModule?.sigmaRules || window.sigmaRules || [];
     for (const ruleId of sigmaRuleIds) {
-        const rule = sigmaRules.find(r => r.id === ruleId);
+        const rule = rules.find(r => r.id === ruleId);
         if (rule && rule.technique_id && rule.technique_id !== 'N/A') {
             techIds.add(rule.technique_id);
         }
@@ -108,7 +109,17 @@ function getTechniquesFromSigmaRules(sigmaRuleIds) {
     return [...techIds];
 }
 
-function openQueryEditor(queryData = null, techniqueId = null) {
+async function openQueryEditor(queryData = null, techniqueId = null) {
+    // Ensure Sigma module is loaded and initialized
+    if (!window.sigmaModule && window.loadSigmaModule) {
+        await window.loadSigmaModule();
+    }
+    
+    // Ensure sigmaRules is populated
+    if (window.sigmaModule && (!window.sigmaModule.sigmaRules || window.sigmaModule.sigmaRules.length === 0)) {
+        await window.sigmaModule.initSigmaModule();
+    }
+    
     document.getElementById('query-modal-title').textContent = queryData ? 'Edit Query' : 'Add Query';
     document.getElementById('query-edit-id').value = queryData?.id || '';
     document.getElementById('query-name').value = queryData?.name || '';
@@ -147,27 +158,44 @@ function openQueryEditor(queryData = null, techniqueId = null) {
         const sigmaTitles = queryData?.sigmaRuleTitle ? queryData.sigmaRuleTitle.split('|').filter(Boolean) : [];
         const sigmaUrls = queryData?.sigmaRuleUrl ? queryData.sigmaRuleUrl.split('|').filter(Boolean) : [];
         
-        // Restore badges
-        if (typeof renderAttachedSigmaBadges === 'function') {
-            renderAttachedSigmaBadges(sigmaTitles, sigmaUrls);
+        // Restore badges using sigma module
+        if (window.sigmaModule && typeof window.sigmaModule.renderAttachedSigmaBadges === 'function') {
+            window.sigmaModule.renderAttachedSigmaBadges(sigmaTitles, sigmaUrls);
         } else {
-            // Fallback: set hidden fields
+            // Fallback: set hidden fields and show both search and badges
             document.getElementById('query-sigma-rule-id').value = queryData.sigmaRuleId;
             document.getElementById('query-sigma-rule-title').value = queryData.sigmaRuleTitle || '';
             document.getElementById('query-sigma-rule-url').value = queryData.sigmaRuleUrl || '';
             const badgeContainer = document.getElementById('query-sigma-attached-badge-container');
-            const searchWrapper = document.getElementById('query-sigma-search').closest('.sigma-attach-wrapper');
+            const searchWrapper = document.getElementById('query-sigma-search')?.closest('.sigma-attach-wrapper');
             if (badgeContainer) badgeContainer.classList.remove('hidden');
-            if (searchWrapper) searchWrapper.classList.add('hidden');
+            if (searchWrapper) searchWrapper.classList.remove('hidden');
         }
     } else {
-        clearSigmaRuleFromModal();
+        // No sigma rules - clear and show search
+        if (window.sigmaModule && typeof window.sigmaModule.clearSigmaRuleFromModal === 'function') {
+            window.sigmaModule.clearSigmaRuleFromModal();
+        } else {
+            // Fallback: clear fields and show search
+            document.getElementById('query-sigma-rule-id').value = '';
+            document.getElementById('query-sigma-rule-title').value = '';
+            document.getElementById('query-sigma-rule-url').value = '';
+            const badgeContainer = document.getElementById('query-sigma-attached-badge-container');
+            const searchWrapper = document.getElementById('query-sigma-search')?.closest('.sigma-attach-wrapper');
+            if (badgeContainer) badgeContainer.classList.add('hidden');
+            if (searchWrapper) searchWrapper.classList.remove('hidden');
+            const si = document.getElementById('query-sigma-search');
+            if (si) { si.value = ''; }
+        }
     }
     
-    // Initialize Sigma Search bindings once if not done
-    if (!window.sigmaSearchInitialized) {
-        initQueryModalSigmaSearch();
-        window.sigmaSearchInitialized = true;
+    // Always ensure sigma search is visible when modal opens
+    const searchWrapper = document.getElementById('query-sigma-search')?.closest('.sigma-attach-wrapper');
+    if (searchWrapper) searchWrapper.classList.remove('hidden');
+    
+    // Always reinitialize Sigma Search bindings when modal opens
+    if (window.sigmaModule && typeof window.sigmaModule.initQueryModalSigmaSearch === 'function') {
+        window.sigmaModule.initQueryModalSigmaSearch();
     }
     
     const queryModal = new bootstrap.Modal(document.getElementById('query-modal'));
@@ -257,7 +285,7 @@ function saveQuery() {
         }
     }, 400);
     
-    saveCurrentLayer();
+    saveCurrentLayerNow();
     techniqueIds.forEach(tid => logActivity('query_add', tid, name));
     
     requestAnimationFrame(() => {
@@ -278,7 +306,7 @@ function deleteQuery(techniqueId, queryId) {
             tech.queries = tech.queries.filter(q => q.id !== queryId);
         }
     }
-    saveCurrentLayer();
+    autoSaveLayer();
     logActivity('query_delete', techniqueId, queryName || queryId);
     renderMatrix();
     renderQueriesView();
@@ -297,7 +325,7 @@ function toggleFavorite(techniqueId, queryId) {
             }
         }
     }
-    saveCurrentLayer();
+    autoSaveLayer();
     renderQueriesView();
 }
 

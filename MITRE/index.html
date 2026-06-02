@@ -249,7 +249,7 @@
                         <i class="bi bi-grid-3x3-gap"></i> Heatmap
                     </button>
                 </div>
-                <div id="queries-list" class="queries-grid"></div>
+                <div id="queries-list"></div>
                 <div id="queries-heatmap" class="queries-heatmap hidden"></div>
             </div>
 
@@ -471,6 +471,9 @@
                         <button class="btn btn-sm btn-outline-primary" id="btn-load-live-sigma" style="margin-right: 8px;">
                             <i class="bi bi-github mr-1"></i> Connect Live (3,000+ Rules)
                         </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="btn-toggle-candidates" style="margin-right: 8px;" onclick="toggleCandidatesView()">
+                            <i class="bi bi-bookmark-star"></i> Candidates <span id="candidates-count-badge" class="badge-candidates">0</span>
+                        </button>
                         <span id="sigma-autosync-countdown" class="sigma-autosync-countdown hidden" style="font-size: 0.72rem; color: var(--on-surface-tertiary); display: inline-flex; align-items: center; gap: 0.3rem;">
                             <i class="bi bi-clock"></i> Next auto-sync: --
                         </span>
@@ -524,6 +527,30 @@
                             <h5>Sigma Rules Explorer</h5>
                             <p class="text-sm text-on-surface-tertiary">Select a Sigma detection rule from the explorer feed to inspect details, check mapping coverages, and copy YAML rules.</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- POTENTIAL RULE CANDIDATES SECTION -->
+                <div id="sigma-candidates-section" class="sigma-candidates-section hidden">
+                    <div class="candidates-header">
+                        <div>
+                            <h4 class="candidates-title"><i class="bi bi-bookmark-star"></i> Potential Rule Candidates</h4>
+                            <p class="candidates-subtitle">Rules you've marked for future deployment. Click the bookmark icon on any rule card to add or remove it from your candidate list.</p>
+                        </div>
+                        <div class="candidates-actions">
+                            <button class="btn btn-sm btn-outline-primary" onclick="exportCandidatesList()">
+                                <i class="bi bi-download"></i> Export List
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="clearAllCandidates()">
+                                <i class="bi bi-trash"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                    <div id="sigma-candidates-grid" class="sigma-candidates-grid"></div>
+                    <div id="sigma-candidates-empty" class="sigma-candidates-empty hidden">
+                        <i class="bi bi-bookmark"></i>
+                        <h5>No candidates yet</h5>
+                        <p>Browse the Sigma rules feed and click the bookmark icon on any rule to add it to your candidate list.</p>
                     </div>
                 </div>
             </div>
@@ -626,72 +653,109 @@
     </div>
 
     <div class="modal fade" id="query-modal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="query-modal-title">Add Query</h5>
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content query-editor-modal">
+                <div class="modal-header query-editor-header">
+                    <div class="query-editor-header-left">
+                        <h5 class="modal-title" id="query-modal-title">
+                            <i class="bi bi-plus-circle"></i> Add Query
+                        </h5>
+                        <span class="query-editor-subtitle">Create or edit a detection query</span>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body query-editor-body">
                     <input type="hidden" id="query-edit-id">
                     <input type="hidden" id="query-technique-id">
-                    <div class="mb-3" id="query-technique-select-group">
-                        <label class="form-label text-sm font-semibold">Techniques</label>
-                        <div id="technique-select-container"></div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label text-sm font-semibold">Month Added</label>
-                            <input type="month" id="query-month" class="form-control">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label text-sm font-semibold">Language</label>
-                            <select id="query-language" class="form-select">
-                                <option value="splunk">Splunk SPL</option>
-                                <option value="kql" selected>KQL (Sentinel)</option>
-                                <option value="sigma">Sigma</option>
-                                <option value="elastic">Elastic Lucene</option>
-                                <option value="custom">Custom</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-sm font-semibold">Query Name</label>
-                        <input type="text" id="query-name" class="form-control" placeholder="e.g. LSASS Access Detection">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-sm font-semibold">Source / Reference</label>
-                        <input type="text" id="query-source" class="form-control" placeholder="e.g. Sigma rule ID, blog URL">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-sm font-semibold">Query</label>
-                        <textarea id="query-text" class="form-control font-monospace" rows="6" placeholder="Enter your query here..." style="font-family: var(--font-mono); font-size: 0.85rem;"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-sm font-semibold">Description</label>
-                        <textarea id="query-description" class="form-control" rows="2" placeholder="What does this query detect?"></textarea>
-                    </div>
                     
-                    <div class="sigma-attach-section">
-                        <label class="form-label text-sm font-semibold"><i class="bi bi-link-45deg text-primary"></i> Link SigmaHQ Rule References</label>
-                        <div class="sigma-attach-wrapper">
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-transparent"><i class="bi bi-search text-on-surface-tertiary"></i></span>
-                                <input type="text" id="query-sigma-search" class="form-control" placeholder="Search Sigma rules by title or technique...">
+                    <div class="query-editor-layout">
+                        <div class="query-editor-main">
+                            <div class="query-editor-section">
+                                <div class="query-editor-section-header">
+                                    <i class="bi bi-code-square"></i>
+                                    <span>Query Details</span>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label query-editor-label">Query Name</label>
+                                        <input type="text" id="query-name" class="form-control query-editor-input" placeholder="e.g. LSASS Access Detection">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label query-editor-label">Language</label>
+                                        <select id="query-language" class="form-select query-editor-input">
+                                            <option value="kql" selected>KQL (Sentinel)</option>
+                                            <option value="splunk">Splunk SPL</option>
+                                            <option value="sigma">Sigma</option>
+                                            <option value="elastic">Elastic Lucene</option>
+                                            <option value="custom">Custom</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label query-editor-label">Month Added</label>
+                                        <input type="month" id="query-month" class="form-control query-editor-input">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label query-editor-label">Source / Reference</label>
+                                        <input type="text" id="query-source" class="form-control query-editor-input" placeholder="e.g. Sigma rule ID, blog URL">
+                                    </div>
+                                </div>
                             </div>
-                            <div id="query-sigma-search-results" class="sigma-attach-search-results"></div>
+                            
+                            <div class="query-editor-section">
+                                <div class="query-editor-section-header">
+                                    <i class="bi bi-terminal"></i>
+                                    <span>Query Definition</span>
+                                </div>
+                                <textarea id="query-text" class="form-control query-editor-code" rows="8" placeholder="Enter your detection query here..." style="font-family: var(--font-mono); font-size: 0.82rem;"></textarea>
+                            </div>
+                            
+                            <div class="query-editor-section">
+                                <div class="query-editor-section-header">
+                                    <i class="bi bi-file-text"></i>
+                                    <span>Description</span>
+                                </div>
+                                <textarea id="query-description" class="form-control query-editor-input" rows="2" placeholder="What does this query detect?"></textarea>
+                            </div>
                         </div>
-                        <input type="hidden" id="query-sigma-rule-id">
-                        <input type="hidden" id="query-sigma-rule-title">
-                        <input type="hidden" id="query-sigma-rule-url">
-                        <div id="query-sigma-attached-badge-container" class="hidden">
-                            <div id="query-sigma-attached-list" class="sigma-attached-list"></div>
+                        
+                        <div class="query-editor-sidebar">
+                            <div class="query-editor-section" id="query-technique-select-group">
+                                <div class="query-editor-section-header">
+                                    <i class="bi bi-grid-3x3"></i>
+                                    <span>Techniques</span>
+                                </div>
+                                <div id="technique-select-container"></div>
+                            </div>
+                            
+                            <div class="query-editor-section sigma-attach-section">
+                                <div class="query-editor-section-header">
+                                    <i class="bi bi-link-45deg"></i>
+                                    <span>SigmaHQ References</span>
+                                </div>
+                                <div class="sigma-attach-wrapper">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-transparent"><i class="bi bi-search text-on-surface-tertiary"></i></span>
+                                        <input type="text" id="query-sigma-search" class="form-control" placeholder="Search Sigma rules...">
+                                    </div>
+                                    <div id="query-sigma-search-results" class="sigma-attach-search-results"></div>
+                                </div>
+                                <input type="hidden" id="query-sigma-rule-id">
+                                <input type="hidden" id="query-sigma-rule-title">
+                                <input type="hidden" id="query-sigma-rule-url">
+                                <div id="query-sigma-attached-badge-container" class="hidden">
+                                    <div id="query-sigma-attached-list" class="sigma-attached-list"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="btn-save-query">Save Query</button>
+                <div class="modal-footer query-editor-footer">
+                    <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary query-editor-save-btn" id="btn-save-query">
+                        <i class="bi bi-check-lg"></i> Save Query
+                    </button>
                 </div>
             </div>
         </div>
@@ -1151,7 +1215,6 @@
     <script src="js/reports/simulator.js"></script>
     <script src="js/landing/enhancements.js"></script>
     <script src="js/intel/view.js"></script>
-    <script src="js/intel/sigma.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

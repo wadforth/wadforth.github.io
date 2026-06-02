@@ -235,7 +235,7 @@
 
 .queries-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
     gap: 0.75rem;
 }
 
@@ -249,12 +249,12 @@
     background: var(--surface-elevated);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1rem;
     transition: var(--transition);
     box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
-    height: 330px;
+    width: 100%;
     box-sizing: border-box;
 }
 
@@ -769,5 +769,213 @@
     color: var(--on-surface);
     word-break: break-word;
     overflow-wrap: break-word;
+}
+
+/* ============================================
+   Query Date Groups - Grouped by Created Date
+   ============================================ */
+
+.query-date-group {
+    margin-bottom: 1.5rem;
+}
+
+.query-date-group-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--on-surface-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.query-date-group-header i {
+    color: var(--primary);
+    font-size: 0.85rem;
+}
+
+.query-date-group-count {
+    background: var(--surface-variant);
+    color: var(--on-surface-tertiary);
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 0.15em 0.5em;
+    border-radius: var(--radius-pill);
+    margin-left: auto;
+}
+
+.query-date-group-content.queries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 0.75rem;
+}
+
+.query-date-group-content.queries-list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.query-created {
+    font-size: 0.6rem;
+    color: var(--on-surface-tertiary);
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    margin-left: 0.75rem;
+}
+
+/* ============================================
+   Query Editor Modal - Professional Layout
+   ============================================ */
+
+.query-editor-modal {
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xl);
+}
+
+.query-editor-header {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+}
+
+.query-editor-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.query-editor-header .modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.query-editor-header .modal-title i {
+    color: var(--primary);
+    font-size: 1.2rem;
+}
+
+.query-editor-subtitle {
+    font-size: 0.75rem;
+    color: var(--on-surface-tertiary);
+}
+
+.query-editor-body {
+    padding: 1.25rem 1.5rem;
+}
+
+.query-editor-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+    .query-editor-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+.query-editor-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.query-editor-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.query-editor-section {
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.query-editor-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--on-surface-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.query-editor-section-header i {
+    color: var(--primary);
+    font-size: 0.9rem;
+}
+
+.query-editor-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--on-surface-secondary);
+    margin-bottom: 0.35rem;
+}
+
+.query-editor-input {
+    font-size: 0.85rem;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    color: var(--on-surface);
+    transition: var(--transition);
+}
+
+.query-editor-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(88, 76, 244, 0.15);
+    background: var(--surface-elevated);
+}
+
+.query-editor-code {
+    font-size: 0.82rem;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    color: var(--on-surface);
+    padding: 0.75rem;
+    line-height: 1.5;
+    transition: var(--transition);
+    min-height: 140px;
+}
+
+.query-editor-code:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(88, 76, 244, 0.15);
+}
+
+.query-editor-footer {
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.query-editor-save-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+}
+
+.query-editor-save-btn i {
+    font-size: 1rem;
 }
 

@@ -37,7 +37,7 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
 });
 
 document.querySelectorAll('[data-view]').forEach(link => {
-    link.addEventListener('click', (e) => {
+    link.addEventListener('click', async (e) => {
         e.preventDefault();
         localStorage.setItem('attack-explorer-current-view', link.dataset.view);
         document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
@@ -54,18 +54,19 @@ document.querySelectorAll('[data-view]').forEach(link => {
         } else if (link.dataset.view === 'mitigations') {
             renderMitigationsView();
         } else if (link.dataset.view === 'reports') {
-            loadReportsList();
+            window.loadReportsList();
         } else if (link.dataset.view === 'intel') {
             renderIntelView();
         } else if (link.dataset.view === 'sigma') {
-            renderSigmaView();
+            const sigma = await window.loadSigmaModule();
+            sigma.renderSigmaView();
         }
     });
 });
 
 document.getElementById('nav-home').addEventListener('click', (e) => {
     e.preventDefault();
-    saveCurrentLayer();
+    saveCurrentLayerNow();
     showLanding();
 });
 
@@ -296,8 +297,31 @@ async function init() {
     initTheme();
     initUI();
     
-    // Bootstrap SigmaHQ Explorer module
-    initSigmaModule();
+    // Sigma module is lazy-loaded on first access (code splitting)
+    let sigmaModuleLoaded = false;
+    let sigmaModule = null;
+    
+    window.loadSigmaModule = async function() {
+        if (!sigmaModuleLoaded) {
+            sigmaModule = await import('./js/intel/sigma.js');
+            sigmaModuleLoaded = true;
+            window.sigmaModule = sigmaModule;
+            await sigmaModule.initSigmaModule();
+            
+            // Expose candidates functions globally for onclick handlers
+            window.toggleCandidatesView = sigmaModule.toggleCandidatesView;
+            window.renderCandidatesList = sigmaModule.renderCandidatesList;
+            window.updateCandidatesBadge = sigmaModule.updateCandidatesBadge;
+            window.isRuleCandidate = sigmaModule.isRuleCandidate;
+            window.toggleRuleCandidate = sigmaModule.toggleRuleCandidate;
+            window.removeCandidate = sigmaModule.removeCandidate;
+            window.clearAllCandidates = sigmaModule.clearAllCandidates;
+            window.exportCandidatesList = sigmaModule.exportCandidatesList;
+            window.deployCandidate = sigmaModule.deployCandidate;
+            window.viewCandidateDetails = sigmaModule.viewCandidateDetails;
+        }
+        return sigmaModule;
+    };
 
     await fetchReleases();
 
@@ -311,7 +335,7 @@ async function init() {
     }
 
     // Restore current layer if exists
-    const savedLayer = loadCurrentLayer();
+    const savedLayer = await loadCurrentLayer();
     if (savedLayer) {
         state.currentDomain = localStorage.getItem('attack-explorer-current-domain') || 'enterprise-attack';
         state.currentVersion = localStorage.getItem('attack-explorer-current-version') || state.currentVersion;
