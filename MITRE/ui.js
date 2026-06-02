@@ -241,7 +241,7 @@ function registerDefaultShortcuts() {
     
     keyboardShortcuts.register('ctrl+s', () => {
         if (state.currentLayer) {
-            saveCurrentLayer();
+            saveCurrentLayerNow();
             showToast('Layer saved', 'success');
         }
     }, 'Save layer');

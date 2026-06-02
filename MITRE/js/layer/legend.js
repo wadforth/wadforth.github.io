@@ -15,7 +15,7 @@ document.getElementById('auto-color-toggle').addEventListener('change', (e) => {
     state.autoColorByQueries = e.target.checked;
     if (state.currentLayer) {
         state.currentLayer.autoColorByQueries = state.autoColorByQueries;
-        saveCurrentLayer();
+        autoSaveLayer();
     }
     renderLegendEditor();
     requestAnimationFrame(() => renderMatrix());
@@ -106,7 +106,7 @@ function renderLegendEditor() {
                 if (swatch) swatch.style.background = preset.dataset.color;
                 document.querySelector(`.legend-custom-input[data-rule-idx="${idx}"]`).value = preset.dataset.color;
                 renderMatrix();
-                saveCurrentLayer();
+                autoSaveLayer();
                 preset.closest('.legend-color-picker').classList.add('hidden');
             });
         });
@@ -119,7 +119,7 @@ function renderLegendEditor() {
                 const swatch = document.querySelector(`.legend-color-swatch[data-rule-idx="${idx}"]`);
                 if (swatch) swatch.style.background = e.target.value;
                 renderMatrix();
-                saveCurrentLayer();
+                autoSaveLayer();
             });
         });
         
@@ -128,7 +128,7 @@ function renderLegendEditor() {
                 const idx = parseInt(e.target.dataset.ruleIdx);
                 state.autoColorRules[idx].operator = e.target.value;
                 renderMatrix();
-                saveCurrentLayer();
+                autoSaveLayer();
             });
         });
         
@@ -137,7 +137,7 @@ function renderLegendEditor() {
                 const idx = parseInt(e.target.dataset.ruleIdx);
                 state.autoColorRules[idx].value = parseInt(e.target.value) || 0;
                 renderMatrix();
-                saveCurrentLayer();
+                autoSaveLayer();
             });
         });
         
@@ -203,7 +203,7 @@ function renderLegendEditor() {
                 const input = document.querySelector(`.legend-custom-input[data-index="${idx}"]`);
                 if (input) input.value = newColor;
                 renderMatrix();
-                saveCurrentLayer();
+                autoSaveLayer();
             }
             picker.classList.add('hidden');
         });
@@ -229,7 +229,7 @@ function renderLegendEditor() {
                 const swatch = document.querySelector(`.legend-color-swatch[data-index="${idx}"]`);
                 if (swatch) swatch.style.background = newColor;
                 renderMatrix();
-                saveCurrentLayer();
+                autoSaveLayer();
             }
         });
     });
@@ -249,7 +249,7 @@ function renderLegendEditor() {
             state.currentLayer.legend.splice(idx, 1);
             renderLegendEditor();
             renderMatrix();
-            saveCurrentLayer();
+            autoSaveLayer();
         });
     });
 }
@@ -264,4 +264,5 @@ document.getElementById('btn-add-legend-item').addEventListener('click', () => {
     if (!state.currentLayer.legend) state.currentLayer.legend = [];
     state.currentLayer.legend.push({ label: 'New', color: '#6366f1' });
     renderLegendEditor();
+    autoSaveLayer();
 });

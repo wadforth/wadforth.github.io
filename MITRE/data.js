@@ -80,7 +80,7 @@ async function loadSTIX(domain, version, layerData = null) {
         }
 
         localStorage.setItem('attack-explorer-last-version', version);
-        saveCurrentLayer();
+        saveCurrentLayerNow();
         saveRecentLayer(state.currentLayer);
     } catch (err) {
         console.error('Failed to load STIX data:', err);

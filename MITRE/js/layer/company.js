@@ -11,7 +11,7 @@ document.getElementById('file-logo').addEventListener('change', (e) => {
     reader.onload = (ev) => {
         state.companyLogo = ev.target.result;
         updateLayerToolbar();
-        saveCurrentLayer();
+        saveCurrentLayerNow();
         showToast('Logo updated', 'success');
     };
     reader.readAsDataURL(file);
@@ -24,7 +24,7 @@ document.getElementById('btn-set-company-name').addEventListener('click', async 
     if (name !== null) {
         state.companyName = name.trim();
         updateLayerToolbar();
-        saveCurrentLayer();
+        saveCurrentLayerNow();
         showToast('Company name updated', 'success');
     }
 });
@@ -34,7 +34,7 @@ document.getElementById('btn-set-author').addEventListener('click', async () => 
     const author = await showPrompt('Report Author', state.author || '');
     if (author !== null) {
         state.author = author.trim();
-        saveCurrentLayer();
+        saveCurrentLayerNow();
         showToast('Author updated', 'success');
     }
 });

@@ -1,8 +1,49 @@
-let queriesSortBy = 'name';
-let queriesSortDir = 'asc';
+let queriesSortBy = 'date';
+let queriesSortDir = 'desc';
 let queriesViewMode = 'grid';
 let queriesShowFavoritesOnly = false;
 let queriesShowHeatmap = false;
+
+function getDateGroup(timestamp) {
+    if (!timestamp) return 'older';
+    const now = new Date();
+    const date = new Date(timestamp);
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterdayStart = todayStart - 86400000;
+    const weekStart = todayStart - (now.getDay() * 86400000);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    
+    const ts = date.getTime();
+    if (ts >= todayStart) return 'today';
+    if (ts >= yesterdayStart) return 'yesterday';
+    if (ts >= weekStart) return 'thisWeek';
+    if (ts >= monthStart) return 'thisMonth';
+    return 'older';
+}
+
+function getDateGroupLabel(group) {
+    const labels = {
+        today: 'Today',
+        yesterday: 'Yesterday',
+        thisWeek: 'This Week',
+        thisMonth: 'This Month',
+        older: 'Older'
+    };
+    return labels[group] || 'Older';
+}
+
+function getDateGroupIcon(group) {
+    const icons = {
+        today: 'bi-calendar-check',
+        yesterday: 'bi-calendar-minus',
+        thisWeek: 'bi-calendar-week',
+        thisMonth: 'bi-calendar-month',
+        older: 'bi-clock-history'
+    };
+    return icons[group] || 'bi-clock-history';
+}
+
+const DATE_GROUP_ORDER = ['today', 'yesterday', 'thisWeek', 'thisMonth', 'older'];
 
 function getAllQueries() {
     const queryMap = new Map();
@@ -33,6 +74,10 @@ function sortQueries(queries) {
             case 'name':
                 valA = (a.name || '').toLowerCase();
                 valB = (b.name || '').toLowerCase();
+                return valA < valB ? -dir : valA > valB ? dir : 0;
+            case 'date':
+                valA = a.created || a.lastModified || '';
+                valB = b.created || b.lastModified || '';
                 return valA < valB ? -dir : valA > valB ? dir : 0;
             case 'technique':
                 valA = a.techniqueID || '';
@@ -72,7 +117,6 @@ function renderQueriesView() {
     container.classList.remove('hidden');
     heatmapContainer.classList.add('hidden');
     controlsContainer.classList.remove('hidden');
-    container.className = queriesViewMode === 'grid' ? 'queries-grid' : 'queries-list-view';
     
     const query = (searchInput?.value || '').toLowerCase().trim();
     const lang = langFilter?.value || 'all';
@@ -95,8 +139,6 @@ function renderQueriesView() {
     if (lang !== 'all') {
         queries = queries.filter(q => q.language === lang);
     }
-    
-    queries = sortQueries(queries);
     
     const techsWithQueries = new Set(queries.flatMap(q => q.techniqueIDs || [q.techniqueID]));
     const langCounts = {};
@@ -132,10 +174,10 @@ function renderQueriesView() {
                 <div class="queries-sort-group">
                     <label class="queries-sort-label">Sort:</label>
                     <select class="queries-sort-select" id="queries-sort-select">
+                        <option value="date" ${queriesSortBy === 'date' ? 'selected' : ''}>Date Created</option>
                         <option value="name" ${queriesSortBy === 'name' ? 'selected' : ''}>Name</option>
                         <option value="technique" ${queriesSortBy === 'technique' ? 'selected' : ''}>Technique</option>
                         <option value="language" ${queriesSortBy === 'language' ? 'selected' : ''}>Language</option>
-                        <option value="modified" ${queriesSortBy === 'modified' ? 'selected' : ''}>Modified</option>
                         <option value="favorite" ${queriesSortBy === 'favorite' ? 'selected' : ''}>Favorites</option>
                     </select>
                     <button class="btn btn-sm btn-ghost queries-sort-dir" id="queries-sort-dir" title="Toggle sort direction">
@@ -173,85 +215,120 @@ function renderQueriesView() {
     
     controlsContainer.innerHTML = statsHtml + toolbarHtml;
     
-    const cardsHtml = queries.map(q => {
-        const techIds = q.techniqueIDs || [q.techniqueID];
-        const primaryTech = state.techniques.find(t => t.external_references?.[0]?.external_id === techIds[0]);
-        const primaryTechName = primaryTech?.name || techIds[0];
-        const modifiedStr = formatTimestamp(q.lastModified || q.created);
-        const techBadges = techIds.map(tid => `<span class="query-tech-ref">${tid}</span>`).join('');
-        const multiTechLabel = techIds.length > 1 ? `<span class="text-on-surface-tertiary text-sm">+${techIds.length - 1} more</span>` : `<span class="text-on-surface-tertiary text-sm">${escapeHtml(primaryTechName)}</span>`;
+    const groupedQueries = groupQueriesByDate(queries);
+    
+    let cardsHtml = '';
+    for (const group of DATE_GROUP_ORDER) {
+        const groupQueries = groupedQueries[group];
+        if (!groupQueries || groupQueries.length === 0) continue;
         
-        if (queriesViewMode === 'list') {
-            return `
-                <div class="query-card query-card-list" data-query-id="${q.id}">
-                    <div class="query-list-row">
-                        <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
-                            <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
-                        </button>
-                        <div class="query-list-info">
-                            <span class="query-list-name">${escapeHtml(q.name)}</span>
-                            <span class="query-list-tech">${escapeHtml(primaryTechName)}</span>
-                        </div>
-                        <span class="query-lang-badge ${q.language}">${q.language}</span>
-                        <span class="query-list-id">${techIds.join(', ')}</span>
-                        <span class="query-list-modified" title="${q.lastModified || q.created}">${modifiedStr}</span>
-                        <div class="query-list-actions">
-                            <button class="btn btn-ghost btn-sm btn-copy-query" data-query-id="${q.id}" title="Copy query">
-                                <i class="bi bi-clipboard"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-sm btn-edit-query" data-query-id="${q.id}" title="Edit">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-ghost btn-sm btn-delete-query" data-query-id="${q.id}" title="Delete">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
+        cardsHtml += `
+            <div class="query-date-group">
+                <div class="query-date-group-header">
+                    <i class="bi ${getDateGroupIcon(group)}"></i>
+                    <span>${getDateGroupLabel(group)}</span>
+                    <span class="query-date-group-count">${groupQueries.length}</span>
                 </div>
-            `;
-        }
-        
-        return `
-            <div class="query-card" data-query-id="${q.id}">
-                <div class="query-card-header">
-                    <div class="query-card-header-left">
-                        <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
-                            <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
-                        </button>
-                        <div>
-                            <h6 class="query-card-title">${escapeHtml(q.name)}</h6>
-                            <div class="query-meta mt-1">
-                                <span class="query-lang-badge ${q.language}">${q.language}</span>
-                                ${techBadges}
-                                ${multiTechLabel}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="query-card-actions">
-                        <button class="btn btn-ghost btn-copy-query" data-query-id="${q.id}" title="Copy query">
-                            <i class="bi bi-clipboard"></i>
-                        </button>
-                        <button class="btn btn-ghost btn-edit-query" data-query-id="${q.id}" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="btn btn-ghost btn-delete-query" data-query-id="${q.id}" title="Delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
-                ${q.description ? `<p class="query-card-desc" title="${escapeHtml(cleanDescription(q.description))}">${escapeHtml(truncateDescription(q.description, 150))}</p>` : ''}
-                ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
-                <div class="query-card-footer">
-                    <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
+                <div class="query-date-group-content ${queriesViewMode === 'grid' ? 'queries-grid' : 'queries-list-view'}">
+                    ${groupQueries.map(q => renderQueryCard(q)).join('')}
                 </div>
             </div>
         `;
-    }).join('');
+    }
     
     container.innerHTML = cardsHtml;
     bindQueriesToolbar();
     bindQueryCardActions(queries);
+}
+
+function groupQueriesByDate(queries) {
+    const sorted = sortQueries(queries);
+    const groups = { today: [], yesterday: [], thisWeek: [], thisMonth: [], older: [] };
+    
+    for (const q of sorted) {
+        const group = getDateGroup(q.created || q.lastModified);
+        groups[group].push(q);
+    }
+    
+    return groups;
+}
+
+function renderQueryCard(q) {
+    const techIds = q.techniqueIDs || [q.techniqueID];
+    const primaryTech = state.techniques.find(t => t.external_references?.[0]?.external_id === techIds[0]);
+    const primaryTechName = primaryTech?.name || techIds[0];
+    const modifiedStr = formatTimestamp(q.lastModified || q.created);
+    const createdStr = formatTimestamp(q.created);
+    const techBadges = techIds.map(tid => `<span class="query-tech-ref">${tid}</span>`).join('');
+    const multiTechLabel = techIds.length > 1 ? `<span class="text-on-surface-tertiary text-xs">+${techIds.length - 1} more</span>` : `<span class="text-on-surface-tertiary text-xs">${escapeHtml(primaryTechName)}</span>`;
+    
+    if (queriesViewMode === 'list') {
+        return `
+            <div class="query-card query-card-list" data-query-id="${q.id}">
+                <div class="query-list-row">
+                    <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
+                        <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
+                    </button>
+                    <div class="query-list-info">
+                        <span class="query-list-name">${escapeHtml(q.name)}</span>
+                        <span class="query-list-tech">${escapeHtml(primaryTechName)}</span>
+                    </div>
+                    <span class="query-lang-badge ${q.language}">${q.language}</span>
+                    <span class="query-list-id">${techIds.join(', ')}</span>
+                    <span class="query-list-modified" title="${q.lastModified || q.created}">${modifiedStr}</span>
+                    <div class="query-list-actions">
+                        <button class="btn btn-ghost btn-sm btn-copy-query" data-query-id="${q.id}" title="Copy query">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-edit-query" data-query-id="${q.id}" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-ghost btn-sm btn-delete-query" data-query-id="${q.id}" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    return `
+        <div class="query-card" data-query-id="${q.id}">
+            <div class="query-card-header">
+                <div class="query-card-header-left">
+                    <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
+                        <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
+                    </button>
+                    <div>
+                        <h6 class="query-card-title">${escapeHtml(q.name)}</h6>
+                        <div class="query-meta mt-1">
+                            <span class="query-lang-badge ${q.language}">${q.language}</span>
+                            ${techBadges}
+                            ${multiTechLabel}
+                        </div>
+                    </div>
+                </div>
+                <div class="query-card-actions">
+                    <button class="btn btn-ghost btn-copy-query" data-query-id="${q.id}" title="Copy query">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-edit-query" data-query-id="${q.id}" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-ghost btn-delete-query" data-query-id="${q.id}" title="Delete">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
+            ${q.description ? `<p class="query-card-desc" title="${escapeHtml(cleanDescription(q.description))}">${escapeHtml(truncateDescription(q.description, 150))}</p>` : ''}
+            ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
+            <div class="query-card-footer">
+                <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
+                ${q.created ? `<span class="query-created"><i class="bi bi-calendar-plus"></i> Created ${createdStr}</span>` : ''}
+            </div>
+        </div>
+    `;
 }
 
 function bindQueriesToolbar() {

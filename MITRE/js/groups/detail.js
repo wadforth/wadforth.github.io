@@ -594,7 +594,7 @@ function showGroupModal(groupId) {
                                 }
                                 ann.enabled = true;
                             });
-                            saveCurrentLayer();
+                            autoSaveLayer();
                             renderMatrix();
                         }
                     }

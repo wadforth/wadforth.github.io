@@ -25,7 +25,7 @@ function setMitigationStatus(mitigationId, status) {
     if (!state.currentLayer.mitigationStatus) state.currentLayer.mitigationStatus = {};
     state.currentLayer.mitigationStatus[mitigationId] = status;
     logActivity('mitigation_status', null, `${mitigationId}: ${status}`);
-    saveCurrentLayer();
+    autoSaveLayer();
 }
 
 function sortMitigations(mitigations) {

@@ -616,7 +616,7 @@ function updateTechniqueMonth(techniqueId, month) {
     const ann = getTechniqueAnnotation(techniqueId);
     if (ann) {
         ann.monthAdded = month;
-        saveCurrentLayer();
+        autoSaveLayer();
         showToast('Month updated', 'success');
     }
 }

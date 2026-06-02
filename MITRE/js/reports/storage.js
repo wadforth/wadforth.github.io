@@ -89,7 +89,7 @@ function logActivity(type, techniqueId, details = '') {
         techniqueId,
         details
     });
-    saveCurrentLayer();
+    autoSaveLayer();
 }
 
 function getActivitiesSince(dateStr) {

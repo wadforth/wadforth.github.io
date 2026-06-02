@@ -403,7 +403,7 @@
         });
 
         // Save new layer and re-render workspace
-        saveCurrentLayer();
+        autoSaveLayer();
         renderMatrix();
         
         // Hide Simulator Modal

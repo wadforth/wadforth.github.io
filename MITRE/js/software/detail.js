@@ -455,7 +455,7 @@ function showSoftwareModal(softwareId) {
                                 }
                                 ann.enabled = true;
                             });
-                            saveCurrentLayer();
+                            autoSaveLayer();
                             renderMatrix();
                         }
                     }
