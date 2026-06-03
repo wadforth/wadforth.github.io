@@ -389,9 +389,9 @@ function bindQueriesToolbar() {
     }
 
     // Expand/Collapse handler
-    const queriesContainer = document.getElementById('queries-container');
-    if (queriesContainer) {
-        queriesContainer.addEventListener('click', (e) => {
+    const queriesList = document.getElementById('queries-list');
+    if (queriesList) {
+        queriesList.addEventListener('click', (e) => {
             const expandBtn = e.target.closest('.btn-expand-query');
             if (expandBtn) {
                 const card = expandBtn.closest('.query-card');
