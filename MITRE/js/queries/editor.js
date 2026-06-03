@@ -335,6 +335,105 @@ function toggleFavorite(techniqueId, queryId) {
 
 document.getElementById('btn-save-query').addEventListener('click', saveQuery);
 
+let archiveTargetQueryId = null;
+let archiveTargetTechniqueId = null;
+
+window.openArchiveModal = function(queryId, techniqueId) {
+    archiveTargetQueryId = queryId;
+    archiveTargetTechniqueId = techniqueId;
+    
+    let queryName = '';
+    if (state.currentLayer) {
+        for (const tech of state.currentLayer.techniques) {
+            if (tech.queries) {
+                const q = tech.queries.find(q => q.id === queryId);
+                if (q) {
+                    queryName = q.name;
+                    break;
+                }
+            }
+        }
+    }
+    
+    document.getElementById('archive-query-name').textContent = queryName || 'Unknown Query';
+    document.getElementById('archive-reason').value = '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('archive-query-modal'));
+    modal.show();
+};
+
+window.confirmArchiveQuery = function() {
+    const reason = document.getElementById('archive-reason').value.trim();
+    if (!reason) {
+        showToast('Please provide a reason for archiving', 'error');
+        return;
+    }
+    
+    if (!state.currentLayer || !archiveTargetQueryId) return;
+    
+    const now = new Date().toISOString();
+    let queryName = '';
+    
+    for (const tech of state.currentLayer.techniques) {
+        if (tech.queries) {
+            const q = tech.queries.find(q => q.id === archiveTargetQueryId);
+            if (q) {
+                q.archived = true;
+                q.archivedAt = now;
+                q.archiveReason = reason;
+                q.lastModified = now;
+                queryName = q.name;
+            }
+        }
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('archive-query-modal'));
+    if (modal) modal.hide();
+    
+    autoSaveLayer();
+    logActivity('query_archive', archiveTargetTechniqueId, queryName || archiveTargetQueryId);
+    
+    renderMatrix();
+    renderQueriesView();
+    refreshTechniqueModalQueries();
+    
+    showToast('Query archived', 'success');
+    
+    archiveTargetQueryId = null;
+    archiveTargetTechniqueId = null;
+};
+
+window.unarchiveQuery = function(queryId, techniqueId) {
+    if (!state.currentLayer) return;
+    
+    const now = new Date().toISOString();
+    let queryName = '';
+    
+    for (const tech of state.currentLayer.techniques) {
+        if (tech.queries) {
+            const q = tech.queries.find(q => q.id === queryId);
+            if (q) {
+                q.archived = false;
+                q.archivedAt = null;
+                q.archiveReason = null;
+                q.lastModified = now;
+                queryName = q.name;
+            }
+        }
+    }
+    
+    autoSaveLayer();
+    logActivity('query_unarchive', techniqueId, queryName || queryId);
+    
+    renderMatrix();
+    renderQueriesView();
+    refreshTechniqueModalQueries();
+    
+    showToast('Query restored', 'success');
+};
+
+document.getElementById('btn-confirm-archive').addEventListener('click', confirmArchiveQuery);
+
 document.getElementById('btn-add-query-global').addEventListener('click', () => {
     if (!state.currentLayer) return;
     openQueryEditor(null, null);

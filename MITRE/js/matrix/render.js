@@ -216,6 +216,14 @@ function buildTechniqueCell(tech, subs = []) {
     
     const hasSentinelCandidate = ann?.queries?.some(q => q.sentinelCandidate);
     const sentinelBadge = hasSentinelCandidate ? '<span class="matrix-sentinel-badge" title="Has Sentinel candidate queries"><i class="bi bi-robot"></i></span>' : '';
+    
+    const allQueriesArchived = ann?.queries?.length > 0 && ann.queries.every(q => q.archived);
+    const someQueriesArchived = ann?.queries?.some(q => q.archived);
+    const archivedBadge = allQueriesArchived 
+        ? '<span class="matrix-archived-badge" title="All queries archived"><i class="bi bi-archive"></i></span>'
+        : someQueriesArchived 
+            ? '<span class="matrix-partial-archived-badge" title="Some queries archived"><i class="bi bi-archive"></i></span>'
+            : '';
 
     const displayId = highlightText(id, state.matrixSearchQuery);
     const displayName = highlightText(name, state.matrixSearchQuery);
@@ -223,7 +231,10 @@ function buildTechniqueCell(tech, subs = []) {
     let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass}" data-id="${id}" ${colorStyle}>
         <div class="tech-id" ${textColor ? `style="color: ${textColor};"` : ''}>${displayId}</div>
         <div class="tech-name" ${textColor ? `style="color: ${textColor};"` : ''}>${displayName}</div>
-        ${sentinelBadge}
+        <div class="matrix-badges">
+            ${sentinelBadge}
+            ${archivedBadge}
+        </div>
         ${expandBtn}
     </div>`;
 

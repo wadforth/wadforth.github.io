@@ -41,188 +41,77 @@ function getTechniquesByMonth() {
             hasSubs = state.techniques.some(t => {
                 const ref = t.external_references?.[0]?.external_id;
                 return ref && ref.startsWith(techId + '.');
-            });
-        }
-        
-        // Strict filtering:
-        // A technique (whether main or sub) is only active if:
-        // 1. It has logged queries: ann.queries.length > 0
-        // 2. OR it has a custom color annotation: ann.color
-        // 3. OR (if it's a parent) at least one of its sub-techniques in this layer has queries or color
-        const hasActiveQueriesOrColor = (ann.queries && ann.queries.length > 0) || ann.color;
-        
-        let hasActiveSubInLayer = false;
-        if (hasSubs) {
-            hasActiveSubInLayer = state.currentLayer.techniques.some(subAnn => {
-                return subAnn.techniqueID.startsWith(techId + '.') && 
-                       ((subAnn.queries && subAnn.queries.length > 0) || subAnn.color);
-            });
-        }
-        
-        if (!hasActiveQueriesOrColor && !hasActiveSubInLayer) return;
-        
-        if (ann.queries && ann.queries.length > 0) {
+        });
+    }
+    
+    // Archived Queries
+    const archivedQueries = [];
+    const seenArchived = new Set();
+    techniques.forEach(ann => {
+        if (ann.queries) {
             ann.queries.forEach(q => {
-                const qMonth = q.monthAdded || baseMonth;
-                if (!byMonth[qMonth]) byMonth[qMonth] = [];
-                const existing = byMonth[qMonth].find(t => t.techniqueID === ann.techniqueID);
-                if (!existing) {
-                    byMonth[qMonth].push({ ...ann, queries: [q] });
-                } else {
-                    if (!existing.queries) existing.queries = [];
-                    existing.queries.push(q);
+                if (q.archived && q.archivedAt && q.archivedAt.startsWith(month) && !seenArchived.has(q.id)) {
+                    seenArchived.add(q.id);
+                    archivedQueries.push({
+                        id: q.id,
+                        name: q.name,
+                        techniqueID: ann.techniqueID,
+                        archivedAt: q.archivedAt,
+                        archiveReason: q.archiveReason
+                    });
                 }
             });
-        } else {
-            // According to user requirements: sub-techniques and standalone techniques 
-            // should only show up in the report if they have logged queries.
-            // Parent techniques (which have sub-techniques) can be included under baseMonth if annotated and active.
-            if (hasSubs) {
-                if (!byMonth[baseMonth]) byMonth[baseMonth] = [];
-                byMonth[baseMonth].push(ann);
-            }
         }
     });
     
-    return Object.fromEntries(
-        Object.entries(byMonth).sort((a, b) => b[0].localeCompare(a[0]))
-    );
-}
-
-function getAvailableMonths() {
-    const byMonth = getTechniquesByMonth();
-    const months = Object.keys(byMonth);
-    
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    if (!months.includes(currentMonth)) {
-        months.unshift(currentMonth);
-    }
-    
-    return months;
-}
-
-function getMonthLabel(monthStr) {
-    const [year, month] = monthStr.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
-
-function getPreviousMonths(selectedMonth) {
-    const allMonths = getAvailableMonths();
-    const idx = allMonths.indexOf(selectedMonth);
-    return allMonths.slice(idx + 1);
-}
-
-function getExistingTechniqueIds(selectedMonth) {
-    const prevMonths = getPreviousMonths(selectedMonth);
-    const byMonth = getTechniquesByMonth();
-    const existingIds = new Set();
-    
-    prevMonths.forEach(month => {
-        (byMonth[month] || []).forEach(ann => {
-            existingIds.add(ann.techniqueID);
-        });
-    });
-    
-    return existingIds;
-}
-
-function isSubTechnique(techId) {
-    return techId.includes('.');
-}
-
-function getColorName(color, techType) {
-    if (!color) return 'None';
-    
-    const rules = state.autoColorRules || [];
-    const typeFilter = techType === 'sub' ? 'query-count' : 'sub-coverage';
-    
-    for (const rule of rules) {
-        if (rule.type === typeFilter && (rule.color + '80' === color || rule.color === color)) {
-            return rule.label;
-        }
-    }
-    
-    const colorMap = {
-        '#ef4444': 'Red',
-        '#f97316': 'Orange',
-        '#eab308': 'Yellow',
-        '#22c55e': 'Green',
-        '#3b82f6': 'Blue',
-        '#8b5cf6': 'Purple',
-    };
-    
-    const baseColor = color.replace('80', '');
-    return colorMap[baseColor] || 'Custom';
-}
-
-function renderReportsList(reports) {
-    const container = document.getElementById('reports-list');
-    const emptyState = document.getElementById('reports-empty');
-    if (!container) return;
-
-    if (emptyState) emptyState.classList.add('hidden');
-
-    const stats = getFullCoverageStats();
-    const availableMonths = getAvailableMonths();
-    const selectedMonth = availableMonths[0];
-    const version = state.currentVersion || state.currentLayer?.attackVersion || 'N/A';
-
-    let html = `
-        <div class="reports-container">
-            <div class="reports-header">
-                <div>
-                    <h2>${state.currentLayer.name || 'Coverage Reports'}</h2>
-                    <p>Track and analyze your MITRE ATT&CK detection coverage over time</p>
-                </div>
-                <div class="reports-actions">
-                    <button class="btn btn-outline-success" onclick="openThreatHuntReportModal()">
-                        <i class="bi bi-crosshair mr-2"></i>Threat Hunt Report
-                    </button>
-                </div>
-            </div>
-
-            <div class="reports-stats">
-                <div class="stat-card">
-                    <div class="stat-value">${stats.total}</div>
-                    <div class="stat-label">Total Techniques</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${stats.logged}</div>
-                    <div class="stat-label">Logged Techniques</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${stats.covered}</div>
-                    <div class="stat-label">With Queries</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${stats.pct % 1 === 0 ? stats.pct : stats.pct.toFixed(1)}%</div>
-                    <div class="stat-label">Coverage</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${version}</div>
-                    <div class="stat-label">ATT&CK Version</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${reports.length > 0 ? new Date(reports[0].generatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}</div>
-                    <div class="stat-label">Last Report</div>
-                </div>
-            </div>
-
-            <div class="month-selector-bar mb-4">
-                <label class="text-on-surface-tertiary text-sm mr-2">View by Month:</label>
-                <select class="form-select form-select-sm" style="width: auto; min-width: 200px;" onchange="renderMonthChangelog(this.value)">
-                    ${availableMonths.map(m => `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
-                </select>
-            </div>
-
-            <div id="month-changelog-container">
-                ${renderMonthChangelogHTML(selectedMonth)}
-            </div>
-    `;
-
-    if (reports.length > 0) {
+    if (archivedQueries.length > 0) {
+        const headerBgArchived = isDark ? 'rgba(251, 146, 60, 0.08)' : '#fff7ed';
         html += `
+            <tr class="timeline-header">
+                <td style="padding: 8px 0 3px 0; border: none;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0; border: none; width: 4px; background-color: #fb923c;"></td>
+                            <td style="padding: 3px 8px; border: none; background-color: ${headerBgArchived};">
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Archived Queries (${archivedQueries.length})</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        `;
+        archivedQueries.forEach((aq, idx) => {
+            const techName = getTechniqueName(aq.techniqueID);
+            if (!techName) return;
+            const bg = idx % 2 === 0 ? rowBg : altRowBg;
+            
+            html += `
+                <tr class="timeline-item event-archived">
+                    <td style="padding: 0; border: none; background-color: ${bg};">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 4px 8px 4px 12px; border: none; width: 90px; vertical-align: top;">
+                                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; color: var(--report-text);">${aq.techniqueID}</span>
+                                </td>
+                                <td style="padding: 4px 8px; border: none; vertical-align: top;">
+                                    <span style="font-weight: 600; color: var(--report-text);">${techName}</span>
+                                    <div style="font-size: 0.65rem; color: #ea580c; margin-top: 2px; display: flex; align-items: center; gap: 0.25rem;">
+                                        <i class="bi bi-archive"></i> ${escapeHtml(aq.name)}
+                                    </div>
+                                    ${aq.archiveReason ? `<div style="font-size: 0.65rem; color: var(--report-text-muted); margin-top: 2px; font-style: italic;">"${escapeHtml(truncateDescription(aq.archiveReason, 80))}"</div>` : ''}
+                                </td>
+                                <td style="padding: 4px 8px; border: none; text-align: right; vertical-align: top;">
+                                    <span style="font-size: 0.65rem; color: var(--report-text-muted);">${formatTimestamp(aq.archivedAt)}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    html += `
             <div class="reports-section-header mt-5 mb-3">
                 <h5><i class="bi bi-journal-text mr-2"></i>Generated Reports</h5>
             </div>

@@ -777,6 +777,38 @@
         </div>
     </div>
 
+    <div class="modal fade" id="archive-query-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 1rem;">
+                <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 1.25rem 1.5rem;">
+                    <h5 class="modal-title" style="color: var(--accent-orange); display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="bi bi-archive"></i> Archive Query
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <p style="color: var(--on-surface-secondary); margin-bottom: 1rem; font-size: 0.85rem;">
+                        Archiving this query will mark it as inactive. It will still appear in historical reports but won't count toward active coverage.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--on-surface-secondary);">Query Name</label>
+                        <div id="archive-query-name" style="font-weight: 600; color: var(--on-surface);"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--on-surface-secondary);">Archive Reason <span style="color: var(--accent-red);">*</span></label>
+                        <textarea id="archive-reason" class="form-control" rows="3" placeholder="Why is this query being archived? (e.g., replaced by new detection, no longer relevant, high false positives)" style="font-size: 0.85rem; background: var(--surface-subtle); border: 1px solid var(--border); color: var(--on-surface);"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--border); padding: 1rem 1.5rem;">
+                    <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn" id="btn-confirm-archive" style="background: var(--accent-orange); color: white; border: none; font-weight: 600;">
+                        <i class="bi bi-archive mr-1"></i> Archive Query
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="technique-modal" tabindex="-1">
         <div class="modal-dialog modal-xl technique-modal-dialog">
             <div class="modal-content technique-modal">
