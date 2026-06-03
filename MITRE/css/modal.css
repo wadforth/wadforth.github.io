@@ -717,6 +717,11 @@
     position: relative;
 }
 
+.query-card-item.query-card-archived {
+    opacity: 0.7;
+    border-color: var(--accent-orange);
+}
+
 .query-card-item-footer {
     display: flex;
     justify-content: space-between;
