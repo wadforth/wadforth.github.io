@@ -414,7 +414,7 @@ window.unarchiveQuery = function(queryId, techniqueId) {
             const q = tech.queries.find(q => q.id === queryId);
             if (q) {
                 q.archived = false;
-                q.archivedAt = null;
+                q.unarchivedAt = now;
                 q.archiveReason = null;
                 q.lastModified = now;
                 queryName = q.name;

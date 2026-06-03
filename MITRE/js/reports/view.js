@@ -44,29 +44,72 @@ function getTechniquesByMonth() {
         });
     }
     
-    // Archived Queries
-    const archivedQueries = [];
-    const seenArchived = new Set();
+    // Restored Queries
+    const restoredQueries = [];
+    const seenRestored = new Set();
     techniques.forEach(ann => {
         if (ann.queries) {
             ann.queries.forEach(q => {
-                if (q.archived && q.archivedAt && q.archivedAt.startsWith(month) && !seenArchived.has(q.id)) {
-                    seenArchived.add(q.id);
-                    archivedQueries.push({
+                if (q.unarchivedAt && q.unarchivedAt.startsWith(month) && !seenRestored.has(q.id)) {
+                    seenRestored.add(q.id);
+                    restoredQueries.push({
                         id: q.id,
                         name: q.name,
                         techniqueID: ann.techniqueID,
-                        archivedAt: q.archivedAt,
-                        archiveReason: q.archiveReason
+                        unarchivedAt: q.unarchivedAt
                     });
                 }
             });
         }
     });
     
-    if (archivedQueries.length > 0) {
-        const headerBgArchived = isDark ? 'rgba(251, 146, 60, 0.08)' : '#fff7ed';
+    if (restoredQueries.length > 0) {
+        const headerBgRestored = isDark ? 'rgba(34, 197, 94, 0.08)' : '#f0fdf4';
         html += `
+            <tr class="timeline-header">
+                <td style="padding: 8px 0 3px 0; border: none;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0; border: none; width: 4px; background-color: #22c55e;"></td>
+                            <td style="padding: 3px 8px; border: none; background-color: ${headerBgRestored};">
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px;">Restored Queries (${restoredQueries.length})</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        `;
+        restoredQueries.forEach((rq, idx) => {
+            const techName = getTechniqueName(rq.techniqueID);
+            if (!techName) return;
+            const bg = idx % 2 === 0 ? rowBg : altRowBg;
+            
+            html += `
+                <tr class="timeline-item event-restored">
+                    <td style="padding: 0; border: none; background-color: ${bg};">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 4px 8px 4px 12px; border: none; width: 90px; vertical-align: top;">
+                                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; color: var(--report-text);">${rq.techniqueID}</span>
+                                </td>
+                                <td style="padding: 4px 8px; border: none; vertical-align: top;">
+                                    <span style="font-weight: 600; color: var(--report-text);">${techName}</span>
+                                    <div style="font-size: 0.65rem; color: #16a34a; margin-top: 2px; display: flex; align-items: center; gap: 0.25rem;">
+                                        <i class="bi bi-arrow-counterclockwise"></i> ${escapeHtml(rq.name)}
+                                    </div>
+                                </td>
+                                <td style="padding: 4px 8px; border: none; text-align: right; vertical-align: top;">
+                                    <span style="font-size: 0.65rem; color: var(--report-text-muted);">${formatTimestamp(rq.unarchivedAt)}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    html += `
             <tr class="timeline-header">
                 <td style="padding: 8px 0 3px 0; border: none;">
                     <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
