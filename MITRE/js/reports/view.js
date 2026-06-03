@@ -3718,7 +3718,8 @@ function buildEmailHTML(report, isDark = false) {
                             name: q.name, 
                             techniqueID: ann.techniqueID, 
                             language: q.language,
-                            description: q.description
+                            description: q.description,
+                            sentinelCandidate: q.sentinelCandidate
                         });
                     }
                 });
@@ -3760,6 +3761,7 @@ function buildEmailHTML(report, isDark = false) {
                     <li style="margin-bottom: 12px; list-style-type: none; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px;">
                         <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${queryName}</strong>
                         <span style="background-color: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle; display: inline-block;">${q.language}</span>
+                        ${q.sentinelCandidate ? `<span style="background-color: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; vertical-align: middle; display: inline-block; border-radius: 3px;"><i class="bi bi-robot"></i> Sentinel</span>` : ''}
                         ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${q.description}</div>` : ''}
                         ${badgesHtml}
                     </li>
