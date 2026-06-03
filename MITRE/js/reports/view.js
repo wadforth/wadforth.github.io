@@ -1788,7 +1788,7 @@ function buildNewQueriesSection(report) {
                 <div class="new-query-header">
                     <div class="new-query-header-badges">
                         <span class="new-query-lang" style="background: ${langColor}20; color: ${langColor}; border-color: ${langColor}40;">${q.language}</span>
-                        ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge report-sentinel-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel</span>' : ''}
+                        ${q.sentinelCandidate ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.15rem 0.45rem;font-size:0.65rem;font-weight:600;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);border-radius:0.35rem;text-transform:uppercase;letter-spacing:0.02em;" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel</span>' : ''}
                     </div>
                     <span class="new-query-date">${formatTimestamp(q.created)}</span>
                 </div>
