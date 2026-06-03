@@ -212,6 +212,7 @@ async function initSigmaModule() {
         if (cleanRules && cleanRules.length > 100) {
             // We have a substantial cache — restore it instantly
             sigmaRules = cleanRules;
+            window.sigmaRules = sigmaRules;
             isLiveSigmaConnected = true;
             console.log(`Restored ${sigmaRules.length} Sigma rules from IndexedDB cache.`);
             syncRulesToWorker();
@@ -390,8 +391,18 @@ async function executeSyncFromGitHub(isBackground) {
 
         showSigmaSyncProgress(true, 55, `Indexing ${allRulePaths.length.toLocaleString()} rule paths...`);
 
+        // Deduplicate allRulePaths by path to prevent duplicate Total rules
+        const pathSet = new Map();
+        allRulePaths.forEach(item => {
+            if (!pathSet.has(item.path)) {
+                pathSet.set(item.path, item);
+            }
+        });
+        allRulePaths = [...pathSet.values()];
+
         // Purge any old offline baseline rules from memory
         sigmaRules = sigmaRules.filter(r => !r.isOfflineBaseline);
+        window.sigmaRules = sigmaRules;
 
         // Build a lookup of existing rules by ID for fast merge
         const existingMap = new Map();
@@ -486,6 +497,7 @@ async function executeSyncFromGitHub(isBackground) {
         showSigmaSyncProgress(true, 100, `Synced! ${newCount > 0 ? newCount + ' new rules' : 'Up to date'}${updatedCount > 0 ? ', ' + updatedCount + ' modified' : ''}`);
 
         isLiveSigmaConnected = true;
+        window.sigmaRules = sigmaRules;
         updateSyncButton('synced');
         populateProductFilter();
         syncRulesToWorker();
@@ -1126,10 +1138,11 @@ function renderSigmaList() {
     }
     sigmaVirtualState.totalHeight = totalHeight;
 
-    // Setup container
+    // Setup container - fill parent wrapper height
     grid.style.position = 'relative';
     grid.style.overflowY = 'auto';
-    grid.style.height = 'calc(100vh - 420px)';
+    grid.style.height = '100%';
+    grid.style.minHeight = '400px';
 
     // Create spacer and viewport
     let spacer = grid.querySelector('.sigma-virtual-spacer');
@@ -1146,6 +1159,10 @@ function renderSigmaList() {
     }
 
     spacer.style.height = `${totalHeight}px`;
+
+    // Initialize container height for virtual scroll calculation
+    sigmaVirtualState.containerHeight = grid.clientHeight;
+    sigmaVirtualState.scrollTop = 0;
 
     // Initial render
     renderVirtualViewport(grid, viewport);
@@ -1954,3 +1971,6 @@ export {
     viewCandidateDetails,
     renderAttachedSigmaBadges
 };
+
+// Expose sigmaRules globally for onclick handlers in rendered HTML
+window.sigmaRules = sigmaRules;

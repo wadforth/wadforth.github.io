@@ -343,9 +343,12 @@
 .sigma-list-wrapper {
     width: 440px;
     flex-shrink: 0;
-    overflow-y: auto;
+    overflow: hidden;
     padding-right: 4px;
     border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .sigma-grid {

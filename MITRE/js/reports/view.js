@@ -2941,25 +2941,10 @@ function generateDynamicExecutiveSummary(report) {
     const stats = getMonthStats(month);
     
     const coverageStats = getOverallCoverageStatsUpToMonth(month);
-    const tactics = getCoverageByTacticUpToMonth(month);
     const overallCoverage = coverageStats.pct % 1 === 0 ? coverageStats.pct : coverageStats.pct.toFixed(1);
     
-    const tacticCounts = {};
-    state.currentLayer?.techniques.forEach(ann => {
-        if (!ann.queries) return;
-        const hasMonthQuery = ann.queries.some(q => resolveQueryMonth(q, ann) === month);
-        if (!hasMonthQuery) return;
-        
-        const tacs = getTechniqueTactics(ann.techniqueID);
-        tacs.forEach(tactic => {
-            tacticCounts[tactic] = (tacticCounts[tactic] || 0) + 1;
-        });
-    });
-    
-    const topTactics = Object.entries(tacticCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([tactic]) => tactic);
+    // Get threat disruption count
+    const threatsDisrupted = getThreatsDisruptedCount(month);
     
     let summary = `This ${report.type === 'initial' ? 'initial assessment' : 'monthly update'} report covers threat hunting activities for ${report.reportMonth || month}. `;
     
@@ -2972,21 +2957,14 @@ function generateDynamicExecutiveSummary(report) {
     
     if (stats.mainTechs > 0 || stats.subTechs > 0) {
         summary += `During this period, ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} were added to the detection portfolio, `;
-        summary += `resulting in ${stats.queries} new detection queries added this period. `;
+        summary += `resulting in ${stats.queries} new detection quer${stats.queries !== 1 ? 'ies' : 'y'} added. `;
     }
     
-    if (topTactics.length > 0) {
-        summary += `Primary hunting focus areas included ${topTactics.join(', ')}, `;
-        summary += `reflecting current threat landscape priorities and organizational risk assessment. `;
+    if (threatsDisrupted > 0) {
+        summary += `Our security team has disrupted ${threatsDisrupted} active threat groups and tools through targeted detection deployments. `;
     }
     
-    const lowCoverage = tactics.filter(t => t.coverage < 50);
-    if (lowCoverage.length > 0) {
-        summary += `Critical coverage gaps remain in ${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')}, `;
-        summary += `requiring immediate attention to reduce detection blind spots. `;
-    }
-    
-    summary += `Key recommendations include prioritizing high-impact techniques, aligning detections with emerging threat actor TTPs, and maintaining continuous monitoring of existing coverage areas.`;
+    summary += `These queries represent our active detection logging efforts across the enterprise, providing visibility into adversary behaviors aligned with the MITRE ATT&CK framework.`;
     
     return summary;
 }
