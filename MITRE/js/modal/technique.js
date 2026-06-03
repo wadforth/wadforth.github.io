@@ -109,7 +109,10 @@ function showTechniqueModal(techniqueId, skipHistory = false) {
             <div class="tech-card query-card-item">
                 <div class="tech-card-header">
                     <span class="tech-card-name">${escapeHtml(q.name)}</span>
-                    <span class="query-lang-badge ${q.language}">${q.language}</span>
+                    <div class="query-header-badges">
+                        ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel</span>' : ''}
+                        <span class="query-lang-badge ${q.language}">${q.language}</span>
+                    </div>
                 </div>
                 <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
                 ${q.description ? `<p class="query-card-desc">${escapeHtml(q.description)}</p>` : ''}
@@ -537,7 +540,10 @@ function refreshTechniqueModalQueries() {
                         </button>
                         <span class="tech-card-name">${escapeHtml(q.name)}</span>
                     </div>
-                    <span class="query-lang-badge ${q.language}">${q.language}</span>
+                    <div class="query-header-badges">
+                        ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel</span>' : ''}
+                        <span class="query-lang-badge ${q.language}">${q.language}</span>
+                    </div>
                 </div>
                 <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
                 ${q.description ? `<p class="query-card-desc">${escapeHtml(q.description)}</p>` : ''}

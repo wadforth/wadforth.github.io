@@ -586,6 +586,31 @@
     color: var(--accent-green);
 }
 
+.query-header-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.sentinel-candidate-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.15rem 0.45rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--accent-blue);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.sentinel-candidate-badge i {
+    font-size: 0.7rem;
+}
+
 /* ============================================
    View Toggle - Open PRO / Nebula Inspired
    ============================================ */
@@ -977,5 +1002,25 @@
 
 .query-editor-save-btn i {
     font-size: 1rem;
+}
+
+.query-sentinel-toggle {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface-subtle);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+}
+
+.query-sentinel-toggle .form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.query-sentinel-toggle .form-check-label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--on-surface);
+    cursor: pointer;
 }
 

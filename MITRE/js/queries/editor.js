@@ -128,6 +128,8 @@ async function openQueryEditor(queryData = null, techniqueId = null) {
     document.getElementById('query-description').value = queryData?.description || '';
     document.getElementById('query-source').value = queryData?.source || '';
     
+    document.getElementById('query-sentinel-candidate').checked = !!queryData?.sentinelCandidate;
+    
     const currentMonth = new Date().toISOString().slice(0, 7);
     document.getElementById('query-month').value = queryData?.monthAdded || currentMonth;
     
@@ -226,6 +228,7 @@ function saveQuery() {
     const sigmaRuleId = sigmaRuleIdRaw || undefined;
     const sigmaRuleTitle = sigmaRuleTitleRaw || undefined;
     const sigmaRuleUrl = sigmaRuleUrlRaw || undefined;
+    const sentinelCandidate = document.getElementById('query-sentinel-candidate').checked;
     
     if (techniqueIds.length === 0) {
         showToast('Please select at least one technique', 'error');
@@ -268,7 +271,8 @@ function saveQuery() {
             monthAdded,
             sigmaRuleId: sigmaRuleId,
             sigmaRuleTitle: sigmaRuleTitle,
-            sigmaRuleUrl: sigmaRuleUrl
+            sigmaRuleUrl: sigmaRuleUrl,
+            sentinelCandidate
         });
     }
     
