@@ -1741,7 +1741,8 @@ function buildNewQueriesSection(report) {
                         techniqueID: ann.techniqueID,
                         language: q.language,
                         created: q.created,
-                        description: q.description
+                        description: q.description,
+                        sentinelCandidate: q.sentinelCandidate
                     });
                 }
             });
@@ -1785,7 +1786,10 @@ function buildNewQueriesSection(report) {
         html += `
             <div class="new-query-card">
                 <div class="new-query-header">
-                    <span class="new-query-lang" style="background: ${langColor}20; color: ${langColor}; border-color: ${langColor}40;">${q.language}</span>
+                    <div class="new-query-header-badges">
+                        <span class="new-query-lang" style="background: ${langColor}20; color: ${langColor}; border-color: ${langColor}40;">${q.language}</span>
+                        ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge report-sentinel-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel</span>' : ''}
+                    </div>
                     <span class="new-query-date">${formatTimestamp(q.created)}</span>
                 </div>
                 <h6 class="new-query-title">${escapeHtml(queryName)}</h6>
@@ -3362,6 +3366,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
             if (!techName) return;
             const techTactics = getTechniqueTactics(ann.techniqueID);
             const queryNames = (ann.queries && ann.queries.length > 0) ? ann.queries.map(q => q.name).join(', ') : '';
+            const hasSentinel = ann.queries?.some(q => q.sentinelCandidate);
             const bg = idx % 2 === 0 ? rowBg : altRowBg;
             const relatedSubs = subTechniques.filter(s => s.techniqueID.startsWith(ann.techniqueID + '.'));
             
@@ -3379,6 +3384,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
                                 </td>
                                 <td style="padding: 5px 10px; border: none; text-align: right; vertical-align: top; max-width: 280px;">
                                     ${queryNames ? `<div style="font-size: 9.5px; color: ${textColor}; font-style: italic;">"${queryNames}"</div>` : ''}
+                                    ${hasSentinel ? `<div style="font-size: 8px; color: #3b82f6; margin-top: 2px;"><i class="bi bi-robot"></i> Sentinel candidate</div>` : ''}
                                 </td>
                             </tr>
                         </table>
@@ -3416,6 +3422,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
             if (!techName) return;
             const techTactics = getTechniqueTactics(ann.techniqueID);
             const queryNames = (ann.queries && ann.queries.length > 0) ? ann.queries.map(q => q.name).join(', ') : '';
+            const hasSentinelSub = ann.queries?.some(q => q.sentinelCandidate);
             const bg = idx % 2 === 0 ? rowBg : altRowBg;
             
             html += `
@@ -3432,6 +3439,7 @@ function buildEmailMonthlyActivity(report, theme, isDark = false) {
                                 </td>
                                 <td style="padding: 5px 10px; border: none; text-align: right; vertical-align: top; max-width: 280px;">
                                     ${queryNames ? `<div style="font-size: 9.5px; color: ${textColor}; font-style: italic;">"${queryNames}"</div>` : ''}
+                                    ${hasSentinelSub ? `<div style="font-size: 8px; color: #3b82f6; margin-top: 2px;"><i class="bi bi-robot"></i> Sentinel candidate</div>` : ''}
                                 </td>
                             </tr>
                         </table>

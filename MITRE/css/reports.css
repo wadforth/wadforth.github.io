@@ -2863,6 +2863,17 @@
     margin-bottom: 0.5rem;
 }
 
+.new-query-header-badges {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.report-sentinel-badge {
+    font-size: 0.6rem;
+    padding: 0.1rem 0.35rem;
+}
+
 .new-query-lang {
     font-size: 0.65rem;
     font-weight: 700;

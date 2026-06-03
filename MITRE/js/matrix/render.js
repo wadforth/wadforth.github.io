@@ -213,6 +213,9 @@ function buildTechniqueCell(tech, subs = []) {
     const bgColor = effectiveColor ? effectiveColor : '';
     const textColor = effectiveColor ? getContrastColor(effectiveColor.replace(/80$/, '')) : '';
     const colorStyle = effectiveColor ? `style="background: ${bgColor}; color: ${textColor};"` : '';
+    
+    const hasSentinelCandidate = ann?.queries?.some(q => q.sentinelCandidate);
+    const sentinelBadge = hasSentinelCandidate ? '<span class="matrix-sentinel-badge" title="Has Sentinel candidate queries"><i class="bi bi-robot"></i></span>' : '';
 
     const displayId = highlightText(id, state.matrixSearchQuery);
     const displayName = highlightText(name, state.matrixSearchQuery);
@@ -220,6 +223,7 @@ function buildTechniqueCell(tech, subs = []) {
     let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass}" data-id="${id}" ${colorStyle}>
         <div class="tech-id" ${textColor ? `style="color: ${textColor};"` : ''}>${displayId}</div>
         <div class="tech-name" ${textColor ? `style="color: ${textColor};"` : ''}>${displayName}</div>
+        ${sentinelBadge}
         ${expandBtn}
     </div>`;
 
