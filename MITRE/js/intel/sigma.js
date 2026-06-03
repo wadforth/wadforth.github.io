@@ -231,6 +231,12 @@ async function initSigmaModule() {
                 setTimeout(() => backgroundResync(), 2000);
             }
             startAutoSyncCountdown();
+
+            // Auto-hydrate any remaining virtual rules from cache
+            const remainingVirtual = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === '')).length;
+            if (remainingVirtual > 0) {
+                setTimeout(() => autoHydrateAllVirtualRules(), 3000);
+            }
             return;
         }
 
@@ -521,6 +527,9 @@ async function executeSyncFromGitHub(isBackground) {
         // Start auto-sync countdown
         startAutoSyncCountdown();
 
+        // Auto-hydrate all virtual rules in background
+        setTimeout(() => autoHydrateAllVirtualRules(), 3000);
+
     } catch (err) {
         console.error("Failed to sync SigmaHQ:", err);
         showSigmaSyncProgress(false);
@@ -770,6 +779,84 @@ function parseYAMLInMainThread(rule) {
 
     rule.isVirtual = false;
     rule.hydratedAt = Date.now();
+}
+
+async function autoHydrateAllVirtualRules() {
+    const virtualRules = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === ''));
+    if (virtualRules.length === 0) return;
+
+    console.log(`Auto-hydrating ${virtualRules.length} virtual Sigma rules in background...`);
+
+    const batchSize = 10;
+    const delayBetweenBatches = 2000;
+    let hydratedCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < virtualRules.length; i += batchSize) {
+        const batch = virtualRules.slice(i, i + batchSize);
+        const promises = batch.map(async (rule) => {
+            try {
+                const rawUrl = `https://raw.githubusercontent.com/SigmaHQ/sigma/master/${rule.path}`;
+                let rawContent;
+
+                if (typeof fetchViaProxy === 'function') {
+                    rawContent = await fetchViaProxy(rawUrl);
+                } else {
+                    const resp = await fetch(rawUrl);
+                    if (!resp.ok) throw new Error('Raw fetch failed');
+                    rawContent = await resp.text();
+                }
+
+                if (!rawContent || rawContent.trim().length === 0) throw new Error('Empty content');
+
+                rule.yaml = rawContent;
+
+                if (sigmaWorker) {
+                    await new Promise((resolve) => {
+                        workerPendingParses.set(rule.id, (parsedRule) => {
+                            Object.assign(rule, parsedRule);
+                            idbPut('rules', rule).then(() => resolve());
+                        });
+                        sigmaWorker.postMessage({
+                            type: 'PARSE_YAML',
+                            payload: { rule: JSON.parse(JSON.stringify(rule)) }
+                        });
+                        setTimeout(() => {
+                            if (workerPendingParses.has(rule.id)) {
+                                workerPendingParses.delete(rule.id);
+                                parseYAMLInMainThread(rule);
+                                idbPut('rules', rule).then(() => resolve());
+                            }
+                        }, 10000);
+                    });
+                } else {
+                    parseYAMLInMainThread(rule);
+                    await idbPut('rules', rule);
+                }
+
+                hydratedCount++;
+            } catch (err) {
+                console.warn(`Auto-hydrate failed for ${rule.path}:`, err.message);
+                rule.yaml = `error: Auto-hydrate failed.\nurl: ${rule.url}`;
+                rule.isVirtual = false;
+                rule.hydratedAt = Date.now();
+                await idbPut('rules', rule);
+                failedCount++;
+            }
+        });
+
+        await Promise.allSettled(promises);
+
+        if (i + batchSize < virtualRules.length) {
+            await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+        }
+    }
+
+    console.log(`Auto-hydrate complete: ${hydratedCount} hydrated, ${failedCount} failed.`);
+    refreshSigmaFilteredCache();
+    renderSigmaStats();
+    renderSigmaList();
+    updateHydrationStatus();
 }
 
 // ---- Section 8: Coverage Engine ----
