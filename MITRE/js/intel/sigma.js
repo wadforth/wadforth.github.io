@@ -859,6 +859,106 @@ async function autoHydrateAllVirtualRules() {
     updateHydrationStatus();
 }
 
+async function manualHydrateAll() {
+    const btn = document.getElementById('btn-hydrate-all-sigma');
+    const virtualRules = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === ''));
+
+    if (virtualRules.length === 0) {
+        showToast('All rules are already hydrated and indexed.', 'success');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="bi bi-hourglass-split mr-1"></i> Hydrating... (0/${virtualRules.length})`;
+    }
+
+    showSigmaSyncProgress(true, 0, `Hydrating ${virtualRules.length.toLocaleString()} rules...`);
+
+    const batchSize = 10;
+    const delayBetweenBatches = 2000;
+    let hydratedCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < virtualRules.length; i += batchSize) {
+        const batch = virtualRules.slice(i, i + batchSize);
+        const promises = batch.map(async (rule) => {
+            try {
+                const rawUrl = `https://raw.githubusercontent.com/SigmaHQ/sigma/master/${rule.path}`;
+                let rawContent;
+
+                if (typeof fetchViaProxy === 'function') {
+                    rawContent = await fetchViaProxy(rawUrl);
+                } else {
+                    const resp = await fetch(rawUrl);
+                    if (!resp.ok) throw new Error('Raw fetch failed');
+                    rawContent = await resp.text();
+                }
+
+                if (!rawContent || rawContent.trim().length === 0) throw new Error('Empty content');
+
+                rule.yaml = rawContent;
+
+                if (sigmaWorker) {
+                    await new Promise((resolve) => {
+                        workerPendingParses.set(rule.id, (parsedRule) => {
+                            Object.assign(rule, parsedRule);
+                            idbPut('rules', rule).then(() => resolve());
+                        });
+                        sigmaWorker.postMessage({
+                            type: 'PARSE_YAML',
+                            payload: { rule: JSON.parse(JSON.stringify(rule)) }
+                        });
+                        setTimeout(() => {
+                            if (workerPendingParses.has(rule.id)) {
+                                workerPendingParses.delete(rule.id);
+                                parseYAMLInMainThread(rule);
+                                idbPut('rules', rule).then(() => resolve());
+                            }
+                        }, 10000);
+                    });
+                } else {
+                    parseYAMLInMainThread(rule);
+                    await idbPut('rules', rule);
+                }
+
+                hydratedCount++;
+            } catch (err) {
+                console.warn(`Hydrate failed for ${rule.path}:`, err.message);
+                rule.yaml = `error: Hydrate failed.\nurl: ${rule.url}`;
+                rule.isVirtual = false;
+                rule.hydratedAt = Date.now();
+                await idbPut('rules', rule);
+                failedCount++;
+            }
+        });
+
+        await Promise.allSettled(promises);
+
+        const pct = Math.round(((i + batch.length) / virtualRules.length) * 100);
+        if (btn) btn.innerHTML = `<i class="bi bi-cloud-arrow-down mr-1"></i> Hydrating... (${hydratedCount}/${virtualRules.length})`;
+        showSigmaSyncProgress(true, pct, `Hydrated ${hydratedCount.toLocaleString()} / ${virtualRules.length.toLocaleString()}...`);
+
+        if (i + batchSize < virtualRules.length) {
+            await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+        }
+    }
+
+    showSigmaSyncProgress(true, 100, `Hydrated! ${hydratedCount} rules indexed${failedCount > 0 ? ', ' + failedCount + ' failed' : ''}`);
+    refreshSigmaFilteredCache();
+    renderSigmaStats();
+    renderSigmaList();
+    updateHydrationStatus();
+
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate & Index All`;
+    }
+
+    setTimeout(() => showSigmaSyncProgress(false), 3000);
+    showToast(`Hydration complete: ${hydratedCount} rules indexed.`, 'success');
+}
+
 // ---- Section 8: Coverage Engine ----
 
 function getSigmaCoverageStatus(rule) {
