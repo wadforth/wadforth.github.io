@@ -1788,7 +1788,7 @@ function buildNewQueriesSection(report) {
                 <div class="new-query-header">
                     <div class="new-query-header-badges">
                         <span class="new-query-lang" style="background: ${langColor}20; color: ${langColor}; border-color: ${langColor}40;">${q.language}</span>
-                        ${q.sentinelCandidate ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.15rem 0.45rem;font-size:0.65rem;font-weight:600;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);border-radius:0.35rem;text-transform:uppercase;letter-spacing:0.02em;" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel</span>' : ''}
+                        ${q.sentinelCandidate ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.15rem 0.45rem;font-size:0.65rem;font-weight:600;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);border-radius:0.35rem;text-transform:uppercase;letter-spacing:0.02em;" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
                     </div>
                     <span class="new-query-date">${formatTimestamp(q.created)}</span>
                 </div>
@@ -3761,7 +3761,7 @@ function buildEmailHTML(report, isDark = false) {
                     <li style="margin-bottom: 12px; list-style-type: none; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px;">
                         <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${queryName}</strong>
                         <span style="background-color: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle; display: inline-block;">${q.language}</span>
-                        ${q.sentinelCandidate ? `<span style="background-color: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; vertical-align: middle; display: inline-block; border-radius: 3px;"><i class="bi bi-robot"></i> Sentinel</span>` : ''}
+                        ${q.sentinelCandidate ? `<span style="background-color: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; vertical-align: middle; display: inline-block; border-radius: 3px;"><i class="bi bi-robot"></i> Sentinel Candidate</span>` : ''}
                         ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${q.description}</div>` : ''}
                         ${badgesHtml}
                     </li>

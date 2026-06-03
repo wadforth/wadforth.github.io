@@ -602,7 +602,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.15rem 0.45rem;
+    padding: 0.15rem 0.5rem;
     font-size: 0.65rem;
     font-weight: 600;
     background: rgba(59, 130, 246, 0.12);
@@ -611,6 +611,7 @@
     border-radius: 0.35rem;
     text-transform: uppercase;
     letter-spacing: 0.02em;
+    white-space: nowrap;
 }
 
 .sentinel-candidate-badge i {

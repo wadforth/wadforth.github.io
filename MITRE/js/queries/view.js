@@ -274,7 +274,7 @@ function renderQueryCard(q) {
                         <span class="query-list-tech">${escapeHtml(primaryTechName)}</span>
                     </div>
                     <div class="query-list-badges">
-                        ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i></span>' : ''}
+                        ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
                         <span class="query-lang-badge ${q.language}">${q.language}</span>
                     </div>
                     <span class="query-list-id">${techIds.join(', ')}</span>
@@ -306,7 +306,7 @@ function renderQueryCard(q) {
                         <h6 class="query-card-title">${escapeHtml(q.name)}</h6>
                         <div class="query-meta mt-1">
                             <div class="query-header-badges">
-                                ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel</span>' : ''}
+                                ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
                                 <span class="query-lang-badge ${q.language}">${q.language}</span>
                             </div>
                             ${techBadges}
