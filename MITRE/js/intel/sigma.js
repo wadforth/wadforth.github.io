@@ -2161,3 +2161,4 @@ export {
 
 // Expose sigmaRules globally for onclick handlers in rendered HTML
 window.sigmaRules = sigmaRules;
+window.manualHydrateAll = manualHydrateAll;
