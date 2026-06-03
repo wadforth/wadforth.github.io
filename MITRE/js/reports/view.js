@@ -112,6 +112,51 @@ function getTechniquesByMonth() {
     }
     
     html += `
+            <tr class="timeline-header">
+                <td style="padding: 8px 0 3px 0; border: none;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0; border: none; width: 4px; background-color: #fb923c;"></td>
+                            <td style="padding: 3px 8px; border: none; background-color: ${headerBgArchived};">
+                                <span style="font-size: 0.7rem; font-weight: 700; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px;">Archived Queries (${archivedQueries.length})</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        `;
+        archivedQueries.forEach((aq, idx) => {
+            const techName = getTechniqueName(aq.techniqueID);
+            if (!techName) return;
+            const bg = idx % 2 === 0 ? rowBg : altRowBg;
+            
+            html += `
+                <tr class="timeline-item event-archived">
+                    <td style="padding: 0; border: none; background-color: ${bg};">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 4px 8px 4px 12px; border: none; width: 90px; vertical-align: top;">
+                                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; color: var(--report-text);">${aq.techniqueID}</span>
+                                </td>
+                                <td style="padding: 4px 8px; border: none; vertical-align: top;">
+                                    <span style="font-weight: 600; color: var(--report-text);">${techName}</span>
+                                    <div style="font-size: 0.65rem; color: #ea580c; margin-top: 2px; display: flex; align-items: center; gap: 0.25rem;">
+                                        <i class="bi bi-archive"></i> ${escapeHtml(aq.name)}
+                                    </div>
+                                    ${aq.archiveReason ? `<div style="font-size: 0.65rem; color: var(--report-text-muted); margin-top: 2px; font-style: italic;">"${escapeHtml(truncateDescription(aq.archiveReason, 80))}"</div>` : ''}
+                                </td>
+                                <td style="padding: 4px 8px; border: none; text-align: right; vertical-align: top;">
+                                    <span style="font-size: 0.65rem; color: var(--report-text-muted);">${formatTimestamp(aq.archivedAt)}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    html += `
             <div class="reports-section-header mt-5 mb-3">
                 <h5><i class="bi bi-journal-text mr-2"></i>Generated Reports</h5>
             </div>
