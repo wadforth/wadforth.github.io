@@ -304,13 +304,9 @@ function renderQueryCard(q) {
                     </button>
                     <div>
                         <h6 class="query-card-title">${escapeHtml(q.name)}</h6>
-                        <div class="query-meta mt-1">
-                            <div class="query-header-badges">
-                                ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
-                                <span class="query-lang-badge ${q.language}">${q.language}</span>
-                            </div>
-                            ${techBadges}
-                            ${multiTechLabel}
+                        <div class="query-header-badges">
+                            ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
+                            <span class="query-lang-badge ${q.language}">${q.language}</span>
                         </div>
                     </div>
                 </div>
@@ -330,8 +326,14 @@ function renderQueryCard(q) {
             ${q.description ? `<p class="query-card-desc" title="${escapeHtml(cleanDescription(q.description))}">${escapeHtml(truncateDescription(q.description, 150))}</p>` : ''}
             ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
             <div class="query-card-footer">
-                <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
-                ${q.created ? `<span class="query-created"><i class="bi bi-calendar-plus"></i> Created ${createdStr}</span>` : ''}
+                <div class="query-card-techs">
+                    ${techBadges}
+                    ${multiTechLabel}
+                </div>
+                <div class="query-card-dates">
+                    <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
+                    ${q.created ? `<span class="query-created"><i class="bi bi-calendar-plus"></i> Created ${createdStr}</span>` : ''}
+                </div>
             </div>
         </div>
     `;

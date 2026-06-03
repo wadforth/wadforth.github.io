@@ -436,22 +436,39 @@
 
 .queries-grid .query-card-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: flex-end;
     margin-top: auto;
-    padding-top: 0.75rem;
+    padding-top: 0.85rem;
     border-top: 1px solid var(--border);
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .query-card-footer {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-top: 0.75rem;
-    padding-top: 0.75rem;
+    align-items: flex-end;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
     border-top: 1px solid var(--border);
-    gap: 0.75rem;
+    gap: 1rem;
     flex-wrap: wrap;
+}
+
+.query-card-techs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.query-card-dates {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
 }
 
 .query-modified,
@@ -461,6 +478,7 @@
     display: flex;
     align-items: center;
     gap: 0.3rem;
+    white-space: nowrap;
 }
 
 .query-modified i,
@@ -834,15 +852,15 @@
 .query-tech-ref {
     display: inline-flex;
     align-items: center;
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-family: var(--font-mono);
     color: var(--primary);
-    background: rgba(139, 92, 246, 0.12);
-    padding: 0.2em 0.5em;
-    border-radius: 0.35rem;
+    background: rgba(139, 92, 246, 0.08);
+    padding: 0.15em 0.4em;
+    border-radius: 0.3rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.15);
 }
 
 .query-card-title {
