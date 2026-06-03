@@ -1563,6 +1563,14 @@ window.filterTimeline = function(filterType, btn) {
     }
     
     html += `
+            </table>
+        </div>
+    `;
+    
+    return html;
+}
+
+function buildMethodology(report) {
     const methodology = report.methodology || {};
     const scope = report.scope || {};
     
