@@ -311,6 +311,9 @@ function renderQueryCard(q) {
                     </div>
                 </div>
                 <div class="query-card-actions">
+                    <button class="btn btn-ghost btn-expand-query" data-query-id="${q.id}" title="Expand/Collapse">
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
                     <button class="btn btn-ghost btn-copy-query" data-query-id="${q.id}" title="Copy query">
                         <i class="bi bi-clipboard"></i>
                     </button>
@@ -322,13 +325,17 @@ function renderQueryCard(q) {
                     </button>
                 </div>
             </div>
-            <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
             ${q.description ? `<p class="query-card-desc" title="${escapeHtml(cleanDescription(q.description))}">${escapeHtml(truncateDescription(q.description, 150))}</p>` : ''}
-            ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
-            <div class="query-card-footer">
+            <div class="query-card-collapsible">
+                <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
                 <div class="query-card-techs">
                     ${techBadges}
                     ${multiTechLabel}
+                </div>
+            </div>
+            <div class="query-card-footer">
+                <div class="query-card-techs-summary">
+                    <i class="bi bi-grid-3x3"></i> ${techIds.length} technique${techIds.length > 1 ? 's' : ''}
                 </div>
                 <div class="query-card-dates">
                     <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
@@ -378,6 +385,20 @@ function bindQueriesToolbar() {
         viewList.addEventListener('click', () => {
             queriesViewMode = 'list';
             renderQueriesView();
+        });
+    }
+
+    // Expand/Collapse handler
+    const queriesContainer = document.getElementById('queries-container');
+    if (queriesContainer) {
+        queriesContainer.addEventListener('click', (e) => {
+            const expandBtn = e.target.closest('.btn-expand-query');
+            if (expandBtn) {
+                const card = expandBtn.closest('.query-card');
+                if (card) {
+                    card.classList.toggle('query-card-expanded');
+                }
+            }
         });
     }
 }
