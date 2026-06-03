@@ -37,7 +37,7 @@ let workerPendingFilter = null;
 
 function initSigmaWorker() {
     try {
-        sigmaWorker = new Worker('js/intel/sigma-worker.js');
+        sigmaWorker = new Worker(new URL('sigma-worker.js', import.meta.url));
         sigmaWorker.onmessage = function(e) {
             const { type, rule, ruleId, error, filtered, total, count } = e.data;
             
