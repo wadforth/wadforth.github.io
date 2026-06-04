@@ -274,7 +274,7 @@ export async function fetchViaProxy(url) {
         try {
             console.log(`Attempting native direct fetch (CORS-friendly): ${url}`);
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
             const res = await fetch(url, { signal: controller.signal });
             clearTimeout(timeoutId);
             if (res.ok) {
@@ -290,11 +290,13 @@ export async function fetchViaProxy(url) {
     }
 
     const proxies = [
-        // 1. CORSProxy.io (Fastest & most robust raw XML proxy)
-        target => `https://corsproxy.io/?${encodeURIComponent(target)}`,
+        // 1. CORSProxy.org (Fastest robust proxy)
+        target => `https://corsproxy.org/?${encodeURIComponent(target)}`,
         // 2. CodeTabs CORS Proxy (Stable backup proxy)
         target => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}`,
-        // 3. AllOrigins (JSON wrapper backup)
+        // 3. CORSProxy.io (Legacy fallback)
+        target => `https://corsproxy.io/?${encodeURIComponent(target)}`,
+        // 4. AllOrigins (JSON wrapper backup)
         target => `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`
     ];
 
@@ -304,7 +306,7 @@ export async function fetchViaProxy(url) {
             console.log(`Attempting fetch via proxy ${i + 1}: ${proxyUrl}`);
             
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout
             
             const res = await fetch(proxyUrl, { signal: controller.signal });
             clearTimeout(timeoutId);

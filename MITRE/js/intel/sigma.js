@@ -25,8 +25,9 @@ export let selectedSigmaSort = "default";
 export let selectedSigmaDate = "all";
 export let isLiveSigmaConnected = false;
 
-export const SIGMA_PAGE_SIZE = 50;
-export let sigmaCurrentPage = 0;
+export const SIGMA_PAGINATION_CHUNK = 20;
+export let currentVisibleCount = 20;
+
 export let sigmaFilteredCache = [];
 export let sigmaSearchDebounceTimer = null;
 
@@ -120,7 +121,7 @@ export async function initSigmaModule() {
             updateSyncButton('synced');
             bindSigmaEvents();
             populateProductFilter();
-            refreshSigmaFilteredCache();
+            await refreshSigmaFilteredCache();
             renderSigmaStats();
             renderSigmaList();
             renderSigmaDetails();
@@ -143,7 +144,7 @@ export async function initSigmaModule() {
 
         // No cache — show empty state and auto-connect to GitHub
         bindSigmaEvents();
-        refreshSigmaFilteredCache();
+        await refreshSigmaFilteredCache();
         renderSigmaStats();
         renderSigmaList();
         renderSigmaDetails();
@@ -1069,19 +1070,7 @@ export function renderSigmaStats() {
 // ---- Section 13: Rendering - Virtual Scrolled Rule List ----
 
 export const SIGMA_CARD_HEIGHT = 180; // Approximate height of a card in px
-export const SIGMA_HEADER_HEIGHT = 40; // Height of month group header
-export const SIGMA_OVERSCAN = 5; // Extra cards to render above/below viewport
 
-export let sigmaVirtualState = {
-    scrollTop: 0,
-    containerHeight: 0,
-    startIndex: 0,
-    endIndex: 0,
-    totalHeight: 0,
-    groupedData: [], // Flat array of {type: 'header'|'card', data, idx}
-    isScrolling: false,
-    scrollTimeout: null
-};
 
 export function getRuleFolderName(rule) {
     if (!rule.path) return '';
@@ -1145,6 +1134,42 @@ export function buildVirtualGroupedData(filtered) {
     return groups;
 }
 
+export function buildGroupedData(filtered) {
+    const groups = [];
+    const monthGroups = {};
+    const noDate = [];
+
+    filtered.forEach((rule, idx) => {
+        const effectiveDate = getEffectiveDate(rule);
+        const mKey = getMonthKey(effectiveDate);
+        if (mKey) {
+            if (!monthGroups[mKey]) monthGroups[mKey] = [];
+            monthGroups[mKey].push({ rule, idx });
+        } else {
+            noDate.push({ rule, idx });
+        }
+    });
+
+    const sortedMonths = Object.keys(monthGroups).sort((a, b) => b.localeCompare(a));
+
+    for (const mKey of sortedMonths) {
+        const items = monthGroups[mKey];
+        groups.push({ type: 'header', label: formatMonthLabel(mKey), count: items.length, icon: 'bi-calendar-month' });
+        for (const { rule, idx } of items) {
+            groups.push({ type: 'card', rule, idx });
+        }
+    }
+
+    if (noDate.length > 0) {
+        groups.push({ type: 'header', label: 'Unindexed (awaiting hydration)', count: noDate.length, icon: 'bi-clock-history' });
+        for (const { rule, idx } of noDate) {
+            groups.push({ type: 'card', rule, idx });
+        }
+    }
+
+    return groups;
+}
+
 export function renderSigmaList() {
     const grid = document.getElementById('sigma-feed-grid');
     const countBadge = document.getElementById('sigma-rules-count');
@@ -1160,117 +1185,16 @@ export function renderSigmaList() {
                 <i class="bi bi-search text-2xl mb-2 d-block"></i>
                 <span class="text-xs">No matching Sigma rules found.</span>
             </div>`;
-        sigmaVirtualState.groupedData = [];
-        sigmaVirtualState.totalHeight = 0;
         return;
     }
 
-    // Build grouped data structure
-    sigmaVirtualState.groupedData = buildVirtualGroupedData(filtered);
-
-    // Calculate total height
-    let totalHeight = 0;
-    for (const item of sigmaVirtualState.groupedData) {
-        totalHeight += item.type === 'header' ? SIGMA_HEADER_HEIGHT : SIGMA_CARD_HEIGHT;
-    }
-    sigmaVirtualState.totalHeight = totalHeight;
-
-    // Setup container - fill parent wrapper height
-    grid.style.position = 'relative';
-    grid.style.overflowY = 'auto';
-    grid.style.height = '100%';
-    grid.style.minHeight = '400px';
-
-    // Create spacer and viewport
-    let spacer = grid.querySelector('.sigma-virtual-spacer');
-    let viewport = grid.querySelector('.sigma-virtual-viewport');
-
-    if (!spacer) {
-        spacer = document.createElement('div');
-        spacer.className = 'sigma-virtual-spacer';
-        viewport = document.createElement('div');
-        viewport.className = 'sigma-virtual-viewport';
-        grid.innerHTML = '';
-        grid.appendChild(spacer);
-        grid.appendChild(viewport);
-    }
-
-    spacer.style.height = `${totalHeight}px`;
-
-    // Initialize container height for virtual scroll calculation
-    sigmaVirtualState.containerHeight = grid.clientHeight;
-    sigmaVirtualState.scrollTop = 0;
-
-    // Initial render
-    renderVirtualViewport(grid, viewport);
-
-    // Scroll handler with debounce
-    grid.removeEventListener('scroll', handleSigmaVirtualScroll);
-    grid.addEventListener('scroll', handleSigmaVirtualScroll, { passive: true });
-}
-
-export function handleSigmaVirtualScroll(e) {
-    const grid = e.target;
-    sigmaVirtualState.scrollTop = grid.scrollTop;
-    sigmaVirtualState.containerHeight = grid.clientHeight;
-
-    if (sigmaVirtualState.scrollTimeout) {
-        cancelAnimationFrame(sigmaVirtualState.scrollTimeout);
-    }
-
-    sigmaVirtualState.scrollTimeout = requestAnimationFrame(() => {
-        const viewport = grid.querySelector('.sigma-virtual-viewport');
-        if (viewport) {
-            renderVirtualViewport(grid, viewport);
-        }
-    });
-}
-
-export function renderVirtualViewport(grid, viewport) {
-    const { scrollTop, containerHeight, groupedData } = sigmaVirtualState;
-
-    if (!groupedData.length) return;
-
-    // Calculate visible range
-    let startIndex = 0;
-    let endIndex = 0;
-    let currentOffset = 0;
-
-    // Find start index
-    for (let i = 0; i < groupedData.length; i++) {
-        const itemHeight = groupedData[i].type === 'header' ? SIGMA_HEADER_HEIGHT : SIGMA_CARD_HEIGHT;
-        if (currentOffset + itemHeight >= scrollTop - (SIGMA_OVERSCAN * SIGMA_CARD_HEIGHT)) {
-            startIndex = Math.max(0, i - SIGMA_OVERSCAN);
-            break;
-        }
-        currentOffset += itemHeight;
-    }
-
-    // Find end index
-    currentOffset = 0;
-    for (let i = 0; i < groupedData.length; i++) {
-        const itemHeight = groupedData[i].type === 'header' ? SIGMA_HEADER_HEIGHT : SIGMA_CARD_HEIGHT;
-        if (currentOffset >= scrollTop + containerHeight + (SIGMA_OVERSCAN * SIGMA_CARD_HEIGHT)) {
-            endIndex = Math.min(groupedData.length, i + SIGMA_OVERSCAN);
-            break;
-        }
-        currentOffset += itemHeight;
-    }
-    if (endIndex === 0) endIndex = groupedData.length;
-
-    sigmaVirtualState.startIndex = startIndex;
-    sigmaVirtualState.endIndex = endIndex;
-
-    // Calculate offset for first visible item
-    let offsetY = 0;
-    for (let i = 0; i < startIndex; i++) {
-        offsetY += groupedData[i].type === 'header' ? SIGMA_HEADER_HEIGHT : SIGMA_CARD_HEIGHT;
-    }
-
-    // Render visible items
-    let html = `<div style="transform: translateY(${offsetY}px);">`;
-
-    for (let i = startIndex; i < endIndex; i++) {
+    const groupedData = buildGroupedData(filtered);
+    let html = '';
+    
+    // Determine how many items to show based on pagination
+    const itemsToShow = Math.min(currentVisibleCount, groupedData.length);
+    
+    for (let i = 0; i < itemsToShow; i++) {
         const item = groupedData[i];
         if (item.type === 'header') {
             html += `<div class="sigma-date-group" style="height: ${SIGMA_HEADER_HEIGHT}px;">
@@ -1284,22 +1208,40 @@ export function renderVirtualViewport(grid, viewport) {
             html += renderSigmaCard(item.rule, item.idx);
         }
     }
+    
+    // Add Load More button if there are more items
+    if (currentVisibleCount < groupedData.length) {
+        html += `
+            <div class="text-center mt-4 mb-6">
+                <button onclick="loadMoreSigmaRules()" class="btn btn-outline-primary btn-sm px-4 rounded-pill" style="border-color: rgba(168,85,247,0.4); color: #a855f7;">
+                    <i class="bi bi-arrow-down-circle me-1"></i> Load More Rules... (${groupedData.length - currentVisibleCount} remaining)
+                </button>
+            </div>
+        `;
+    }
 
-    html += '</div>';
-    viewport.innerHTML = html;
+    grid.style.overflowY = 'auto';
+    grid.style.height = '100%';
+    grid.innerHTML = html;
 
-    // Re-bind card click handlers
-    viewport.querySelectorAll('.sigma-card').forEach(card => {
+    // Bind card click handlers
+    grid.querySelectorAll('.sigma-card').forEach(card => {
         card.addEventListener('click', () => {
             const idx = parseInt(card.dataset.idx, 10);
             selectedSigmaIdx = idx;
-            viewport.querySelectorAll('.sigma-card').forEach(c => c.classList.remove('active'));
+            grid.querySelectorAll('.sigma-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
             renderSigmaDetails();
         });
     });
 }
 
+export function loadMoreSigmaRules() {
+    currentVisibleCount += SIGMA_PAGINATION_CHUNK;
+    renderSigmaList();
+}
+
+    html += '</div>';
 export function renderSigmaCard(rule, idx) {
     const level = rule.level || (rule.isVirtual ? '' : extractLevelFromYaml(rule.yaml));
     const isActive = selectedSigmaIdx === idx;
