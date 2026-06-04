@@ -1069,9 +1069,6 @@ export function renderSigmaStats() {
 
 // ---- Section 13: Rendering - Virtual Scrolled Rule List ----
 
-export const SIGMA_CARD_HEIGHT = 180; // Approximate height of a card in px
-
-
 export function getRuleFolderName(rule) {
     if (!rule.path) return '';
     const parts = rule.path.split('/');
@@ -1976,7 +1973,7 @@ window.getMonthKey = getMonthKey;
 window.formatMonthLabel = formatMonthLabel;
 window.renderSigmaList = renderSigmaList;
 window.renderSigmaCard = renderSigmaCard;
-window.formatRuleDate = formatRuleDate;
+window.loadMoreSigmaRules = loadMoreSigmaRules;
 window.formatRuleDate = formatRuleDate;
 window.renderSigmaDetails = renderSigmaDetails;
 window.sigmaFilterDebounceTimer = sigmaFilterDebounceTimer;
