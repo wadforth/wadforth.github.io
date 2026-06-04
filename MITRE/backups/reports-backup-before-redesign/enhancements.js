@@ -585,27 +585,33 @@ export function openReportPreviewWizardModal() {
         return;
     }
     
+    const defaultMonth = availableMonths[0];
     const monthOptions = availableMonths.map(m => 
         `<option value="${m}">${getMonthLabel(m)}</option>`
     ).join('');
     
     const modalHtml = `
         <div class="modal fade" id="report-preview-wizard-modal" tabindex="-1">
-            <div class="modal-dialog modal-md">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-file-earmark-plus mr-2"></i>Create New Report</h5>
+                        <h5 class="modal-title"><i class="bi bi-file-earmark-diff mr-2"></i>New Report Preview</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="mb-2">
+                        <div class="mb-4">
                             <label class="form-label font-semibold text-on-surface">Select Month for Report:</label>
-                            <select id="preview-wizard-month-select" class="form-select">
+                            <select id="preview-wizard-month-select" class="form-select" onchange="updateWizardPreview(this.value)">
                                 ${monthOptions}
                             </select>
-                            <p class="text-on-surface-tertiary text-sm mt-3" style="line-height:1.5;">
-                                The system will collect and consolidate threat hunt telemetry, query additions, and coverage updates for the selected period to compile a polished, executive-ready pyramid report.
-                            </p>
+                            <p class="text-on-surface-tertiary text-sm mt-1">Previewing changes from logs for the selected month before generating the full executive report.</p>
+                        </div>
+                        
+                        <div class="border rounded p-3" style="background: var(--report-bg-secondary); border-color: var(--report-border);">
+                            <h6 class="text-on-surface-secondary uppercase text-xs font-bold tracking-wider mb-3">Changelog Preview</h6>
+                            <div id="wizard-preview-container">
+                                ${renderMonthChangelogHTML(defaultMonth)}
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">

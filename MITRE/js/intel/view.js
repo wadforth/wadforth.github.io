@@ -1,12 +1,12 @@
 // Threat Intelligence Hub Controller
 // Aggregates, parses, filters, and maps live threat data directly to MITRE ATT&CK elements.
 
-let intelArticles = [];
-let selectedArticleIdx = null;
-let intelSearchQuery = "";
-let searchDebounceTimeout = null;
+export let intelArticles = [];
+export let selectedArticleIdx = null;
+export let intelSearchQuery = "";
+export let searchDebounceTimeout = null;
 
-let intelFeeds = [
+export let intelFeeds = [
     { id: 'cisa', name: 'CISA Alerts', url: 'https://www.cisa.gov/cybersecurity-advisories/all.xml', checked: true },
     { id: 'hackernews', name: 'The Hacker News', url: 'https://feeds.feedburner.com/TheHackersNews', checked: true },
     { id: 'bleepingcomputer', name: 'Bleeping Computer', url: 'https://www.bleepingcomputer.com/feed/', checked: true },
@@ -15,10 +15,10 @@ let intelFeeds = [
     { id: 'krebsonsecurity', name: 'Krebs on Security', url: 'https://krebsonsecurity.com/feed/', checked: false }
 ];
 
-let selectedSectors = new Set();
-let selectedFeeds = new Set(['cisa', 'hackernews', 'bleepingcomputer']);
+export let selectedSectors = new Set();
+export let selectedFeeds = new Set(['cisa', 'hackernews', 'bleepingcomputer']);
 
-const SECTOR_KEYWORDS = {
+export const SECTOR_KEYWORDS = {
     Finance: ['bank', 'payment', 'swipe', 'card', 'financial', 'swift', 'crypto', 'bitcoin', 'credit', 'ledger', 'atm', 'heist'],
     Healthcare: ['hospital', 'patient', 'clinical', 'medical', 'healthcare', 'pharma', 'vaccine', 'clinic', 'dentist'],
     Government: ['government', 'military', 'defense', 'federal', 'state', 'cisa', 'embassy', 'diplomatic', 'agency', 'senate', 'pentagon', 'white house'],
@@ -28,7 +28,7 @@ const SECTOR_KEYWORDS = {
     Aviation: ['aviation', 'airport', 'airline', 'flight', 'aerospace', 'aircraft', 'boeing', 'airbus']
 };
 
-const ATTACK_KEYWORD_DICTIONARY = {
+export const ATTACK_KEYWORD_DICTIONARY = {
     'phishing': 'T1566',
     'spearphishing': 'T1566',
     'ransomware': 'T1486',
@@ -54,7 +54,7 @@ const ATTACK_KEYWORD_DICTIONARY = {
 };
 
 // Load custom feeds from localStorage immediately on startup
-function loadCustomFeeds() {
+export function loadCustomFeeds() {
     try {
         const stored = localStorage.getItem('attack-explorer-custom-feeds');
         if (stored) {
@@ -75,14 +75,14 @@ function loadCustomFeeds() {
 }
 loadCustomFeeds();
 
-function saveCustomFeedsToLocalStorage() {
+export function saveCustomFeedsToLocalStorage() {
     const defaultIds = ['cisa', 'hackernews', 'bleepingcomputer', 'dfirreport', 'cisacve', 'krebsonsecurity'];
     const customFeeds = intelFeeds.filter(f => !defaultIds.includes(f.id));
     localStorage.setItem('attack-explorer-custom-feeds', JSON.stringify(customFeeds));
 }
 
 // Main routing load function
-async function renderIntelView() {
+export async function renderIntelView() {
     // Hide nav alert notification dot when looking at this view
     const dot = document.getElementById('intel-nav-dot');
     if (dot) dot.classList.add('hidden');
@@ -99,7 +99,7 @@ async function renderIntelView() {
 }
 
 // Render the feed dropdown and sector filters
-function renderIntelFilters() {
+export function renderIntelFilters() {
     const feedContainer = document.getElementById('intel-feed-checkboxes');
     const sectorContainer = document.getElementById('intel-sector-filters');
     
@@ -164,7 +164,7 @@ function renderIntelFilters() {
     updateActiveFeedCountBadge();
 }
 
-function updateActiveFeedCountBadge() {
+export function updateActiveFeedCountBadge() {
     const countEl = document.getElementById('active-feed-count');
     if (countEl) {
         countEl.textContent = selectedFeeds.size;
@@ -172,7 +172,7 @@ function updateActiveFeedCountBadge() {
 }
 
 // Render Custom RSS Feeds list in the dropdown
-function renderCustomFeedsList() {
+export function renderCustomFeedsList() {
     const listContainer = document.getElementById('intel-custom-feed-list');
     if (!listContainer) return;
     
@@ -228,7 +228,7 @@ function renderCustomFeedsList() {
     });
 }
 
-function deleteCustomFeed(feedId) {
+export function deleteCustomFeed(feedId) {
     const feed = intelFeeds.find(f => f.id === feedId);
     const feedName = feed ? feed.name : "Custom Feed";
     
@@ -257,7 +257,7 @@ function deleteCustomFeed(feedId) {
 }
 
 // 250ms debounced search input handler
-function handleSearchInput(e) {
+export function handleSearchInput(e) {
     if (searchDebounceTimeout) clearTimeout(searchDebounceTimeout);
     searchDebounceTimeout = setTimeout(() => {
         intelSearchQuery = e.target.value.trim().toLowerCase();
@@ -268,7 +268,7 @@ function handleSearchInput(e) {
 }
 
 // Robust multi-proxy fetch to bypass CORS limits seamlessly
-async function fetchViaProxy(url) {
+export async function fetchViaProxy(url) {
     // Attempt direct native fetch first for CORS-friendly domains (e.g. GitHub Raw)
     if (url.includes('raw.githubusercontent.com') || url.includes('githubusercontent.com')) {
         try {
@@ -328,7 +328,7 @@ async function fetchViaProxy(url) {
 }
 
 // Regex RSS & Atom Parser to parse malformed XML strictly avoided by DOMParser
-function parseRSSViaRegex(xmlContent) {
+export function parseRSSViaRegex(xmlContent) {
     const items = [];
     
     // Check if it looks like an Atom feed
@@ -425,14 +425,14 @@ function parseRSSViaRegex(xmlContent) {
 }
 
 // Helper to identify if a description is a teaser summary (like Bleeping Computer)
-function checkIfTeaser(desc) {
+export function checkIfTeaser(desc) {
     if (!desc) return false;
     const trimmed = desc.trim();
     return trimmed.includes('[...]') || trimmed.includes('…') || (trimmed.length > 0 && trimmed.length < 300);
 }
 
 // Extract text from elements, handling CDATA comments parsed under HTML5 DOMParser fallback
-function getElementTextWithCDATA(el) {
+export function getElementTextWithCDATA(el) {
     if (!el) return '';
     // Look for CDATA comment child node (common in text/html parsing fallback)
     for (let child of el.childNodes) {
@@ -448,7 +448,7 @@ function getElementTextWithCDATA(el) {
 }
 
 // Fetch live XML feed from public RSS feeds using a CORS Proxy
-async function refreshIntelFeed() {
+export async function refreshIntelFeed() {
     const grid = document.getElementById('intel-feed-grid');
     const loading = document.getElementById('intel-feed-loading');
     
@@ -694,7 +694,7 @@ async function refreshIntelFeed() {
 }
 
 // Classify sectors based on keyword matching
-function classifySectors(text) {
+export function classifySectors(text) {
     const tags = [];
     const cleanText = text.toLowerCase();
     
@@ -707,7 +707,7 @@ function classifySectors(text) {
 }
 
 // Scans titles & bodies to automatically map threat groups and technique IDs in MITRE database
-function detectAttackMappings(text) {
+export function detectAttackMappings(text) {
     const cleanText = text.toLowerCase();
     const mappings = {
         techniques: [],
@@ -759,7 +759,7 @@ function detectAttackMappings(text) {
 }
 
 // Get filtered articles list based on active filters
-function getFilteredArticles() {
+export function getFilteredArticles() {
     let filtered = intelArticles.filter(art => art.sources && art.sources.some(s => selectedFeeds.has(s.id)));
     
     if (selectedSectors.size > 0) {
@@ -778,7 +778,7 @@ function getFilteredArticles() {
 }
 
 // Map dates to clean chronological groups
-function getChronologicalGroup(date) {
+export function getChronologicalGroup(date) {
     if (!date) return 'Earlier';
     
     const now = new Date();
@@ -810,7 +810,7 @@ function getChronologicalGroup(date) {
 }
 
 // Render the vertical stream of compact article items inside Column 2
-function renderIntelGrid() {
+export function renderIntelGrid() {
     const grid = document.getElementById('intel-feed-grid');
     if (!grid) return;
     
@@ -883,7 +883,7 @@ function renderIntelGrid() {
 }
 
 // Render the Right details pane based on selection state
-function renderIntelDetails() {
+export function renderIntelDetails() {
     const pane = document.getElementById('intel-details-panel');
     if (!pane) return;
     
@@ -1048,7 +1048,7 @@ function renderIntelDetails() {
 document.getElementById('btn-refresh-intel')?.addEventListener('click', refreshIntelFeed);
 
 // Initialize event listeners
-function initIntelView() {
+export function initIntelView() {
     // 1. Add Custom Feed Button click -> Show Bootstrap Modal
     const btnAdd = document.getElementById('btn-add-custom-feed');
     btnAdd?.addEventListener('click', () => {
@@ -1134,3 +1134,34 @@ function initIntelView() {
 
 // Call init immediately
 initIntelView();
+
+// Legacy Window Bindings
+window.intelArticles = intelArticles;
+window.selectedArticleIdx = selectedArticleIdx;
+window.intelSearchQuery = intelSearchQuery;
+window.searchDebounceTimeout = searchDebounceTimeout;
+window.intelFeeds = intelFeeds;
+window.selectedSectors = selectedSectors;
+window.selectedFeeds = selectedFeeds;
+window.SECTOR_KEYWORDS = SECTOR_KEYWORDS;
+window.ATTACK_KEYWORD_DICTIONARY = ATTACK_KEYWORD_DICTIONARY;
+window.loadCustomFeeds = loadCustomFeeds;
+window.saveCustomFeedsToLocalStorage = saveCustomFeedsToLocalStorage;
+window.renderIntelView = renderIntelView;
+window.renderIntelFilters = renderIntelFilters;
+window.updateActiveFeedCountBadge = updateActiveFeedCountBadge;
+window.renderCustomFeedsList = renderCustomFeedsList;
+window.deleteCustomFeed = deleteCustomFeed;
+window.handleSearchInput = handleSearchInput;
+window.fetchViaProxy = fetchViaProxy;
+window.parseRSSViaRegex = parseRSSViaRegex;
+window.checkIfTeaser = checkIfTeaser;
+window.getElementTextWithCDATA = getElementTextWithCDATA;
+window.refreshIntelFeed = refreshIntelFeed;
+window.classifySectors = classifySectors;
+window.detectAttackMappings = detectAttackMappings;
+window.getFilteredArticles = getFilteredArticles;
+window.getChronologicalGroup = getChronologicalGroup;
+window.renderIntelGrid = renderIntelGrid;
+window.renderIntelDetails = renderIntelDetails;
+window.initIntelView = initIntelView;

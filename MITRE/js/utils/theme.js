@@ -1,5 +1,5 @@
 // Zero network hashed color generator
-function getHashedColor(str) {
+export function getHashedColor(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -9,7 +9,7 @@ function getHashedColor(str) {
 }
 
 // Zero network initials extractor
-function getInitials(name) {
+export function getInitials(name) {
     const clean = name.replace(/[^a-zA-Z0-9\s]/g, '').trim();
     const parts = clean.split(/\s+/);
     if (parts.length >= 2) {
@@ -19,7 +19,7 @@ function getInitials(name) {
 }
 
 // Helper to classify groups dynamically by geopolitical/financial threat profile
-function getAttributionTheme(group) {
+export function getAttributionTheme(group) {
     const desc = (group.description || '').toLowerCase();
     const name = (group.name || '').toLowerCase();
     const motivation = [group.primary_motivation, ...(group.secondary_motivations || [])].filter(Boolean).map(m => m.toLowerCase()).join(' ');
@@ -56,7 +56,7 @@ function getAttributionTheme(group) {
 }
 
 // Helper to classify software dynamically by malware vs tool behavioral threat profile
-function getSoftwareTheme(sw) {
+export function getSoftwareTheme(sw) {
     if (sw.type === 'malware') {
         return {
             id: 'malware',
@@ -81,7 +81,7 @@ function getSoftwareTheme(sw) {
 }
 
 // Generate procedural glowing inline SVG avatars for groups
-function getProceduralAvatarSVG(groupId, groupName) {
+export function getProceduralAvatarSVG(groupId, groupName) {
     let hash = 0;
     for (let i = 0; i < groupName.length; i++) {
         hash = groupName.charCodeAt(i) + ((hash << 5) - hash);
@@ -126,7 +126,7 @@ function getProceduralAvatarSVG(groupId, groupName) {
 }
 
 // Generate procedural glowing inline SVG avatars for software
-function getProceduralSoftwareAvatarSVG(swId, name, type) {
+export function getProceduralSoftwareAvatarSVG(swId, name, type) {
     let hash = 0;
     for (let i = 0; i < name.length; i++) {
         hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -209,3 +209,11 @@ function getProceduralSoftwareAvatarSVG(swId, name, type) {
         </text>
     </svg>`;
 }
+
+// Legacy Window Bindings
+window.getHashedColor = getHashedColor;
+window.getInitials = getInitials;
+window.getAttributionTheme = getAttributionTheme;
+window.getSoftwareTheme = getSoftwareTheme;
+window.getProceduralAvatarSVG = getProceduralAvatarSVG;
+window.getProceduralSoftwareAvatarSVG = getProceduralSoftwareAvatarSVG;

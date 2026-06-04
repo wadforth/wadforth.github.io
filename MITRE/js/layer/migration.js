@@ -4,7 +4,7 @@
  * techniques to their successors using STIX relationship data.
  */
 
-const MigrationEngine = {
+export const MigrationEngine = {
     // Finds all deprecated or revoked techniques in a layer and maps them to successors
     analyzeMigration(layerData, targetVersion, targetTechniques, targetRelationships) {
         const changes = {
@@ -229,4 +229,7 @@ const MigrationEngine = {
         return migrated;
     }
 };
+window.MigrationEngine = MigrationEngine;
+
+// Legacy Window Bindings
 window.MigrationEngine = MigrationEngine;

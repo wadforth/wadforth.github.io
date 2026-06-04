@@ -200,9 +200,6 @@
 }
 
 .matrix-sentinel-badge {
-    position: absolute;
-    top: 2px;
-    right: 2px;
     display: inline-flex;
     align-items: center;
     justify-content: center;

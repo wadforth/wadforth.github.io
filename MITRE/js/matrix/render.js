@@ -1,9 +1,9 @@
-function renderAll() {
+export function renderAll() {
     renderPlatformFilters();
     renderMatrix();
 }
 
-function renderPlatformFilters() {
+export function renderPlatformFilters() {
     const container = document.getElementById('platform-filters');
     const sorted = [...state.platforms].sort();
     if (sorted.length === 0) { container.innerHTML = ''; return; }
@@ -22,7 +22,7 @@ function renderPlatformFilters() {
     });
 }
 
-function getFilteredTechniques() {
+export function getFilteredTechniques() {
     return state.techniques.filter(t => {
         const platforms = t.x_mitre_platforms || [];
         const platformMatch = platforms.length === 0 || platforms.some(p => state.activePlatforms.has(p));
@@ -43,7 +43,7 @@ function getFilteredTechniques() {
     });
 }
 
-function renderMatrix() {
+export function renderMatrix() {
     const container = document.getElementById('matrix-container');
     const noResults = document.getElementById('matrix-no-results');
     const filtered = getFilteredTechniques();
@@ -98,7 +98,7 @@ function renderMatrix() {
     }
     html += '</tr></tbody></table>';
 
-    container.innerHTML = html;
+    container.innerHTML = window.DOMSanitizer ? window.DOMSanitizer.sanitize(html) : html;
     noResults.classList.toggle('hidden', hasAnyVisible || filtered.length > 0);
 
     container.querySelectorAll('.technique-cell[data-id]').forEach(el => {
@@ -169,7 +169,7 @@ function renderMatrix() {
     }
 }
 
-function toggleSubTechniques(pid, btnElement) {
+export function toggleSubTechniques(pid, btnElement) {
     let td = btnElement?.closest?.('td');
     if (!td) {
         td = document.querySelector(`.technique-cell[data-id="${pid}"]`)?.closest('td');
@@ -200,7 +200,7 @@ function toggleSubTechniques(pid, btnElement) {
     }
 }
 
-function buildTechniqueCell(tech, subs = []) {
+export function buildTechniqueCell(tech, subs = []) {
     const id = tech.external_references?.[0]?.external_id || '';
     const name = tech.name;
     const hasSubs = subs.length > 0;
@@ -263,3 +263,11 @@ function buildTechniqueCell(tech, subs = []) {
 
     return html;
 }
+
+// Legacy Window Bindings
+window.renderAll = renderAll;
+window.renderPlatformFilters = renderPlatformFilters;
+window.getFilteredTechniques = getFilteredTechniques;
+window.renderMatrix = renderMatrix;
+window.toggleSubTechniques = toggleSubTechniques;
+window.buildTechniqueCell = buildTechniqueCell;

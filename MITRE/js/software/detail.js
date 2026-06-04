@@ -1,6 +1,6 @@
 
 
-function showSoftwareModal(softwareId) {
+export function showSoftwareModal(softwareId) {
     const software = state.software.find(s => {
         const sid = s.external_references?.[0]?.external_id || '';
         return sid === softwareId;
@@ -464,3 +464,6 @@ function showSoftwareModal(softwareId) {
         });
     }, 300);
 }
+
+// Legacy Window Bindings
+window.showSoftwareModal = showSoftwareModal;

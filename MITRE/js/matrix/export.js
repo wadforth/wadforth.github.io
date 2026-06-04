@@ -49,7 +49,7 @@ document.getElementById('btn-export-matrix')?.addEventListener('click', () => {
     new bootstrap.Modal(document.getElementById('export-options-modal')).show();
 });
 
-function updateExportPreview() {
+export function updateExportPreview() {
     const selectedTactics = [...document.querySelectorAll('.tactic-check:checked')].map(cb => cb.value);
     
     const filtered = state.techniques.filter(t => {
@@ -170,7 +170,7 @@ document.getElementById('btn-confirm-export')?.addEventListener('click', async (
     }
 });
 
-async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
+export async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const exportBg = isDark ? '#0f172a' : '#ffffff';
     const exportSurface = isDark ? '#1e293b' : '#ffffff';
@@ -362,7 +362,7 @@ async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated, inclu
     link.click();
 }
 
-async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
+export async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
     const domainLabel = state.currentDomain.replace('-attack', '').charAt(0).toUpperCase() + state.currentDomain.replace('-attack', '').slice(1);
     const version = state.currentVersion || 'master';
     const isAuto = state.autoColorByQueries;
@@ -575,7 +575,7 @@ async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, inclu
     printWindow.document.close();
 }
 
-async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
+export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
     const domainLabel = state.currentDomain.replace('-attack', '').charAt(0).toUpperCase() + state.currentDomain.replace('-attack', '').slice(1);
     const version = state.currentVersion || 'master';
     const isAuto = state.autoColorByQueries;
@@ -829,3 +829,9 @@ async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, inclu
     link.click();
     URL.revokeObjectURL(url);
 }
+
+// Legacy Window Bindings
+window.updateExportPreview = updateExportPreview;
+window.exportMatrixPNG = exportMatrixPNG;
+window.exportMatrixPDF = exportMatrixPDF;
+window.exportMatrixSVG = exportMatrixSVG;

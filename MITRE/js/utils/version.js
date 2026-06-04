@@ -1,4 +1,4 @@
-function showVersionWarningModal(title, message, orphans, onProceed, onCancel) {
+export function showVersionWarningModal(title, message, orphans, onProceed, onCancel) {
     const modalHtml = `
         <div class="modal fade" id="version-warning-modal" tabindex="-1">
             <div class="modal-dialog modal-dialog-centered">
@@ -56,7 +56,7 @@ function showVersionWarningModal(title, message, orphans, onProceed, onCancel) {
     });
 }
 
-function findOrphanedTechniques(layer, availableTechniques) {
+export function findOrphanedTechniques(layer, availableTechniques) {
     if (!layer?.techniques) return [];
     
     const availableIds = new Set();
@@ -83,6 +83,11 @@ function findOrphanedTechniques(layer, availableTechniques) {
         }));
 }
 
-function normalizeVersion(ver) {
+export function normalizeVersion(ver) {
     return (ver || '').replace(/[^0-9.]/g, '');
 }
+
+// Legacy Window Bindings
+window.showVersionWarningModal = showVersionWarningModal;
+window.findOrphanedTechniques = findOrphanedTechniques;
+window.normalizeVersion = normalizeVersion;

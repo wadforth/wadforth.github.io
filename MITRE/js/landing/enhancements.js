@@ -3,9 +3,9 @@
    Animated background only
    ============================================ */
 
-let landingEnhanced = false;
+export let landingEnhanced = false;
 
-function enhanceLandingPage() {
+export function enhanceLandingPage() {
     if (landingEnhanced) return;
     
     const landingView = document.getElementById('landing-view');
@@ -49,3 +49,7 @@ function enhanceLandingPage() {
     
     landingEnhanced = true;
 }
+
+// Legacy Window Bindings
+window.landingEnhanced = landingEnhanced;
+window.enhanceLandingPage = enhanceLandingPage;

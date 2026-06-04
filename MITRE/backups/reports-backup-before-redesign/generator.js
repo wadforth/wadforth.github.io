@@ -22,8 +22,6 @@ export function generateReport(reportType = 'initial') {
     const reports = state._cachedReports || [];
     const lastReport = reports.length > 0 ? reports[0] : null;
     const now = new Date();
-    const layerName = state.currentLayer.name || 'Default';
-    const monthLabel = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
     
     const snapshot = getLayerSnapshot();
     const changes = detectChanges(lastReport);
@@ -34,14 +32,12 @@ export function generateReport(reportType = 'initial') {
     
     const report = {
         id: `report_${Date.now()}`,
-        title: `${layerName} - ${monthLabel} ${reportType === 'initial' ? 'Initial Assessment' : 'Coverage Update'}`,
-        tags: [layerName.toLowerCase().replace(/\s+/g, '_'), now.toISOString().slice(0, 7), reportType],
         type: reportType,
         layerId: state.currentLayer.id || 'default',
-        layerName: layerName,
+        layerName: state.currentLayer.name || 'Untitled Layer',
         generatedAt: now.toISOString(),
         generatedDate: now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-        reportMonth: monthLabel,
+        reportMonth: now.toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),
         periodStart: lastReport ? lastReport.periodEnd || lastReport.generatedAt : now.toISOString(),
         periodEnd: now.toISOString(),
         snapshot: snapshot,
@@ -59,8 +55,6 @@ export function generateReport(reportType = 'initial') {
         detectionResults: [],
         gapAnalysis: '',
         prioritization: '',
-        recommendations: '',
-        teamAssignments: [],
         references: [],
         methodology: {},
         scope: {},
@@ -282,7 +276,7 @@ export function getLayerSnapshot() {
         color: t.color || null,
         enabled: t.enabled !== false,
         queryCount: t.queries ? t.queries.length : 0,
-        queries: t.queries ? t.queries.map(q => ({ ...q })) : []
+        queries: t.queries ? t.queries.map(q => ({ id: q.id, name: q.name, language: q.language })) : []
     }));
     
     return {

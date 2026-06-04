@@ -89,7 +89,7 @@ export function logActivity(type, techniqueId, details = '') {
         techniqueId,
         details
     });
-    autoSaveLayer();
+    saveCurrentLayer();
 }
 
 export function getActivitiesSince(dateStr) {

@@ -1,4 +1,4 @@
-async function fetchReleases() {
+export async function fetchReleases() {
     try {
         const cached = localStorage.getItem('attack-explorer-releases');
         const cachedTs = localStorage.getItem('attack-explorer-releases-timestamp');
@@ -38,14 +38,14 @@ async function fetchReleases() {
     }
 }
 
-function populateVersionSelect() {
+export function populateVersionSelect() {
     const select = document.getElementById('version-select');
     select.innerHTML = state.releases.map(r =>
         `<option value="${r.tag}">${r.name}</option>`
     ).join('');
 }
 
-async function loadSTIX(domain, version, layerData = null) {
+export async function loadSTIX(domain, version, layerData = null) {
     state.currentVersion = version;
     showLoading(true, 'Fetching STIX bundle...');
     try {
@@ -96,7 +96,7 @@ async function loadSTIX(domain, version, layerData = null) {
     }
 }
 
-function createNewLayer(domain, version) {
+export function createNewLayer(domain, version) {
     return {
         id: `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: 'Untitled Layer',
@@ -115,7 +115,7 @@ function createNewLayer(domain, version) {
     };
 }
 
-function updateVersionDisplay(version) {
+export function updateVersionDisplay(version) {
     const el = document.getElementById('loaded-version');
     const release = state.releases.find(r => r.tag === version);
     if (release && release.published) {
@@ -126,7 +126,7 @@ function updateVersionDisplay(version) {
     }
 }
 
-function updateLayerToolbar() {
+export function updateLayerToolbar() {
     const layer = state.currentLayer;
     if (!layer) return;
     document.getElementById('layer-name-display').textContent = layer.name;
@@ -152,49 +152,61 @@ function updateLayerToolbar() {
     }
 }
 
-function parseSTIX(bundle) {
+export function parseSTIX(bundle) {
     const objects = bundle.objects || [];
-    state.techniques = [];
-    state.tactics = [];
-    state.groups = [];
-    state.software = [];
-    state.mitigations = [];
-    state.relationships = [];
-    state.dataSources = [];
-    state.dataComponents = [];
-    state.platforms = new Set();
-
-    state.revokedTechniques = [];
+    
+    const tempState = {
+        techniques: [],
+        revokedTechniques: [],
+        tactics: [],
+        groups: [],
+        software: [],
+        mitigations: [],
+        relationships: [],
+        dataSources: [],
+        dataComponents: [],
+        platforms: new Set()
+    };
 
     for (const obj of objects) {
         if (obj.type === 'attack-pattern') {
             if (!obj.deprecated && !obj.revoked) {
-                state.techniques.push(obj);
+                tempState.techniques.push(obj);
                 if (obj.x_mitre_platforms) {
-                    obj.x_mitre_platforms.forEach(p => state.platforms.add(p));
+                    obj.x_mitre_platforms.forEach(p => tempState.platforms.add(p));
                 }
             } else {
-                state.revokedTechniques.push(obj);
+                tempState.revokedTechniques.push(obj);
             }
         } else if (obj.type === 'x-mitre-tactic' && !obj.deprecated && !obj.revoked) {
-            state.tactics.push(obj);
+            tempState.tactics.push(obj);
         } else if (obj.type === 'intrusion-set' && !obj.deprecated && !obj.revoked) {
-            state.groups.push(obj);
+            tempState.groups.push(obj);
         } else if (obj.type === 'tool' && !obj.deprecated && !obj.revoked) {
-            state.software.push(obj);
+            tempState.software.push(obj);
         } else if (obj.type === 'malware' && !obj.deprecated && !obj.revoked) {
-            state.software.push(obj);
+            tempState.software.push(obj);
         } else if (obj.type === 'course-of-action' && !obj.deprecated && !obj.revoked) {
-            state.mitigations.push(obj);
+            tempState.mitigations.push(obj);
         } else if (obj.type === 'relationship') {
-            state.relationships.push(obj);
+            tempState.relationships.push(obj);
         } else if (obj.type === 'x-mitre-data-source' && !obj.deprecated && !obj.revoked) {
-            state.dataSources.push(obj);
+            tempState.dataSources.push(obj);
         } else if (obj.type === 'x-mitre-data-component' && !obj.deprecated && !obj.revoked) {
-            state.dataComponents.push(obj);
+            tempState.dataComponents.push(obj);
         }
     }
 
-    state.activePlatforms = new Set(state.platforms);
-    console.log(`Parsed: ${state.techniques.length} techniques, ${state.tactics.length} tactics, ${state.groups.length} groups, ${state.software.length} software, ${state.mitigations.length} mitigations, ${state.dataSources.length} data sources, ${state.dataComponents.length} data components`);
+    // Atomic update to eliminate race conditions
+    window.StateManager.setSTIXData(tempState);
+    console.log(`Parsed: ${tempState.techniques.length} techniques, ${tempState.tactics.length} tactics, ${tempState.groups.length} groups, ${tempState.software.length} software, ${tempState.mitigations.length} mitigations, ${tempState.dataSources.length} data sources, ${tempState.dataComponents.length} data components`);
 }
+
+// Legacy Window Bindings
+window.fetchReleases = fetchReleases;
+window.populateVersionSelect = populateVersionSelect;
+window.loadSTIX = loadSTIX;
+window.createNewLayer = createNewLayer;
+window.updateVersionDisplay = updateVersionDisplay;
+window.updateLayerToolbar = updateLayerToolbar;
+window.parseSTIX = parseSTIX;

@@ -1,4 +1,4 @@
-const presetColors = [
+export const presetColors = [
     '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6',
     '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f43f5e',
     '#6366f1', '#14b8a6', '#f59e0b', '#10b981', '#64748b',
@@ -21,7 +21,7 @@ document.getElementById('auto-color-toggle').addEventListener('change', (e) => {
     requestAnimationFrame(() => renderMatrix());
 });
 
-function renderLegendEditor() {
+export function renderLegendEditor() {
     if (!state.currentLayer.legend) {
         state.currentLayer.legend = JSON.parse(JSON.stringify(defaultLegend));
     }
@@ -266,3 +266,7 @@ document.getElementById('btn-add-legend-item').addEventListener('click', () => {
     renderLegendEditor();
     autoSaveLayer();
 });
+
+// Legacy Window Bindings
+window.presetColors = presetColors;
+window.renderLegendEditor = renderLegendEditor;

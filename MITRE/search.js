@@ -1,4 +1,4 @@
-function renderList(containerId, items) {
+export function renderList(containerId, items) {
     const container = document.getElementById(containerId);
     const sorted = [...items].sort((a, b) => {
         const idA = a.external_references?.[0]?.external_id || '';
@@ -31,3 +31,6 @@ function renderList(containerId, items) {
 }
 
 
+
+// Legacy Window Bindings
+window.renderList = renderList;

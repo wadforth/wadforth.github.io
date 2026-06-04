@@ -1,4 +1,4 @@
-function getTechniquesByTactic() {
+export function getTechniquesByTactic() {
     const map = {};
     const tacticOrder = state.tactics
         .filter(t => t.x_mitre_shortname)
@@ -21,7 +21,7 @@ function getTechniquesByTactic() {
     return map;
 }
 
-function renderTechniqueSelector(selectedIds = [], lockedIds = []) {
+export function renderTechniqueSelector(selectedIds = [], lockedIds = []) {
     const container = document.getElementById('technique-select-container');
     const byTactic = getTechniquesByTactic();
     
@@ -91,12 +91,12 @@ function renderTechniqueSelector(selectedIds = [], lockedIds = []) {
     });
 }
 
-function getSelectedTechniques() {
+export function getSelectedTechniques() {
     const ids = [...document.querySelectorAll('#technique-list .technique-cb:checked')].map(cb => cb.value);
     return [...new Set(ids)];
 }
 
-function getTechniquesFromSigmaRules(sigmaRuleIds) {
+export function getTechniquesFromSigmaRules(sigmaRuleIds) {
     if (!sigmaRuleIds || sigmaRuleIds.length === 0) return [];
     const techIds = new Set();
     const rules = window.sigmaModule?.sigmaRules || window.sigmaRules || [];
@@ -109,7 +109,7 @@ function getTechniquesFromSigmaRules(sigmaRuleIds) {
     return [...techIds];
 }
 
-async function openQueryEditor(queryData = null, techniqueId = null) {
+export async function openQueryEditor(queryData = null, techniqueId = null) {
     // Ensure Sigma module is loaded and initialized
     if (!window.sigmaModule && window.loadSigmaModule) {
         await window.loadSigmaModule();
@@ -208,7 +208,7 @@ async function openQueryEditor(queryData = null, techniqueId = null) {
     }, { once: true });
 }
 
-function saveQuery() {
+export function saveQuery() {
     const editId = document.getElementById('query-edit-id').value;
     let techniqueIds = getSelectedTechniques();
     
@@ -300,7 +300,7 @@ function saveQuery() {
     showToast(editId ? 'Query updated' : `Query added to ${techniqueIds.length} technique${techniqueIds.length > 1 ? 's' : ''}`, 'success');
 }
 
-function deleteQuery(techniqueId, queryId) {
+export function deleteQuery(techniqueId, queryId) {
     if (!state.currentLayer) return;
     let queryName = '';
     for (const tech of state.currentLayer.techniques) {
@@ -318,7 +318,7 @@ function deleteQuery(techniqueId, queryId) {
     showToast('Query deleted', 'success');
 }
 
-function toggleFavorite(techniqueId, queryId) {
+export function toggleFavorite(techniqueId, queryId) {
     if (!state.currentLayer) return;
     for (const tech of state.currentLayer.techniques) {
         if (tech.queries) {
@@ -335,8 +335,8 @@ function toggleFavorite(techniqueId, queryId) {
 
 document.getElementById('btn-save-query').addEventListener('click', saveQuery);
 
-let archiveTargetQueryId = null;
-let archiveTargetTechniqueId = null;
+export let archiveTargetQueryId = null;
+export let archiveTargetTechniqueId = null;
 
 window.openArchiveModal = function(queryId, techniqueId) {
     archiveTargetQueryId = queryId;
@@ -438,3 +438,15 @@ document.getElementById('btn-add-query-global').addEventListener('click', () => 
     if (!state.currentLayer) return;
     openQueryEditor(null, null);
 });
+
+// Legacy Window Bindings
+window.getTechniquesByTactic = getTechniquesByTactic;
+window.renderTechniqueSelector = renderTechniqueSelector;
+window.getSelectedTechniques = getSelectedTechniques;
+window.getTechniquesFromSigmaRules = getTechniquesFromSigmaRules;
+window.openQueryEditor = openQueryEditor;
+window.saveQuery = saveQuery;
+window.deleteQuery = deleteQuery;
+window.toggleFavorite = toggleFavorite;
+window.archiveTargetQueryId = archiveTargetQueryId;
+window.archiveTargetTechniqueId = archiveTargetTechniqueId;

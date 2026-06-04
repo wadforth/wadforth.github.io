@@ -1,4 +1,4 @@
-function showContextMenu(e, techniqueId) {
+export function showContextMenu(e, techniqueId) {
     state.contextTarget = techniqueId;
     
     let menu = document.getElementById('context-menu');
@@ -94,7 +94,7 @@ function showContextMenu(e, techniqueId) {
     menu.classList.remove('hidden');
 }
 
-function hideContextMenu() {
+export function hideContextMenu() {
     document.getElementById('context-menu').classList.add('hidden');
     state.contextTarget = null;
 }
@@ -157,8 +157,8 @@ document.getElementById('btn-collapse-all').addEventListener('click', () => {
     });
 });
 
-const matrixSearchInput = document.getElementById('matrix-search-input');
-const matrixSearchClear = document.getElementById('matrix-search-clear');
+export const matrixSearchInput = document.getElementById('matrix-search-input');
+export const matrixSearchClear = document.getElementById('matrix-search-clear');
 
 if (matrixSearchInput) {
     matrixSearchInput.addEventListener('input', (e) => {
@@ -176,3 +176,9 @@ if (matrixSearchClear) {
         renderMatrix();
     });
 }
+
+// Legacy Window Bindings
+window.showContextMenu = showContextMenu;
+window.hideContextMenu = hideContextMenu;
+window.matrixSearchInput = matrixSearchInput;
+window.matrixSearchClear = matrixSearchClear;

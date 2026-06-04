@@ -273,10 +273,7 @@ export function renderQueryCard(q) {
                         <span class="query-list-name">${escapeHtml(q.name)}</span>
                         <span class="query-list-tech">${escapeHtml(primaryTechName)}</span>
                     </div>
-                    <div class="query-list-badges">
-                        ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
-                        <span class="query-lang-badge ${q.language}">${q.language}</span>
-                    </div>
+                    <span class="query-lang-badge ${q.language}">${q.language}</span>
                     <span class="query-list-id">${techIds.join(', ')}</span>
                     <span class="query-list-modified" title="${q.lastModified || q.created}">${modifiedStr}</span>
                     <div class="query-list-actions">
@@ -296,57 +293,39 @@ export function renderQueryCard(q) {
     }
     
     return `
-        <div class="query-card ${q.archived ? 'query-card-archived' : ''}" data-query-id="${q.id}">
+        <div class="query-card" data-query-id="${q.id}">
             <div class="query-card-header">
                 <div class="query-card-header-left">
                     <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
                         <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
                     </button>
                     <div>
-                        <h6 class="query-card-title">${escapeHtml(q.name)}${q.archived ? '<span class="query-archived-badge" title="Archived"><i class="bi bi-archive"></i> Archived</span>' : ''}</h6>
-                        <div class="query-header-badges">
-                            ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
+                        <h6 class="query-card-title">${escapeHtml(q.name)}</h6>
+                        <div class="query-meta mt-1">
                             <span class="query-lang-badge ${q.language}">${q.language}</span>
+                            ${techBadges}
+                            ${multiTechLabel}
                         </div>
                     </div>
                 </div>
                 <div class="query-card-actions">
-                    <button class="btn btn-ghost btn-expand-query" data-query-id="${q.id}" title="Expand/Collapse">
-                        <i class="bi bi-chevron-down"></i>
-                    </button>
                     <button class="btn btn-ghost btn-copy-query" data-query-id="${q.id}" title="Copy query">
                         <i class="bi bi-clipboard"></i>
                     </button>
                     <button class="btn btn-ghost btn-edit-query" data-query-id="${q.id}" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    ${q.archived 
-                        ? `<button class="btn btn-ghost btn-unarchive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Restore query"><i class="bi bi-arrow-counterclockwise"></i></button>`
-                        : `<button class="btn btn-ghost btn-archive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Archive query"><i class="bi bi-archive"></i></button>`
-                    }
                     <button class="btn btn-ghost btn-delete-query" data-query-id="${q.id}" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
             </div>
+            <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
             ${q.description ? `<p class="query-card-desc" title="${escapeHtml(cleanDescription(q.description))}">${escapeHtml(truncateDescription(q.description, 150))}</p>` : ''}
-            ${q.archived && q.archiveReason ? `<div class="query-archive-reason"><i class="bi bi-info-circle"></i> ${escapeHtml(q.archiveReason)}</div>` : ''}
-            <div class="query-card-collapsible">
-                <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
-                <div class="query-card-techs">
-                    ${techBadges}
-                    ${multiTechLabel}
-                </div>
-            </div>
+            ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
             <div class="query-card-footer">
-                <div class="query-card-techs-summary">
-                    <i class="bi bi-grid-3x3"></i> ${techIds.length} technique${techIds.length > 1 ? 's' : ''}
-                </div>
-                <div class="query-card-dates">
-                    ${q.archivedAt ? `<span class="query-archived-date" title="Archived on ${formatTimestamp(q.archivedAt)}"><i class="bi bi-archive"></i> Archived ${formatTimestamp(q.archivedAt)}</span>` : ''}
-                    <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
-                    ${q.created ? `<span class="query-created"><i class="bi bi-calendar-plus"></i> Created ${createdStr}</span>` : ''}
-                </div>
+                <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
+                ${q.created ? `<span class="query-created"><i class="bi bi-calendar-plus"></i> Created ${createdStr}</span>` : ''}
             </div>
         </div>
     `;
@@ -393,20 +372,6 @@ export function bindQueriesToolbar() {
             renderQueriesView();
         });
     }
-
-    // Expand/Collapse handler
-    const queriesList = document.getElementById('queries-list');
-    if (queriesList) {
-        queriesList.addEventListener('click', (e) => {
-            const expandBtn = e.target.closest('.btn-expand-query');
-            if (expandBtn) {
-                const card = expandBtn.closest('.query-card');
-                if (card) {
-                    card.classList.toggle('query-card-expanded');
-                }
-            }
-        });
-    }
 }
 
 export function bindQueryCardActions(queries) {
@@ -443,20 +408,6 @@ export function bindQueryCardActions(queries) {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleFavorite(btn.dataset.tech, btn.dataset.query);
-        });
-    });
-    
-    document.querySelectorAll('.btn-archive-query').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openArchiveModal(btn.dataset.queryId, btn.dataset.tech);
-        });
-    });
-    
-    document.querySelectorAll('.btn-unarchive-query').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            unarchiveQuery(btn.dataset.queryId, btn.dataset.tech);
         });
     });
 }

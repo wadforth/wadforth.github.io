@@ -1,4 +1,4 @@
-function escapeSvgText(text) {
+export function escapeSvgText(text) {
     return String(text || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -8,11 +8,11 @@ function escapeSvgText(text) {
         .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 }
 
-function sanitizeSvgAttr(value) {
+export function sanitizeSvgAttr(value) {
     return String(value || '').replace(/["<>&]/g, '');
 }
 
-function getContrastColor(hexColor) {
+export function getContrastColor(hexColor) {
     const hex = hexColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
@@ -21,19 +21,19 @@ function getContrastColor(hexColor) {
     return luminance > 0.5 ? '#1a1a1a' : '#ffffff';
 }
 
-function highlightText(text, query) {
+export function highlightText(text, query) {
     if (!query) return escapeHtml(text);
     const escaped = escapeHtml(text);
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
 }
 
-function getTechniqueAnnotation(techniqueId) {
+export function getTechniqueAnnotation(techniqueId) {
     if (!state.currentLayer?.techniques) return null;
     return state.currentLayer.techniques.find(t => t.techniqueID === techniqueId);
 }
 
-function setTechniqueAnnotation(techniqueId, updates) {
+export function setTechniqueAnnotation(techniqueId, updates) {
     if (!state.currentLayer) return;
     let ann = getTechniqueAnnotation(techniqueId);
     if (!ann) {
@@ -47,7 +47,7 @@ function setTechniqueAnnotation(techniqueId, updates) {
     renderMatrix();
 }
 
-function buildAutoLegendSections() {
+export function buildAutoLegendSections() {
     const sections = [];
     const techRules = state.autoColorRules.filter(r => r.type === 'query-count');
     const subRules = state.autoColorRules.filter(r => r.type === 'sub-coverage');
@@ -78,7 +78,7 @@ function buildAutoLegendSections() {
     return sections;
 }
 
-function getAutoColorForTechnique(techniqueId, allSubs = []) {
+export function getAutoColorForTechnique(techniqueId, allSubs = []) {
     if (!state.autoColorByQueries) return null;
     
     const ann = getTechniqueAnnotation(techniqueId);
@@ -128,3 +128,13 @@ function getAutoColorForTechnique(techniqueId, allSubs = []) {
         return null;
     }
 }
+
+// Legacy Window Bindings
+window.escapeSvgText = escapeSvgText;
+window.sanitizeSvgAttr = sanitizeSvgAttr;
+window.getContrastColor = getContrastColor;
+window.highlightText = highlightText;
+window.getTechniqueAnnotation = getTechniqueAnnotation;
+window.setTechniqueAnnotation = setTechniqueAnnotation;
+window.buildAutoLegendSections = buildAutoLegendSections;
+window.getAutoColorForTechnique = getAutoColorForTechnique;

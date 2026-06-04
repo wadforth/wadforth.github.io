@@ -1,6 +1,6 @@
 
 
-function showGroupModal(groupId) {
+export function showGroupModal(groupId) {
     const group = state.groups.find(g => g.id === groupId);
     if (!group) return;
     
@@ -603,3 +603,6 @@ function showGroupModal(groupId) {
         });
     }, 300);
 }
+
+// Legacy Window Bindings
+window.showGroupModal = showGroupModal;

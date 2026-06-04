@@ -1,17 +1,17 @@
 // IndexedDB configuration
-const LAYER_DB_NAME = 'attack-explorer-layer-db';
-const LAYER_DB_VERSION = 1;
-const STORE_SNAPSHOTS = 'layer_snapshots';
-const STORE_DELTAS = 'layer_deltas';
+export const LAYER_DB_NAME = 'attack-explorer-layer-db';
+export const LAYER_DB_VERSION = 1;
+export const STORE_SNAPSHOTS = 'layer_snapshots';
+export const STORE_DELTAS = 'layer_deltas';
 
-let autoSaveTimer = null;
-let pendingSave = false;
-let lastSnapshotHash = null;
-let deltaBuffer = [];
-const DELTA_FLUSH_THRESHOLD = 5; // Consolidate after this many deltas
+export let autoSaveTimer = null;
+export let pendingSave = false;
+export let lastSnapshotHash = null;
+export let deltaBuffer = [];
+export const DELTA_FLUSH_THRESHOLD = 5; // Consolidate after this many deltas
 
 // IndexedDB initialization
-function openLayerDB() {
+export function openLayerDB() {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(LAYER_DB_NAME, LAYER_DB_VERSION);
         request.onerror = () => reject(request.error);
@@ -31,7 +31,7 @@ function openLayerDB() {
 }
 
 // Compute a simple hash for change detection
-function computeHash(obj) {
+export function computeHash(obj) {
     const str = JSON.stringify(obj);
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -43,7 +43,7 @@ function computeHash(obj) {
 }
 
 // Generate JSON patch operations between two objects
-function computeDelta(oldObj, newObj, basePath = '') {
+export function computeDelta(oldObj, newObj, basePath = '') {
     const ops = [];
     
     if (oldObj === newObj) return ops;
@@ -93,7 +93,7 @@ function computeDelta(oldObj, newObj, basePath = '') {
 }
 
 // Apply delta operations to an object
-function applyDelta(obj, ops) {
+export function applyDelta(obj, ops) {
     const result = JSON.parse(JSON.stringify(obj));
     
     for (const op of ops) {
@@ -117,7 +117,7 @@ function applyDelta(obj, ops) {
 }
 
 // Store a full snapshot in IndexedDB
-async function storeSnapshot(layer) {
+export async function storeSnapshot(layer) {
     const db = await openLayerDB();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_SNAPSHOTS, 'readwrite');
@@ -135,7 +135,7 @@ async function storeSnapshot(layer) {
 }
 
 // Store a delta in IndexedDB
-async function storeDelta(layerId, ops) {
+export async function storeDelta(layerId, ops) {
     if (ops.length === 0) return;
     const db = await openLayerDB();
     return new Promise((resolve, reject) => {
@@ -152,7 +152,7 @@ async function storeDelta(layerId, ops) {
 }
 
 // Get all deltas for a layer, sorted by timestamp
-async function getDeltas(layerId) {
+export async function getDeltas(layerId) {
     const db = await openLayerDB();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_DELTAS, 'readonly');
@@ -169,7 +169,7 @@ async function getDeltas(layerId) {
 }
 
 // Get the latest snapshot for a layer
-async function getSnapshot(layerId) {
+export async function getSnapshot(layerId) {
     const db = await openLayerDB();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_SNAPSHOTS, 'readonly');
@@ -181,7 +181,7 @@ async function getSnapshot(layerId) {
 }
 
 // Clear deltas for a layer
-async function clearDeltas(layerId) {
+export async function clearDeltas(layerId) {
     const db = await openLayerDB();
     return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_DELTAS, 'readwrite');
@@ -201,7 +201,7 @@ async function clearDeltas(layerId) {
 }
 
 // Consolidate: apply all deltas to snapshot, store new snapshot, clear deltas
-async function consolidateDeltas(layer) {
+export async function consolidateDeltas(layer) {
     const newHash = await storeSnapshot(layer);
     await clearDeltas(layer.id);
     lastSnapshotHash = newHash;
@@ -209,7 +209,7 @@ async function consolidateDeltas(layer) {
 }
 
 // Save current layer with delta tracking
-async function saveCurrentLayer() {
+export async function saveCurrentLayer() {
     if (!state.currentLayer) return;
     state.currentLayer.companyName = state.companyName;
     state.currentLayer.companyLogo = state.companyLogo;
@@ -256,7 +256,7 @@ async function saveCurrentLayer() {
 }
 
 // Debounced auto-save: coalesces rapid saves into a single write after 800ms
-function autoSaveLayer() {
+export function autoSaveLayer() {
     if (!state.currentLayer) return;
     pendingSave = true;
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
@@ -269,7 +269,7 @@ function autoSaveLayer() {
 }
 
 // Force immediate save (bypasses debounce) - use for explicit user actions
-function saveCurrentLayerNow() {
+export function saveCurrentLayerNow() {
     if (autoSaveTimer) {
         clearTimeout(autoSaveTimer);
         autoSaveTimer = null;
@@ -279,7 +279,7 @@ function saveCurrentLayerNow() {
 }
 
 // Load layer from IndexedDB with delta replay
-async function loadCurrentLayer() {
+export async function loadCurrentLayer() {
     // Try IndexedDB first
     const savedId = localStorage.getItem('attack-explorer-current-layer');
     if (!savedId) {
@@ -304,7 +304,7 @@ async function loadCurrentLayer() {
     return loadLayerFromLocalStorage();
 }
 
-async function loadLayerFromIndexedDB(layerId) {
+export async function loadLayerFromIndexedDB(layerId) {
     try {
         const snapshot = await getSnapshot(layerId);
         if (!snapshot) {
@@ -350,7 +350,7 @@ async function loadLayerFromIndexedDB(layerId) {
     }
 }
 
-function loadLayerFromLocalStorage() {
+export function loadLayerFromLocalStorage() {
     const saved = localStorage.getItem('attack-explorer-current-layer');
     if (!saved) return null;
     try {
@@ -379,7 +379,7 @@ function loadLayerFromLocalStorage() {
     }
 }
 
-function saveRecentLayer(layer) {
+export function saveRecentLayer(layer) {
     let recent = JSON.parse(localStorage.getItem('attack-explorer-recent') || '[]');
     recent = recent.filter(l => l.id !== layer.name + layer.domain);
     recent.unshift({
@@ -394,7 +394,7 @@ function saveRecentLayer(layer) {
     localStorage.setItem('attack-explorer-recent', JSON.stringify(recent));
 }
 
-function renderRecentLayers() {
+export function renderRecentLayers() {
     const recent = JSON.parse(localStorage.getItem('attack-explorer-recent') || '[]');
     const section = document.getElementById('recent-layers-section');
     const list = document.getElementById('recent-layers-list');
@@ -506,3 +506,32 @@ document.getElementById('btn-close-layer').addEventListener('click', async () =>
         showLanding();
     }
 });
+
+// Legacy Window Bindings
+window.LAYER_DB_NAME = LAYER_DB_NAME;
+window.LAYER_DB_VERSION = LAYER_DB_VERSION;
+window.STORE_SNAPSHOTS = STORE_SNAPSHOTS;
+window.STORE_DELTAS = STORE_DELTAS;
+window.autoSaveTimer = autoSaveTimer;
+window.pendingSave = pendingSave;
+window.lastSnapshotHash = lastSnapshotHash;
+window.deltaBuffer = deltaBuffer;
+window.DELTA_FLUSH_THRESHOLD = DELTA_FLUSH_THRESHOLD;
+window.openLayerDB = openLayerDB;
+window.computeHash = computeHash;
+window.computeDelta = computeDelta;
+window.applyDelta = applyDelta;
+window.storeSnapshot = storeSnapshot;
+window.storeDelta = storeDelta;
+window.getDeltas = getDeltas;
+window.getSnapshot = getSnapshot;
+window.clearDeltas = clearDeltas;
+window.consolidateDeltas = consolidateDeltas;
+window.saveCurrentLayer = saveCurrentLayer;
+window.autoSaveLayer = autoSaveLayer;
+window.saveCurrentLayerNow = saveCurrentLayerNow;
+window.loadCurrentLayer = loadCurrentLayer;
+window.loadLayerFromIndexedDB = loadLayerFromIndexedDB;
+window.loadLayerFromLocalStorage = loadLayerFromLocalStorage;
+window.saveRecentLayer = saveRecentLayer;
+window.renderRecentLayers = renderRecentLayers;

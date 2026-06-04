@@ -1,4 +1,4 @@
-function escapeHtml(text) {
+export function escapeHtml(text) {
     if (!text) return '';
     return String(text)
         .replace(/&/g, '&amp;')
@@ -8,7 +8,7 @@ function escapeHtml(text) {
         .replace(/'/g, '&#039;');
 }
 
-function formatTimestamp(isoString) {
+export function formatTimestamp(isoString) {
     if (!isoString) return '';
     const d = new Date(isoString);
     const now = new Date();
@@ -28,7 +28,7 @@ function formatTimestamp(isoString) {
  * Cleans MITRE STIX raw descriptions by removing citation tags and markdown links
  * to produce clean plain text suitable for card previews.
  */
-function cleanDescription(text) {
+export function cleanDescription(text) {
     if (!text) return '';
     // Replace markdown links with their labels: [Label](URL) -> Label
     let clean = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
@@ -42,7 +42,7 @@ function cleanDescription(text) {
 /**
  * Clean and truncate description gracefully to a maximum length
  */
-function truncateDescription(text, maxLength = 140) {
+export function truncateDescription(text, maxLength = 140) {
     const clean = cleanDescription(text);
     if (clean.length <= maxLength) return clean;
     // Gracefully truncate at last word space if within 80% of max length
@@ -53,3 +53,9 @@ function truncateDescription(text, maxLength = 140) {
     }
     return truncated + '...';
 }
+
+// Legacy Window Bindings
+window.escapeHtml = escapeHtml;
+window.formatTimestamp = formatTimestamp;
+window.cleanDescription = cleanDescription;
+window.truncateDescription = truncateDescription;

@@ -1,4 +1,4 @@
-function showToast(message, type = 'info', duration = 3000) {
+export function showToast(message, type = 'info', duration = 3000) {
     const container = document.getElementById('app-toast');
     if (!container) return;
     
@@ -29,7 +29,7 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
-function showPrompt(title, defaultValue = '') {
+export function showPrompt(title, defaultValue = '') {
     return new Promise((resolve) => {
         const modal = document.getElementById('custom-prompt-modal');
         document.getElementById('custom-prompt-title').textContent = title;
@@ -61,7 +61,7 @@ function showPrompt(title, defaultValue = '') {
     });
 }
 
-function showConfirm(title, message) {
+export function showConfirm(title, message) {
     return new Promise((resolve) => {
         const modal = document.getElementById('custom-confirm-modal');
         document.getElementById('custom-confirm-title').textContent = title;
@@ -99,7 +99,7 @@ function showConfirm(title, message) {
    Enhanced Toast System
    ============================================ */
 
-function showToastWithOptions(message, options = {}) {
+export function showToastWithOptions(message, options = {}) {
     const {
         type = 'info',
         duration = 3000,
@@ -146,7 +146,7 @@ function showToastWithOptions(message, options = {}) {
     return id;
 }
 
-function dismissToast(toastId) {
+export function dismissToast(toastId) {
     const el = document.getElementById(toastId);
     if (el) {
         el.classList.remove('toast-enter');
@@ -155,7 +155,7 @@ function dismissToast(toastId) {
     }
 }
 
-function dismissAllToasts() {
+export function dismissAllToasts() {
     document.querySelectorAll('#app-toast .toast').forEach(toast => {
         toast.classList.remove('toast-enter');
         toast.classList.add('toast-exit');
@@ -167,7 +167,7 @@ function dismissAllToasts() {
    Keyboard Shortcuts System
    ============================================ */
 
-const keyboardShortcuts = {
+export const keyboardShortcuts = {
     handlers: {},
     
     register(key, handler, description = '') {
@@ -222,7 +222,7 @@ const keyboardShortcuts = {
 
 document.addEventListener('keydown', (e) => keyboardShortcuts.handle(e));
 
-function registerDefaultShortcuts() {
+export function registerDefaultShortcuts() {
     keyboardShortcuts.register('ctrl+k', () => {
         const searchInput = document.querySelector('#matrix-search, #search-input');
         if (searchInput) {
@@ -287,7 +287,7 @@ function registerDefaultShortcuts() {
    Loading Skeleton Helpers
    ============================================ */
 
-function showSkeleton(container, type = 'card', count = 3) {
+export function showSkeleton(container, type = 'card', count = 3) {
     if (!container) return;
     
     const skeletons = {
@@ -308,7 +308,7 @@ function showSkeleton(container, type = 'card', count = 3) {
     container.innerHTML = html;
 }
 
-function hideSkeleton(container) {
+export function hideSkeleton(container) {
     if (container && container.querySelector('.loading-container')) {
         container.innerHTML = '';
     }
@@ -318,9 +318,9 @@ function hideSkeleton(container) {
    Auto-Save Indicator
    ============================================ */
 
-let autoSaveTimeout = null;
+export let autoSaveTimeout = null;
 
-function showAutoSaveIndicator(status = 'saving') {
+export function showAutoSaveIndicator(status = 'saving') {
     let indicator = document.getElementById('autosave-indicator');
     
     if (!indicator) {
@@ -347,7 +347,7 @@ function showAutoSaveIndicator(status = 'saving') {
     }
 }
 
-function debounceAutoSave(saveFn, delay = 1000) {
+export function debounceAutoSave(saveFn, delay = 1000) {
     if (autoSaveTimeout) {
         clearTimeout(autoSaveTimeout);
     }
@@ -369,7 +369,7 @@ function debounceAutoSave(saveFn, delay = 1000) {
    Undo/Redo System
    ============================================ */
 
-const undoStack = {
+export const undoStack = {
     history: [],
     future: [],
     maxSize: 50,
@@ -414,19 +414,19 @@ const undoStack = {
     }
 };
 
-function undo() {
+export function undo() {
     if (undoStack.undo()) {
         showToast('Undone', 'info');
     }
 }
 
-function redo() {
+export function redo() {
     if (undoStack.redo()) {
         showToast('Redone', 'info');
     }
 }
 
-function recordUndo(description, undoFn, redoFn) {
+export function recordUndo(description, undoFn, redoFn) {
     undoStack.push({
         description,
         undo: undoFn,
@@ -438,7 +438,7 @@ function recordUndo(description, undoFn, redoFn) {
    Tooltip System
    ============================================ */
 
-function initTooltips() {
+export function initTooltips() {
     document.querySelectorAll('[data-tooltip]').forEach(el => {
         el.addEventListener('mouseenter', showTooltip);
         el.addEventListener('mouseleave', hideTooltip);
@@ -447,7 +447,7 @@ function initTooltips() {
     });
 }
 
-function showTooltip(event) {
+export function showTooltip(event) {
     const el = event.target;
     const text = el.dataset.tooltip;
     const placement = el.dataset.tooltipPlacement || 'top';
@@ -495,14 +495,14 @@ function showTooltip(event) {
     tooltip.classList.remove('hidden');
 }
 
-function hideTooltip(event) {
+export function hideTooltip(event) {
     const tooltip = document.getElementById('global-tooltip');
     if (tooltip) {
         tooltip.classList.add('hidden');
     }
 }
 
-function updateTooltip(text) {
+export function updateTooltip(text) {
     const tooltip = document.getElementById('global-tooltip');
     if (tooltip) {
         tooltip.textContent = text;
@@ -513,8 +513,32 @@ function updateTooltip(text) {
    Initialize UI Utilities
    ============================================ */
 
-function initUI() {
+export function initUI() {
     registerDefaultShortcuts();
     initTooltips();
 }
 
+
+// Legacy Window Bindings
+window.showToast = showToast;
+window.showPrompt = showPrompt;
+window.showConfirm = showConfirm;
+window.showToastWithOptions = showToastWithOptions;
+window.dismissToast = dismissToast;
+window.dismissAllToasts = dismissAllToasts;
+window.keyboardShortcuts = keyboardShortcuts;
+window.registerDefaultShortcuts = registerDefaultShortcuts;
+window.showSkeleton = showSkeleton;
+window.hideSkeleton = hideSkeleton;
+window.autoSaveTimeout = autoSaveTimeout;
+window.showAutoSaveIndicator = showAutoSaveIndicator;
+window.debounceAutoSave = debounceAutoSave;
+window.undoStack = undoStack;
+window.undo = undo;
+window.redo = redo;
+window.recordUndo = recordUndo;
+window.initTooltips = initTooltips;
+window.showTooltip = showTooltip;
+window.hideTooltip = hideTooltip;
+window.updateTooltip = updateTooltip;
+window.initUI = initUI;

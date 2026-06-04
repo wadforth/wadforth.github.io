@@ -1,11 +1,11 @@
-let softwareSortBy = 'name';
-let softwareSortDir = 'asc';
-let softwareViewMode = 'grid';
-let softwareFilterType = 'all';
+export let softwareSortBy = 'name';
+export let softwareSortDir = 'asc';
+export let softwareViewMode = 'grid';
+export let softwareFilterType = 'all';
 
 
 
-function getSoftwareTechniqueCount(softwareId) {
+export function getSoftwareTechniqueCount(softwareId) {
     const sw = state.software.find(s => {
         const sid = s.external_references?.[0]?.external_id || '';
         return sid === softwareId;
@@ -14,7 +14,7 @@ function getSoftwareTechniqueCount(softwareId) {
     return state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === sw.id).length;
 }
 
-function getSoftwareGroupCount(softwareId) {
+export function getSoftwareGroupCount(softwareId) {
     const sw = state.software.find(s => {
         const sid = s.external_references?.[0]?.external_id || '';
         return sid === softwareId;
@@ -33,7 +33,7 @@ function getSoftwareGroupCount(softwareId) {
     return state.groups.filter(g => groupIds.has(g.id)).length;
 }
 
-function sortSoftware(software) {
+export function sortSoftware(software) {
     const dir = softwareSortDir === 'asc' ? 1 : -1;
     return [...software].sort((a, b) => {
         let valA, valB;
@@ -62,7 +62,7 @@ function sortSoftware(software) {
     });
 }
 
-function renderSoftwareView() {
+export function renderSoftwareView() {
     const container = document.getElementById('software-list');
     const controlsContainer = document.getElementById('software-controls');
     const searchInput = document.getElementById('software-search-input');
@@ -362,7 +362,7 @@ function renderSoftwareView() {
     }, 50);
 }
 
-function bindSoftwareToolbar() {
+export function bindSoftwareToolbar() {
     const sortSelect = document.getElementById('software-sort-select');
     const sortDir = document.getElementById('software-sort-dir');
     const viewGrid = document.getElementById('software-view-grid');
@@ -404,7 +404,7 @@ function bindSoftwareToolbar() {
     });
 }
 
-function bindSoftwareCardActions() {
+export function bindSoftwareCardActions() {
     document.querySelectorAll('.software-card').forEach(card => {
         card.addEventListener('click', () => {
             showSoftwareModal(card.dataset.swId);
@@ -417,3 +417,15 @@ document.getElementById('software-type-filter')?.addEventListener('change', (e) 
     softwareFilterType = e.target.value;
     renderSoftwareView();
 });
+
+// Legacy Window Bindings
+window.softwareSortBy = softwareSortBy;
+window.softwareSortDir = softwareSortDir;
+window.softwareViewMode = softwareViewMode;
+window.softwareFilterType = softwareFilterType;
+window.getSoftwareTechniqueCount = getSoftwareTechniqueCount;
+window.getSoftwareGroupCount = getSoftwareGroupCount;
+window.sortSoftware = sortSoftware;
+window.renderSoftwareView = renderSoftwareView;
+window.bindSoftwareToolbar = bindSoftwareToolbar;
+window.bindSoftwareCardActions = bindSoftwareCardActions;

@@ -1,0 +1,418 @@
+[
+  {
+    "id": "f5195e0c-fb94-4d2d-82d2-c4bb21a48c66",
+    "title": "Mimikatz LSASS Dump via Process Access",
+    "description": "Detects lsass.exe process access with suspicious access masks, typically associated with credential dumping tools like Mimikatz.",
+    "logsource": {
+      "category": "process_access",
+      "product": "windows"
+    },
+    "technique_id": "T1003.001",
+    "tactic": "Credential Access",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_access/proc_access_win_lsass_susp_access_mask.yml",
+    "yaml": "title: Mimikatz LSASS Dump via Process Access\nid: f5195e0c-fb94-4d2d-82d2-c4bb21a48c66\nstatus: production\ndescription: Detects suspicious process access to LSASS\nlogsource:\n    category: process_access\n    product: windows\ndetection:\n    selection:\n        TargetImage: 'C:\\\\Windows\\\\System32\\\\lsass.exe'\n        GrantedAccess:\n            - '0x1fffff'\n            - '0x1f0fff'\n            - '0x143a'\n    condition: selection\nfalsepositives:\n    - Antivirus and security agents\nlevel: high"
+  },
+  {
+    "id": "e4596b0c-fa94-4d2d-82d2-c4bb21a48c77",
+    "title": "Suspicious PowerShell Download Cradle",
+    "description": "Detects command line string combinations indicating PowerShell downloading content from internet resources, common in staging phases.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1059.001",
+    "tactic": "Execution",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_download_cradles.yml",
+    "yaml": "title: Suspicious PowerShell Download Cradle\nid: e4596b0c-fa94-4d2d-82d2-c4bb21a48c77\nstatus: production\ndescription: Detects suspicious PowerShell download cradles\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\powershell.exe'\n        CommandLine|contains:\n            - 'Net.WebClient'\n            - 'DownloadFile'\n            - 'DownloadString'\n            - 'Invoke-WebRequest'\n            - 'iwr '\n    condition: selection\nfalsepositives:\n    - Administrative scripts\nlevel: high"
+  },
+  {
+    "id": "a1892e0c-fb94-4d2d-82d2-c4bb21a48c88",
+    "title": "Scheduled Task Creation via Cmdline",
+    "description": "Detects the creation of scheduled tasks via schtasks.exe command line tool to achieve persistence.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1053.005",
+    "tactic": "Persistence",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_schtasks_creation.yml",
+    "yaml": "title: Scheduled Task Creation via Cmdline\nid: a1892e0c-fb94-4d2d-82d2-c4bb21a48c88\nstatus: production\ndescription: Detects task scheduler creation of tasks\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\schtasks.exe'\n        CommandLine|contains|all:\n            - '/create'\n            - '/tn'\n    condition: selection\nfalsepositives:\n    - Software installers\nlevel: medium"
+  },
+  {
+    "id": "c1995e0c-fb94-4d2d-82d2-c4bb21a48c99",
+    "title": "Remote Desktop Connection from Suspicious Source",
+    "description": "Detects incoming RDP connections originating from non-standard internal subnets or external IP addresses.",
+    "logsource": {
+      "category": "network_connection",
+      "product": "windows"
+    },
+    "technique_id": "T1021.001",
+    "tactic": "Lateral Movement",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/network_connection/net_connection_win_rdp_suspicious.yml",
+    "yaml": "title: Remote Desktop Connection from Suspicious Source\nid: c1995e0c-fb94-4d2d-82d2-c4bb21a48c99\nstatus: production\ndescription: Detects suspicious network connections on port 3389\nlogsource:\n    category: network_connection\n    product: windows\ndetection:\n    selection:\n        DestinationPort: 3389\n        Initiated: 'true'\n    filter:\n        SourceAddress|startswith: '10.0.0.'\n    condition: selection and not filter\nfalsepositives:\n    - Legitimate administrator RDP\nlevel: medium"
+  },
+  {
+    "id": "d1095e0c-fb94-4d2d-82d2-c4bb21a48c00",
+    "title": "New Windows Service Installation",
+    "description": "Detects the creation of suspicious system services or drivers, which could be used by adversaries to load malware or achieve persistent execution.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1543.003",
+    "tactic": "Persistence",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_service_creation.yml",
+    "yaml": "title: New Windows Service Installation\nid: d1095e0c-fb94-4d2d-82d2-c4bb21a48c00\nstatus: production\ndescription: Detects suspicious sc.exe usage\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\sc.exe'\n        CommandLine|contains:\n            - 'create'\n            - 'binpath'\n    condition: selection\nfalsepositives:\n    - Administrative software installers\nlevel: high"
+  },
+  {
+    "id": "e2195e0c-fb94-4d2d-82d2-c4bb21a48c11",
+    "title": "Suspicious RDP Login with Valid Credentials",
+    "description": "Detects anomalous RDP logins outside of regular hours or targeting high-value assets using valid credentials, suggesting credential theft.",
+    "logsource": {
+      "category": "authentication",
+      "product": "windows"
+    },
+    "technique_id": "T1078",
+    "tactic": "Defense Evasion",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/authentication/auth_win_rdp_anomalous_login.yml",
+    "yaml": "title: Suspicious RDP Login with Valid Credentials\nid: e2195e0c-fb94-4d2d-82d2-c4bb21a48c11\nstatus: production\ndescription: Detects RDP Logins on Event ID 4624 (Logon Type 10)\nlogsource:\n    category: authentication\n    product: windows\ndetection:\n    selection:\n        EventID: 4624\n        LogonType: 10\n    condition: selection\nfalsepositives:\n    - User working late hours\nlevel: medium"
+  },
+  {
+    "id": "f3295e0c-fb94-4d2d-82d2-c4bb21a48c22",
+    "title": "Registry Modification for AutoRun Persistence",
+    "description": "Detects modification of standard registry run keys to execute malware automatically on logon or boot.",
+    "logsource": {
+      "category": "registry",
+      "product": "windows"
+    },
+    "technique_id": "T1547.001",
+    "tactic": "Persistence",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/registry/registry_set_win_autorun_keys.yml",
+    "yaml": "title: Registry Modification for AutoRun Persistence\nid: f3295e0c-fb94-4d2d-82d2-c4bb21a48c22\nstatus: production\ndescription: Detects modifications to registry Run or RunOnce keys\nlogsource:\n    category: registry\n    product: windows\ndetection:\n    selection:\n        TargetObject|contains:\n            - '\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run'\n            - '\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\RunOnce'\n    condition: selection\nfalsepositives:\n    - Legitimate program installers\nlevel: high"
+  },
+  {
+    "id": "a4395e0c-fb94-4d2d-82d2-c4bb21a48c33",
+    "title": "Windows Defender Real-Time Protection Disabled",
+    "description": "Detects commands or registry modifications that disable Windows Defender Real-Time Monitoring to evade detection.",
+    "logsource": {
+      "category": "registry",
+      "product": "windows"
+    },
+    "technique_id": "T1562.001",
+    "tactic": "Defense Evasion",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/registry/registry_set_win_defender_disabled.yml",
+    "yaml": "title: Windows Defender Real-Time Protection Disabled\nid: a4395e0c-fb94-4d2d-82d2-c4bb21a48c33\nstatus: production\ndescription: Detects registry setting that disables Windows Defender features\nlogsource:\n    category: registry\n    product: windows\ndetection:\n    selection:\n        TargetObject|contains: '\\\\Microsoft\\\\Windows Defender\\\\Real-Time Protection\\\\DisableRealtimeMonitoring'\n        Details: 'DWORD (0x00000001)'\n    condition: selection\nfalsepositives:\n    - Intended administrative disabling by GPO\nlevel: critical"
+  },
+  {
+    "id": "b5495e0c-fb94-4d2d-82d2-c4bb21a48c44",
+    "title": "PowerShell Script Execution Bypass",
+    "description": "Detects the use of the -ExecutionBypass, -ep, or -Bypass argument in PowerShell command lines to bypass local security controls.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1059.001",
+    "tactic": "Execution",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_execution_bypass.yml",
+    "yaml": "title: PowerShell Script Execution Bypass\nid: b5495e0c-fb94-4d2d-82d2-c4bb21a48c44\nstatus: production\ndescription: Detects bypass of PowerShell script execution policy\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\powershell.exe'\n        CommandLine|contains:\n            - '-ep bypass'\n            - '-exec bypass'\n            - '-executionpolicy bypass'\n            - '-noprofile'\n    condition: selection\nfalsepositives:\n    - Standard administrative scripts\nlevel: high"
+  },
+  {
+    "id": "c6595e0c-fb94-4d2d-82d2-c4bb21a48c55",
+    "title": "WMI Suspicious Process Creation",
+    "description": "Detects suspicious processes spawned by the WMI provider process (wmiprvse.exe), indicating potential remote execution or lateral movement.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1047",
+    "tactic": "Execution",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_wmi_susp_child.yml",
+    "yaml": "title: WMI Suspicious Process Creation\nid: c6595e0c-fb94-4d2d-82d2-c4bb21a48c55\nstatus: production\ndescription: Detects processes spawned by wmiprvse.exe\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        ParentImage|endswith: '\\\\wmiprvse.exe'\n        Image|endswith:\n            - '\\\\cmd.exe'\n            - '\\\\powershell.exe'\n            - '\\\\bitsadmin.exe'\n            - '\\\\certutil.exe'\n    condition: selection\nfalsepositives:\n    - Monitoring tools executing scripts\nlevel: high"
+  },
+  {
+    "id": "d7695e0c-fb94-4d2d-82d2-c4bb21a48c66",
+    "title": "Volume Shadow Copy Deletion via Vssadmin",
+    "description": "Detects deletion of backup shadow volumes using vssadmin.exe, a common step in ransomware campaigns to prevent data recovery.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1486",
+    "tactic": "Impact",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_volume_shadow_deletion.yml",
+    "yaml": "title: Volume Shadow Copy Deletion via Vssadmin\nid: d7695e0c-fb94-4d2d-82d2-c4bb21a48c66\nstatus: production\ndescription: Detects deletion of Volume Shadow Copies\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\vssadmin.exe'\n        CommandLine|contains|all:\n            - 'delete'\n            - 'shadows'\n    condition: selection\nfalsepositives:\n    - None identified so far\nlevel: critical"
+  },
+  {
+    "id": "e8795e0c-fb94-4d2d-82d2-c4bb21a48c77",
+    "title": "Suspicious Rundll32 Activity without DLL Extension",
+    "description": "Detects execution of rundll32.exe where the command line does not refer to a .dll file, hinting at masquerading or proxy execution.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1218.011",
+    "tactic": "Defense Evasion",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_rundll32_susp_execution.yml",
+    "yaml": "title: Suspicious Rundll32 Activity without DLL Extension\nid: e8795e0c-fb94-4d2d-82d2-c4bb21a48c77\nstatus: production\ndescription: Detects rundll32 command lines missing DLL extension\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\rundll32.exe'\n    filter:\n        CommandLine|contains: '.dll'\n    condition: selection and not filter\nfalsepositives:\n    - Legitimate complex system setups\nlevel: high"
+  },
+  {
+    "id": "f9895e0c-fb94-4d2d-82d2-c4bb21a48c88",
+    "title": "Webshell Execution via IIS w3wp.exe",
+    "description": "Detects suspicious process creation originating from IIS Worker Process (w3wp.exe), which is often a signature of webshell exploitation.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1505.003",
+    "tactic": "Persistence",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_webshell_w3wp.yml",
+    "yaml": "title: Webshell Execution via IIS w3wp.exe\nid: f9895e0c-fb94-4d2d-82d2-c4bb21a48c88\nstatus: production\ndescription: Detects process creation spawned by IIS w3wp.exe\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        ParentImage|endswith: '\\\\w3wp.exe'\n        Image|endswith:\n            - '\\\\cmd.exe'\n            - '\\\\powershell.exe'\n            - '\\\\whoami.exe'\n            - '\\\\net.exe'\n    condition: selection\nfalsepositives:\n    - IIS administrative utilities running commands\nlevel: high"
+  },
+  {
+    "id": "a0995e0c-fb94-4d2d-82d2-c4bb21a48c99",
+    "title": "DLL Side-Loading Suspicious Directory",
+    "description": "Detects DLLs loaded by system programs from user-writeable or non-standard folders, indicating potential DLL side-loading.",
+    "logsource": {
+      "category": "image_load",
+      "product": "windows"
+    },
+    "technique_id": "T1574.002",
+    "tactic": "Persistence",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/image_load/image_load_win_dll_sideloading.yml",
+    "yaml": "title: DLL Side-Loading Suspicious Directory\nid: a0995e0c-fb94-4d2d-82d2-c4bb21a48c99\nstatus: production\ndescription: Detects loading of DLLs from suspicious directories\nlogsource:\n    category: image_load\n    product: windows\ndetection:\n    selection:\n        ImageLoaded|contains:\n            - '\\\\AppData\\\\Local\\\\'\n            - 'C:\\\\Users\\\\Public\\\\'\n            - 'C:\\\\PerfLogs\\\\'\n    filter:\n        ImageLoaded|startswith: 'C:\\\\Windows\\\\System32\\\\'\n    condition: selection and not filter\nfalsepositives:\n    - Custom legacy applications\nlevel: high"
+  },
+  {
+    "id": "b1095e0c-fb94-4d2d-82d2-c4bb21a48d00",
+    "title": "Security Account Manager (SAM) Database Copying",
+    "description": "Detects commands copying the registry SAM database to local files, an activity strongly associated with offline credential cracking.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1003.002",
+    "tactic": "Credential Access",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_sam_registry_backup.yml",
+    "yaml": "title: Security Account Manager (SAM) Database Copying\nid: b1095e0c-fb94-4d2d-82d2-c4bb21a48d00\nstatus: production\ndescription: Detects reg.exe commands backing up the SAM registry hive\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\reg.exe'\n        CommandLine|contains|all:\n            - 'save'\n            - 'sam'\n    condition: selection\nfalsepositives:\n    - None identified\nlevel: critical"
+  },
+  {
+    "id": "c2195e0c-fb94-4d2d-82d2-c4bb21a48d11",
+    "title": "Process Injection via CreateRemoteThread",
+    "description": "Detects remote thread injection API usage across different processes, a core tactic for process injection evasion.",
+    "logsource": {
+      "category": "process_injection",
+      "product": "windows"
+    },
+    "technique_id": "T1055",
+    "tactic": "Privilege Escalation",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_injection/proc_injection_createremotethread.yml",
+    "yaml": "title: Process Injection via CreateRemoteThread\nid: c2195e0c-fb94-4d2d-82d2-c4bb21a48d11\nstatus: production\ndescription: Detects CreateRemoteThread calls targeting non-standard processes\nlogsource:\n    category: process_injection\n    product: windows\ndetection:\n    selection:\n        TargetImage|contains: 'C:\\\\Windows\\\\'\n        SourceImage|not|contains: 'C:\\\\Windows\\\\System32\\\\'\n    condition: selection\nfalsepositives:\n    - Third-party debugging utilities\nlevel: high"
+  },
+  {
+    "id": "d3295e0c-fb94-4d2d-82d2-c4bb21a48d22",
+    "title": "Regsvr32 Network Connection Initiated",
+    "description": "Detects regsvr32.exe initiating network connections, typical of 'Squiblydoo' exploits bypassing app control.",
+    "logsource": {
+      "category": "network_connection",
+      "product": "windows"
+    },
+    "technique_id": "T1218.010",
+    "tactic": "Defense Evasion",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/network_connection/net_connection_win_regsvr32_susp.yml",
+    "yaml": "title: Regsvr32 Network Connection Initiated\nid: d3295e0c-fb94-4d2d-82d2-c4bb21a48d22\nstatus: production\ndescription: Detects network traffic initiated from regsvr32.exe\nlogsource:\n    category: network_connection\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\regsvr32.exe'\n        Initiated: 'true'\n    condition: selection\nfalsepositives:\n    - None\nlevel: critical"
+  },
+  {
+    "id": "e4395e0c-fb94-4d2d-82d2-c4bb21a48d33",
+    "title": "Certutil Suspicious Web Download",
+    "description": "Detects certutil.exe downloading files from the internet using the -urlcache argument, a proxy execution download tactic.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1105",
+    "tactic": "Command and Control",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_certutil_download.yml",
+    "yaml": "title: Certutil Suspicious Web Download\nid: e4395e0c-fb94-4d2d-82d2-c4bb21a48d33\nstatus: production\ndescription: Detects certutil download behavior\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\certutil.exe'\n        CommandLine|contains:\n            - '-urlcache'\n            - 'http'\n    condition: selection\nfalsepositives:\n    - Administrative update routines\nlevel: high"
+  },
+  {
+    "id": "f5495e0c-fb94-4d2d-82d2-c4bb21a48d44",
+    "title": "Suspicious Port Scanning Tool Executed",
+    "description": "Detects command lines with parameters matching active service scanners like nmap or custom port sweeps.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1046",
+    "tactic": "Discovery",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_network_scanning.yml",
+    "yaml": "title: Suspicious Port Scanning Tool Executed\nid: f5495e0c-fb94-4d2d-82d2-c4bb21a48d44\nstatus: production\ndescription: Detects execution of port scanning tools\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        CommandLine|contains:\n            - ' -sS '\n            - ' -sT '\n            - ' -Pn '\n            - 'nmap'\n    condition: selection\nfalsepositives:\n    - Authorized vulnerability testing team\nlevel: medium"
+  },
+  {
+    "id": "a6595e0c-fb94-4d2d-82d2-c4bb21a48d55",
+    "title": "Remote File Share Staging in Public Folders",
+    "description": "Detects file writing and staging under public directories like C:\\Users\\Public\\, indicating attacker staging data.",
+    "logsource": {
+      "category": "file_event",
+      "product": "windows"
+    },
+    "technique_id": "T1074.001",
+    "tactic": "Collection",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/file_event/file_creation_win_public_folder_staging.yml",
+    "yaml": "title: Remote File Share Staging in Public Folders\nid: a6595e0c-fb94-4d2d-82d2-c4bb21a48d55\nstatus: production\ndescription: Detects creation of staged ZIP/RAR files in public folders\nlogsource:\n    category: file_event\n    product: windows\ndetection:\n    selection:\n        TargetFilename|contains: 'C:\\\\Users\\\\Public\\\\'\n        TargetFilename|endswith:\n            - '.zip'\n            - '.rar'\n            - '.7z'\n    condition: selection\nfalsepositives:\n    - User staging files manually\nlevel: medium"
+  },
+  {
+    "id": "b7695e0c-fb94-4d2d-82d2-c4bb21a48d66",
+    "title": "Syskey Decryption Key Extraction",
+    "description": "Detects commands seeking access to Syskey security descriptors, preparing for SAM or LSA decryption.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1003.002",
+    "tactic": "Credential Access",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_syskey_extraction.yml",
+    "yaml": "title: Syskey Decryption Key Extraction\nid: b7695e0c-fb94-4d2d-82d2-c4bb21a48d66\nstatus: production\ndescription: Detects access to critical registry nodes safeguarding Syskey\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        CommandLine|contains:\n            - 'syskey'\n            - 'system\\\\currentcontrolset\\\\control\\\\lsa'\n    condition: selection\nfalsepositives:\n    - Administrative backup suites\nlevel: high"
+  },
+  {
+    "id": "c8795e0c-fb94-4d2d-82d2-c4bb21a48d77",
+    "title": "Obfuscated PowerShell Script Execution",
+    "description": "Detects command lines indicating extremely long base64 streams or encoded scripts inside PowerShell command arguments.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1027",
+    "tactic": "Defense Evasion",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_obfuscated.yml",
+    "yaml": "title: Obfuscated PowerShell Script Execution\nid: c8795e0c-fb94-4d2d-82d2-c4bb21a48d77\nstatus: production\ndescription: Detects extremely long base64 payloads in powershell.exe parameters\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\powershell.exe'\n        CommandLine|contains:\n            - '-encodedcommand'\n            - ' -enc '\n            - ' -e '\n    condition: selection\nfalsepositives:\n    - Legitimate agent orchestration suites\nlevel: high"
+  },
+  {
+    "id": "d9895e0c-fb94-4d2d-82d2-c4bb21a48d88",
+    "title": "Active Directory Account Manipulation",
+    "description": "Detects suspicious Active Directory modifications such as setting 'Password Never Expires' on sensitive admin accounts.",
+    "logsource": {
+      "category": "directory_service",
+      "product": "windows"
+    },
+    "technique_id": "T1098",
+    "tactic": "Persistence",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/directory_service/ds_win_account_manipulation.yml",
+    "yaml": "title: Active Directory Account Manipulation\nid: d9895e0c-fb94-4d2d-82d2-c4bb21a48d88\nstatus: production\ndescription: Detects modifications to UserAccountControl attribute in Active Directory\nlogsource:\n    category: directory_service\n    product: windows\ndetection:\n    selection:\n        EventID: 5136\n        AttributeName: 'userAccountControl'\n    condition: selection\nfalsepositives:\n    - Normal administrative updates\nlevel: high"
+  },
+  {
+    "id": "e0995e0c-fb94-4d2d-82d2-c4bb21a48d99",
+    "title": "Suspicious CMD Process Spawning",
+    "description": "Detects cmd.exe spawned by Microsoft Office products, typical of macro exploitation.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1204.002",
+    "tactic": "Execution",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_office_spawning_cmd.yml",
+    "yaml": "title: Suspicious CMD Process Spawning\nid: e0995e0c-fb94-4d2d-82d2-c4bb21a48d99\nstatus: production\ndescription: Detects cmd.exe spawned by Microsoft Word or Excel\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        ParentImage|endswith:\n            - '\\\\winword.exe'\n            - '\\\\excel.exe'\n            - '\\\\powerpnt.exe'\n        Image|endswith: '\\\\cmd.exe'\n    condition: selection\nfalsepositives:\n    - Rare macros executing custom internal routines\nlevel: critical"
+  },
+  {
+    "id": "f1095e0c-fb94-4d2d-82d2-c4bb21a48e00",
+    "title": "PsExec Service Execution",
+    "description": "Detects remote service execution via Sysinternals PsExec tool, mapping to lateral movement.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1569.002",
+    "tactic": "Execution",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_psexec_service.yml",
+    "yaml": "title: PsExec Service Execution\nid: f1095e0c-fb94-4d2d-82d2-c4bb21a48e00\nstatus: production\ndescription: Detects suspicious service execution parameters mapped to PsExec\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        CommandLine|contains:\n            - '-accepteula'\n            - ' -s '\n            - ' -d '\n            - 'PSEXESVC'\n    condition: selection\nfalsepositives:\n    - Standard systems engineering setups\nlevel: high"
+  },
+  {
+    "id": "a2195e0c-fb94-4d2d-82d2-c4bb21a48e11",
+    "title": "Directory Discovery Commands Executed",
+    "description": "Detects commands scanning local filesystem layout like dir /s, commonly executed in discovery sweeps.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1083",
+    "tactic": "Discovery",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_directory_discovery.yml",
+    "yaml": "title: Directory Discovery Commands Executed\nid: a2195e0c-fb94-4d2d-82d2-c4bb21a48e11\nstatus: production\ndescription: Detects file and directory structural sweeps\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        CommandLine|contains:\n            - 'dir /s'\n            - 'tree '\n    condition: selection\nfalsepositives:\n    - User searching for missing file\nlevel: low"
+  },
+  {
+    "id": "b3295e0c-fb94-4d2d-82d2-c4bb21a48e22",
+    "title": "Network Configuration Enumeration",
+    "description": "Detects commands reviewing host network routing structures (ipconfig /all, route print), indicative of initial network profiling.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1016",
+    "tactic": "Discovery",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_network_config_discovery.yml",
+    "yaml": "title: Network Configuration Enumeration\nid: b3295e0c-fb94-4d2d-82d2-c4bb21a48e22\nstatus: production\ndescription: Detects network topology checks\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith:\n            - '\\\\ipconfig.exe'\n            - '\\\\route.exe'\n        CommandLine|contains:\n            - '/all'\n            - 'print'\n    condition: selection\nfalsepositives:\n    - Ordinary customer support diagnostics\nlevel: low"
+  },
+  {
+    "id": "c4395e0c-fb94-4d2d-82d2-c4bb21a48e33",
+    "title": "Net Connections Enumeration Sweep",
+    "description": "Detects commands examining local net connections (netstat -an, netstat -r) to locate high-value pivots.",
+    "logsource": {
+      "category": "process_creation",
+      "product": "windows"
+    },
+    "technique_id": "T1049",
+    "tactic": "Discovery",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_netstat_discovery.yml",
+    "yaml": "title: Net Connections Enumeration Sweep\nid: c4395e0c-fb94-4d2d-82d2-c4bb21a48e33\nstatus: production\ndescription: Detects netstat sweeps mapping connections\nlogsource:\n    category: process_creation\n    product: windows\ndetection:\n    selection:\n        Image|endswith: '\\\\netstat.exe'\n        CommandLine|contains:\n            - '-ano'\n            - '-an'\n    condition: selection\nfalsepositives:\n    - System troubleshooting by admin\nlevel: low"
+  },
+  {
+    "id": "d5495e0c-fb94-4d2d-82d2-c4bb21a48e44",
+    "title": "Custom Webshell Communication in IIS logs",
+    "description": "Detects IIS requests with suspicious parameters or header fields, pointing to webshell interaction.",
+    "logsource": {
+      "category": "webserver",
+      "product": "iis"
+    },
+    "technique_id": "T1071.001",
+    "tactic": "Command and Control",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/webserver/iis_webshell_communication.yml",
+    "yaml": "title: Custom Webshell Communication in IIS logs\nid: d5495e0c-fb94-4d2d-82d2-c4bb21a48e44\nstatus: production\ndescription: Detects requests with known webshell parameter patterns\nlogsource:\n    category: webserver\n    product: iis\ndetection:\n    selection:\n        cs-uri-query|contains:\n            - 'cmd='\n            - 'pwd='\n            - 'exec='\n    condition: selection\nfalsepositives:\n    - None identified\nlevel: high"
+  },
+  {
+    "id": "e6595e0c-fb94-4d2d-82d2-c4bb21a48e55",
+    "title": "Keylogger File Creation Behavior",
+    "description": "Detects rapid logging of keystrokes to temporary hidden files, characteristic of input capture malware.",
+    "logsource": {
+      "category": "file_event",
+      "product": "windows"
+    },
+    "technique_id": "T1056.001",
+    "tactic": "Collection",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/file_event/file_creation_win_keylogger_log.yml",
+    "yaml": "title: Keylogger File Creation Behavior\nid: e6595e0c-fb94-4d2d-82d2-c4bb21a48e55\nstatus: production\ndescription: Detects creation of logs with keystroke identifiers\nlogsource:\n    category: file_event\n    product: windows\ndetection:\n    selection:\n        TargetFilename|contains: 'keylog'\n    condition: selection\nfalsepositives:\n    - Debugging diagnostics suites\nlevel: high"
+  },
+  {
+    "id": "f7695e0c-fb94-4d2d-82d2-c4bb21a48e66",
+    "title": "Registry Modified to Enable Plaintext Password Storage",
+    "description": "Detects registry modification to enable UseLogonCredential registry key, forcing LSASS to cache credentials in plaintext.",
+    "logsource": {
+      "category": "registry",
+      "product": "windows"
+    },
+    "technique_id": "T1112",
+    "tactic": "Defense Evasion",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/registry/registry_set_win_wdigest_plaintext.yml",
+    "yaml": "title: Registry Modified to Enable Plaintext Password Storage\nid: f7695e0c-fb94-4d2d-82d2-c4bb21a48e66\nstatus: production\ndescription: Detects enabling of WDigest plaintext credential caching\nlogsource:\n    category: registry\n    product: windows\ndetection:\n    selection:\n        TargetObject|contains: '\\\\System\\\\CurrentControlSet\\\\Control\\\\SecurityProviders\\\\WDigest\\\\UseLogonCredential'\n        Details: 'DWORD (0x00000001)'\n    condition: selection\nfalsepositives:\n    - Outdated legacy setups\nlevel: critical"
+  },
+  {
+    "id": "a8795e0c-fb94-4d2d-82d2-c4bb21a48e77",
+    "title": "Credentials Stolen from Browser Database",
+    "description": "Detects process accessing browser Login Data sqlite database files, indicating password theft.",
+    "logsource": {
+      "category": "file_access",
+      "product": "windows"
+    },
+    "technique_id": "T1555.003",
+    "tactic": "Credential Access",
+    "url": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/file_access/file_access_browser_databases.yml",
+    "yaml": "title: Credentials Stolen from Browser Database\nid: a8795e0c-fb94-4d2d-82d2-c4bb21a48e77\nstatus: production\ndescription: Detects file access on chrome/firefox login sqlite files\nlogsource:\n    category: file_access\n    product: windows\ndetection:\n    selection:\n        TargetFilename|contains:\n            - '\\\\Google\\\\Chrome\\\\User Data\\\\Default\\\\Login Data'\n            - '\\\\Mozilla\\\\Firefox\\\\Profiles\\\\'\n        TargetFilename|endswith: 'signons.sqlite'\n    condition: selection\nfalsepositives:\n    - Legitimate user backup tool\nlevel: high"
+  }
+]

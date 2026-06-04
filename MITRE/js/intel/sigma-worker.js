@@ -1,7 +1,7 @@
 // Sigma Web Worker - Handles heavy YAML parsing, filtering, and sorting
 // Runs off the main thread to keep UI responsive
 
-let sigmaRulesCache = [];
+export let sigmaRulesCache = [];
 
 self.onmessage = function(e) {
     const { type, payload } = e.data;
@@ -43,7 +43,7 @@ self.onmessage = function(e) {
     }
 };
 
-function handleParseYAML(rule) {
+export function handleParseYAML(rule) {
     try {
         const rawContent = rule.yaml;
         if (!rawContent) {
@@ -111,7 +111,7 @@ function handleParseYAML(rule) {
     }
 }
 
-function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
+export function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
     const { searchQuery, logsource, tactic, level, coverage, product, date } = filters;
     
     let filtered = rules.filter(rule => {
@@ -175,28 +175,37 @@ function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
     self.postMessage({ type: 'FILTER_COMPLETE', filtered, total: filtered.length });
 }
 
-function extractLevelFromYaml(yamlText) {
+export function extractLevelFromYaml(yamlText) {
     if (!yamlText) return '';
     const m = yamlText.match(/level:\s*(\w+)/i);
     return m ? m[1].toLowerCase() : '';
 }
 
-function getSeverityRank(rule) {
+export function getSeverityRank(rule) {
     const level = rule.level || extractLevelFromYaml(rule.yaml);
     const ranks = { critical: 5, high: 4, medium: 3, low: 2, informational: 1 };
     return ranks[level] || 0;
 }
 
-function parseSigmaDate(dateStr) {
+export function parseSigmaDate(dateStr) {
     if (!dateStr) return 0;
     const d = new Date(dateStr.replace(/\//g, '-'));
     return isNaN(d.getTime()) ? 0 : d.getTime();
 }
 
-function getEffectiveDate(rule) {
+export function getEffectiveDate(rule) {
     const modified = rule.ruleModified ? parseSigmaDate(rule.ruleModified) : 0;
     const created = rule.ruleDate ? parseSigmaDate(rule.ruleDate) : 0;
     const latest = Math.max(modified, created);
     if (latest > 0) return latest;
     return 0;
 }
+
+// Legacy Window Bindings
+window.sigmaRulesCache = sigmaRulesCache;
+window.handleParseYAML = handleParseYAML;
+window.handleFilterAndSort = handleFilterAndSort;
+window.extractLevelFromYaml = extractLevelFromYaml;
+window.getSeverityRank = getSeverityRank;
+window.parseSigmaDate = parseSigmaDate;
+window.getEffectiveDate = getEffectiveDate;

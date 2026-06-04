@@ -1,7 +1,7 @@
-let techNavHistory = [];
-let currentTechId = null;
+export let techNavHistory = [];
+export let currentTechId = null;
 
-function showTechniqueModal(techniqueId, skipHistory = false) {
+export function showTechniqueModal(techniqueId, skipHistory = false) {
     const tech = state.techniques.find(t => t.external_references?.[0]?.external_id === techniqueId);
     if (!tech) return;
 
@@ -105,26 +105,50 @@ function showTechniqueModal(techniqueId, skipHistory = false) {
             </button>
         </div>
     ` + (queries.length
-        ? queries.map(q => `
-            <div class="tech-card query-card-item">
+        ? queries.map(q => {
+            const modifiedStr = formatTimestamp(q.lastModified || q.created);
+            return `
+            <div class="tech-card query-card-item ${q.archived ? 'query-card-archived' : ''}">
                 <div class="tech-card-header">
-                    <span class="tech-card-name">${escapeHtml(q.name)}</span>
+                    <div class="tech-card-header-left">
+                        <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${techniqueId}" data-query="${q.id}" title="Toggle favorite">
+                            <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
+                        </button>
+                        <span class="tech-card-name">${escapeHtml(q.name)}${q.archived ? '<span class="query-archived-badge" title="Archived"><i class="bi bi-archive"></i> Archived</span>' : ''}</span>
+                    </div>
                     <div class="query-header-badges">
                         ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
                         <span class="query-lang-badge ${q.language}">${q.language}</span>
                     </div>
                 </div>
+                ${q.archived && q.archiveReason ? `<div class="query-archive-reason"><i class="bi bi-info-circle"></i> ${escapeHtml(q.archiveReason)}</div>` : ''}
                 <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
                 ${q.description ? `<p class="query-card-desc">${escapeHtml(q.description)}</p>` : ''}
                 ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
-                <div class="tech-card-actions">
-                    <button class="btn-tech-ghost btn-copy-query-inline" data-query="${encodeURIComponent(q.query)}">
-                        <i class="bi bi-clipboard"></i>
-                        <span>Copy</span>
-                    </button>
+                <div class="query-card-item-footer">
+                    <span class="query-modified"><i class="bi bi-clock"></i> ${modifiedStr}</span>
+                    <div class="tech-card-actions">
+                        <button class="btn-tech-ghost btn-copy-query-inline" data-query="${encodeURIComponent(q.query)}">
+                            <i class="bi bi-clipboard"></i>
+                            <span>Copy</span>
+                        </button>
+                        <button class="btn-tech-ghost btn-edit-query-modal" data-query-id="${q.id}" data-tech="${techniqueId}">
+                            <i class="bi bi-pencil"></i>
+                            <span>Edit</span>
+                        </button>
+                        ${q.archived 
+                            ? `<button class="btn-tech-ghost btn-unarchive-query-modal" data-query-id="${q.id}" data-tech="${techniqueId}" title="Restore query"><i class="bi bi-arrow-counterclockwise"></i></button>`
+                            : `<button class="btn-tech-ghost btn-archive-query-modal" data-query-id="${q.id}" data-tech="${techniqueId}" title="Archive query"><i class="bi bi-archive"></i></button>`
+                        }
+                        <button class="btn-tech-ghost btn-delete-query-modal" data-query-id="${q.id}" data-tech="${techniqueId}">
+                            <i class="bi bi-trash"></i>
+                            <span>Delete</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-        `).join('')
+        `;
+        }).join('')
         : '<div class="empty-state"><i class="bi bi-code-slash"></i><p>No queries added yet.</p></div>');
     document.getElementById('count-queries').textContent = queries.length;
 
@@ -145,6 +169,60 @@ function showTechniqueModal(techniqueId, skipHistory = false) {
         btn.addEventListener('click', () => {
             navigator.clipboard.writeText(decodeURIComponent(btn.dataset.query));
             showToast('Query copied!', 'success');
+        });
+    });
+
+    document.querySelectorAll('.btn-archive-query-modal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openArchiveModal(btn.dataset.queryId, btn.dataset.tech);
+            setTimeout(() => {
+                const archiveModal = document.getElementById('archive-query-modal');
+                archiveModal.addEventListener('hidden.bs.modal', () => {
+                    refreshTechniqueModalQueries();
+                }, { once: true });
+            }, 100);
+        });
+    });
+    
+    document.querySelectorAll('.btn-unarchive-query-modal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            unarchiveQuery(btn.dataset.queryId, btn.dataset.tech);
+        });
+    });
+
+    document.querySelectorAll('.btn-delete-query-modal').forEach(async (btn) => {
+        btn.addEventListener('click', async () => {
+            const q = queries.find(q => q.id === btn.dataset.queryId);
+            if (!q) return;
+            const confirmed = await showConfirm('Delete Query', `Delete "${q.name}"?`);
+            if (confirmed) {
+                deleteQuery(btn.dataset.tech, btn.dataset.queryId);
+                refreshTechniqueModalQueries();
+                showToast('Query deleted', 'info');
+            }
+        });
+    });
+    
+    document.querySelectorAll('.query-fav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFavorite(btn.dataset.tech, btn.dataset.query);
+        });
+    });
+    
+    document.querySelectorAll('.btn-edit-query-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const q = queries.find(q => q.id === btn.dataset.queryId);
+            if (q) {
+                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('technique-modal'));
+                if (modalInstance) modalInstance.hide();
+                setTimeout(() => {
+                    document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                    openQueryEditor(q, techniqueId);
+                }, 400);
+            }
         });
     });
 
@@ -223,7 +301,7 @@ function showTechniqueModal(techniqueId, skipHistory = false) {
     modal.show();
 }
 
-function renderTacticBadges(tech) {
+export function renderTacticBadges(tech) {
     const container = document.getElementById('technique-modal-tactics');
     const phases = tech.kill_chain_phases?.filter(k => k.kill_chain_name === 'mitre-attack') || [];
     
@@ -242,7 +320,7 @@ function renderTacticBadges(tech) {
     ).join('')}</span>`;
 }
 
-function renderCoverageBar(techniqueId, tech) {
+export function renderCoverageBar(techniqueId, tech) {
     const container = document.getElementById('tech-modal-coverage');
     const isSub = tech.x_mitre_is_subtechnique;
     
@@ -293,7 +371,7 @@ function renderCoverageBar(techniqueId, tech) {
     `;
 }
 
-function updateBreadcrumb() {
+export function updateBreadcrumb() {
     const breadcrumb = document.getElementById('tech-modal-breadcrumb');
     const path = document.getElementById('tech-breadcrumb-path');
     const backBtn = document.getElementById('tech-breadcrumb-back');
@@ -324,7 +402,7 @@ function updateBreadcrumb() {
     };
 }
 
-function renderTechniqueDetails(tech) {
+export function renderTechniqueDetails(tech) {
     const details = [];
     const techniqueId = tech.external_references?.[0]?.external_id || '';
     
@@ -510,7 +588,7 @@ function renderTechniqueDetails(tech) {
     });
 }
 
-function refreshTechniqueModalQueries() {
+export function refreshTechniqueModalQueries() {
     if (!state.currentModalTechniqueId) return;
     const techniqueId = state.currentModalTechniqueId;
     const ann = getTechniqueAnnotation(techniqueId);
@@ -644,7 +722,7 @@ function refreshTechniqueModalQueries() {
     });
 }
 
-function updateTechniqueMonth(techniqueId, month) {
+export function updateTechniqueMonth(techniqueId, month) {
     const ann = getTechniqueAnnotation(techniqueId);
     if (ann) {
         ann.monthAdded = month;
@@ -652,3 +730,14 @@ function updateTechniqueMonth(techniqueId, month) {
         showToast('Month updated', 'success');
     }
 }
+
+// Legacy Window Bindings
+window.techNavHistory = techNavHistory;
+window.currentTechId = currentTechId;
+window.showTechniqueModal = showTechniqueModal;
+window.renderTacticBadges = renderTacticBadges;
+window.renderCoverageBar = renderCoverageBar;
+window.updateBreadcrumb = updateBreadcrumb;
+window.renderTechniqueDetails = renderTechniqueDetails;
+window.refreshTechniqueModalQueries = refreshTechniqueModalQueries;
+window.updateTechniqueMonth = updateTechniqueMonth;

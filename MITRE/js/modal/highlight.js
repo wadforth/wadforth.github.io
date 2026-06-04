@@ -1,10 +1,10 @@
-function parseDescription(text) {
+export function parseDescription(text) {
     if (!text) return '';
     
     const links = [];
     const citations = [];
     
-    let protected = text
+    let protectedText = text
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, url) => {
             links.push({ label, url });
             return `__L${links.length - 1}__`;
@@ -15,7 +15,7 @@ function parseDescription(text) {
         });
     
     const paragraphs = [];
-    const blocks = protected.split(/\n\n+/);
+    const blocks = protectedText.split(/\n\n+/);
     
     for (const block of blocks) {
         const trimmed = block.trim();
@@ -53,7 +53,7 @@ function parseDescription(text) {
     }).join('');
 }
 
-function highlightQuerySyntax(query, language) {
+export function highlightQuerySyntax(query, language) {
     let escaped = escapeHtml(query);
     
     const rules = {
@@ -98,3 +98,7 @@ function highlightQuerySyntax(query, language) {
     
     return escaped;
 }
+
+// Legacy Window Bindings
+window.parseDescription = parseDescription;
+window.highlightQuerySyntax = highlightQuerySyntax;

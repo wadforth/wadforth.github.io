@@ -1,9 +1,9 @@
-let mitigationsSortBy = 'name';
-let mitigationsSortDir = 'asc';
-let mitigationsViewMode = 'grid';
-let mitigationsStatusFilter = 'all';
+export let mitigationsSortBy = 'name';
+export let mitigationsSortDir = 'asc';
+export let mitigationsViewMode = 'grid';
+export let mitigationsStatusFilter = 'all';
 
-function getMitigationTechniques(mitigationId) {
+export function getMitigationTechniques(mitigationId) {
     const mit = state.mitigations.find(m => m.id === mitigationId);
     if (!mit) return [];
     return state.relationships
@@ -15,12 +15,12 @@ function getMitigationTechniques(mitigationId) {
         .filter(Boolean);
 }
 
-function getMitigationStatus(mitigationId) {
+export function getMitigationStatus(mitigationId) {
     if (!state.currentLayer?.mitigationStatus) return 'none';
     return state.currentLayer.mitigationStatus[mitigationId] || 'none';
 }
 
-function setMitigationStatus(mitigationId, status) {
+export function setMitigationStatus(mitigationId, status) {
     if (!state.currentLayer) return;
     if (!state.currentLayer.mitigationStatus) state.currentLayer.mitigationStatus = {};
     state.currentLayer.mitigationStatus[mitigationId] = status;
@@ -28,7 +28,7 @@ function setMitigationStatus(mitigationId, status) {
     autoSaveLayer();
 }
 
-function sortMitigations(mitigations) {
+export function sortMitigations(mitigations) {
     const dir = mitigationsSortDir === 'asc' ? 1 : -1;
     return [...mitigations].sort((a, b) => {
         let valA, valB;
@@ -52,7 +52,7 @@ function sortMitigations(mitigations) {
     });
 }
 
-function renderMitigationsView() {
+export function renderMitigationsView() {
     const container = document.getElementById('mitigations-list');
     const controlsContainer = document.getElementById('mitigations-controls');
     const searchInput = document.getElementById('mitigations-search-input');
@@ -292,7 +292,7 @@ function renderMitigationsView() {
     bindMitigationCardActions();
 }
 
-function bindMitigationsToolbar() {
+export function bindMitigationsToolbar() {
     const sortSelect = document.getElementById('mitigations-sort-select');
     const sortDir = document.getElementById('mitigations-sort-dir');
     const viewGrid = document.getElementById('mitigations-view-grid');
@@ -334,7 +334,7 @@ function bindMitigationsToolbar() {
     });
 }
 
-function bindMitigationCardActions() {
+export function bindMitigationCardActions() {
     document.querySelectorAll('.mit-status-toggle').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -392,3 +392,16 @@ function bindMitigationCardActions() {
 }
 
 document.getElementById('mitigations-search-input')?.addEventListener('input', renderMitigationsView);
+
+// Legacy Window Bindings
+window.mitigationsSortBy = mitigationsSortBy;
+window.mitigationsSortDir = mitigationsSortDir;
+window.mitigationsViewMode = mitigationsViewMode;
+window.mitigationsStatusFilter = mitigationsStatusFilter;
+window.getMitigationTechniques = getMitigationTechniques;
+window.getMitigationStatus = getMitigationStatus;
+window.setMitigationStatus = setMitigationStatus;
+window.sortMitigations = sortMitigations;
+window.renderMitigationsView = renderMitigationsView;
+window.bindMitigationsToolbar = bindMitigationsToolbar;
+window.bindMitigationCardActions = bindMitigationCardActions;

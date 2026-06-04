@@ -1,14 +1,14 @@
-let groupsSortBy = 'name';
-let groupsSortDir = 'asc';
-let groupsViewMode = 'grid';
+export let groupsSortBy = 'name';
+export let groupsSortDir = 'asc';
+export let groupsViewMode = 'grid';
 
 
 
-function getGroupTechniqueCount(groupId) {
+export function getGroupTechniqueCount(groupId) {
     return state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === groupId).length;
 }
 
-function getGroupSoftwareCount(groupId) {
+export function getGroupSoftwareCount(groupId) {
     const techIds = new Set(
         state.relationships
             .filter(r => r.relationship_type === 'uses' && r.source_ref === groupId)
@@ -19,11 +19,11 @@ function getGroupSoftwareCount(groupId) {
     ).length;
 }
 
-function getGroupDomains(group) {
+export function getGroupDomains(group) {
     return group.x_mitre_domains || [];
 }
 
-function sortGroups(groups) {
+export function sortGroups(groups) {
     const dir = groupsSortDir === 'asc' ? 1 : -1;
     return [...groups].sort((a, b) => {
         let valA, valB;
@@ -48,7 +48,7 @@ function sortGroups(groups) {
     });
 }
 
-function renderGroupsView() {
+export function renderGroupsView() {
     const container = document.getElementById('groups-list');
     const controlsContainer = document.getElementById('groups-controls');
     const searchInput = document.getElementById('groups-search-input');
@@ -240,7 +240,7 @@ function renderGroupsView() {
     bindGroupCardActions();
 }
 
-function bindGroupsToolbar() {
+export function bindGroupsToolbar() {
     const sortSelect = document.getElementById('groups-sort-select');
     const sortDir = document.getElementById('groups-sort-dir');
     const viewGrid = document.getElementById('groups-view-grid');
@@ -275,7 +275,7 @@ function bindGroupsToolbar() {
     }
 }
 
-function bindGroupCardActions() {
+export function bindGroupCardActions() {
     document.querySelectorAll('.group-card').forEach(card => {
         card.addEventListener('click', () => {
             showGroupModal(card.dataset.groupId);
@@ -284,3 +284,15 @@ function bindGroupCardActions() {
 }
 
 document.getElementById('groups-search-input')?.addEventListener('input', renderGroupsView);
+
+// Legacy Window Bindings
+window.groupsSortBy = groupsSortBy;
+window.groupsSortDir = groupsSortDir;
+window.groupsViewMode = groupsViewMode;
+window.getGroupTechniqueCount = getGroupTechniqueCount;
+window.getGroupSoftwareCount = getGroupSoftwareCount;
+window.getGroupDomains = getGroupDomains;
+window.sortGroups = sortGroups;
+window.renderGroupsView = renderGroupsView;
+window.bindGroupsToolbar = bindGroupsToolbar;
+window.bindGroupCardActions = bindGroupCardActions;

@@ -722,6 +722,47 @@
     border-color: var(--accent-orange);
 }
 
+.query-archived-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.45rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--accent-orange);
+    background: rgba(251, 146, 60, 0.1);
+    border: 1px solid rgba(251, 146, 60, 0.2);
+    border-radius: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+}
+
+.query-archived-badge i {
+    font-size: 0.65rem;
+}
+
+.query-archive-reason {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    margin-top: 0.5rem;
+    background: rgba(251, 146, 60, 0.06);
+    border: 1px solid rgba(251, 146, 60, 0.15);
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--accent-orange);
+    line-height: 1.4;
+}
+
+.query-archive-reason i {
+    font-size: 0.8rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+}
+
 .query-card-item-footer {
     display: flex;
     justify-content: space-between;

@@ -1,4 +1,4 @@
-const Modal = (() => {
+export const Modal = (() => {
     const instances = new Map();
     let backdropEl = null;
     let openModals = [];
@@ -101,7 +101,7 @@ const Modal = (() => {
     return ModalInstance;
 })();
 
-const bootstrap = { Modal };
+export const bootstrap = { Modal };
 
 document.addEventListener('click', (e) => {
     const dismissBtn = e.target.closest('[data-dismiss="modal"], [data-bs-dismiss="modal"]');
@@ -137,3 +137,7 @@ document.addEventListener('click', (e) => {
         }
     }
 });
+
+// Legacy Window Bindings
+window.Modal = Modal;
+window.bootstrap = bootstrap;

@@ -13,29 +13,29 @@
 
 // ---- Section 1: State & Constants ----
 
-let sigmaRules = [];
-let selectedSigmaIdx = null;
-let sigmaSearchQuery = "";
-let selectedSigmaLogsource = "all";
-let selectedSigmaTactic = "all";
-let selectedSigmaLevel = "all";
-let selectedSigmaCoverage = "all";
-let selectedSigmaProduct = "all";
-let selectedSigmaSort = "default";
-let selectedSigmaDate = "all";
-let isLiveSigmaConnected = false;
+export let sigmaRules = [];
+export let selectedSigmaIdx = null;
+export let sigmaSearchQuery = "";
+export let selectedSigmaLogsource = "all";
+export let selectedSigmaTactic = "all";
+export let selectedSigmaLevel = "all";
+export let selectedSigmaCoverage = "all";
+export let selectedSigmaProduct = "all";
+export let selectedSigmaSort = "default";
+export let selectedSigmaDate = "all";
+export let isLiveSigmaConnected = false;
 
-const SIGMA_PAGE_SIZE = 50;
-let sigmaCurrentPage = 0;
-let sigmaFilteredCache = [];
-let sigmaSearchDebounceTimer = null;
+export const SIGMA_PAGE_SIZE = 50;
+export let sigmaCurrentPage = 0;
+export let sigmaFilteredCache = [];
+export let sigmaSearchDebounceTimer = null;
 
 // Web Worker for heavy operations
-let sigmaWorker = null;
-let workerPendingParses = new Map(); // ruleId -> resolve/reject
-let workerPendingFilter = null;
+export let sigmaWorker = null;
+export let workerPendingParses = new Map(); // ruleId -> resolve/reject
+export let workerPendingFilter = null;
 
-function initSigmaWorker() {
+export function initSigmaWorker() {
     try {
         sigmaWorker = new Worker(new URL('sigma-worker.js', import.meta.url));
         sigmaWorker.onmessage = function(e) {
@@ -82,113 +82,14 @@ function initSigmaWorker() {
 }
 
 // ---- Section 2: IndexedDB Persistent Cache Layer ----
-
-const SIGMA_IDB = { name: 'SigmaHQExplorer', version: 2 };
-const SIGMA_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
-let sigmaDB = null;
-
-function openSigmaDB() {
-    return new Promise((resolve, reject) => {
-        const req = indexedDB.open(SIGMA_IDB.name, SIGMA_IDB.version);
-        req.onupgradeneeded = (e) => {
-            const db = e.target.result;
-            // Delete old stores if upgrading
-            if (db.objectStoreNames.contains('rules')) db.deleteObjectStore('rules');
-            if (db.objectStoreNames.contains('meta')) db.deleteObjectStore('meta');
-            db.createObjectStore('rules', { keyPath: 'id' });
-            db.createObjectStore('meta', { keyPath: 'key' });
-        };
-        req.onsuccess = (e) => { sigmaDB = e.target.result; resolve(sigmaDB); };
-        req.onerror = (e) => reject(e.target.error);
-    });
-}
-
-function idbGet(store, key) {
-    if (!sigmaDB) return Promise.resolve(null);
-    return new Promise((resolve, reject) => {
-        const tx = sigmaDB.transaction(store, 'readonly');
-        const r = tx.objectStore(store).get(key);
-        r.onsuccess = () => resolve(r.result?.value ?? r.result ?? null);
-        r.onerror = () => reject(r.error);
-    });
-}
-
-function idbPut(store, record) {
-    if (!sigmaDB) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-        const tx = sigmaDB.transaction(store, 'readwrite');
-        tx.objectStore(store).put(record);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-    });
-}
-
-function idbGetAll(store) {
-    if (!sigmaDB) return Promise.resolve([]);
-    return new Promise((resolve, reject) => {
-        const tx = sigmaDB.transaction(store, 'readonly');
-        const r = tx.objectStore(store).getAll();
-        r.onsuccess = () => resolve(r.result || []);
-        r.onerror = () => reject(r.error);
-    });
-}
-
-async function idbBatchPut(store, records) {
-    if (!sigmaDB || records.length === 0) return;
-    const batchSize = 500;
-    for (let i = 0; i < records.length; i += batchSize) {
-        const batch = records.slice(i, i + batchSize);
-        await new Promise((resolve, reject) => {
-            const tx = sigmaDB.transaction(store, 'readwrite');
-            const s = tx.objectStore(store);
-            batch.forEach(r => s.put(r));
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-        });
-    }
-}
-
-function idbSetMeta(key, value) {
-    return idbPut('meta', { key, value });
-}
-
-async function idbGetMeta(key) {
-    const rec = await idbGet('meta', key);
-    return rec?.value !== undefined ? rec.value : rec;
-}
+// (Moved to js/utils/db.js)
 
 // ---- Section 3: Path/Title Helpers ----
-
-function cleanTitleFromPath(path) {
-    const parts = path.split('/');
-    const filename = parts[parts.length - 1].replace(/\.ya?ml$/i, '');
-    return filename
-        .replace(/^(proc_creation_win_|proc_creation_lnx_|sysmon_win_|sysmon_|win_|lnx_|macos_|net_|file_|registry_set_|registry_|proc_)/i, '')
-        .replace(/_/g, ' ')
-        .replace(/\b\w/g, c => c.toUpperCase())
-        .replace(/\b(Wmi|Lsass|Rdp|Cmd|Dll|Iis|Sam|Ad|Cve|Splunk|Kql|Csv|Xml|Api|Exe|Url|Dns|Http|Ssh|Smb|Tcp|Udp|Ftp|Rpc|Dcom|Msi|Ps1|Bat|Vbs|Hta|Mshta|Csc|Msbuild|Reg|Ntds|Nt)\b/g, m => m.toUpperCase());
-}
-
-function parseLogsourceFromPath(path) {
-    const parts = path.split('/');
-    return { product: parts[1] || 'windows', category: parts[2] || 'process_creation' };
-}
-
-function extractLevelFromYaml(yamlText) {
-    if (!yamlText) return '';
-    const m = yamlText.match(/level:\s*(\w+)/i);
-    return m ? m[1].toLowerCase() : '';
-}
-
-function parseSigmaDate(dateStr) {
-    if (!dateStr) return 0;
-    const d = new Date(dateStr.replace(/\//g, '-'));
-    return isNaN(d.getTime()) ? 0 : d.getTime();
-}
+// (Moved to js/intel/sigma-parser.js)
 
 // ---- Section 4: Init & Cache Management ----
 
-async function initSigmaModule() {
+export async function initSigmaModule() {
     initSigmaWorker();
     
     try {
@@ -257,7 +158,7 @@ async function initSigmaModule() {
     }
 }
 
-function syncRulesToWorker() {
+export function syncRulesToWorker() {
     if (sigmaWorker && sigmaRules.length > 0) {
         sigmaWorker.postMessage({
             type: 'INIT_RULES',
@@ -266,7 +167,7 @@ function syncRulesToWorker() {
     }
 }
 
-function updateWorkerRule(rule) {
+export function updateWorkerRule(rule) {
     if (sigmaWorker) {
         sigmaWorker.postMessage({
             type: 'UPDATE_RULE',
@@ -275,21 +176,13 @@ function updateWorkerRule(rule) {
     }
 }
 
-function parseRuleDateField(yaml) {
-    if (!yaml) return '';
-    const m = yaml.match(/^date:\s*(\d{4}[\/-]\d{2}[\/-]\d{2})/m);
-    return m ? m[1].trim() : '';
-}
 
-function parseRuleModifiedField(yaml) {
-    if (!yaml) return '';
-    const m = yaml.match(/^modified:\s*(\d{4}[\/-]\d{2}[\/-]\d{2})/m);
-    return m ? m[1].trim() : '';
-}
+
+
 
 // ---- Section 5: GitHub Sync Engine ----
 
-async function autoSyncFromGitHub() {
+export async function autoSyncFromGitHub() {
     const btn = document.getElementById('btn-load-live-sigma');
     if (isLiveSigmaConnected && btn && btn.classList.contains('btn-success')) {
         // Already connected and no forced resync — skip
@@ -298,11 +191,11 @@ async function autoSyncFromGitHub() {
     await executeSyncFromGitHub(false);
 }
 
-async function backgroundResync() {
+export async function backgroundResync() {
     await executeSyncFromGitHub(true);
 }
 
-async function executeSyncFromGitHub(isBackground) {
+export async function executeSyncFromGitHub(isBackground) {
     const btn = document.getElementById('btn-load-live-sigma');
     if (btn) {
         btn.disabled = true;
@@ -545,7 +438,7 @@ async function executeSyncFromGitHub(isBackground) {
     }
 }
 
-function updateSyncButton(state) {
+export function updateSyncButton(state) {
     const btn = document.getElementById('btn-load-live-sigma');
     if (!btn) return;
     btn.disabled = false;
@@ -572,15 +465,15 @@ function updateSyncButton(state) {
 
 // ---- Section 5b: Auto-Sync Countdown (1st of every month) ----
 
-let sigmaAutoSyncTimer = null;
+export let sigmaAutoSyncTimer = null;
 
-function getNextMonthFirst() {
+export function getNextMonthFirst() {
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
     return nextMonth;
 }
 
-function formatCountdown(ms) {
+export function formatCountdown(ms) {
     const days = Math.floor(ms / (1000 * 60 * 60 * 24));
     const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
@@ -589,7 +482,7 @@ function formatCountdown(ms) {
     return `${minutes}m`;
 }
 
-function startAutoSyncCountdown() {
+export function startAutoSyncCountdown() {
     stopAutoSyncCountdown();
 
     const nextFirst = getNextMonthFirst();
@@ -624,7 +517,7 @@ function startAutoSyncCountdown() {
     }, 60000); // Update every minute
 }
 
-function stopAutoSyncCountdown() {
+export function stopAutoSyncCountdown() {
     if (sigmaAutoSyncTimer) {
         clearInterval(sigmaAutoSyncTimer);
         sigmaAutoSyncTimer = null;
@@ -633,7 +526,7 @@ function stopAutoSyncCountdown() {
 
 // ---- Section 6: Sync Progress Bar ----
 
-function showSigmaSyncProgress(visible, percent, message) {
+export function showSigmaSyncProgress(visible, percent, message) {
     const container = document.getElementById('sigma-sync-container');
     if (!container) return;
 
@@ -659,7 +552,7 @@ function showSigmaSyncProgress(visible, percent, message) {
 // Rules show minimal metadata (path, title, technique_id) from the tree fetch,
 // and full YAML is loaded only on interaction.
 
-function updateHydrationStatus() {
+export function updateHydrationStatus() {
     const el = document.getElementById('sigma-hydrate-status');
     if (!el) return;
 
@@ -677,7 +570,7 @@ function updateHydrationStatus() {
 
 // ---- Section 7: On-Demand Hydration (with cache persistence) ----
 
-async function fetchVirtualRuleContent(rule) {
+export async function fetchVirtualRuleContent(rule) {
     if (!rule || !rule.isVirtual) return;
 
     try {
@@ -736,52 +629,9 @@ async function fetchVirtualRuleContent(rule) {
     }
 }
 
-function parseYAMLInMainThread(rule) {
-    const rawContent = rule.yaml;
-    
-    const titleMatch = rawContent.match(/^title:\s*(.+)$/m);
-    if (titleMatch) rule.title = titleMatch[1].trim().replace(/^['"]|['"]$/g, '');
 
-    const descMatch = rawContent.match(/^description:\s*(.+)$/m);
-    if (descMatch) rule.description = descMatch[1].trim().replace(/^['"]|['"]$/g, '');
 
-    const tagsMatches = rawContent.match(/attack\.t\d{4}(?:\.\d{3})?/gi);
-    rule.technique_id = tagsMatches ? tagsMatches[0].replace(/attack\./i, '').toUpperCase() : 'N/A';
-
-    const tacticMatch = rawContent.match(/attack\.(initial_access|reconnaissance|resource_development|execution|persistence|privilege_escalation|defense_evasion|credential_access|discovery|lateral_movement|collection|exfiltration|command_and_control|impact)/gi);
-    if (tacticMatch) {
-        const tKey = tacticMatch[0].replace(/attack\./i, '').toLowerCase();
-        const map = {
-            'initial_access': 'Initial Access', 'reconnaissance': 'Reconnaissance',
-            'resource_development': 'Resource Development', 'execution': 'Execution',
-            'persistence': 'Persistence', 'privilege_escalation': 'Privilege Escalation',
-            'defense_evasion': 'Defense Evasion', 'credential_access': 'Credential Access',
-            'discovery': 'Discovery', 'lateral_movement': 'Lateral Movement',
-            'collection': 'Collection', 'exfiltration': 'Exfiltration',
-            'command_and_control': 'Command and Control', 'impact': 'Impact'
-        };
-        rule.tactic = map[tKey] || 'Unknown';
-    } else {
-        rule.tactic = 'Unknown';
-    }
-
-    rule.level = extractLevelFromYaml(rawContent);
-    rule.ruleDate = parseRuleDateField(rawContent);
-    rule.ruleModified = parseRuleModifiedField(rawContent);
-
-    const statusMatch = rawContent.match(/^status:\s*(\w+)/mi);
-    rule.ruleStatus = statusMatch ? statusMatch[1].toLowerCase() : '';
-
-    const prodMatch = rawContent.match(/product:\s*(\w+)/i);
-    const catMatch = rawContent.match(/category:\s*(\w+)/i);
-    if (prodMatch) rule.logsource.product = prodMatch[1].toLowerCase();
-    if (catMatch) rule.logsource.category = catMatch[1].toLowerCase();
-
-    rule.isVirtual = false;
-    rule.hydratedAt = Date.now();
-}
-
-async function autoHydrateAllVirtualRules() {
+export async function autoHydrateAllVirtualRules() {
     const virtualRules = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === ''));
     if (virtualRules.length === 0) return;
 
@@ -859,7 +709,7 @@ async function autoHydrateAllVirtualRules() {
     updateHydrationStatus();
 }
 
-async function manualHydrateAll() {
+export async function manualHydrateAll() {
     const btn = document.getElementById('btn-hydrate-all-sigma');
     const virtualRules = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === ''));
 
@@ -961,7 +811,7 @@ async function manualHydrateAll() {
 
 // ---- Section 8: Coverage Engine ----
 
-function getSigmaCoverageStatus(rule) {
+export function getSigmaCoverageStatus(rule) {
     if (!state || !state.currentLayer || !state.currentLayer.techniques) return 'gap';
     for (const tech of state.currentLayer.techniques) {
         if (!tech.queries) continue;
@@ -976,7 +826,7 @@ function getSigmaCoverageStatus(rule) {
     return 'gap';
 }
 
-function getSigmaCoverageStats() {
+export function getSigmaCoverageStats() {
     let active = 0, gap = 0;
     for (const rule of sigmaRules) {
         if (getSigmaCoverageStatus(rule) === 'active') active++; else gap++;
@@ -986,7 +836,7 @@ function getSigmaCoverageStats() {
 
 // ---- Section 9: Dynamic Filter Helpers ----
 
-function getUniqueProducts() {
+export function getUniqueProducts() {
     const products = new Set();
     for (const r of sigmaRules) {
         if (r.logsource && r.logsource.product) products.add(r.logsource.product);
@@ -994,7 +844,7 @@ function getUniqueProducts() {
     return [...products].sort();
 }
 
-function populateProductFilter() {
+export function populateProductFilter() {
     const sel = document.getElementById('sigma-product-filter');
     if (!sel) return;
     const current = sel.value;
@@ -1010,7 +860,7 @@ function populateProductFilter() {
 
 // ---- Section 10: Filtering & Sorting ----
 
-async function refreshSigmaFilteredCache() {
+export async function refreshSigmaFilteredCache() {
     // Build coverage map for worker
     const coverageMap = {};
     for (const rule of sigmaRules) {
@@ -1059,7 +909,7 @@ async function refreshSigmaFilteredCache() {
     }
 }
 
-function refreshSigmaFilteredCacheSync(coverageMap) {
+export function refreshSigmaFilteredCacheSync(coverageMap) {
     sigmaFilteredCache = sigmaRules.filter(rule => {
         // Text search
         const q = sigmaSearchQuery;
@@ -1103,7 +953,7 @@ function refreshSigmaFilteredCacheSync(coverageMap) {
     applySigmaSort();
 }
 
-function getEffectiveDate(rule) {
+export function getEffectiveDate(rule) {
     // Use the latest of modified or date
     const modified = rule.ruleModified ? parseSigmaDate(rule.ruleModified) : 0;
     const created = rule.ruleDate ? parseSigmaDate(rule.ruleDate) : 0;
@@ -1113,13 +963,13 @@ function getEffectiveDate(rule) {
     return 0;
 }
 
-function getSeverityRank(rule) {
+export function getSeverityRank(rule) {
     const level = rule.level || extractLevelFromYaml(rule.yaml);
     const ranks = { critical: 5, high: 4, medium: 3, low: 2, informational: 1 };
     return ranks[level] || 0;
 }
 
-function applySigmaSort() {
+export function applySigmaSort() {
     switch (selectedSigmaSort) {
         case 'az':
             sigmaFilteredCache.sort((a, b) => a.title.localeCompare(b.title));
@@ -1141,7 +991,7 @@ function applySigmaSort() {
 
 // ---- Section 11: Rendering - Sigma View Entry ----
 
-async function renderSigmaView() {
+export async function renderSigmaView() {
     if (sigmaRules.length === 0) {
         await initSigmaModule();
         await refreshSigmaFilteredCache();
@@ -1160,7 +1010,7 @@ async function renderSigmaView() {
 
 // ---- Section 12: Rendering - Stats Dashboard ----
 
-function renderSigmaStats() {
+export function renderSigmaStats() {
     const container = document.getElementById('sigma-stats-dashboard');
     if (!container) return;
 
@@ -1218,11 +1068,11 @@ function renderSigmaStats() {
 
 // ---- Section 13: Rendering - Virtual Scrolled Rule List ----
 
-const SIGMA_CARD_HEIGHT = 180; // Approximate height of a card in px
-const SIGMA_HEADER_HEIGHT = 40; // Height of month group header
-const SIGMA_OVERSCAN = 5; // Extra cards to render above/below viewport
+export const SIGMA_CARD_HEIGHT = 180; // Approximate height of a card in px
+export const SIGMA_HEADER_HEIGHT = 40; // Height of month group header
+export const SIGMA_OVERSCAN = 5; // Extra cards to render above/below viewport
 
-let sigmaVirtualState = {
+export let sigmaVirtualState = {
     scrollTop: 0,
     containerHeight: 0,
     startIndex: 0,
@@ -1233,33 +1083,33 @@ let sigmaVirtualState = {
     scrollTimeout: null
 };
 
-function getRuleFolderName(rule) {
+export function getRuleFolderName(rule) {
     if (!rule.path) return '';
     const parts = rule.path.split('/');
     if (parts.length >= 2) return parts[0];
     return '';
 }
 
-function getRuleFileName(rule) {
+export function getRuleFileName(rule) {
     if (!rule.path) return '';
     const parts = rule.path.split('/');
     return parts[parts.length - 1];
 }
 
-function getMonthKey(timestamp) {
+export function getMonthKey(timestamp) {
     if (!timestamp || timestamp === 0) return null;
     const d = new Date(timestamp);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function formatMonthLabel(monthKey) {
+export function formatMonthLabel(monthKey) {
     if (!monthKey) return '';
     const [year, month] = monthKey.split('-');
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     return `${months[parseInt(month, 10) - 1]} ${year}`;
 }
 
-function buildVirtualGroupedData(filtered) {
+export function buildVirtualGroupedData(filtered) {
     const groups = [];
     const monthGroups = {};
     const noDate = [];
@@ -1295,7 +1145,7 @@ function buildVirtualGroupedData(filtered) {
     return groups;
 }
 
-function renderSigmaList() {
+export function renderSigmaList() {
     const grid = document.getElementById('sigma-feed-grid');
     const countBadge = document.getElementById('sigma-rules-count');
     if (!grid) return;
@@ -1359,7 +1209,7 @@ function renderSigmaList() {
     grid.addEventListener('scroll', handleSigmaVirtualScroll, { passive: true });
 }
 
-function handleSigmaVirtualScroll(e) {
+export function handleSigmaVirtualScroll(e) {
     const grid = e.target;
     sigmaVirtualState.scrollTop = grid.scrollTop;
     sigmaVirtualState.containerHeight = grid.clientHeight;
@@ -1376,7 +1226,7 @@ function handleSigmaVirtualScroll(e) {
     });
 }
 
-function renderVirtualViewport(grid, viewport) {
+export function renderVirtualViewport(grid, viewport) {
     const { scrollTop, containerHeight, groupedData } = sigmaVirtualState;
 
     if (!groupedData.length) return;
@@ -1450,7 +1300,7 @@ function renderVirtualViewport(grid, viewport) {
     });
 }
 
-function renderSigmaCard(rule, idx) {
+export function renderSigmaCard(rule, idx) {
     const level = rule.level || (rule.isVirtual ? '' : extractLevelFromYaml(rule.yaml));
     const isActive = selectedSigmaIdx === idx;
     const coverage = getSigmaCoverageStatus(rule);
@@ -1503,7 +1353,7 @@ function renderSigmaCard(rule, idx) {
         </div>`;
 }
 
-function formatRuleDate(rule) {
+export function formatRuleDate(rule) {
     // Show the latest of modified or date
     const d = rule.ruleModified && rule.ruleDate
         ? (parseSigmaDate(rule.ruleModified) >= parseSigmaDate(rule.ruleDate) ? rule.ruleModified : rule.ruleDate)
@@ -1520,7 +1370,7 @@ function formatRuleDate(rule) {
 
 // ---- Section 14: Rendering - Details Panel ----
 
-function renderSigmaDetails() {
+export function renderSigmaDetails() {
     const panel = document.getElementById('sigma-details-panel');
     if (!panel) return;
 
@@ -1649,9 +1499,9 @@ function renderSigmaDetails() {
 
 // ---- Section 15: Event Bindings ----
 
-let sigmaFilterDebounceTimer = null;
+export let sigmaFilterDebounceTimer = null;
 
-function bindSigmaEvents() {
+export function bindSigmaEvents() {
     const ids = {
         'sigma-search-input': null,
         'sigma-logsource-filter': null,
@@ -1703,7 +1553,7 @@ function bindSigmaEvents() {
     });
 }
 
-async function resetSigmaView() {
+export async function resetSigmaView() {
     selectedSigmaIdx = null;
     sigmaCurrentPage = 0;
     await refreshSigmaFilteredCache();
@@ -1714,7 +1564,7 @@ async function resetSigmaView() {
 
 // ---- Section 16: Query Modal Autocomplete ----
 
-function initQueryModalSigmaSearch() {
+export function initQueryModalSigmaSearch() {
     const searchInput = document.getElementById('query-sigma-search');
     const resultsContainer = document.getElementById('query-sigma-search-results');
     const removeBtn = document.getElementById('btn-remove-attached-sigma');
@@ -1789,7 +1639,7 @@ function initQueryModalSigmaSearch() {
     });
 }
 
-function attachSigmaRuleToModal(id, title, url) {
+export function attachSigmaRuleToModal(id, title, url) {
     // Get existing linked rules
     const existingIds = document.getElementById('query-sigma-rule-id').value;
     const existingTitles = document.getElementById('query-sigma-rule-title').value;
@@ -1826,7 +1676,7 @@ function attachSigmaRuleToModal(id, title, url) {
     renderAttachedSigmaBadges(titles, urls);
 }
 
-function renderAttachedSigmaBadges(titles, urls) {
+export function renderAttachedSigmaBadges(titles, urls) {
     const badgeContainer = document.getElementById('query-sigma-attached-badge-container');
     const badgeList = document.getElementById('query-sigma-attached-list');
     const searchWrapper = document.getElementById('query-sigma-search').closest('.sigma-attach-wrapper');
@@ -1861,7 +1711,7 @@ function renderAttachedSigmaBadges(titles, urls) {
     });
 }
 
-function removeSigmaRuleAtIndex(idx) {
+export function removeSigmaRuleAtIndex(idx) {
     const ids = document.getElementById('query-sigma-rule-id').value.split('|').filter(Boolean);
     const titles = document.getElementById('query-sigma-rule-title').value.split('|').filter(Boolean);
     const urls = document.getElementById('query-sigma-rule-url').value.split('|').filter(Boolean);
@@ -1889,7 +1739,7 @@ function removeSigmaRuleAtIndex(idx) {
     }
 }
 
-function clearSigmaRuleFromModal() {
+export function clearSigmaRuleFromModal() {
     document.getElementById('query-sigma-rule-id').value = '';
     document.getElementById('query-sigma-rule-title').value = '';
     document.getElementById('query-sigma-rule-url').value = '';
@@ -1906,9 +1756,9 @@ function clearSigmaRuleFromModal() {
 
 // ---- Section: Rule Candidates ----
 
-let sigmaCandidates = [];
+export let sigmaCandidates = [];
 
-function loadCandidates() {
+export function loadCandidates() {
     try {
         const stored = localStorage.getItem('sigma_candidates');
         sigmaCandidates = stored ? JSON.parse(stored) : [];
@@ -1918,16 +1768,16 @@ function loadCandidates() {
     updateCandidatesBadge();
 }
 
-function saveCandidates() {
+export function saveCandidates() {
     localStorage.setItem('sigma_candidates', JSON.stringify(sigmaCandidates));
     updateCandidatesBadge();
 }
 
-function isRuleCandidate(ruleId) {
+export function isRuleCandidate(ruleId) {
     return sigmaCandidates.some(c => c.id === ruleId);
 }
 
-function toggleRuleCandidate(rule) {
+export function toggleRuleCandidate(rule) {
     if (!rule || !rule.id) return;
     const idx = sigmaCandidates.findIndex(c => c.id === rule.id);
     if (idx >= 0) {
@@ -1956,7 +1806,7 @@ function toggleRuleCandidate(rule) {
     }
 }
 
-function toggleCandidatesView() {
+export function toggleCandidatesView() {
     const grid = document.getElementById('sigma-feed-grid');
     const candidatesSection = document.getElementById('sigma-candidates-section');
     const btn = document.getElementById('btn-toggle-candidates');
@@ -1973,7 +1823,7 @@ function toggleCandidatesView() {
     }
 }
 
-function renderCandidatesList() {
+export function renderCandidatesList() {
     const grid = document.getElementById('sigma-candidates-grid');
     const empty = document.getElementById('sigma-candidates-empty');
     
@@ -2018,7 +1868,7 @@ function renderCandidatesList() {
     grid.innerHTML = html;
 }
 
-function removeCandidate(ruleId) {
+export function removeCandidate(ruleId) {
     sigmaCandidates = sigmaCandidates.filter(c => c.id !== ruleId);
     saveCandidates();
     renderCandidatesList();
@@ -2033,7 +1883,7 @@ function removeCandidate(ruleId) {
     }
 }
 
-function clearAllCandidates() {
+export function clearAllCandidates() {
     if (sigmaCandidates.length === 0) return;
     showConfirm('Clear All Candidates', 'Are you sure you want to remove all rules from your candidate list?').then(confirmed => {
         if (confirmed) {
@@ -2049,7 +1899,7 @@ function clearAllCandidates() {
     });
 }
 
-function exportCandidatesList() {
+export function exportCandidatesList() {
     if (sigmaCandidates.length === 0) return;
     const csv = [
         ['Rule ID', 'Title', 'Technique', 'Severity', 'Date Added'].join(','),
@@ -2071,7 +1921,7 @@ function exportCandidatesList() {
     URL.revokeObjectURL(url);
 }
 
-function deployCandidate(ruleId) {
+export function deployCandidate(ruleId) {
     const rule = sigmaCandidates.find(c => c.id === ruleId);
     if (!rule) return;
     // Navigate to the rule in the main feed
@@ -2086,7 +1936,7 @@ function deployCandidate(ruleId) {
     }, 300);
 }
 
-function viewCandidateDetails(ruleId) {
+export function viewCandidateDetails(ruleId) {
     const rule = sigmaCandidates.find(c => c.id === ruleId);
     if (!rule) return;
     toggleCandidatesView();
@@ -2098,7 +1948,7 @@ function viewCandidateDetails(ruleId) {
     }, 300);
 }
 
-function updateCandidatesBadge() {
+export function updateCandidatesBadge() {
     const badge = document.getElementById('candidates-count-badge');
     if (badge) {
         badge.textContent = sigmaCandidates.length;
@@ -2106,7 +1956,7 @@ function updateCandidatesBadge() {
     }
 }
 
-function formatCandidateDate(isoStr) {
+export function formatCandidateDate(isoStr) {
     if (!isoStr) return 'Unknown';
     const d = new Date(isoStr);
     const now = new Date();
@@ -2126,39 +1976,92 @@ function formatCandidateDate(isoStr) {
 loadCandidates();
 
 // ES Module exports for dynamic import() code splitting
-export {
-    initSigmaModule,
-    renderSigmaView,
-    initQueryModalSigmaSearch,
-    attachSigmaRuleToModal,
-    clearSigmaRuleFromModal,
-    fetchVirtualRuleContent,
-    getSigmaCoverageStatus,
-    getSigmaCoverageStats,
-    bindSigmaEvents,
-    resetSigmaView,
-    refreshSigmaFilteredCache,
-    renderSigmaStats,
-    renderSigmaList,
-    renderSigmaDetails,
-    updateHydrationStatus,
-    populateProductFilter,
-    updateSyncButton,
-    sigmaRules,
-    sigmaFilteredCache,
-    toggleCandidatesView,
-    renderCandidatesList,
-    updateCandidatesBadge,
-    isRuleCandidate,
-    toggleRuleCandidate,
-    removeCandidate,
-    clearAllCandidates,
-    exportCandidatesList,
-    deployCandidate,
-    viewCandidateDetails,
-    renderAttachedSigmaBadges
-};
-
 // Expose sigmaRules globally for onclick handlers in rendered HTML
 window.sigmaRules = sigmaRules;
 window.manualHydrateAll = manualHydrateAll;
+
+// Legacy Window Bindings
+window.sigmaRules = sigmaRules;
+window.selectedSigmaIdx = selectedSigmaIdx;
+window.sigmaSearchQuery = sigmaSearchQuery;
+window.selectedSigmaLogsource = selectedSigmaLogsource;
+window.selectedSigmaTactic = selectedSigmaTactic;
+window.selectedSigmaLevel = selectedSigmaLevel;
+window.selectedSigmaCoverage = selectedSigmaCoverage;
+window.selectedSigmaProduct = selectedSigmaProduct;
+window.selectedSigmaSort = selectedSigmaSort;
+window.selectedSigmaDate = selectedSigmaDate;
+window.isLiveSigmaConnected = isLiveSigmaConnected;
+window.SIGMA_PAGE_SIZE = SIGMA_PAGE_SIZE;
+window.sigmaCurrentPage = sigmaCurrentPage;
+window.sigmaFilteredCache = sigmaFilteredCache;
+window.sigmaSearchDebounceTimer = sigmaSearchDebounceTimer;
+window.sigmaWorker = sigmaWorker;
+window.workerPendingParses = workerPendingParses;
+window.workerPendingFilter = workerPendingFilter;
+window.initSigmaWorker = initSigmaWorker;
+window.initSigmaModule = initSigmaModule;
+window.syncRulesToWorker = syncRulesToWorker;
+window.updateWorkerRule = updateWorkerRule;
+window.autoSyncFromGitHub = autoSyncFromGitHub;
+window.backgroundResync = backgroundResync;
+window.executeSyncFromGitHub = executeSyncFromGitHub;
+window.updateSyncButton = updateSyncButton;
+window.sigmaAutoSyncTimer = sigmaAutoSyncTimer;
+window.getNextMonthFirst = getNextMonthFirst;
+window.formatCountdown = formatCountdown;
+window.startAutoSyncCountdown = startAutoSyncCountdown;
+window.stopAutoSyncCountdown = stopAutoSyncCountdown;
+window.showSigmaSyncProgress = showSigmaSyncProgress;
+window.updateHydrationStatus = updateHydrationStatus;
+window.fetchVirtualRuleContent = fetchVirtualRuleContent;
+window.autoHydrateAllVirtualRules = autoHydrateAllVirtualRules;
+window.manualHydrateAll = manualHydrateAll;
+window.getSigmaCoverageStatus = getSigmaCoverageStatus;
+window.getSigmaCoverageStats = getSigmaCoverageStats;
+window.getUniqueProducts = getUniqueProducts;
+window.populateProductFilter = populateProductFilter;
+window.refreshSigmaFilteredCache = refreshSigmaFilteredCache;
+window.refreshSigmaFilteredCacheSync = refreshSigmaFilteredCacheSync;
+window.getEffectiveDate = getEffectiveDate;
+window.getSeverityRank = getSeverityRank;
+window.applySigmaSort = applySigmaSort;
+window.renderSigmaView = renderSigmaView;
+window.renderSigmaStats = renderSigmaStats;
+window.SIGMA_CARD_HEIGHT = SIGMA_CARD_HEIGHT;
+window.SIGMA_HEADER_HEIGHT = SIGMA_HEADER_HEIGHT;
+window.SIGMA_OVERSCAN = SIGMA_OVERSCAN;
+window.sigmaVirtualState = sigmaVirtualState;
+window.getRuleFolderName = getRuleFolderName;
+window.getRuleFileName = getRuleFileName;
+window.getMonthKey = getMonthKey;
+window.formatMonthLabel = formatMonthLabel;
+window.buildVirtualGroupedData = buildVirtualGroupedData;
+window.renderSigmaList = renderSigmaList;
+window.handleSigmaVirtualScroll = handleSigmaVirtualScroll;
+window.renderVirtualViewport = renderVirtualViewport;
+window.renderSigmaCard = renderSigmaCard;
+window.formatRuleDate = formatRuleDate;
+window.renderSigmaDetails = renderSigmaDetails;
+window.sigmaFilterDebounceTimer = sigmaFilterDebounceTimer;
+window.bindSigmaEvents = bindSigmaEvents;
+window.resetSigmaView = resetSigmaView;
+window.initQueryModalSigmaSearch = initQueryModalSigmaSearch;
+window.attachSigmaRuleToModal = attachSigmaRuleToModal;
+window.renderAttachedSigmaBadges = renderAttachedSigmaBadges;
+window.removeSigmaRuleAtIndex = removeSigmaRuleAtIndex;
+window.clearSigmaRuleFromModal = clearSigmaRuleFromModal;
+window.sigmaCandidates = sigmaCandidates;
+window.loadCandidates = loadCandidates;
+window.saveCandidates = saveCandidates;
+window.isRuleCandidate = isRuleCandidate;
+window.toggleRuleCandidate = toggleRuleCandidate;
+window.toggleCandidatesView = toggleCandidatesView;
+window.renderCandidatesList = renderCandidatesList;
+window.removeCandidate = removeCandidate;
+window.clearAllCandidates = clearAllCandidates;
+window.exportCandidatesList = exportCandidatesList;
+window.deployCandidate = deployCandidate;
+window.viewCandidateDetails = viewCandidateDetails;
+window.updateCandidatesBadge = updateCandidatesBadge;
+window.formatCandidateDate = formatCandidateDate;
