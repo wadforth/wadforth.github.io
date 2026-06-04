@@ -1821,7 +1821,7 @@ export function generateLeadershipOverview(report) {
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     const periodLabel = report.reportMonth || (month ? getMonthLabel(month) : 'this period');
     
-    return "The data presented in this report highlights our strategic alignment with the MITRE ATT&CK framework for ${periodLabel}. While our operational coverage provides robust visibility into known adversary behaviors, it is critical to recognize that coverage percentages reflect techniques where at least one telemetry source is actively queried. Individual techniques may encompass multiple distinct attack vectors, some of which may remain unmonitored. Strategic focus should be directed towards addressing identified zero-coverage gaps in high-risk areas, maturing our detection engineering lifecycle, and ensuring that our telemetry sources continuously adapt to emerging adversary tradecraft.";
+    return `The data presented in this report highlights our strategic alignment with the MITRE ATT&CK framework for ${periodLabel}. While our operational coverage provides robust visibility into known adversary behaviors, it is critical to recognize that coverage percentages reflect techniques where at least one telemetry source is actively queried. Individual techniques may encompass multiple distinct attack vectors, some of which may remain unmonitored. Strategic focus should be directed towards addressing identified zero-coverage gaps in high-risk areas, maturing our detection engineering lifecycle, and ensuring that our telemetry sources continuously adapt to emerging adversary tradecraft.`;
 }
 
 export function getQueryAssociations(q, layerTechs) {
@@ -2560,19 +2560,16 @@ export function validateReport(report) {
 }
 
 export function generateDynamicMonthlyFocus(report) {
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const month = report.reportMonth || report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     if (!month) return '';
-    
-    const byMonth = getTechniquesByMonth();
-    const techniques = byMonth[month] || [];
-    
-    if (techniques.length === 0) return '';
     
     const stats = getMonthStats(month);
     
+    if (stats.queries === 0 && stats.mainTechs === 0 && stats.subTechs === 0) return '';
+    
     const tacticCounts = {};
-    techniques.forEach(ann => {
-        const tactics = getTechniqueTactics(ann.techniqueID);
+    stats.techIds.forEach(techId => {
+        const tactics = getTechniqueTactics(techId);
         tactics.forEach(tactic => {
             tacticCounts[tactic] = (tacticCounts[tactic] || 0) + 1;
         });
@@ -2587,17 +2584,13 @@ export function generateDynamicMonthlyFocus(report) {
     focus += `Added ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} with ${stats.queries} detection queries. `;
     
     if (topTactics.length > 0) {
-        focus += `Primary focus areas include ${topTactics[0]} (${tacticCounts[topTactics[0]]} techniques), `;
+        focus += `Primary focus areas include ${topTactics[0]} (${tacticCounts[topTactics[0]]} techniques) `;
         if (topTactics.length > 1) {
-            focus += `${topTactics[1]} (${tacticCounts[topTactics[1]]} techniques)`;
-            if (topTactics.length > 2) {
-                focus += `, and ${topTactics[2]} (${tacticCounts[topTactics[2]]} techniques)`;
-            }
+            focus += `and ${topTactics[1]} (${tacticCounts[topTactics[1]]} techniques)`;
         }
-        focus += '. ';
+        focus += `. `;
     }
-    
-    focus += 'Continue expanding coverage in high-priority tactics while maintaining detection quality across all implemented hunts.';
+    focus += `Continue expanding coverage in high-priority tactics while maintaining detection quality across all implemented hunts.`;
     
     return focus;
 }
