@@ -1197,7 +1197,7 @@ export function renderSigmaList() {
     for (let i = 0; i < itemsToShow; i++) {
         const item = groupedData[i];
         if (item.type === 'header') {
-            html += `<div class="sigma-date-group" style="height: ${SIGMA_HEADER_HEIGHT}px;">
+            html += `<div class="sigma-date-group">
                 <div class="sigma-date-group-header">
                     <i class="bi ${item.icon}"></i>
                     <span>${item.label}</span>
@@ -1969,19 +1969,14 @@ window.getSeverityRank = getSeverityRank;
 window.applySigmaSort = applySigmaSort;
 window.renderSigmaView = renderSigmaView;
 window.renderSigmaStats = renderSigmaStats;
-window.SIGMA_CARD_HEIGHT = SIGMA_CARD_HEIGHT;
-window.SIGMA_HEADER_HEIGHT = SIGMA_HEADER_HEIGHT;
-window.SIGMA_OVERSCAN = SIGMA_OVERSCAN;
-window.sigmaVirtualState = sigmaVirtualState;
+
 window.getRuleFolderName = getRuleFolderName;
 window.getRuleFileName = getRuleFileName;
 window.getMonthKey = getMonthKey;
 window.formatMonthLabel = formatMonthLabel;
-window.buildVirtualGroupedData = buildVirtualGroupedData;
 window.renderSigmaList = renderSigmaList;
-window.handleSigmaVirtualScroll = handleSigmaVirtualScroll;
-window.renderVirtualViewport = renderVirtualViewport;
 window.renderSigmaCard = renderSigmaCard;
+window.formatRuleDate = formatRuleDate;
 window.formatRuleDate = formatRuleDate;
 window.renderSigmaDetails = renderSigmaDetails;
 window.sigmaFilterDebounceTimer = sigmaFilterDebounceTimer;
