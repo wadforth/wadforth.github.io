@@ -26,7 +26,7 @@ export class LayerImportEngine {
                     
                     state.currentDomain = layerData.domain || 'enterprise-attack';
                     
-                    const importedVer = layerData.attackVersion || 'master';
+                    const importedVer = layerData.versions?.attack || layerData.attackVersion || 'master';
                     const latestVer = state.releases[0]?.tag || 'master';
                     
                     state.companyName = layerData.companyName || '';

@@ -91,7 +91,8 @@ export const MigrationEngine = {
 
         // Populate Modal Details
         document.getElementById('migration-title').textContent = `Layer Version Migration Wizard`;
-        document.getElementById('migration-subtitle').textContent = `Migrating from ${layerData.attackVersion || 'Legacy'} to ${targetVersion}`;
+        const oldVer = layerData.versions?.attack || layerData.attackVersion || 'Legacy';
+        document.getElementById('migration-subtitle').textContent = `Migrating from ${oldVer} to ${targetVersion}`;
         
         const detailsContainer = document.getElementById('migration-details-list');
         let html = '';
@@ -169,6 +170,8 @@ export const MigrationEngine = {
     applyMigration(layerData, targetVersion, changes) {
         const migrated = JSON.parse(JSON.stringify(layerData));
         migrated.attackVersion = targetVersion;
+        if (!migrated.versions) migrated.versions = {};
+        migrated.versions.attack = targetVersion;
 
         const newTechList = [];
 

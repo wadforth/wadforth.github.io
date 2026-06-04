@@ -379,6 +379,7 @@ export function loadLayerFromLocalStorage() {
     }
 }
 
+
 export function saveRecentLayer(layer) {
     let recent = JSON.parse(localStorage.getItem('attack-explorer-recent') || '[]');
     recent = recent.filter(l => l.id !== layer.name + layer.domain);
@@ -386,7 +387,7 @@ export function saveRecentLayer(layer) {
         id: layer.name + layer.domain,
         name: layer.name,
         domain: layer.domain,
-        attackVersion: layer.attackVersion,
+        attackVersion: layer.versions?.attack || layer.attackVersion,
         timestamp: Date.now(),
         data: layer,
     });
@@ -435,7 +436,7 @@ export function renderRecentLayers() {
             const layer = recent.find(l => l.id === item.dataset.id);
             if (layer) {
                 state.currentDomain = layer.domain;
-                state.currentVersion = layer.attackVersion;
+                state.currentVersion = layer.versions?.attack || layer.attackVersion;
                 document.getElementById('domain-select').value = state.currentDomain;
                 document.getElementById('version-select').value = state.currentVersion;
                 showWorkspace();

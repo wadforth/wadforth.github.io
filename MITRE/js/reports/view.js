@@ -171,7 +171,7 @@ export function renderReportsList(reports) {
     const stats = getFullCoverageStats();
     const availableMonths = getAvailableMonths();
     const selectedMonth = availableMonths[0];
-    const version = state.currentVersion || state.currentLayer?.attackVersion || 'N/A';
+    const version = state.currentVersion || state.currentLayer?.versions?.attack || state.currentLayer?.attackVersion || 'N/A';
 
     let html = `
         <div class="reports-container">

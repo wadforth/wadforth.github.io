@@ -1,0 +1,501 @@
+{
+  "name": "Extensive Threat Hunting Assessment 2026",
+  "versions": {
+    "attack": "19.1",
+    "navigator": "5.2.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Comprehensive Threat Hunting Assessment covering multiple techniques, Sigma rules, Sentinel Candidates, and archived queries.",
+  "companyName": "Acme Corp",
+  "author": "Threat Intel Team",
+  "autoColorRules": [
+    {
+      "color": "#10b981",
+      "condition": "queryCount > 0"
+    },
+    {
+      "color": "#7c3aed",
+      "condition": "techId === 'T1059'"
+    }
+  ],
+  "techniques": [
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "color": "#10b981",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-4i93p",
+          "name": "Suspicious PowerShell Downloads",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'powershell.exe' and ProcessCommandLine has_any ('Net.WebClient', 'DownloadString', 'Invoke-WebRequest')",
+          "description": "Detects PowerShell attempting to download payloads from the internet.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": true,
+          "monthAdded": "2026-04",
+          "sigmaRuleId": "rules/windows/process_creation/proc_creation_win_powershell_download.yml",
+          "sigmaRuleTitle": "PowerShell Download Pattern",
+          "sigmaRuleUrl": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/proc_creation_win_powershell_download.yml",
+          "sentinelCandidate": true,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-b4uta",
+          "name": "Encoded PowerShell Execution",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'powershell.exe' and ProcessCommandLine has_any ('-enc', '-EncodedCommand', '-e')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-05",
+          "sigmaRuleId": "rules/windows/process_creation/proc_creation_win_powershell_encoded.yml",
+          "sigmaRuleTitle": "Encoded PowerShell Command",
+          "sentinelCandidate": false,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-wjck5",
+          "name": "Legacy PS Download String",
+          "language": "kql",
+          "query": "DeviceProcessEvents | limit 10",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-04",
+          "sentinelCandidate": false,
+          "archived": true,
+          "archivedAt": "2026-06-04T18:57:50.287Z",
+          "archiveReason": "Too noisy, replaced with 'Suspicious PowerShell Downloads'."
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1003.001",
+      "tactic": "credential-access",
+      "color": "#f59e0b",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-6d1ug",
+          "name": "Procdump LSASS Extraction",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'procdump.exe' and ProcessCommandLine has_any ('lsass', 'lsass.exe')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-06",
+          "sigmaRuleId": "rules/windows/process_creation/proc_creation_win_sysinternals_procdump_lsass.yml",
+          "sigmaRuleTitle": "Procdump LSASS Memory Dump",
+          "sentinelCandidate": true,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-xfd54",
+          "name": "Rundll32 Comsvcs.dll Dump",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'rundll32.exe' and ProcessCommandLine has_any ('comsvcs.dll', 'MiniDump')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-05",
+          "sentinelCandidate": false,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-bmfqp",
+          "name": "Taskmgr LSASS Dump",
+          "language": "kql",
+          "query": "DeviceProcessEvents | limit 10",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-04",
+          "sentinelCandidate": false,
+          "archived": true,
+          "archivedAt": "2026-06-04T18:57:50.287Z",
+          "archiveReason": "Extremely low true positive rate."
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "persistence",
+      "color": "#10b981",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-g67on",
+          "name": "Suspicious Schtasks Creation",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'schtasks.exe' and ProcessCommandLine has '/create' and ProcessCommandLine has_any ('SYSTEM', 'HIGHEST')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-06",
+          "sentinelCandidate": false,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-ifi3s",
+          "name": "Schtasks modifying existing task",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'schtasks.exe' and ProcessCommandLine has '/change'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-05",
+          "sentinelCandidate": false,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1070.001",
+      "tactic": "defense-evasion",
+      "color": "#ef4444",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-r5h7o",
+          "name": "Wevtutil Clear Logs",
+          "language": "kql",
+          "query": "DeviceProcessEvents | limit 10",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-04",
+          "sentinelCandidate": false,
+          "archived": true,
+          "archivedAt": "2026-06-04T18:57:50.287Z",
+          "archiveReason": "Merged into a broader defense evasion query."
+        },
+        {
+          "id": "q-1780599470288-2ml20",
+          "name": "Clear Security Event Log via PowerShell",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'powershell.exe' and ProcessCommandLine has 'Clear-EventLog' and ProcessCommandLine has 'Security'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-06",
+          "sigmaRuleId": "rules/windows/powershell/powershell_clear_eventlog.yml",
+          "sigmaRuleTitle": "PowerShell Clear-EventLog",
+          "sentinelCandidate": true,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1566.001",
+      "tactic": "initial-access",
+      "color": "#3b82f6",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-gijul",
+          "name": "Suspicious Office Document Spawning Shell",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where InitiatingProcessFileName in~ ('winword.exe', 'excel.exe', 'powerpnt.exe') and FileName in~ ('cmd.exe', 'powershell.exe', 'wscript.exe', 'cscript.exe')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": true,
+          "monthAdded": "2026-05",
+          "sentinelCandidate": true,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1047",
+      "tactic": "execution",
+      "color": "#10b981",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-is2jl",
+          "name": "WMI Process Creation",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'wmiprvse.exe' and ProcessCommandLine has 'process call create'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-04",
+          "sigmaRuleId": "rules/windows/process_creation/proc_creation_win_wmi_process_creation.yml",
+          "sigmaRuleTitle": "WMI Process Creation",
+          "sentinelCandidate": true,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-h36sy",
+          "name": "Wmic execution of suspicious scripts",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'wmic.exe' and ProcessCommandLine has_any ('.vbs', '.js', '.bat')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-05",
+          "sentinelCandidate": false,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1105",
+      "tactic": "command-and-control",
+      "color": "#f59e0b",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-lq8bj",
+          "name": "Certutil Download",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'certutil.exe' and ProcessCommandLine has_any ('-urlcache', '-split', '-f')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": true,
+          "monthAdded": "2026-06",
+          "sentinelCandidate": true,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-sbkz8",
+          "name": "Bitsadmin Download",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'bitsadmin.exe' and ProcessCommandLine has '/transfer'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-05",
+          "sentinelCandidate": false,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-c9g01",
+          "name": "Curl Download",
+          "language": "kql",
+          "query": "DeviceProcessEvents | limit 10",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-04",
+          "sentinelCandidate": false,
+          "archived": true,
+          "archivedAt": "2026-06-04T18:57:50.287Z",
+          "archiveReason": "Legitimate dev activity uses this too much."
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1078",
+      "tactic": "initial-access",
+      "color": "#ef4444",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-lph8b",
+          "name": "Successful Logon from Suspicious IP",
+          "language": "kql",
+          "query": "SigninLogs | where ResultType == 0 and IPAddress in ('1.1.1.1', '8.8.8.8')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-06",
+          "sentinelCandidate": true,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1110.003",
+      "tactic": "credential-access",
+      "color": "#3b82f6",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-o2tof",
+          "name": "Multiple Failed Logons Across Accounts",
+          "language": "kql",
+          "query": "SigninLogs | where ResultType != 0 | summarize count() by IPAddress, bin(TimeGenerated, 5m) | where count_ > 50",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": true,
+          "monthAdded": "2026-04",
+          "sentinelCandidate": false,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-t649u",
+          "name": "Password Spray Alert",
+          "language": "kql",
+          "query": "DeviceProcessEvents | limit 10",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-04",
+          "sentinelCandidate": false,
+          "archived": true,
+          "archivedAt": "2026-06-04T18:57:50.287Z",
+          "archiveReason": "Too noisy. Replaced with more advanced logic."
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1027",
+      "tactic": "defense-evasion",
+      "color": "#10b981",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-38wrv",
+          "name": "Suspicious Base64 Commandline",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where ProcessCommandLine matches regex '[A-Za-z0-9+/]{50,}={0,2}'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-06",
+          "sentinelCandidate": true,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1082",
+      "tactic": "discovery",
+      "color": "#f59e0b",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-m1e6y",
+          "name": "Systeminfo Execution",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'systeminfo.exe'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-05",
+          "sentinelCandidate": false,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-mtp6i",
+          "name": "Wmic OS Get",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'wmic.exe' and ProcessCommandLine has 'os get'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-04",
+          "sentinelCandidate": false,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1569.002",
+      "tactic": "execution",
+      "color": "#ef4444",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-rc50p",
+          "name": "Suspicious Service Creation via SC",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'sc.exe' and ProcessCommandLine has 'create' and ProcessCommandLine has_any ('binpath', 'binPath')",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": false,
+          "monthAdded": "2026-06",
+          "sentinelCandidate": true,
+          "archived": false
+        },
+        {
+          "id": "q-1780599470288-3e7ng",
+          "name": "PsExec Service Execution",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'PSEXESVC.exe'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": true,
+          "monthAdded": "2026-05",
+          "sentinelCandidate": false,
+          "archived": false
+        }
+      ]
+    },
+    {
+      "techniqueID": "T1486",
+      "tactic": "impact",
+      "color": "#ef4444",
+      "enabled": true,
+      "queries": [
+        {
+          "id": "q-1780599470288-24t1x",
+          "name": "Vssadmin Delete Shadows",
+          "language": "kql",
+          "query": "DeviceProcessEvents | where FileName =~ 'vssadmin.exe' and ProcessCommandLine has 'delete shadows'",
+          "description": "Example query description.",
+          "source": "SigmaHQ",
+          "created": "2026-06-04T18:57:50.287Z",
+          "lastModified": "2026-06-04T18:57:50.287Z",
+          "favorite": true,
+          "monthAdded": "2026-06",
+          "sigmaRuleId": "rules/windows/process_creation/proc_creation_win_vssadmin_delete_shadows.yml",
+          "sigmaRuleTitle": "Vssadmin Delete Shadows",
+          "sentinelCandidate": true,
+          "archived": false
+        }
+      ]
+    }
+  ]
+}
