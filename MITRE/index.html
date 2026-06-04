@@ -22,7 +22,6 @@
     <link href="css/animations.css" rel="stylesheet">
     <link href="css/skeletons.css" rel="stylesheet">
     <link href="css/landing.css" rel="stylesheet">
-    <link href="css/intel.css" rel="stylesheet">
     <link href="css/sigma.css" rel="stylesheet">
 </head>
 <body>
@@ -33,7 +32,7 @@
                     <i class="bi bi-shield-check"></i>
                 </div>
                 <span class="font-bold brand-text">ATT&CK Explorer</span>
-                <span id="loaded-version" class="version-badge">v19.1 — May 2026</span>
+                <span id="loaded-version" class="version-badge">v19.1 â€” May 2026</span>
             </a>
 
             <div class="top-nav hidden">
@@ -44,12 +43,7 @@
                     <li class="nav-item"><a class="nav-link" href="#" data-view="software"><i class="bi bi-cpu-fill mr-1"></i>Software</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-view="mitigations"><i class="bi bi-shield-fill-check mr-1"></i>Mitigations</a></li>
                     <li class="nav-item"><a class="nav-link" href="#" data-view="reports"><i class="bi bi-file-earmark-text mr-1"></i>Reports</a></li>
-                    <li class="nav-item" style="position: relative;">
-                        <a class="nav-link" href="#" data-view="intel">
-                            <i class="bi bi-rss-fill mr-1"></i>Intel Feed
-                            <span id="intel-nav-dot" class="intel-nav-dot hidden"></span>
-                        </a>
-                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link" href="#" data-view="sigma">
                             <i class="bi bi-terminal-fill mr-1"></i>Sigma Rules
@@ -317,75 +311,7 @@
                 </div>
             </div>
 
-            <div id="intel-view" class="view-section hidden">
-                <div class="view-header mb-3">
-                    <div>
-                        <h4 class="view-title">Threat Intelligence Hub</h4>
-                        <p class="view-subtitle text-on-surface-secondary">Live curated feeds mapped to ATT&CK tactics, techniques, and threat actors.</p>
-                    </div>
-                </div>
-                
-                <!-- TOP CONTROL BAR -->
-                <div class="intel-top-bar">
-                    <div class="intel-top-bar-left">
-                        <div class="intel-search-wrapper">
-                            <i class="bi bi-search"></i>
-                            <input type="text" id="intel-search-input" placeholder="Search advisories by keyword, ID, or source...">
-                        </div>
-                        
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="intel-feed-dropdown-btn" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
-                                <i class="bi bi-rss-fill mr-1 text-primary"></i> Feeds Filter (<span id="active-feed-count">3</span>)
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-dark intel-dropdown-menu p-3" aria-labelledby="intel-feed-dropdown-btn" style="min-width: 300px; background: rgba(21, 27, 43, 0.95); border: 1px solid var(--border); box-shadow: var(--shadow-lg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                                <h6 class="dropdown-header text-on-surface-tertiary px-0 pb-2 mb-2 border-bottom border-secondary text-xs uppercase font-bold tracking-wider" style="font-family: 'JetBrains Mono', monospace;">Feed Sources</h6>
-                                <div id="intel-feed-checkboxes" class="d-flex flex-column gap-2 mb-3">
-                                    <!-- Feed source checkboxes populated dynamically -->
-                                </div>
-                                <h6 class="dropdown-header text-on-surface-tertiary px-0 pb-2 mb-2 border-bottom border-secondary text-xs uppercase font-bold tracking-wider" style="font-family: 'JetBrains Mono', monospace;">Custom Feeds</h6>
-                                <div id="intel-custom-feed-list" class="d-flex flex-column gap-2 mb-2" style="max-height: 200px; overflow-y: auto;">
-                                    <!-- Custom feed list items populated dynamically -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="intel-top-bar-right">
-                        <button class="btn btn-sm btn-outline-primary" id="btn-add-custom-feed">
-                            <i class="bi bi-plus-lg mr-1"></i>Add Custom Feed
-                        </button>
-                        <button class="btn btn-sm btn-primary" id="btn-refresh-intel">
-                            <i class="bi bi-arrow-clockwise mr-1"></i>Refresh Feed
-                        </button>
-                    </div>
-                </div>
 
-                <!-- SECTOR FILTER ROW -->
-                <div class="intel-sector-row">
-                    <span class="intel-sector-row-label"><i class="bi bi-tag-fill mr-1 text-primary"></i> Target Sectors:</span>
-                    <div id="intel-sector-filters" class="intel-sector-badges-container"></div>
-                </div>
-
-                <!-- MAIN WORKSPACE -->
-                <div class="intel-layout-container">
-                    <!-- News Grid -->
-                    <div class="intel-feed-grid-wrapper">
-                        <div id="intel-feed-grid" class="intel-feed-grid"></div>
-                        <div id="intel-feed-loading" class="text-center py-5">
-                            <span class="spinner-border spinner-border-sm text-primary mb-2"></span>
-                            <p class="text-sm text-on-surface-secondary">Aggregating live intelligence feeds...</p>
-                        </div>
-                    </div>
-                    <!-- Advisory Details Panel -->
-                    <div class="intel-details-panel" id="intel-details-panel">
-                        <div class="intel-details-empty">
-                            <i class="bi bi-shield-radar"></i>
-                            <h5>Intelligence Workspace</h5>
-                            <p class="text-sm text-on-surface-tertiary">Select a threat advisory from the feed to view active MITRE mappings, gaps, and custom pivots.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- SIGMA RULES EXPLORER VIEW -->
             <div id="sigma-view" class="view-section hidden">
@@ -509,8 +435,8 @@
                     </select>
                     <select id="sigma-sort-select" class="sigma-select-filter" style="width: 155px;">
                         <option value="default">Sort: Default</option>
-                        <option value="az">Sort: A → Z</option>
-                        <option value="za">Sort: Z → A</option>
+                        <option value="az">Sort: A â†’ Z</option>
+                        <option value="za">Sort: Z â†’ A</option>
                         <option value="severity-desc">Sort: Critical First</option>
                         <option value="severity-asc">Sort: Low First</option>
                         <option value="date-desc">Sort: Newest First</option>
@@ -1137,9 +1063,9 @@
                             </div>
 
                             <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 11px; color: var(--on-surface-secondary);">
-                                <div style="font-weight: bold; margin-bottom: 4px; color: var(--on-surface);">ℹ️ Maturity Grading Scale:</div>
+                                <div style="font-weight: bold; margin-bottom: 4px; color: var(--on-surface);">â„¹ï¸ Maturity Grading Scale:</div>
                                 <div class="d-flex justify-content-between mb-1">
-                                    <span>Grade A (≥70% Coverage):</span>
+                                    <span>Grade A (â‰¥70% Coverage):</span>
                                     <span style="color: var(--accent-green); font-weight: bold;">Robust Posture</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-1">
@@ -1198,34 +1124,6 @@
         </div>
     </div>
 
-    <!-- Add Custom RSS Feed Modal -->
-    <div class="modal fade" id="custom-feed-modal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content technique-modal">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle mr-2 text-primary"></i>Add Custom RSS Feed</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label text-sm font-semibold">Feed Name</label>
-                        <input type="text" id="custom-feed-name" class="form-control" placeholder="e.g. Mandiant Threat Intel" style="background: rgba(21, 27, 43, 0.6); color: var(--on-surface); border-color: var(--border);">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-sm font-semibold">RSS Feed URL</label>
-                        <input type="url" id="custom-feed-url" class="form-control" placeholder="https://www.mandiant.com/resources/blog/rss.xml" style="background: rgba(21, 27, 43, 0.6); color: var(--on-surface); border-color: var(--border);">
-                        <div class="form-text text-xs text-on-surface-tertiary mt-1">Must be a valid cross-origin RSS/Atom XML feed.</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="btn-save-custom-feed">
-                        <i class="bi bi-save mr-1"></i>Save Feed
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script type="module" src="js/layer/migration.js"></script>
     <script type="module" src="js/utils/modal.js"></script>
@@ -1266,7 +1164,6 @@
     <script type="module" src="js/reports/enhancements.js"></script>
     <script type="module" src="js/reports/simulator.js"></script>
     <script type="module" src="js/landing/enhancements.js"></script>
-    <script type="module" src="js/intel/view.js"></script>
     <script type="module" src="js/routing/router.js"></script>
     <script type="module" src="js/layer/import.js"></script>
     <script type="module" src="app.js"></script>

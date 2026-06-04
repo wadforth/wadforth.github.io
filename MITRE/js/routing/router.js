@@ -50,8 +50,7 @@ export class Router {
             window.renderMitigationsView();
         } else if (view === 'reports' && window.loadReportsList) {
             window.loadReportsList();
-        } else if (view === 'intel' && window.renderIntelView) {
-            window.renderIntelView();
+
         } else if (view === 'sigma') {
             if (window.loadSigmaModule) {
                 const sigma = await window.loadSigmaModule();
