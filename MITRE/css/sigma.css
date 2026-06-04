@@ -14,8 +14,9 @@
    Virtual Scrolling Container
    -------------------------------------------- */
 #sigma-feed-grid {
-    contain: layout style paint;
-    will-change: transform;
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-bottom: 1rem;
 }
 
 .sigma-virtual-spacer {
@@ -370,6 +371,7 @@
     box-shadow: var(--shadow-sm);
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .sigma-card:hover {

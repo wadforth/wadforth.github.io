@@ -411,7 +411,7 @@ export async function executeSyncFromGitHub(isBackground) {
         setTimeout(() => showSigmaSyncProgress(false), 3000);
 
         selectedSigmaIdx = null;
-        sigmaCurrentPage = 0;
+        currentVisibleCount = SIGMA_PAGINATION_CHUNK;
         await refreshSigmaFilteredCache();
         renderSigmaStats();
         renderSigmaList();
@@ -1496,7 +1496,7 @@ export function bindSigmaEvents() {
 
 export async function resetSigmaView() {
     selectedSigmaIdx = null;
-    sigmaCurrentPage = 0;
+    currentVisibleCount = SIGMA_PAGINATION_CHUNK;
     await refreshSigmaFilteredCache();
     renderSigmaStats();
     renderSigmaList();
