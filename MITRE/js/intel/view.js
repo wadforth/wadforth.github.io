@@ -290,13 +290,17 @@ export async function fetchViaProxy(url) {
     }
 
     const proxies = [
-        // 1. CORSProxy.org (Fastest robust proxy)
-        target => `https://corsproxy.org/?${encodeURIComponent(target)}`,
-        // 2. CodeTabs CORS Proxy (Stable backup proxy)
+        // 1. CodeTabs CORS Proxy (Stable backup proxy)
         target => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}`,
+        // 2. CORSProxy.org (Fastest robust proxy)
+        target => `https://corsproxy.org/?${encodeURIComponent(target)}`,
         // 3. CORSProxy.io (Legacy fallback)
         target => `https://corsproxy.io/?${encodeURIComponent(target)}`,
-        // 4. AllOrigins (JSON wrapper backup)
+        // 4. Render CORS Anywhere (Free instance)
+        target => `https://cors-anywhere-mbq9.onrender.com/${target}`,
+        // 5. Heroku CORS Anywhere (Requires opt-in but good fallback)
+        target => `https://cors-anywhere.herokuapp.com/${target}`,
+        // 6. AllOrigins (JSON wrapper backup)
         target => `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`
     ];
 

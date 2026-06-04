@@ -1241,7 +1241,6 @@ export function loadMoreSigmaRules() {
     renderSigmaList();
 }
 
-    html += '</div>';
 export function renderSigmaCard(rule, idx) {
     const level = rule.level || (rule.isVirtual ? '' : extractLevelFromYaml(rule.yaml));
     const isActive = selectedSigmaIdx === idx;
