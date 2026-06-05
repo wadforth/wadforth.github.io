@@ -1465,7 +1465,7 @@
     min-width: 100%;
     max-height: 300px;
     overflow-y: auto;
-    background-color: var(--surface-overlay);
+    background-color: var(--surface, #1e293b);
     border: 1px solid var(--border);
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);

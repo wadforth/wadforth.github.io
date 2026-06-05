@@ -14,6 +14,7 @@
 // ---- Section 1: State & Constants ----
 import { compileSigmaToKQL } from './sigma-compiler.js';
 import { KqlSchemaMap } from './schema-kql.js';
+import { escapeHtml } from '../utils/format.js';
 export let sigmaRules = [];
 export let selectedSigmaIdx = null;
 export let sigmaSearchQuery = "";
@@ -121,7 +122,7 @@ export async function initSigmaModule() {
             syncRulesToWorker();
             updateSyncButton('synced');
             bindSigmaEvents();
-            populateProductFilter();
+            populateDynamicFilters(sigmaRules);
             await refreshSigmaFilteredCache();
             renderSigmaStats();
             renderSigmaList();
@@ -400,7 +401,7 @@ export async function executeSyncFromGitHub(isBackground) {
         isLiveSigmaConnected = true;
         window.sigmaRules = sigmaRules;
         updateSyncButton('synced');
-        populateProductFilter();
+        populateDynamicFilters(sigmaRules);
         syncRulesToWorker();
 
         if (!isBackground) {
@@ -846,19 +847,7 @@ export function getUniqueProducts() {
     return [...products].sort();
 }
 
-export function populateProductFilter() {
-    const sel = document.getElementById('sigma-product-filter');
-    if (!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="all">All Products</option>';
-    getUniqueProducts().forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p;
-        opt.textContent = p.charAt(0).toUpperCase() + p.slice(1);
-        sel.appendChild(opt);
-    });
-    sel.value = current || 'all';
-}
+// Legacy product filter removed in favor of populateDynamicFilters
 
 // ---- Section 10: Filtering & Sorting ----
 
@@ -2110,7 +2099,7 @@ window.manualHydrateAll = manualHydrateAll;
 window.getSigmaCoverageStatus = getSigmaCoverageStatus;
 window.getSigmaCoverageStats = getSigmaCoverageStats;
 window.getUniqueProducts = getUniqueProducts;
-window.populateProductFilter = populateProductFilter;
+window.populateDynamicFilters = populateDynamicFilters;
 window.refreshSigmaFilteredCache = refreshSigmaFilteredCache;
 window.refreshSigmaFilteredCacheSync = refreshSigmaFilteredCacheSync;
 window.getEffectiveDate = getEffectiveDate;
