@@ -40,7 +40,8 @@ export let workerPendingFilter = null;
 
 export function initSigmaWorker() {
     try {
-        sigmaWorker = new Worker(new URL('sigma-worker.js', import.meta.url), { type: 'module' });
+        const workerUrl = new URL(`sigma-worker.js?v=${Date.now()}`, import.meta.url);
+        sigmaWorker = new Worker(workerUrl, { type: 'module' });
         sigmaWorker.onmessage = function(e) {
             const { type, rule, ruleId, error, filtered, total, count } = e.data;
             
