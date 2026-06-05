@@ -64,7 +64,14 @@ export function compileSigmaToKQL(yamlText, platform = 'mde') {
 function compileSelectionNode(node, category, platform) {
     if (!node) return '';
 
-    // If node is an array (e.g. list of dictionaries)
+    // Handle primitive values (e.g., keyword lists in Sigma)
+    if (typeof node !== 'object') {
+        let strVal = String(node).replace(/\\/g, '\\\\');
+        strVal = strVal.replace(/^\*/, '').replace(/\*$/, '');
+        return `search "${strVal}"`;
+    }
+
+    // If node is an array (e.g. list of dictionaries or list of keywords)
     if (Array.isArray(node)) {
         const clauses = node.map(item => compileSelectionNode(item, category, platform)).filter(Boolean);
         if (clauses.length === 0) return '';
@@ -77,16 +84,18 @@ function compileSelectionNode(node, category, platform) {
     if (typeof node === 'object') {
         const fieldClauses = [];
         for (const [key, val] of Object.entries(node)) {
-            // key could be "Image|endswith" or "CommandLine"
+            // key could be "Image|endswith|all" or "CommandLine"
             const parts = key.split('|');
             const sigmaField = parts[0];
-            const modifiers = parts.slice(1);
+            const modifiers = parts.slice(1).map(m => m.toLowerCase());
             
-            // We only handle the first modifier for simplicity in this V1 AST parser
-            const modifier = modifiers.length > 0 ? modifiers[0].toLowerCase() : '';
+            // Extract the matching modifier and check for 'all'
+            const modifier = modifiers.find(m => ['contains', 'endswith', 'startswith', 're'].includes(m)) || '';
+            const isAll = modifiers.includes('all');
+            
             const kqlField = getKqlField(sigmaField, category, platform);
 
-            // Value could be a list (e.g. `CommandLine: ['a', 'b']`), which implies OR
+            // Value could be a list (e.g. `CommandLine: ['a', 'b']`)
             let valArray = Array.isArray(val) ? val : [val];
             
             const valClauses = valArray.map(v => {
@@ -116,7 +125,10 @@ function compileSelectionNode(node, category, platform) {
 
             if (valClauses.length > 0) {
                 if (valClauses.length === 1) fieldClauses.push(valClauses[0]);
-                else fieldClauses.push(`(${valClauses.join(' or ')})`);
+                else {
+                    const joiner = isAll ? ' and ' : ' or ';
+                    fieldClauses.push(`(${valClauses.join(joiner)})`);
+                }
             }
         }
         
