@@ -259,6 +259,8 @@
     margin-bottom: 0.75rem;
     flex-wrap: wrap;
     align-items: center;
+    position: relative;
+    z-index: 100;
 }
 
 .sigma-filters-row label {

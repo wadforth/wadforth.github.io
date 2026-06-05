@@ -1015,7 +1015,8 @@ function populateDynamicFilters(rules) {
     
     for (const r of rules) {
         if (r.logsource) {
-            if (r.logsource.product) products.add(r.logsource.product);
+            const p = r.logsource.product;
+            if (p && !/^\\d+$/.test(p)) products.add(p);
             if (r.logsource.category) services.add(r.logsource.category);
             if (r.logsource.service) services.add(r.logsource.service);
         }
