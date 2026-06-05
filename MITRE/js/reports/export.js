@@ -890,14 +890,18 @@ export function buildEmailHTML(report, isDark = false) {
                             if (teamId === 'engineering') {
                                 const candidates = [];
                                 const seenIds = new Set();
+                                const targetMonth = report.selectedMonth || report.reportMonth || new Date().toISOString().slice(0, 7);
                                 const techniques = report.snapshot?.techniques || state.currentLayer?.techniques || [];
                                 techniques.forEach(ann => {
                                     const baseMonth = ann.monthAdded || new Date().toISOString().slice(0, 7);
                                     if (ann.queries) {
                                         ann.queries.forEach(q => {
+                                            const resolvedQMonth = window.resolveQueryMonth ? window.resolveQueryMonth(q, ann) : (q.monthAdded || (q.created ? q.created.slice(0, 7) : targetMonth));
+                                            if (resolvedQMonth !== targetMonth) return;
+                                            
                                             let isSentinel = q.sentinelCandidate;
                                             let desc = q.description || '';
-                                            let qMonth = q.monthAdded || baseMonth;
+                                            let qMonth = resolvedQMonth;
                                             
                                             // Fallback lookup in currentLayer if snapshot is missing properties
                                             if (state.currentLayer?.techniques) {

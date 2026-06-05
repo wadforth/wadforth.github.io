@@ -48,7 +48,11 @@ export function getTeamRecommendations(teamId, report) {
             const coveredCount = relatedTechs.filter(tech => {
                 const tid = tech.external_references?.[0]?.external_id || '';
                 const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
-                return ann?.queries && ann.queries.length > 0;
+                if (!ann?.queries) return false;
+                return ann.queries.some(q => {
+                    const qMonth = window.resolveQueryMonth ? window.resolveQueryMonth(q, ann) : (q.monthAdded || q.created?.slice(0, 7) || new Date().toISOString().slice(0, 7));
+                    return qMonth <= month;
+                });
             }).length;
             const techCount = relatedTechs.length;
             const coveragePct = techCount > 0 ? Math.round((coveredCount / techCount) * 100) : 0;
@@ -226,6 +230,11 @@ export function generateDynamicMonthlyFocus(report) {
     const groupHits = {};
     if (state.groups) {
         techniques.forEach(ann => {
+            const hasNewQueries = ann.queries?.some(q => {
+                const qMonth = window.resolveQueryMonth ? window.resolveQueryMonth(q, ann) : (q.monthAdded || q.created?.slice(0, 7));
+                return qMonth === month;
+            });
+            if (!hasNewQueries) return;
             state.groups.forEach(group => {
                 if (group.techniques?.includes(ann.techniqueID)) {
                     groupHits[group.name] = (groupHits[group.name] || 0) + 1;

@@ -21,8 +21,10 @@ const layer = {
   "companyName": "Acme Corp",
   "author": "Threat Intel Team",
   "autoColorRules": [
-    { "color": "#10b981", "condition": "queryCount > 0" },
-    { "color": "#7c3aed", "condition": "techId === 'T1059'" }
+    { "label": "≥60% sub-techniques covered", "color": "#22c55e", "operator": ">=", "value": 60, "type": "sub-coverage" },
+    { "label": "<60% sub-techniques covered", "color": "#eab308", "operator": "<", "value": 60, "type": "sub-coverage" },
+    { "label": "2+ queries created", "color": "#22c55e", "operator": ">=", "value": 2, "type": "query-count" },
+    { "label": "1 query created", "color": "#eab308", "operator": "=", "value": 1, "type": "query-count" }
   ],
   "techniques": []
 };

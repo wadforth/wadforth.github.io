@@ -68,15 +68,23 @@ export function getTechniquesByMonth() {
         
         if (ann.queries && ann.queries.length > 0) {
             ann.queries.forEach(q => {
-                const qMonth = q.monthAdded || baseMonth;
-                if (!byMonth[qMonth]) byMonth[qMonth] = [];
-                const existing = byMonth[qMonth].find(t => t.techniqueID === ann.techniqueID);
-                if (!existing) {
-                    byMonth[qMonth].push({ ...ann, queries: [q] });
-                } else {
-                    if (!existing.queries) existing.queries = [];
-                    existing.queries.push(q);
-                }
+                const months = new Set();
+                months.add(q.monthAdded || baseMonth);
+                if (q.archived && q.archivedAt) months.add(q.archivedAt.slice(0, 7));
+                if (q.unarchivedAt) months.add(q.unarchivedAt.slice(0, 7));
+                
+                months.forEach(qMonth => {
+                    if (!byMonth[qMonth]) byMonth[qMonth] = [];
+                    const existing = byMonth[qMonth].find(t => t.techniqueID === ann.techniqueID);
+                    if (!existing) {
+                        byMonth[qMonth].push({ ...ann, queries: [q] });
+                    } else {
+                        if (!existing.queries) existing.queries = [];
+                        if (!existing.queries.some(eq => eq.id === q.id)) {
+                            existing.queries.push(q);
+                        }
+                    }
+                });
             });
         } else {
             // According to user requirements: sub-techniques and standalone techniques 
@@ -2528,10 +2536,14 @@ export function buildTeamAssignmentsSection(report) {
             if (teamId === 'engineering') {
                 const candidates = [];
                 const seenIds = new Set();
+                const targetMonth = report.selectedMonth || report.reportMonth || new Date().toISOString().slice(0, 7);
                 const techniques = report.snapshot?.techniques || window.state?.currentLayer?.techniques || [];
                 techniques.forEach(ann => {
                     if (ann.queries) {
                         ann.queries.forEach(q => {
+                            const qMonth = window.resolveQueryMonth ? window.resolveQueryMonth(q, ann) : (q.monthAdded || (q.created ? q.created.slice(0, 7) : targetMonth));
+                            if (qMonth !== targetMonth) return;
+                            
                             let isSentinel = q.sentinelCandidate;
                             if (window.state?.currentLayer?.techniques) {
                                 const activeTech = window.state.currentLayer.techniques.find(t => t.techniqueID === ann.techniqueID);
