@@ -1379,20 +1379,29 @@ export function renderSigmaDetails() {
             <h6 class="text-on-surface font-semibold text-sm mb-2">Description</h6>
             <p class="text-sm text-on-surface-secondary mb-4" style="line-height: 1.6;">${escapeHtml(rule.description)}</p>
 
-            <div class="sigma-yaml-section">
+            <div class="sigma-yaml-section" id="sigma-code-section">
                 <div class="sigma-yaml-header-row">
-                    <span class="sigma-yaml-title"><i class="bi bi-code-square mr-1"></i> Sigma YAML Definition</span>
-                </div>
-                <div class="sigma-yaml-container">
-                    <button class="sigma-copy-btn" id="btn-copy-sigma-yaml"><i class="bi bi-clipboard mr-1"></i> Copy YAML</button>
-                    <button class="sigma-copy-btn" id="btn-translate-kql" style="right: 120px;"><i class="bi bi-magic mr-1"></i> Translate to KQL</button>
-                    <pre class="sigma-yaml-code"><code>${escapeHtml(rule.yaml)}</code></pre>
+                    <span class="sigma-yaml-title"><i class="bi bi-code-square mr-1"></i> Definition & Translation</span>
+                    <button class="btn btn-sm btn-outline-primary" id="btn-translate-kql" style="font-size: 0.75rem; padding: 2px 10px; border-color: rgba(168,85,247,0.5); color: #a855f7;"><i class="bi bi-magic mr-1"></i> Translate to KQL</button>
                 </div>
                 
-                <div id="sigma-kql-container" class="sigma-yaml-container hidden mt-3" style="border-color: #3b82f6;">
-                    <div style="position: absolute; top: -10px; left: 15px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; z-index: 2;">KQL (Best Effort)</div>
-                    <button class="sigma-copy-btn" id="btn-copy-kql"><i class="bi bi-clipboard mr-1"></i> Copy KQL</button>
-                    <pre class="sigma-yaml-code" id="sigma-kql-output" style="background: #0f172a;"><code></code></pre>
+                <div class="sigma-split-pane" id="sigma-split-pane">
+                    <!-- YAML Panel -->
+                    <div class="sigma-code-panel" id="sigma-yaml-panel">
+                        <div class="sigma-yaml-container" style="height: 100%;">
+                            <button class="sigma-copy-btn" id="btn-copy-sigma-yaml"><i class="bi bi-clipboard mr-1"></i> Copy YAML</button>
+                            <pre class="sigma-yaml-code" style="height: 100%;"><code>${escapeHtml(rule.yaml)}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- KQL Panel (Hidden by default) -->
+                    <div class="sigma-code-panel hidden" id="sigma-kql-panel">
+                        <div class="sigma-yaml-container" style="border-color: #3b82f6; height: 100%;">
+                            <div style="position: absolute; top: -10px; left: 15px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; z-index: 2;">KQL (Best Effort)</div>
+                            <button class="sigma-copy-btn" id="btn-copy-kql"><i class="bi bi-clipboard mr-1"></i> Copy KQL</button>
+                            <pre class="sigma-yaml-code" id="sigma-kql-output" style="background: #0f172a; height: 100%;"><code></code></pre>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1428,7 +1437,8 @@ export function renderSigmaDetails() {
     document.getElementById('btn-translate-kql')?.addEventListener('click', () => {
         const kqlOutput = compileSigmaToKQL(rule.yaml, 'mde');
         document.getElementById('sigma-kql-output').innerHTML = `<code>${escapeHtml(kqlOutput)}</code>`;
-        document.getElementById('sigma-kql-container').classList.remove('hidden');
+        document.getElementById('sigma-kql-panel').classList.remove('hidden');
+        document.getElementById('sigma-split-pane').classList.add('active-split');
     });
 
     document.getElementById('btn-copy-kql')?.addEventListener('click', (e) => {

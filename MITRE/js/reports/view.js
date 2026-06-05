@@ -4692,7 +4692,7 @@ export async function exportReportMarkdown(reportId) {
             
             // Format query code properly
             let codeBlock = q.query || q.code || '';
-            md += \`\`\`\${(q.language || '').toLowerCase()}\n\${codeBlock}\n\`\`\`\n\n\`;
+            md += `\`\`\`${(q.language || '').toLowerCase()}\n${codeBlock}\n\`\`\`\n\n`;
         });
     }
 
