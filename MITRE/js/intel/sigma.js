@@ -39,7 +39,7 @@ export let workerPendingFilter = null;
 
 export function initSigmaWorker() {
     try {
-        sigmaWorker = new Worker(new URL('sigma-worker.js', import.meta.url));
+        sigmaWorker = new Worker(new URL('sigma-worker.js', import.meta.url), { type: 'module' });
         sigmaWorker.onmessage = function(e) {
             const { type, rule, ruleId, error, filtered, total, count } = e.data;
             
@@ -1095,11 +1095,11 @@ window.toggleSigmaMultiFilter = function(type, value, isChecked) {
 };
 
 function updateMultiSelectLabel(id, name, selected, total) {
-    const el = document.querySelector(\`#\${id} .sigma-multi-select-label\`);
+    const el = document.querySelector(`#${id} .sigma-multi-select-label`);
     if (!el) return;
-    if (selected === total) el.textContent = \`\${name}: All\`;
-    else if (selected === 0) el.textContent = \`\${name}: None\`;
-    else el.textContent = \`\${name}: \${selected} selected\`;
+    if (selected === total) el.textContent = `${name}: All`;
+    else if (selected === 0) el.textContent = `${name}: None`;
+    else el.textContent = `${name}: ${selected} selected`;
 }
 
 // Dropdown toggle logic
