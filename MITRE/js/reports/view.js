@@ -4620,7 +4620,7 @@ export async function exportReportMarkdown(reportId) {
     const totalQueries = getTotalUniqueActiveQueriesUpToMonth(currentMonth);
     const threatsDisrupted = getThreatsDisruptedCount(currentMonth);
     
-    const maturityGrade = (pct) => {
+    const getMaturityGrade = (pct) => {
         if (pct >= 80) return 'A+ Excellent';
         if (pct >= 70) return 'A Strong';
         if (pct >= 60) return 'B+ Capable';
@@ -4629,7 +4629,8 @@ export async function exportReportMarkdown(reportId) {
         if (pct >= 30) return 'C Baseline';
         if (pct >= 20) return 'D Lacking';
         return 'F Critical Gaps';
-    }(coverageStats.pct);
+    };
+    const maturityGrade = getMaturityGrade(coverageStats.pct);
 
     let md = `# MITRE ATT&CK Coverage Report\n\n`;
     md += `**Company:** ${report.companyName || 'N/A'}\n`;

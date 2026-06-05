@@ -1,4 +1,4 @@
-import { escapeHtml } from '../utils/sanitize.js';
+import { escapeHtml } from '../utils/format.js';
 
 export async function generateChangelog() {
     const state = window.state;
