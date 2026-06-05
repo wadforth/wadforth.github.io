@@ -187,6 +187,8 @@
     flex-wrap: wrap;
     gap: 0.75rem;
     box-shadow: var(--shadow-sm);
+    position: relative;
+    z-index: 200;
 }
 
 .sigma-top-bar-left,
