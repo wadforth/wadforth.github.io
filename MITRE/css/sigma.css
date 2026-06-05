@@ -1425,27 +1425,29 @@
 .sigma-multi-select {
     position: relative;
     display: inline-block;
-    width: 150px;
-    font-size: 0.8rem;
+    width: 140px;
+    font-size: 0.78rem;
 }
 
 .sigma-multi-select-header {
-    background-color: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--on-surface);
-    padding: 0.35rem 0.75rem;
-    border-radius: 4px;
+    font-size: 0.78rem;
+    padding: 0.4rem 0.5rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--on-surface-secondary);
+    border-radius: var(--radius-sm);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: all 0.2s;
+    transition: var(--transition);
     user-select: none;
     height: 100%;
 }
 
-.sigma-multi-select-header:hover {
+.sigma-multi-select-header:hover, .sigma-multi-select.open .sigma-multi-select-header {
     border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary-light);
 }
 
 .sigma-multi-select-label {

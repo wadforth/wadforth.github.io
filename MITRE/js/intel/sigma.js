@@ -1104,25 +1104,20 @@ function updateMultiSelectLabel(id, name, selected, total) {
 
 // Dropdown toggle logic
 document.addEventListener('click', (e) => {
+    const header = e.target.closest('.sigma-multi-select-header');
+    if (header) {
+        const parent = header.parentElement;
+        const wasOpen = parent.classList.contains('open');
+        document.querySelectorAll('.sigma-multi-select.open').forEach(el => el.classList.remove('open'));
+        if (!wasOpen) parent.classList.add('open');
+        e.stopPropagation();
+        return;
+    }
+    
     const isDropdownClick = e.target.closest('.sigma-multi-select');
     if (!isDropdownClick) {
         document.querySelectorAll('.sigma-multi-select.open').forEach(el => el.classList.remove('open'));
     }
-});
-
-window.addEventListener('DOMContentLoaded', () => {
-    // We attach listeners to the headers to toggle the dropdown
-    setTimeout(() => {
-        document.querySelectorAll('.sigma-multi-select-header').forEach(header => {
-            header.addEventListener('click', (e) => {
-                const parent = header.parentElement;
-                const wasOpen = parent.classList.contains('open');
-                document.querySelectorAll('.sigma-multi-select.open').forEach(el => el.classList.remove('open'));
-                if (!wasOpen) parent.classList.add('open');
-                e.stopPropagation();
-            });
-        });
-    }, 1000); // Give DOM time to initialize
 });
 
 // ---- Section 12: Rendering - Stats Dashboard ----
