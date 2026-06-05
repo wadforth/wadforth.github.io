@@ -557,3 +557,102 @@
     transform: scale(1);
 }
 
+/* ========================================================
+   Responsive & Immersive Navbars
+   ======================================================== */
+
+@media (max-width: 1200px) {
+    /* Compress horizontal spacing on medium-large screens */
+    .navbar .container-fluid {
+        gap: 1rem;
+    }
+    .top-nav-pills {
+        gap: 0.2rem;
+    }
+    .top-nav-pills .nav-link {
+        padding: 0.4rem 0.6rem;
+    }
+}
+
+@media (max-width: 992px) {
+    /* Make the top navbar horizontally scrollable and hide text on nav links */
+    .navbar {
+        padding: 0 0.5rem;
+    }
+    .navbar .container-fluid {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none; /* Firefox */
+        padding-bottom: 4px; /* Space for hidden scrollbar */
+    }
+    .navbar .container-fluid::-webkit-scrollbar {
+        display: none; /* Chrome/Safari */
+    }
+    
+    .brand-text {
+        display: none !important; /* Hide ATT&CK Explorer text */
+    }
+    
+    .top-nav-pills .nav-link {
+        font-size: 0 !important; /* Hide text */
+        padding: 0.5rem !important;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+    }
+    .top-nav-pills .nav-link i {
+        font-size: 1.1rem !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Make the layer toolbar horizontally scrollable */
+    .layer-toolbar .container-fluid {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 0 0.5rem;
+    }
+    .layer-toolbar .container-fluid::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Hide text on toolbar buttons */
+    .layer-toolbar .btn-ghost {
+        font-size: 0 !important;
+        padding: 0.4rem !important;
+    }
+    .layer-toolbar .btn-ghost i {
+        font-size: 1rem !important;
+        margin-right: 0 !important;
+    }
+    
+    #btn-legend-editor, #btn-export-layer, #btn-save-layer, #btn-coverage-simulator {
+        width: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extreme squish - Mobile */
+    .navbar {
+        height: 54px;
+        min-height: 54px;
+    }
+    .workspace-view {
+        margin-top: 54px;
+        height: calc(100vh - 54px);
+    }
+    .layer-name-display {
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #layer-domain-badge, #layer-version-badge {
+        display: none !important;
+    }
+}
