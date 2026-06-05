@@ -3,187 +3,141 @@ import { getKqlTable, getKqlField } from './schema-kql.js';
 
 /**
  * Compiles a Sigma YAML rule string into a Microsoft Sentinel / MDE KQL query.
- * Implements a best-effort tokenizer to resolve complex Boolean condition strings and wildcards.
+ * Uses js-yaml to parse the AST for perfect structural accuracy.
  */
 export function compileSigmaToKQL(yamlText, platform = 'mde') {
     if (!yamlText) return '// No YAML provided for compilation.';
+    if (!window.jsyaml) return '// Error: js-yaml library not loaded. Ensure it is injected in index.html.';
     
-    // Extract logsource
-    const productMatch = yamlText.match(/product:\s*([^\r\n]+)/i);
-    const categoryMatch = yamlText.match(/category:\s*([^\r\n]+)/i);
-    const product = productMatch ? productMatch[1].trim() : '';
-    const category = categoryMatch ? categoryMatch[1].trim() : '';
+    let rule;
+    try {
+        rule = window.jsyaml.load(yamlText);
+    } catch (e) {
+        return `// Error parsing Sigma YAML: ${e.message}\n// Please ensure the YAML is well-formed.`;
+    }
+
+    if (!rule || !rule.detection) {
+        return `// Error: Rule does not contain a valid detection block.`;
+    }
+
+    const logsource = rule.logsource || {};
+    const category = logsource.category || '';
+    const product = logsource.product || '';
     
     // Determine target KQL Table
     const table = getKqlTable(category, product, platform);
     
-    // Extract detection block
-    // We match from 'detection:' until 'falsepositives:', 'level:', 'tags:', 'status:', 'author:', 'date:', or EOF
-    const detectionBlockMatch = yamlText.match(/detection:\s*([\s\S]*?)(?:\n\s*(?:falsepositives|level|tags|status|author|date|logsource|id|title|description|fields|rule):|$)/);
-    if (!detectionBlockMatch) {
-        return `${table}\n// Could not parse detection logic block from YAML.`;
+    // Extract condition
+    const condition = rule.detection.condition;
+    if (!condition) {
+        return `${table}\n// Warning: No condition field found in detection block.`;
     }
-    
-    let detectionText = detectionBlockMatch[1];
-    
-    // Extract the raw condition string
-    const conditionMatch = detectionText.match(/condition:\s*([^\r\n]+)/i);
-    const rawCondition = conditionMatch ? conditionMatch[1].trim() : '';
-    
-    // Remove the condition line from our selections text so we only parse fields
-    const selectionsText = detectionText.replace(/condition:\s*([^\r\n]+)/i, '');
-    
-    // Parse Selections into a dictionary map: { selection1: [ {field, modifier, value}, ... ] }
-    const selections = parseSelections(selectionsText, category, platform);
-    
-    // Generate KQL fragments for each parsed selection block
+
+    // Build fragments for each selection block
     const selectionKqlFragments = {};
-    for (const [selName, items] of Object.entries(selections)) {
-        if (items.length === 0) continue;
-        selectionKqlFragments[selName] = buildSelectionFragment(items);
+    for (const [key, value] of Object.entries(rule.detection)) {
+        // Skip metadata keys
+        if (['condition', 'timeframe', 'fields', 'falsepositives'].includes(key)) continue;
+        
+        const frag = compileSelectionNode(value, category, platform);
+        if (frag) {
+            selectionKqlFragments[key] = frag;
+        }
     }
-    
-    // Parse and evaluate the Boolean condition string
-    let conditionKql = '';
-    if (rawCondition) {
-        conditionKql = evaluateCondition(rawCondition, selectionKqlFragments);
-    } else {
-        // Fallback: if no condition string, AND all selections together
-        conditionKql = Object.values(selectionKqlFragments).map(frag => `(${frag})`).join(' and \n');
-    }
-    
+
+    // Evaluate the condition
+    const conditionKql = evaluateCondition(condition, selectionKqlFragments);
+
     // Build the final KQL Query
     let kql = `${table}\n`;
     if (conditionKql) {
         kql += `| where ${conditionKql}\n`;
     }
-    kql += `// NOTE: This KQL was auto-translated via best-effort schema mapping and may require manual tuning.`;
+    kql += `// NOTE: This KQL was auto-translated via AST parser and best-effort schema mapping.`;
     
     return kql;
 }
 
 /**
- * Parses the YAML text block to extract selection groups and their respective field-value pairs.
+ * Recursively compiles a selection node (Dictionary, Array, or String) into KQL
  */
-function parseSelections(selectionsText, category, platform) {
-    const selections = {};
-    let currentSelection = '';
-    
-    const lines = selectionsText.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        
-        // Match selection headers e.g., `selection1:` or `filter_main:`
-        const selMatch = line.match(/^ {4}([a-zA-Z0-9_-]+):$/);
-        if (selMatch) {
-            currentSelection = selMatch[1];
-            selections[currentSelection] = [];
-            continue;
-        }
-        
-        if (currentSelection && line.trim() && !line.trim().startsWith('#')) {
-            // Match field definitions e.g., `  Image|endswith: '\cmd.exe'` or `  CommandLine|contains:`
-            const fieldMatch = line.match(/^ {8}([a-zA-Z0-9_.-]+)(\|([a-zA-Z0-9_]+))?:\s*(.*)$/);
-            if (fieldMatch) {
-                const sigmaField = fieldMatch[1];
-                const modifier = fieldMatch[3] || '';
-                const rawValue = fieldMatch[4];
+function compileSelectionNode(node, category, platform) {
+    if (!node) return '';
+
+    // If node is an array (e.g. list of dictionaries)
+    if (Array.isArray(node)) {
+        const clauses = node.map(item => compileSelectionNode(item, category, platform)).filter(Boolean);
+        if (clauses.length === 0) return '';
+        if (clauses.length === 1) return clauses[0];
+        // List items are implicitly OR'd together
+        return `(${clauses.join(' or ')})`;
+    }
+
+    // If node is an object (dictionary of fields)
+    if (typeof node === 'object') {
+        const fieldClauses = [];
+        for (const [key, val] of Object.entries(node)) {
+            // key could be "Image|endswith" or "CommandLine"
+            const parts = key.split('|');
+            const sigmaField = parts[0];
+            const modifiers = parts.slice(1);
+            
+            // We only handle the first modifier for simplicity in this V1 AST parser
+            const modifier = modifiers.length > 0 ? modifiers[0].toLowerCase() : '';
+            const kqlField = getKqlField(sigmaField, category, platform);
+
+            // Value could be a list (e.g. `CommandLine: ['a', 'b']`), which implies OR
+            let valArray = Array.isArray(val) ? val : [val];
+            
+            const valClauses = valArray.map(v => {
+                if (v === null || v === undefined) return '';
+                let strVal = String(v);
                 
-                // Check if value is empty/multiline list starting on next line
-                if (rawValue === '') {
-                    // Peek ahead for list items
-                    let j = i + 1;
-                    while (j < lines.length && lines[j].match(/^\s+-\s+(.+)$/)) {
-                        const valMatch = lines[j].match(/^\s+-\s+(.+)$/);
-                        selections[currentSelection].push(createItem(sigmaField, modifier, valMatch[1], category, platform));
-                        j++;
-                    }
-                    i = j - 1; // Skip the lines we just processed
-                } else if (rawValue.startsWith('[')) {
-                    // Inline array e.g., `['a', 'b']`
-                    const arrayStr = rawValue.replace(/^\[|\]$/g, '');
-                    const vals = arrayStr.split(',').map(v => v.trim());
-                    vals.forEach(v => selections[currentSelection].push(createItem(sigmaField, modifier, v, category, platform)));
+                // Escape backslashes for KQL string literals
+                strVal = strVal.replace(/\\/g, '\\\\');
+
+                // Check implicit wildcards
+                const hasStartWildcard = strVal.startsWith('*');
+                const hasEndWildcard = strVal.endsWith('*');
+                strVal = strVal.replace(/^\*/, '').replace(/\*$/, '');
+
+                if (modifier === 'contains' || (hasStartWildcard && hasEndWildcard)) {
+                    return `${kqlField} contains "${strVal}"`;
+                } else if (modifier === 'endswith' || hasStartWildcard) {
+                    return `${kqlField} endswith "${strVal}"`;
+                } else if (modifier === 'startswith' || hasEndWildcard) {
+                    return `${kqlField} startswith "${strVal}"`;
+                } else if (modifier === 're') {
+                    return `${kqlField} matches regex @"${strVal}"`;
                 } else {
-                    selections[currentSelection].push(createItem(sigmaField, modifier, rawValue, category, platform));
+                    return `${kqlField} =~ "${strVal}"`; // Case-insensitive exact match
                 }
-            } else if (line.match(/^\s+-\s+(.+)$/)) {
-                // List of dictionaries fallback (not fully supported, but we try to capture the value)
-                const valMatch = line.match(/^\s+-\s+(.+)$/);
-                // We assume it applies to the last used field if no field is specified.
-                if (selections[currentSelection].length > 0) {
-                    const lastItem = selections[currentSelection][selections[currentSelection].length - 1];
-                    selections[currentSelection].push(createItem(lastItem.sigmaField, lastItem.modifier, valMatch[1], category, platform));
-                }
+            }).filter(Boolean);
+
+            if (valClauses.length > 0) {
+                if (valClauses.length === 1) fieldClauses.push(valClauses[0]);
+                else fieldClauses.push(`(${valClauses.join(' or ')})`);
             }
         }
-    }
-    return selections;
-}
-
-function createItem(sigmaField, modifier, rawValue, category, platform) {
-    let value = rawValue.replace(/^['"]|['"]$/g, '');
-    return {
-        sigmaField,
-        kqlField: getKqlField(sigmaField, category, platform),
-        modifier: modifier.toLowerCase(),
-        value
-    };
-}
-
-/**
- * Converts a single parsed selection block into a valid KQL boolean string.
- */
-function buildSelectionFragment(items) {
-    const groupedFields = {};
-    
-    // Group values by the translated KQL field (this naturally forms OR groups for the same field)
-    items.forEach(item => {
-        if (!groupedFields[item.kqlField]) groupedFields[item.kqlField] = [];
-        groupedFields[item.kqlField].push(item);
-    });
-    
-    const fieldClauses = [];
-    for (const [field, ops] of Object.entries(groupedFields)) {
-        const fieldOrs = ops.map(op => {
-            let val = op.value;
-            // Escape KQL string slashes
-            val = val.replace(/\\/g, '\\\\');
-            
-            // Check implicit wildcards
-            const hasStartWildcard = val.startsWith('*');
-            const hasEndWildcard = val.endsWith('*');
-            val = val.replace(/^\*/, '').replace(/\*$/, '');
-            
-            if (op.modifier === 'contains' || (hasStartWildcard && hasEndWildcard)) {
-                return `${field} contains "${val}"`;
-            } else if (op.modifier === 'endswith' || hasStartWildcard) {
-                return `${field} endswith "${val}"`;
-            } else if (op.modifier === 'startswith' || hasEndWildcard) {
-                return `${field} startswith "${val}"`;
-            } else if (op.modifier === 're') {
-                return `${field} matches regex @"${val}"`;
-            } else {
-                return `${field} =~ "${val}"`; // Case-insensitive exact match
-            }
-        });
         
-        if (fieldOrs.length > 1) {
-            fieldClauses.push(`(${fieldOrs.join(' or ')})`);
-        } else {
-            fieldClauses.push(fieldOrs[0]);
-        }
+        if (fieldClauses.length === 0) return '';
+        if (fieldClauses.length === 1) return fieldClauses[0];
+        // Different fields in the same dictionary are implicitly AND'd together
+        return `(${fieldClauses.join(' and ')})`;
     }
-    
-    // Different fields within the same selection block are ANDed together
-    return fieldClauses.join(' and ');
+
+    return '';
 }
 
 /**
  * Tokenizes and evaluates the Sigma condition string into a fully resolved KQL condition.
  */
 function evaluateCondition(conditionStr, fragmentsMap) {
-    let expr = conditionStr;
+    if (Array.isArray(conditionStr)) {
+        conditionStr = conditionStr.join(' or ');
+    }
+    
+    let expr = String(conditionStr);
     
     // 1. Resolve Aggregation Wildcards (e.g. `1 of selection*`, `all of filter*`)
     expr = expr.replace(/1 of ([a-zA-Z0-9_*]+)/gi, (match, pattern) => {
