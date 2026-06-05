@@ -26,8 +26,15 @@ export class LayerImportEngine {
                     
                     state.currentDomain = layerData.domain || 'enterprise-attack';
                     
-                    const importedVer = layerData.versions?.attack || layerData.attackVersion || 'master';
-                    const latestVer = state.releases[0]?.tag || 'master';
+                    const importedVerRaw = layerData.versions?.attack || layerData.attackVersion || 'master';
+                    const normImported = window.normalizeVersion ? window.normalizeVersion(importedVerRaw) : importedVerRaw;
+                    
+                    const latestVerTag = state.releases[0]?.tag || 'master';
+                    const normLatest = window.normalizeVersion ? window.normalizeVersion(latestVerTag) : latestVerTag;
+                    
+                    // Match the imported version to an actual release tag from GitHub (e.g. 'v19.1')
+                    const matchingRelease = state.releases.find(r => (window.normalizeVersion ? window.normalizeVersion(r.tag) : r.tag) === normImported);
+                    const importedVerTag = matchingRelease ? matchingRelease.tag : (normImported === 'master' || normImported === '' ? 'master' : `v${normImported}`);
                     
                     state.companyName = layerData.companyName || '';
                     state.companyLogo = layerData.companyLogo || null;
@@ -37,16 +44,16 @@ export class LayerImportEngine {
                     
                     if (window.showWorkspace) window.showWorkspace();
                     
-                    if (importedVer !== latestVer) {
+                    if (normImported !== normLatest && normImported !== '') {
                         const proceed = await window.showConfirm(
                             'Upgrade Imported Layer?',
-                            `This layer was created using ATT&CK ${importedVer}. Would you like to automatically upgrade and migrate your queries to the latest version (${latestVer})?`
+                            `This layer was created using ATT&CK ${normImported}. Would you like to automatically upgrade and migrate your queries to the latest version (${normLatest})?`
                         );
                         
                         if (proceed) {
                             if (window.showLoading) window.showLoading(true, 'Fetching latest STIX dataset for migration...');
                             try {
-                                const url = `${window.RAW_BASE || 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data'}/${latestVer}/${state.currentDomain}/${state.currentDomain}.json`;
+                                const url = `${window.RAW_BASE || 'https://raw.githubusercontent.com/mitre-attack/attack-stix-data'}/${latestVerTag}/${state.currentDomain}/${state.currentDomain}.json`;
                                 const resp = await fetch(url);
                                 if (!resp.ok) throw new Error('Failed to load dataset');
                                 const bundle = await resp.json();
@@ -64,30 +71,35 @@ export class LayerImportEngine {
                                     }
                                 }
                                 
-                                const changes = window.MigrationEngine.analyzeMigration(layerData, latestVer, tempState.techniques, tempState.relationships);
+                                const changes = window.MigrationEngine.analyzeMigration(layerData, latestVerTag, tempState.techniques, tempState.relationships);
                                 if (window.showLoading) window.showLoading(false);
                                 
-                                window.MigrationEngine.showMigrationWizard(layerData, latestVer, changes, async (migratedLayer) => {
-                                    state.currentVersion = latestVer;
-                                    document.getElementById('version-select').value = latestVer;
-                                    if (window.loadSTIX) await window.loadSTIX(state.currentDomain, latestVer, migratedLayer);
-                                    if (window.showToast) window.showToast(`Layer migrated to ATT&CK ${latestVer}`, 'success');
+                                window.MigrationEngine.showMigrationWizard(layerData, latestVerTag, changes, async (migratedLayer) => {
+                                    state.currentVersion = latestVerTag;
+                                    document.getElementById('version-select').value = latestVerTag;
+                                    if (window.loadSTIX) await window.loadSTIX(state.currentDomain, latestVerTag, migratedLayer);
+                                    if (window.showToast) window.showToast(`Layer migrated to ATT&CK ${latestVerTag}`, 'success');
                                 }, async () => {
-                                    state.currentVersion = importedVer;
-                                    document.getElementById('version-select').value = importedVer;
-                                    if (window.loadSTIX) await window.loadSTIX(state.currentDomain, importedVer, layerData);
+                                    state.currentVersion = importedVerTag;
+                                    document.getElementById('version-select').value = importedVerTag;
+                                    if (window.loadSTIX) await window.loadSTIX(state.currentDomain, importedVerTag, layerData);
                                 });
                                 return;
                             } catch (err) {
                                 if (window.showLoading) window.showLoading(false);
                                 if (window.showToast) window.showToast('Failed to fetch migration data. Loading original layer.', 'warning');
+                                
+                                state.currentVersion = importedVerTag;
+                                document.getElementById('version-select').value = importedVerTag;
+                                if (window.loadSTIX) await window.loadSTIX(state.currentDomain, importedVerTag, layerData);
                             }
+                            return;
                         }
                     }
                     
-                    state.currentVersion = importedVer;
-                    document.getElementById('version-select').value = importedVer;
-                    if (window.loadSTIX) await window.loadSTIX(state.currentDomain, importedVer, layerData);
+                    state.currentVersion = importedVerTag;
+                    document.getElementById('version-select').value = importedVerTag;
+                    if (window.loadSTIX) await window.loadSTIX(state.currentDomain, importedVerTag, layerData);
                     
                 } catch (err) {
                     if (window.showToast) window.showToast('Invalid layer file: ' + err.message, 'error');
