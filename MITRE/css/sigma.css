@@ -1431,6 +1431,10 @@
     font-size: 0.78rem;
 }
 
+.sigma-multi-select.open {
+    z-index: 1001; /* Render open dropdowns over their siblings */
+}
+
 .sigma-multi-select-header {
     font-size: 0.78rem;
     padding: 0.4rem 0.5rem;

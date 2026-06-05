@@ -1016,7 +1016,7 @@ function populateDynamicFilters(rules) {
     for (const r of rules) {
         if (r.logsource) {
             const p = r.logsource.product;
-            if (p && !/^\\d+$/.test(p)) products.add(p);
+            if (p && !/^\d+$/.test(p)) products.add(p);
             if (r.logsource.category) services.add(r.logsource.category);
             if (r.logsource.service) services.add(r.logsource.service);
         }
@@ -1107,7 +1107,7 @@ export function updateDynamicFilterStates() {
         const rCat = r.logsource.category;
         const rServ = r.logsource.service;
         
-        const hasProd = !rProd || /^\\d+$/.test(rProd) ? false : true;
+        const hasProd = !rProd || /^\d+$/.test(rProd) ? false : true;
         
         const sMatch = selectedSigmaLogsource.length === 0 || 
                        (rCat && selectedSigmaLogsource.includes(rCat)) || 
