@@ -81,21 +81,20 @@ function parseSelections(selectionsText, category, platform) {
             continue;
         }
         
-        // Only process if we are inside a selection block
         if (currentSelection && line.trim() && !line.trim().startsWith('#')) {
-            // Match field definitions e.g., `  Image|endswith: '\cmd.exe'` or `  CommandLine: '*powershell*'`
-            const fieldMatch = line.match(/^ {8}([a-zA-Z0-9_.-]+)(\|([a-zA-Z0-9_]+))?:\s*(.+)$/);
+            // Match field definitions e.g., `  Image|endswith: '\cmd.exe'` or `  CommandLine|contains:`
+            const fieldMatch = line.match(/^ {8}([a-zA-Z0-9_.-]+)(\|([a-zA-Z0-9_]+))?:\s*(.*)$/);
             if (fieldMatch) {
                 const sigmaField = fieldMatch[1];
                 const modifier = fieldMatch[3] || '';
                 const rawValue = fieldMatch[4];
                 
-                // Check if value is a multiline list starting on next line
+                // Check if value is empty/multiline list starting on next line
                 if (rawValue === '') {
                     // Peek ahead for list items
                     let j = i + 1;
-                    while (j < lines.length && lines[j].match(/^ {12}-\s+(.+)$/)) {
-                        const valMatch = lines[j].match(/^ {12}-\s+(.+)$/);
+                    while (j < lines.length && lines[j].match(/^\s+-\s+(.+)$/)) {
+                        const valMatch = lines[j].match(/^\s+-\s+(.+)$/);
                         selections[currentSelection].push(createItem(sigmaField, modifier, valMatch[1], category, platform));
                         j++;
                     }
@@ -108,9 +107,9 @@ function parseSelections(selectionsText, category, platform) {
                 } else {
                     selections[currentSelection].push(createItem(sigmaField, modifier, rawValue, category, platform));
                 }
-            } else if (line.match(/^ {8}-\s+(.+)$/)) {
+            } else if (line.match(/^\s+-\s+(.+)$/)) {
                 // List of dictionaries fallback (not fully supported, but we try to capture the value)
-                const valMatch = line.match(/^ {8}-\s+(.+)$/);
+                const valMatch = line.match(/^\s+-\s+(.+)$/);
                 // We assume it applies to the last used field if no field is specified.
                 if (selections[currentSelection].length > 0) {
                     const lastItem = selections[currentSelection][selections[currentSelection].length - 1];

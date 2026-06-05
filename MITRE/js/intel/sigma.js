@@ -1420,8 +1420,8 @@ export function renderSigmaDetails() {
 
     // Event bindings
     document.getElementById('btn-copy-sigma-yaml')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
         navigator.clipboard.writeText(rule.yaml).then(() => {
-            const btn = e.currentTarget;
             const orig = btn.innerHTML;
             btn.innerHTML = `<i class="bi bi-check-lg mr-1"></i> Copied!`;
             btn.style.color = "var(--accent-green)";
@@ -1442,9 +1442,9 @@ export function renderSigmaDetails() {
     });
 
     document.getElementById('btn-copy-kql')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget;
         const kqlOutput = document.getElementById('sigma-kql-output').innerText;
         navigator.clipboard.writeText(kqlOutput).then(() => {
-            const btn = e.currentTarget;
             const orig = btn.innerHTML;
             btn.innerHTML = `<i class="bi bi-check-lg mr-1"></i> Copied!`;
             btn.style.color = "var(--accent-green)";
