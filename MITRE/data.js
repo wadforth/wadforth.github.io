@@ -31,8 +31,8 @@ export async function fetchReleases() {
         populateVersionSelect();
         return releases;
     } catch (err) {
-        console.warn('Could not fetch releases, falling back to master:', err);
-        state.releases = [{ tag: 'master', name: 'Latest (master)', published: null }];
+        console.warn('Could not fetch releases, falling back to latest stable:', err);
+        state.releases = [{ tag: 'v19.1', name: 'v19.1 (Latest)', published: null }];
         populateVersionSelect();
         return [];
     }

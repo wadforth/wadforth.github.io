@@ -420,7 +420,7 @@ export function renderRecentLayers() {
                     <div class="recent-layer-name">${escapeHtml(l.name)}</div>
                     <div class="recent-layer-meta">
                         <span class="recent-layer-badge">${domainLabel}</span>
-                        <span>${(l.attackVersion || '').toString().startsWith('v') ? '' : 'v'}${l.attackVersion}</span>
+                        <span>${l.attackVersion === 'master' ? 'master' : ((l.attackVersion || '').toString().startsWith('v') ? '' : 'v') + l.attackVersion}</span>
                         <span>&bull;</span>
                         <span>${new Date(l.timestamp).toLocaleDateString()}</span>
                     </div>
