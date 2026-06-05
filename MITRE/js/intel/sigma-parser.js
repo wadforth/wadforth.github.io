@@ -14,7 +14,12 @@ export function cleanTitleFromPath(path) {
 
 export function parseLogsourceFromPath(path) {
     const parts = path.split('/');
-    return { product: parts[1] || 'windows', category: parts[2] || 'process_creation' };
+    if (parts[0] === 'rules-emerging-threats') {
+        return { product: 'emerging_threats', category: parts[1] || 'general' };
+    }
+    let product = parts[1] || 'windows';
+    if (/^\d+$/.test(product)) product = 'unknown';
+    return { product: product, category: parts[2] || 'process_creation' };
 }
 
 export function extractLevelFromYaml(yamlText) {

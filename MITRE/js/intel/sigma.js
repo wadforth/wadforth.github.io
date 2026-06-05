@@ -1065,6 +1065,9 @@ function populateDynamicFilters(rules) {
         servContainer.innerHTML = html;
         updateMultiSelectLabel('sigma-multi-logsource', 'Services', selectedSigmaLogsource.length, servArray.length);
     }
+    
+    // Set initial grey-out states
+    updateDynamicFilterStates();
 }
 
 window.toggleSigmaMultiFilter = function(type, value, isChecked) {
@@ -1074,20 +1077,75 @@ window.toggleSigmaMultiFilter = function(type, value, isChecked) {
         } else {
             selectedSigmaProduct = selectedSigmaProduct.filter(p => p !== value);
         }
-        const total = document.querySelectorAll('#sigma-product-options input').length;
-        updateMultiSelectLabel('sigma-multi-product', 'Products', selectedSigmaProduct.length, total);
-    } else if (type === 'logsource') {
+        updateMultiSelectLabel('sigma-multi-product', 'Products', selectedSigmaProduct.length, document.querySelectorAll('#sigma-product-options input').length);
+    } else {
         if (isChecked) {
             if (!selectedSigmaLogsource.includes(value)) selectedSigmaLogsource.push(value);
         } else {
             selectedSigmaLogsource = selectedSigmaLogsource.filter(s => s !== value);
         }
-        const total = document.querySelectorAll('#sigma-logsource-options input').length;
-        updateMultiSelectLabel('sigma-multi-logsource', 'Services', selectedSigmaLogsource.length, total);
+        updateMultiSelectLabel('sigma-multi-logsource', 'Services', selectedSigmaLogsource.length, document.querySelectorAll('#sigma-logsource-options input').length);
     }
-    currentVisibleCount = SIGMA_PAGINATION_CHUNK;
-    triggerFilterWorker();
+    
+    updateDynamicFilterStates();
+    
+    // Trigger reset view
+    clearTimeout(sigmaFilterDebounceTimer);
+    sigmaFilterDebounceTimer = setTimeout(async () => {
+        await resetSigmaView();
+    }, 150);
 };
+
+export function updateDynamicFilterStates() {
+    const availableProducts = new Set();
+    const availableServices = new Set();
+    
+    for (const r of sigmaRules) {
+        if (!r.logsource) continue;
+        const rProd = r.logsource.product;
+        const rCat = r.logsource.category;
+        const rServ = r.logsource.service;
+        
+        const hasProd = !rProd || /^\\d+$/.test(rProd) ? false : true;
+        
+        const sMatch = selectedSigmaLogsource.length === 0 || 
+                       (rCat && selectedSigmaLogsource.includes(rCat)) || 
+                       (rServ && selectedSigmaLogsource.includes(rServ));
+                       
+        const pMatch = selectedSigmaProduct.length === 0 || 
+                       (rProd && selectedSigmaProduct.includes(rProd));
+                       
+        if (sMatch && hasProd) availableProducts.add(rProd);
+        if (pMatch) {
+            if (rCat) availableServices.add(rCat);
+            if (rServ) availableServices.add(rServ);
+        }
+    }
+    
+    document.querySelectorAll('#sigma-product-options input[type="checkbox"]').forEach(cb => {
+        const val = cb.value;
+        const label = cb.closest('label');
+        if (availableProducts.has(val)) {
+            cb.disabled = false;
+            label.style.opacity = '1';
+        } else {
+            cb.disabled = true;
+            label.style.opacity = '0.4';
+        }
+    });
+    
+    document.querySelectorAll('#sigma-logsource-options input[type="checkbox"]').forEach(cb => {
+        const val = cb.value;
+        const label = cb.closest('label');
+        if (availableServices.has(val)) {
+            cb.disabled = false;
+            label.style.opacity = '1';
+        } else {
+            cb.disabled = true;
+            label.style.opacity = '0.4';
+        }
+    });
+}
 
 function updateMultiSelectLabel(id, name, selected, total) {
     const el = document.querySelector(`#${id} .sigma-multi-select-label`);
