@@ -46,6 +46,7 @@ export function populateVersionSelect() {
 }
 
 export async function loadSTIX(domain, version, layerData = null) {
+    if (typeof version === 'string') version = version.replace(/^v+/, 'v');
     state.currentVersion = version;
     showLoading(true, 'Fetching STIX bundle...');
     try {
