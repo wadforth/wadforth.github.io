@@ -7,14 +7,19 @@ export async function generateChangelog() {
     const currentVer = (state.currentVersion || '').replace(/^v+/, 'v');
     const currentIndex = state.releases.findIndex(r => r.tag.replace(/^v+/, 'v') === currentVer);
     
-    // No previous version known
-    if (currentIndex === -1 || currentIndex >= state.releases.length - 1) {
+    let previousVer;
+    
+    // If we're on master/vmaster, diff against the latest stable release (index 0)
+    if (currentVer === 'master' || currentVer === 'vmaster') {
+        previousVer = state.releases[0].tag.replace(/^v+/, 'v');
+    } else if (currentIndex === -1 || currentIndex >= state.releases.length - 1) {
+        // No previous version known
         document.getElementById('btn-changelog')?.classList.add('hidden');
         state.changelogDiff = null;
         return;
+    } else {
+        previousVer = state.releases[currentIndex + 1].tag.replace(/^v+/, 'v');
     }
-
-    const previousVer = state.releases[currentIndex + 1].tag.replace(/^v+/, 'v');
     
     // Initialize empty diff
     state.changelogDiff = {

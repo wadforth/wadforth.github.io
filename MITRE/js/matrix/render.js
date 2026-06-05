@@ -208,7 +208,7 @@ export function buildTechniqueCell(tech, subs = []) {
     
     const autoColor = getAutoColorForTechnique(id, subs);
     const ann = getTechniqueAnnotation(id);
-    const effectiveColor = autoColor || ann?.color;
+    const effectiveColor = state.autoColorByQueries ? autoColor : ann?.color;
     const annotatedClass = effectiveColor ? 'annotated' : '';
     const bgColor = effectiveColor ? effectiveColor : '';
     const textColor = effectiveColor ? getContrastColor(effectiveColor.replace(/80$/, '')) : '';
@@ -249,7 +249,7 @@ export function buildTechniqueCell(tech, subs = []) {
             const subName = s.name;
             const subAutoColor = getAutoColorForTechnique(subId, []);
             const subAnn = getTechniqueAnnotation(subId);
-            const subEffectiveColor = subAutoColor || subAnn?.color;
+            const subEffectiveColor = state.autoColorByQueries ? subAutoColor : subAnn?.color;
             const subAnnotated = subEffectiveColor ? 'annotated' : '';
             const subBgColor = subEffectiveColor ? subEffectiveColor : '';
             const subTextColor = subEffectiveColor ? getContrastColor(subEffectiveColor.replace(/80$/, '')) : '';
