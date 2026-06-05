@@ -1418,3 +1418,97 @@
     max-height: 500px;
     overflow-y: auto;
 }
+
+/* --------------------------------------------
+   Custom Multi-Select Dropdowns
+   -------------------------------------------- */
+.sigma-multi-select {
+    position: relative;
+    display: inline-block;
+    width: 150px;
+    font-size: 0.8rem;
+}
+
+.sigma-multi-select-header {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--on-surface);
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+    user-select: none;
+    height: 100%;
+}
+
+.sigma-multi-select-header:hover {
+    border-color: var(--primary);
+}
+
+.sigma-multi-select-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90%;
+}
+
+.sigma-multi-select-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: max-content;
+    min-width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+}
+
+.sigma-multi-select.open .sigma-multi-select-dropdown {
+    display: flex;
+}
+
+.sigma-multi-select-option {
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    border-bottom: 1px solid var(--border);
+}
+
+.sigma-multi-select-option:last-child {
+    border-bottom: none;
+}
+
+.sigma-multi-select-option:hover {
+    background-color: var(--surface-hover);
+}
+
+.sigma-multi-select-option input[type="checkbox"] {
+    cursor: pointer;
+}
+
+/* KQL Deviation Badge */
+.badge-non-standard {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--accent-red);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    background-color: rgba(239, 68, 68, 0.1);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}

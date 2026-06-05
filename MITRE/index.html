@@ -384,27 +384,15 @@
                             <input type="text" id="sigma-search-input" placeholder="Search rules by title, keyword, ID, or technique...">
                         </div>
                         
-                        <select id="sigma-logsource-filter" class="sigma-select-filter">
-                            <option value="all">All Log Sources</option>
-                            <option value="process_creation">Process Creation</option>
-                            <option value="process_access">Process Access</option>
-                            <option value="registry">Registry Actions</option>
-                            <option value="registry_set">Registry Set</option>
-                            <option value="registry_add">Registry Add</option>
-                            <option value="network_connection">Network Connections</option>
-                            <option value="file_event">File Events</option>
-                            <option value="file_change">File Changes</option>
-                            <option value="file_access">File Access</option>
-                            <option value="file_delete">File Deletions</option>
-                            <option value="image_load">Image Load</option>
-                            <option value="dns_query">DNS Queries</option>
-                            <option value="pipe_created">Pipe Created</option>
-                            <option value="driver_load">Driver Load</option>
-                            <option value="authentication">Authentications</option>
-                            <option value="directory_service">Directory Services</option>
-                            <option value="ps_script">PowerShell Script</option>
-                            <option value="ps_classic_start">PS Classic Start</option>
-                        </select>
+                        <div class="sigma-multi-select" id="sigma-multi-logsource" tabindex="0">
+                            <div class="sigma-multi-select-header">
+                                <span class="sigma-multi-select-label">Services: All</span>
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                            <div class="sigma-multi-select-dropdown" id="sigma-logsource-options">
+                                <!-- Checkboxes injected dynamically -->
+                            </div>
+                        </div>
                         
                         <select id="sigma-tactic-filter" class="sigma-select-filter">
                             <option value="all">All Tactics</option>
@@ -456,9 +444,15 @@
                         <option value="active">Active Coverage</option>
                         <option value="gap">Defensive Gaps</option>
                     </select>
-                    <select id="sigma-product-filter" class="sigma-select-filter" style="width: 130px;">
-                        <option value="all">All Products</option>
-                    </select>
+                    <div class="sigma-multi-select" id="sigma-multi-product" tabindex="0">
+                        <div class="sigma-multi-select-header">
+                            <span class="sigma-multi-select-label">Products: All</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="sigma-multi-select-dropdown" id="sigma-product-options">
+                            <!-- Checkboxes injected dynamically -->
+                        </div>
+                    </div>
                     <select id="sigma-date-filter" class="sigma-select-filter" style="width: 140px;">
                         <option value="all">All Dates</option>
                         <option value="new">New Since Sync</option>

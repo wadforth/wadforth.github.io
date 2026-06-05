@@ -125,8 +125,12 @@ export function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
             (rule.yaml && rule.yaml.toLowerCase().includes(q));
         
         // Logsource
-        const matchLog = logsource === 'all' ||
-            (rule.logsource && rule.logsource.category === logsource);
+        const cat = rule.logsource?.category;
+        const srv = rule.logsource?.service;
+        const matchLog = logsource.length === 0 ? false : 
+            (cat && logsource.includes(cat)) || 
+            (srv && logsource.includes(srv)) ||
+            (!cat && !srv && logsource.includes('unknown'));
         
         // Tactic
         const matchTactic = tactic === 'all' ||
@@ -141,8 +145,8 @@ export function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
         const matchCov = coverage === 'all' || cov === coverage;
         
         // Product
-        const matchProd = product === 'all' ||
-            (rule.logsource && rule.logsource.product === product);
+        const prod = rule.logsource?.product || 'unknown';
+        const matchProd = product.length === 0 ? false : product.includes(prod);
         
         // Date filter
         let matchDate = true;

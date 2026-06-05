@@ -13,16 +13,15 @@
 
 // ---- Section 1: State & Constants ----
 import { compileSigmaToKQL } from './sigma-compiler.js';
-
-
+import { KqlSchemaMap } from './schema-kql.js';
 export let sigmaRules = [];
 export let selectedSigmaIdx = null;
 export let sigmaSearchQuery = "";
-export let selectedSigmaLogsource = "all";
+export let selectedSigmaLogsource = [];
 export let selectedSigmaTactic = "all";
 export let selectedSigmaLevel = "all";
 export let selectedSigmaCoverage = "all";
-export let selectedSigmaProduct = "all";
+export let selectedSigmaProduct = [];
 export let selectedSigmaSort = "default";
 export let selectedSigmaDate = "all";
 export let isLiveSigmaConnected = false;
@@ -924,8 +923,12 @@ export function refreshSigmaFilteredCacheSync(coverageMap) {
             (rule.yaml && rule.yaml.toLowerCase().includes(q));
 
         // Logsource
-        const matchLog = selectedSigmaLogsource === 'all' ||
-            (rule.logsource && rule.logsource.category === selectedSigmaLogsource);
+        const cat = rule.logsource?.category;
+        const srv = rule.logsource?.service;
+        const matchLog = selectedSigmaLogsource.length === 0 ? false : 
+            (cat && selectedSigmaLogsource.includes(cat)) || 
+            (srv && selectedSigmaLogsource.includes(srv)) ||
+            (!cat && !srv && selectedSigmaLogsource.includes('unknown'));
 
         // Tactic
         const matchTactic = selectedSigmaTactic === 'all' ||
@@ -940,8 +943,8 @@ export function refreshSigmaFilteredCacheSync(coverageMap) {
         const matchCov = selectedSigmaCoverage === 'all' || cov === selectedSigmaCoverage;
 
         // Product
-        const matchProd = selectedSigmaProduct === 'all' ||
-            (rule.logsource && rule.logsource.product === selectedSigmaProduct);
+        const prod = rule.logsource?.product || 'unknown';
+        const matchProd = selectedSigmaProduct.length === 0 ? false : selectedSigmaProduct.includes(prod);
 
         // Date filter
         let matchDate = true;
@@ -1002,14 +1005,125 @@ export async function renderSigmaView() {
         renderSigmaList();
         renderSigmaDetails();
         updateHydrationStatus();
-        return;
     }
+    populateDynamicFilters(sigmaRules);
     await refreshSigmaFilteredCache();
     renderSigmaStats();
     renderSigmaList();
     renderSigmaDetails();
     updateHydrationStatus();
 }
+
+function populateDynamicFilters(rules) {
+    const products = new Set();
+    const services = new Set();
+    
+    for (const r of rules) {
+        if (r.logsource) {
+            if (r.logsource.product) products.add(r.logsource.product);
+            if (r.logsource.category) services.add(r.logsource.category);
+            if (r.logsource.service) services.add(r.logsource.service);
+        }
+    }
+    
+    const prodArray = Array.from(products).sort();
+    const servArray = Array.from(services).sort();
+    
+    // Auto-select all if not initialized
+    if (selectedSigmaProduct.length === 0 && prodArray.length > 0) {
+        selectedSigmaProduct.push(...prodArray);
+    }
+    if (selectedSigmaLogsource.length === 0 && servArray.length > 0) {
+        selectedSigmaLogsource.push(...servArray);
+    }
+    
+    // Render Products Dropdown
+    const prodContainer = document.getElementById('sigma-product-options');
+    if (prodContainer) {
+        let html = '';
+        for (const p of prodArray) {
+            const checked = selectedSigmaProduct.includes(p) ? 'checked' : '';
+            html += `
+                <label class="sigma-multi-select-option">
+                    <input type="checkbox" value="${escapeHtml(p)}" ${checked} onchange="toggleSigmaMultiFilter('product', this.value, this.checked)">
+                    ${escapeHtml(p)}
+                </label>
+            `;
+        }
+        prodContainer.innerHTML = html;
+        updateMultiSelectLabel('sigma-multi-product', 'Products', selectedSigmaProduct.length, prodArray.length);
+    }
+    
+    // Render Services Dropdown
+    const servContainer = document.getElementById('sigma-logsource-options');
+    if (servContainer) {
+        let html = '';
+        for (const s of servArray) {
+            const checked = selectedSigmaLogsource.includes(s) ? 'checked' : '';
+            html += `
+                <label class="sigma-multi-select-option">
+                    <input type="checkbox" value="${escapeHtml(s)}" ${checked} onchange="toggleSigmaMultiFilter('logsource', this.value, this.checked)">
+                    ${escapeHtml(s)}
+                </label>
+            `;
+        }
+        servContainer.innerHTML = html;
+        updateMultiSelectLabel('sigma-multi-logsource', 'Services', selectedSigmaLogsource.length, servArray.length);
+    }
+}
+
+window.toggleSigmaMultiFilter = function(type, value, isChecked) {
+    if (type === 'product') {
+        if (isChecked) {
+            if (!selectedSigmaProduct.includes(value)) selectedSigmaProduct.push(value);
+        } else {
+            selectedSigmaProduct = selectedSigmaProduct.filter(p => p !== value);
+        }
+        const total = document.querySelectorAll('#sigma-product-options input').length;
+        updateMultiSelectLabel('sigma-multi-product', 'Products', selectedSigmaProduct.length, total);
+    } else if (type === 'logsource') {
+        if (isChecked) {
+            if (!selectedSigmaLogsource.includes(value)) selectedSigmaLogsource.push(value);
+        } else {
+            selectedSigmaLogsource = selectedSigmaLogsource.filter(s => s !== value);
+        }
+        const total = document.querySelectorAll('#sigma-logsource-options input').length;
+        updateMultiSelectLabel('sigma-multi-logsource', 'Services', selectedSigmaLogsource.length, total);
+    }
+    currentVisibleCount = SIGMA_PAGINATION_CHUNK;
+    triggerFilterWorker();
+};
+
+function updateMultiSelectLabel(id, name, selected, total) {
+    const el = document.querySelector(\`#\${id} .sigma-multi-select-label\`);
+    if (!el) return;
+    if (selected === total) el.textContent = \`\${name}: All\`;
+    else if (selected === 0) el.textContent = \`\${name}: None\`;
+    else el.textContent = \`\${name}: \${selected} selected\`;
+}
+
+// Dropdown toggle logic
+document.addEventListener('click', (e) => {
+    const isDropdownClick = e.target.closest('.sigma-multi-select');
+    if (!isDropdownClick) {
+        document.querySelectorAll('.sigma-multi-select.open').forEach(el => el.classList.remove('open'));
+    }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+    // We attach listeners to the headers to toggle the dropdown
+    setTimeout(() => {
+        document.querySelectorAll('.sigma-multi-select-header').forEach(header => {
+            header.addEventListener('click', (e) => {
+                const parent = header.parentElement;
+                const wasOpen = parent.classList.contains('open');
+                document.querySelectorAll('.sigma-multi-select.open').forEach(el => el.classList.remove('open'));
+                if (!wasOpen) parent.classList.add('open');
+                e.stopPropagation();
+            });
+        });
+    }, 1000); // Give DOM time to initialize
+});
 
 // ---- Section 12: Rendering - Stats Dashboard ----
 
@@ -1259,6 +1373,19 @@ export function renderSigmaCard(rule, idx) {
         }
     }
 
+    // Determine non-standard badge
+    let isNonStandard = false;
+    if (rule.logsource) {
+        const prod = (rule.logsource.product || '').toLowerCase();
+        const cat = (rule.logsource.category || '').toLowerCase();
+        const standardProducts = ['windows', 'linux', 'macos', ''];
+        
+        // If product is non-standard, or category is not in our known tables map
+        if (!standardProducts.includes(prod) || (cat && !KqlSchemaMap.tables[cat])) {
+            isNonStandard = true;
+        }
+    }
+
     return `
         <div class="sigma-card ${isActive ? 'active' : ''}" data-idx="${idx}" data-rule-id="${rule.id}">
             <div class="sigma-card-header">
@@ -1266,6 +1393,7 @@ export function renderSigmaCard(rule, idx) {
                     ${rule.technique_id ? `<span class="sigma-card-tech">${escapeHtml(rule.technique_id)}</span>` : ''}
                     ${rule.isVirtual ? `<span class="sigma-card-virtual-badge" title="Live GitHub Rule – click to hydrate"><i class="bi bi-cloud-arrow-down-fill"></i></span>` : ''}
                     ${statusBadge}
+                    ${isNonStandard ? `<span class="badge-non-standard" title="Custom product/category. KQL translation may be inaccurate."><i class="bi bi-exclamation-triangle"></i> Non-Standard</span>` : ''}
                 </div>
                 <div class="sigma-card-header-right">
                     ${coverage === 'active' ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active</span>' : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Gap</span>'}
