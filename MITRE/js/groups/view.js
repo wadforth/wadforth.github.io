@@ -153,6 +153,9 @@ export function renderGroupsView() {
         const themeClass = `group-theme-${theme.id}`;
         const avatarSvg = getProceduralAvatarSVG(g.id, g.name);
         
+        const isNew = state.changelogDiff?.added?.groups?.has(groupId);
+        const newBadge = isNew ? `<span class="badge bg-success text-xxs shadow-sm" style="font-size: 0.55rem; padding: 2px 4px; margin-left: 4px; vertical-align: middle;">NEW</span>` : '';
+
         // Retrieve techniques related to this group
         const groupTechniques = state.relationships
             .filter(r => r.relationship_type === 'uses' && r.source_ref === g.id)
@@ -185,7 +188,7 @@ export function renderGroupsView() {
                             ${avatarSvg}
                         </div>
                         <div class="group-list-info">
-                            <span class="group-list-name" style="font-weight: 700;">${escapeHtml(g.name)} <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="font-size: 0.7rem; margin-left: 2px; color: ${theme.accentHex}; text-shadow: 0 0 6px rgba(${theme.accentRGB}, 0.8);"></i></span>
+                            <span class="group-list-name" style="font-weight: 700;">${escapeHtml(g.name)} <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="font-size: 0.7rem; margin-left: 2px; color: ${theme.accentHex}; text-shadow: 0 0 6px rgba(${theme.accentRGB}, 0.8);"></i>${newBadge}</span>
                             <span class="group-list-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; border-radius: 4px; font-weight: bold; font-size: 0.65rem; padding: 2px 6px;">${groupId}</span>
                             <span class="${theme.badgeClass}" style="transform: scale(0.9); transform-origin: left center; margin-left: 4px;"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
                         </div>
@@ -215,7 +218,7 @@ export function renderGroupsView() {
                         </div>
                         <h6 class="group-card-title" style="margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--on-surface); display: flex; align-items: center; gap: 4px;">
                             ${escapeHtml(g.name)}
-                            <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="color: ${theme.accentHex}; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.8); margin: 0; font-size: 0.8rem; vertical-align: middle;"></i>
+                            <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="color: ${theme.accentHex}; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.8); margin: 0; font-size: 0.8rem; vertical-align: middle;"></i>${newBadge}
                         </h6>
                     </div>
                     <span class="group-tech-badge" style="background: rgba(${theme.accentRGB}, 0.08); color: ${theme.accentHex}; border: 1px solid rgba(${theme.accentRGB}, 0.15); border-radius: 6px; font-weight: 800; font-size: 0.75rem; padding: 3px 7px;">${techCount}</span>

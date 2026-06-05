@@ -228,11 +228,14 @@ export function buildTechniqueCell(tech, subs = []) {
     const displayId = highlightText(id, state.matrixSearchQuery);
     const displayName = highlightText(name, state.matrixSearchQuery);
 
+    const isNew = state.changelogDiff?.added?.techniques?.has(id);
+    const newBadge = isNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm mr-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: top;">NEW</span>' : '';
+
     let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass}" data-id="${id}" ${colorStyle}>
         <div class="tech-id" ${textColor ? `style="color: ${textColor};"` : ''}>${displayId}</div>
         <div class="tech-name" ${textColor ? `style="color: ${textColor};"` : ''}>${displayName}</div>
         <div class="matrix-badges">
-            ${sentinelBadge}
+            ${newBadge}${sentinelBadge}
             ${archivedBadge}
         </div>
         ${expandBtn}
@@ -253,9 +256,13 @@ export function buildTechniqueCell(tech, subs = []) {
             const subColor = subEffectiveColor ? `style="background: ${subBgColor}; color: ${subTextColor};"` : '';
             const subDisplayId = highlightText(subId, state.matrixSearchQuery);
             const subDisplayName = highlightText(subName, state.matrixSearchQuery);
+            
+            const isSubNew = state.changelogDiff?.added?.techniques?.has(subId);
+            const subNewBadge = isSubNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm ml-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: middle;">NEW</span>' : '';
+
             return `<div class="technique-cell sub-technique ${subAnnotated}" data-id="${subId}" ${subColor}>
                 <span class="sub-connector"></span>
-                <span class="tech-id" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayId}</span> <span class="tech-name" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayName}</span>
+                <span class="tech-id" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayId}</span> <span class="tech-name" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayName}</span>${subNewBadge}
             </div>`;
         }).join('');
         html += `</div>`;

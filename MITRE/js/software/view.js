@@ -253,6 +253,9 @@ export function renderSoftwareView() {
             const themeClass = `software-theme-${theme.id}`;
             const avatarSvg = getProceduralSoftwareAvatarSVG(s.id, s.name, s.type);
             
+            const isNew = state.changelogDiff?.added?.software?.has(swId);
+            const newBadge = isNew ? `<span class="badge bg-success text-xxs shadow-sm" style="font-size: 0.55rem; padding: 2px 4px; margin-left: 4px; vertical-align: middle;">NEW</span>` : '';
+
             // Optimized target lookup
             const techRels = relsBySource.get(s.id) || [];
             const relatedTechniques = techRels.map(r => techById.get(r.target_ref)).filter(Boolean);
@@ -310,7 +313,7 @@ export function renderSoftwareView() {
                                 ${avatarSvg}
                             </div>
                             <div class="software-list-info">
-                                <span class="software-list-name" style="font-weight: 700;">${escapeHtml(s.name)}</span>
+                                <span class="software-list-name" style="font-weight: 700;">${escapeHtml(s.name)}${newBadge}</span>
                                 <span class="software-list-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; border-radius: 4px; font-weight: bold; font-size: 0.65rem; padding: 2px 6px;">${swId}</span>
                                 <span class="${theme.badgeClass}" style="transform: scale(0.9); transform-origin: left center; margin-left: 4px;"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
                             </div>
@@ -339,7 +342,7 @@ export function renderSoftwareView() {
                                 <span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
                             </div>
                             <h6 class="software-card-title" style="margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--on-surface); display: flex; align-items: center; gap: 4px;">
-                                ${escapeHtml(s.name)}
+                                ${escapeHtml(s.name)}${newBadge}
                             </h6>
                         </div>
                         <span class="software-tech-badge" style="background: rgba(${theme.accentRGB}, 0.08); color: ${theme.accentHex}; border: 1px solid rgba(${theme.accentRGB}, 0.15); border-radius: 6px; font-weight: 800; font-size: 0.75rem; padding: 3px 7px;">${techCount}</span>

@@ -58,6 +58,10 @@ export async function loadSTIX(domain, version, layerData = null) {
         showLoading(true, 'Parsing STIX data...');
         const bundle = await resp.json();
         parseSTIX(bundle);
+        
+        if (window.generateChangelog) {
+            window.generateChangelog().catch(err => console.warn('Changelog error:', err));
+        }
 
         if (layerData) {
             state.currentLayer = layerData;

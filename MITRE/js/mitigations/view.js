@@ -170,6 +170,9 @@ export function renderMitigationsView() {
         const desc = m.description || '';
         const truncatedDesc = truncateDescription(desc, 140);
         
+        const isNew = state.changelogDiff?.added?.mitigations?.has(mitId);
+        const newBadge = isNew ? `<span class="badge bg-success text-xxs shadow-sm" style="font-size: 0.55rem; padding: 2px 4px; margin-left: 4px; vertical-align: middle;">NEW</span>` : '';
+
         // Pre-calculate real-time query coverage maturity grade for the mitigation
         const coveredTechs = techs.filter(t => {
             const tid = t.external_references?.[0]?.external_id || '';
@@ -223,7 +226,7 @@ export function renderMitigationsView() {
                             <i class="bi ${status === 'implemented' ? 'bi-check-circle-fill' : status === 'planned' ? 'bi-clock-fill' : 'bi-circle'}"></i>
                         </button>
                         <div class="mitigation-list-info" style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-                            <span class="mitigation-list-name" style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.name)}</span>
+                            <span class="mitigation-list-name" style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.name)}${newBadge}</span>
                             <span class="mitigation-list-id" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px; flex-shrink: 0;">${mitId}</span>
                         </div>
                         <span class="mitigation-tech-count" style="font-size: 0.72rem; font-weight: 600; white-space: nowrap;">${techs.length} technique${techs.length === 1 ? '' : 's'}</span>
@@ -247,7 +250,7 @@ export function renderMitigationsView() {
                 <div class="mitigation-card-header">
                     <div class="mitigation-card-header-left">
                         <span class="mitigation-id-badge" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${mitId}</span>
-                        <h6 class="mitigation-card-title" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}</h6>
+                        <h6 class="mitigation-card-title" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}${newBadge}</h6>
                     </div>
                     <button class="btn btn-sm mit-status-toggle ${status}" data-mit="${m.id}" title="Click to cycle: None → Planned → Implemented">
                         <i class="bi ${status === 'implemented' ? 'bi-check-circle-fill' : status === 'planned' ? 'bi-clock-fill' : 'bi-circle'}"></i>

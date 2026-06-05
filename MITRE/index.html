@@ -147,6 +147,9 @@
                     <span class="layer-name-display" id="layer-name-display">Untitled Layer</span>
                     <span class="badge bg-secondary" id="layer-domain-badge">Enterprise</span>
                     <span class="badge bg-secondary" id="layer-version-badge">v19.1</span>
+                    <button class="btn btn-sm btn-outline-info hidden" id="btn-changelog" title="View Version Changelog" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;">
+                        <i class="bi bi-journal-text mr-1"></i>Changelog
+                    </button>
                 </div>
                 <div class="flex items-center gap-2">
                     <button class="btn btn-sm btn-ghost" id="btn-set-company-logo" title="Set Company Logo">
@@ -1149,6 +1152,32 @@
                 </div>
             </div>
         </div>
+        </div>
+    </div>
+
+    <!-- Changelog Modal -->
+    <div class="modal fade" id="changelog-modal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <div>
+                        <h5 class="modal-title font-bold text-lg" id="changelog-title">Version Changelog</h5>
+                        <p class="text-sm text-on-surface-secondary mb-0" id="changelog-subtitle">Comparing ...</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="changelog-loading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-on-surface-secondary text-sm">Analyzing dataset changes...</p>
+                    </div>
+                    <div id="changelog-details-list" class="hidden"></div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
 
@@ -1164,6 +1193,7 @@
     <script type="module" src="js/utils/version.js"></script>
     <script type="module" src="js/utils/db.js"></script>
     <script type="module" src="js/intel/sigma-parser.js"></script>
+    <script type="module" src="js/intel/changelog.js"></script>
     <script type="module" src="ui.js"></script>
     <script type="module" src="data.js"></script>
     <script type="module" src="js/data/stix-utils.js"></script>
