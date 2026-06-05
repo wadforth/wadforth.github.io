@@ -385,11 +385,11 @@
                         </div>
                         
                         <div class="sigma-multi-select" id="sigma-multi-logsource" tabindex="0">
-                            <div class="sigma-multi-select-header">
+                            <div class="sigma-multi-select-header" onclick="this.parentElement.classList.toggle('open'); event.stopPropagation();">
                                 <span class="sigma-multi-select-label">Services: All</span>
                                 <i class="bi bi-chevron-down"></i>
                             </div>
-                            <div class="sigma-multi-select-dropdown" id="sigma-logsource-options">
+                            <div class="sigma-multi-select-dropdown" id="sigma-logsource-options" onclick="event.stopPropagation();">
                                 <!-- Checkboxes injected dynamically -->
                             </div>
                         </div>
@@ -445,11 +445,11 @@
                         <option value="gap">Defensive Gaps</option>
                     </select>
                     <div class="sigma-multi-select" id="sigma-multi-product" tabindex="0">
-                        <div class="sigma-multi-select-header">
+                        <div class="sigma-multi-select-header" onclick="this.parentElement.classList.toggle('open'); event.stopPropagation();">
                             <span class="sigma-multi-select-label">Products: All</span>
                             <i class="bi bi-chevron-down"></i>
                         </div>
-                        <div class="sigma-multi-select-dropdown" id="sigma-product-options">
+                        <div class="sigma-multi-select-dropdown" id="sigma-product-options" onclick="event.stopPropagation();">
                             <!-- Checkboxes injected dynamically -->
                         </div>
                     </div>
@@ -1190,6 +1190,13 @@
     <script type="module" src="js/intel/sigma-parser.js"></script>
     <script type="module" src="js/intel/changelog.js"></script>
     <script type="module" src="ui.js"></script>
+    <script>
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.sigma-multi-select.open').forEach(function(el) {
+                el.classList.remove('open');
+            });
+        });
+    </script>
     <script type="module" src="data.js"></script>
     <script type="module" src="js/data/stix-utils.js"></script>
     <script type="module" src="js/matrix/annotations.js"></script>

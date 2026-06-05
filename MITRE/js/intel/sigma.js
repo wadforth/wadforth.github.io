@@ -1102,23 +1102,7 @@ function updateMultiSelectLabel(id, name, selected, total) {
     else el.textContent = `${name}: ${selected} selected`;
 }
 
-// Dropdown toggle logic
-document.addEventListener('click', (e) => {
-    const header = e.target.closest('.sigma-multi-select-header');
-    if (header) {
-        const parent = header.parentElement;
-        const wasOpen = parent.classList.contains('open');
-        document.querySelectorAll('.sigma-multi-select.open').forEach(el => el.classList.remove('open'));
-        if (!wasOpen) parent.classList.add('open');
-        e.stopPropagation();
-        return;
-    }
-    
-    const isDropdownClick = e.target.closest('.sigma-multi-select');
-    if (!isDropdownClick) {
-        document.querySelectorAll('.sigma-multi-select.open').forEach(el => el.classList.remove('open'));
-    }
-});
+// Dropdown toggle logic moved to inline HTML for robustness
 
 // ---- Section 12: Rendering - Stats Dashboard ----
 
