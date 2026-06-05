@@ -1025,11 +1025,19 @@ function populateDynamicFilters(rules) {
     const prodArray = Array.from(products).sort();
     const servArray = Array.from(services).sort();
     
-    // Auto-select all if not initialized
-    if (selectedSigmaProduct.length === 0 && prodArray.length > 0) {
+    // Load from local storage or auto-select all
+    const storedProd = localStorage.getItem('sigma_filter_products');
+    const storedServ = localStorage.getItem('sigma_filter_services');
+    
+    if (storedProd !== null) {
+        selectedSigmaProduct = JSON.parse(storedProd);
+    } else if (selectedSigmaProduct.length === 0 && prodArray.length > 0) {
         selectedSigmaProduct.push(...prodArray);
     }
-    if (selectedSigmaLogsource.length === 0 && servArray.length > 0) {
+    
+    if (storedServ !== null) {
+        selectedSigmaLogsource = JSON.parse(storedServ);
+    } else if (selectedSigmaLogsource.length === 0 && servArray.length > 0) {
         selectedSigmaLogsource.push(...servArray);
     }
     
@@ -1079,6 +1087,7 @@ window.toggleSigmaMultiFilter = function(type, value, isChecked) {
             selectedSigmaProduct = selectedSigmaProduct.filter(p => p !== value);
         }
         updateMultiSelectLabel('sigma-multi-product', 'Products', selectedSigmaProduct.length, document.querySelectorAll('#sigma-product-options input').length);
+        localStorage.setItem('sigma_filter_products', JSON.stringify(selectedSigmaProduct));
     } else {
         if (isChecked) {
             if (!selectedSigmaLogsource.includes(value)) selectedSigmaLogsource.push(value);
@@ -1086,6 +1095,7 @@ window.toggleSigmaMultiFilter = function(type, value, isChecked) {
             selectedSigmaLogsource = selectedSigmaLogsource.filter(s => s !== value);
         }
         updateMultiSelectLabel('sigma-multi-logsource', 'Services', selectedSigmaLogsource.length, document.querySelectorAll('#sigma-logsource-options input').length);
+        localStorage.setItem('sigma_filter_services', JSON.stringify(selectedSigmaLogsource));
     }
     
     updateDynamicFilterStates();
@@ -1109,11 +1119,11 @@ export function updateDynamicFilterStates() {
         
         const hasProd = !rProd || /^\d+$/.test(rProd) ? false : true;
         
-        const sMatch = selectedSigmaLogsource.length === 0 || 
-                       (rCat && selectedSigmaLogsource.includes(rCat)) || 
-                       (rServ && selectedSigmaLogsource.includes(rServ));
+        const sMatch = selectedSigmaLogsource.length === 0 ? false : 
+                       ((rCat && selectedSigmaLogsource.includes(rCat)) || 
+                       (rServ && selectedSigmaLogsource.includes(rServ)));
                        
-        const pMatch = selectedSigmaProduct.length === 0 || 
+        const pMatch = selectedSigmaProduct.length === 0 ? false : 
                        (rProd && selectedSigmaProduct.includes(rProd));
                        
         if (sMatch && hasProd) availableProducts.add(rProd);
