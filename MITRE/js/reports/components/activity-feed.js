@@ -1,5 +1,5 @@
 export function buildUnifiedActivityFeed(report, isDark = false, isEmail = false) {
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || report.reportMonth?.slice(0, 7);
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     if (!month) return '';
     
     const byMonth = getTechniquesByMonth();

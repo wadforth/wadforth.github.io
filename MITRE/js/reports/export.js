@@ -890,7 +890,7 @@ export function buildEmailHTML(report, isDark = false) {
                             if (teamId === 'engineering') {
                                 const candidates = [];
                                 const seenIds = new Set();
-                                const targetMonth = report.selectedMonth || report.reportMonth || new Date().toISOString().slice(0, 7);
+                                const targetMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
                                 const techniques = report.snapshot?.techniques || state.currentLayer?.techniques || [];
                                 techniques.forEach(ann => {
                                     const baseMonth = ann.monthAdded || new Date().toISOString().slice(0, 7);

@@ -2240,7 +2240,7 @@ export function validateReport(report) {
 }
 
 export function generateDynamicMonthlyFocus(report) {
-    const month = report.reportMonth || report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     if (!month) return '';
     
     const byMonth = getTechniquesByMonth();
@@ -2543,7 +2543,7 @@ export function buildTeamAssignmentsSection(report) {
             if (teamId === 'engineering') {
                 const candidates = [];
                 const seenIds = new Set();
-                const targetMonth = report.selectedMonth || report.reportMonth || new Date().toISOString().slice(0, 7);
+                const targetMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
                 const techniques = report.snapshot?.techniques || window.state?.currentLayer?.techniques || [];
                 techniques.forEach(ann => {
                     if (ann.queries) {
