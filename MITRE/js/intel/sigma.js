@@ -12,6 +12,8 @@
 //   6. Web Worker handles YAML parsing and filtering off main thread
 
 // ---- Section 1: State & Constants ----
+import { compileSigmaToKQL } from './sigma-compiler.js';
+
 
 export let sigmaRules = [];
 export let selectedSigmaIdx = null;
@@ -1383,7 +1385,14 @@ export function renderSigmaDetails() {
                 </div>
                 <div class="sigma-yaml-container">
                     <button class="sigma-copy-btn" id="btn-copy-sigma-yaml"><i class="bi bi-clipboard mr-1"></i> Copy YAML</button>
+                    <button class="sigma-copy-btn" id="btn-translate-kql" style="right: 120px;"><i class="bi bi-magic mr-1"></i> Translate to KQL</button>
                     <pre class="sigma-yaml-code"><code>${escapeHtml(rule.yaml)}</code></pre>
+                </div>
+                
+                <div id="sigma-kql-container" class="sigma-yaml-container hidden mt-3" style="border-color: #3b82f6;">
+                    <div style="position: absolute; top: -10px; left: 15px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; z-index: 2;">KQL (Best Effort)</div>
+                    <button class="sigma-copy-btn" id="btn-copy-kql"><i class="bi bi-clipboard mr-1"></i> Copy KQL</button>
+                    <pre class="sigma-yaml-code" id="sigma-kql-output" style="background: #0f172a;"><code></code></pre>
                 </div>
             </div>
 
@@ -1408,7 +1417,33 @@ export function renderSigmaDetails() {
             btn.innerHTML = `<i class="bi bi-check-lg mr-1"></i> Copied!`;
             btn.style.color = "var(--accent-green)";
             btn.style.borderColor = "var(--accent-green)";
-            setTimeout(() => { btn.innerHTML = orig; btn.style.color = ""; btn.style.borderColor = ""; }, 1800);
+            setTimeout(() => { 
+                btn.innerHTML = orig; 
+                btn.style.color = "var(--on-surface-tertiary)";
+                btn.style.borderColor = "var(--border)";
+            }, 2000);
+        });
+    });
+
+    document.getElementById('btn-translate-kql')?.addEventListener('click', () => {
+        const kqlOutput = compileSigmaToKQL(rule.yaml, 'mde');
+        document.getElementById('sigma-kql-output').innerHTML = `<code>${escapeHtml(kqlOutput)}</code>`;
+        document.getElementById('sigma-kql-container').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-copy-kql')?.addEventListener('click', (e) => {
+        const kqlOutput = document.getElementById('sigma-kql-output').innerText;
+        navigator.clipboard.writeText(kqlOutput).then(() => {
+            const btn = e.currentTarget;
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<i class="bi bi-check-lg mr-1"></i> Copied!`;
+            btn.style.color = "var(--accent-green)";
+            btn.style.borderColor = "var(--accent-green)";
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.style.color = "var(--on-surface-tertiary)";
+                btn.style.borderColor = "var(--border)";
+            }, 2000);
         });
     });
 

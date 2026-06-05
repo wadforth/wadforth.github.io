@@ -1192,6 +1192,9 @@ export function viewReport(reportId) {
                 <button class="btn btn-primary" onclick="exportReportPDF('${report.id}')">
                     <i class="bi bi-file-earmark-pdf mr-2"></i>Export PDF
                 </button>
+                <button class="btn btn-primary" onclick="exportReportMarkdown('${report.id}')" style="background-color: var(--accent-purple); border-color: var(--accent-purple);">
+                    <i class="bi bi-markdown mr-2"></i>Export Markdown
+                </button>
                 <button class="btn btn-outline-primary" onclick="exportReportEmail('${report.id}')">
                     <i class="bi bi-file-earmark-html mr-2"></i>Export HTML
                 </button>
@@ -4603,3 +4606,107 @@ window.buildTechniquesAtRiskEmail = buildTechniquesAtRiskEmail;
 
 window.buildMonthlyChangelog = buildMonthlyChangelog;
 window.getQueryAssociations = getQueryAssociations;
+
+// Markdown Export Implementation
+export async function exportReportMarkdown(reportId) {
+    const report = state._cachedReports?.find(r => r.id === reportId);
+    if (!report) {
+        showToast('Report not found for Markdown export', 'error');
+        return;
+    }
+
+    const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const coverageStats = getOverallCoverageStatsUpToMonth(currentMonth);
+    const totalQueries = getTotalUniqueActiveQueriesUpToMonth(currentMonth);
+    const threatsDisrupted = getThreatsDisruptedCount(currentMonth);
+    
+    const maturityGrade = (pct) => {
+        if (pct >= 80) return 'A+ Excellent';
+        if (pct >= 70) return 'A Strong';
+        if (pct >= 60) return 'B+ Capable';
+        if (pct >= 50) return 'B Good';
+        if (pct >= 40) return 'C+ Developing';
+        if (pct >= 30) return 'C Baseline';
+        if (pct >= 20) return 'D Lacking';
+        return 'F Critical Gaps';
+    }(coverageStats.pct);
+
+    let md = `# MITRE ATT&CK Coverage Report\n\n`;
+    md += `**Company:** ${report.companyName || 'N/A'}\n`;
+    md += `**Report Month:** ${getMonthLabel(currentMonth)}\n`;
+    md += `**Prepared By:** ${report.author || state.author || 'Security Operations Team'}\n\n`;
+    
+    md += `## 1. Executive Summary\n\n`;
+    md += `${report.executiveSummary || 'No executive summary provided.'}\n\n`;
+    
+    md += `### Key Metrics at a Glance\n\n`;
+    md += `| Metric | Value |\n|---|---|\n`;
+    md += `| Overall Framework Coverage | ${coverageStats.pct.toFixed(1)}% |\n`;
+    md += `| Active Detection Queries | ${totalQueries} |\n`;
+    md += `| Threats Disrupted | ${threatsDisrupted} |\n`;
+    md += `| Security Posture Grade | ${maturityGrade} |\n\n`;
+
+    md += `## 2. Threat Landscape & Strategic Gaps\n\n`;
+    md += `### Strategic Recommendations\n\n${report.recommendations || 'None.'}\n\n`;
+    md += `### Gap Analysis & Prioritization\n\n${report.gapAnalysis || 'None.'}\n\n`;
+
+    md += `## 3. Detection Results\n\n`;
+    const detectionResults = report.detectionResults || [];
+    if (detectionResults.length > 0) {
+        md += `| Technique | Metric | Status |\n|---|---|---|\n`;
+        detectionResults.forEach(dr => {
+            md += `| ${dr.techniqueId} | ${dr.metric} | ${dr.status} |\n`;
+        });
+        md += `\n`;
+    } else {
+        md += `No detection results recorded for this period.\n\n`;
+    }
+
+    md += `## 4. Methodology & Scope\n\n`;
+    const methNames = { 'sig-based': 'Signature-Based Detection', 'behavioral': 'Behavioral Analysis', 'threat-intel': 'Threat Intelligence Driven' };
+    const activeMeth = Object.keys(report.methodology || {}).filter(k => report.methodology[k]).map(k => methNames[k] || k);
+    md += `**Methodologies:** ${activeMeth.length > 0 ? activeMeth.join(', ') : 'None specified'}\n\n`;
+    md += `**Additional Notes:** ${report.methodologyNotes || 'None.'}\n\n`;
+    
+    // Automatically extract new queries for the month
+    const byMonth = typeof getTechniquesByMonth === 'function' ? getTechniquesByMonth() : {};
+    const techniques = byMonth[currentMonth] || [];
+    const newQueries = [];
+    techniques.forEach(ann => {
+        if (ann.queries) {
+            ann.queries.forEach(q => {
+                if (!newQueries.some(existing => existing.id === q.id)) {
+                    newQueries.push({ ...q, techniqueID: ann.techniqueID });
+                }
+            });
+        }
+    });
+
+    if (newQueries.length > 0) {
+        md += `## 5. New Threat Hunt Queries Deployed\n\n`;
+        newQueries.forEach(q => {
+            md += `### [${q.techniqueID}] ${q.name || 'Unnamed Query'}\n`;
+            md += `**Language:** ${q.language || 'Unknown'}\n`;
+            if (q.description) md += `*${q.description}*\n\n`;
+            
+            // Format query code properly
+            let codeBlock = q.query || q.code || '';
+            md += \`\`\`\${(q.language || '').toLowerCase()}\n\${codeBlock}\n\`\`\`\n\n\`;
+        });
+    }
+
+    // Trigger download
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = \`Coverage-Report-\${currentMonth}.md\`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showToast('Report exported as Markdown successfully!', 'success');
+}
+
+window.exportReportMarkdown = exportReportMarkdown;
