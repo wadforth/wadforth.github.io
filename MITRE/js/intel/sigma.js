@@ -77,6 +77,11 @@ export function initSigmaWorker() {
         sigmaWorker.onerror = function(err) {
             console.warn('Sigma Worker error, falling back to main thread:', err);
             sigmaWorker = null;
+            if (workerPendingFilter) {
+                const resolve = workerPendingFilter;
+                workerPendingFilter = null;
+                resolve(refreshSigmaFilteredCacheSync());
+            }
         };
     } catch (err) {
         console.warn('Web Worker not available, falling back to main thread:', err);

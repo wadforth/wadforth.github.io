@@ -205,11 +205,4 @@ export function getEffectiveDate(rule) {
     return 0;
 }
 
-// Legacy Window Bindings
-window.sigmaRulesCache = sigmaRulesCache;
-window.handleParseYAML = handleParseYAML;
-window.handleFilterAndSort = handleFilterAndSort;
-window.extractLevelFromYaml = extractLevelFromYaml;
-window.getSeverityRank = getSeverityRank;
-window.parseSigmaDate = parseSigmaDate;
-window.getEffectiveDate = getEffectiveDate;
+
