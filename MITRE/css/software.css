@@ -105,26 +105,29 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
-    background: var(--surface-elevated);
+    background: transparent;
     overflow: hidden;
 }
 
 .software-card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-lg);
     padding: 1.25rem;
     transition: var(--transition);
     position: relative;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .software-card:hover {
-    background: var(--surface-variant);
+    background: rgba(15, 23, 42, 0.5);
     border-color: var(--primary);
-    box-shadow: var(--shadow-md), 0 0 12px var(--primary-light);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25), 0 0 12px var(--primary-light);
+    transform: translateY(-2px);
 }
 
 .software-card-header {
@@ -353,13 +356,15 @@
 #software-detail-modal .software-tab-nav {
     margin: -2rem -2rem 2rem;
     padding: 0 2rem;
-    background: var(--surface-elevated);
-    border-bottom: 1px solid var(--border);
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-wrap: wrap;
     position: sticky;
     top: 0;
     z-index: 10;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 #software-detail-modal .software-tab-pane {
@@ -382,11 +387,11 @@
     gap: 1rem;
     margin-bottom: 1.5rem;
     padding: 0.75rem;
-    background: rgba(21, 27, 43, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border-radius: var(--radius-sm);
-    border: 1px solid rgba(55, 65, 81, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 #software-detail-modal .software-meta-item {
@@ -730,6 +735,48 @@
 .software-tech-item-name {
     color: var(--on-surface-secondary);
     font-size: 0.72rem;
+}
+
+/* ============================================
+   Overview Layout
+   ============================================ */
+
+/* Make Modal Background Glassmorphic */
+#software-detail-modal .modal-content {
+    background: rgba(15, 23, 42, 0.25) !important;
+    backdrop-filter: blur(50px) !important;
+    -webkit-backdrop-filter: blur(50px) !important;
+}
+
+/* Two-column Layout for Overview */
+.software-overview-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 2rem;
+    align-items: start;
+}
+
+.software-overview-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.software-overview-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 0;
+}
+
+@media (max-width: 992px) {
+    .software-overview-layout {
+        grid-template-columns: 1fr;
+    }
+    .software-overview-sidebar {
+        position: static;
+    }
 }
 
 /* ============================================

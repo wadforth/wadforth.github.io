@@ -40,17 +40,17 @@
 
 .technique-select-search:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light);
-    background: var(--surface-elevated);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.4);
 }
 
 .technique-select-list {
     max-height: 260px;
     overflow-y: auto;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-sm);
-    background: var(--surface-subtle);
+    background: rgba(15, 23, 42, 0.2);
 }
 
 .technique-tactic-group {
@@ -66,8 +66,10 @@
     padding: 0.3rem 0.6rem;
     font-size: 0.62rem;
     font-weight: 600;
-    color: var(--primary);
-    background: var(--surface-elevated);
+    color: var(--on-surface);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     position: sticky;
@@ -121,21 +123,23 @@
 
 /* Search Container */
 .search-container .input-group-text {
-    background: var(--surface-subtle);
-    border-color: var(--border);
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(10px);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .search-container .form-control {
     font-size: 0.75rem;
-    background: var(--surface-subtle);
-    border-color: var(--border);
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(10px);
+    border-color: rgba(255, 255, 255, 0.1);
     color: var(--on-surface);
 }
 
 .search-container .form-control:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light);
-    background: var(--surface-elevated);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.5);
 }
 
 /* ============================================
@@ -259,12 +263,14 @@
 }
 
 .query-card:not(.query-card-list) {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
+    background: rgba(15, 23, 42, 0.25);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.25rem;
     padding: 1.5rem;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -438,8 +444,8 @@
 }
 
 .queries-grid .query-card-body {
-    background: var(--surface-subtle);
-    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 0.75rem;
     padding: 1rem;
     font-family: var(--font-mono);
@@ -456,8 +462,8 @@
 }
 
 .query-card-body {
-    background: var(--surface-subtle);
-    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 0.75rem;
     padding: 1rem;
     font-family: var(--font-mono);
@@ -825,9 +831,11 @@
 
 .queries-heatmap-scroll {
     overflow-x: auto;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
-    background: var(--surface-subtle);
+    background: rgba(15, 23, 42, 0.2);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .queries-heatmap-table {
@@ -841,9 +849,11 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--primary);
-    background: var(--surface-elevated);
-    border-bottom: 1px solid var(--border);
+    color: var(--on-surface);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     text-align: center;
     font-size: 0.6rem;
 }
@@ -858,13 +868,15 @@
 
 .heatmap-tech-cell {
     padding: 0.45rem 0.6rem;
-    background: var(--surface-elevated);
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     position: sticky;
     left: 0;
     z-index: 2;
     min-width: 170px;
     max-width: 210px;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .heatmap-tech-id {

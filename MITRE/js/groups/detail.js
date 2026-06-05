@@ -147,91 +147,99 @@ export function showGroupModal(groupId) {
         
         let overviewHtml = `
             <div class="group-tab-pane active" id="group-tab-overview">
-                <div class="group-detail-desc">${parseDescription(group.description || 'No description available.')}</div>
-                
-                <div class="group-meta-grid">
-                    ${created ? `<div class="group-meta-item"><span class="group-meta-label">Created</span><span class="group-meta-value">${created}</span></div>` : ''}
-                    ${modified ? `<div class="group-meta-item"><span class="group-meta-label">Modified</span><span class="group-meta-value">${modified}</span></div>` : ''}
-                    ${firstSeen ? `<div class="group-meta-item"><span class="group-meta-label">First Observed</span><span class="group-meta-value">${firstSeen}</span></div>` : ''}
-                    ${lastSeen ? `<div class="group-meta-item"><span class="group-meta-label">Last Observed</span><span class="group-meta-value">${lastSeen}</span></div>` : ''}
-                    ${sophistication ? `<div class="group-meta-item"><span class="group-meta-label">Sophistication</span><span class="group-meta-value">${escapeHtml(sophistication)}</span></div>` : ''}
-                    ${resourceLevel ? `<div class="group-meta-item"><span class="group-meta-label">Resource Level</span><span class="group-meta-value">${escapeHtml(resourceLevel)}</span></div>` : ''}
-                    ${techCount > 0 ? `<div class="group-meta-item"><span class="group-meta-label">Query Coverage</span><span class="group-meta-value" style="color: ${theme.accentHex}; font-weight: bold; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.2);">${coveragePct}% (${coveredCount}/${techCount})</span></div>` : ''}
+                <div class="group-overview-layout">
+                    <!-- Main Content Column -->
+                    <div class="group-overview-main">
+                        <div class="group-detail-desc" style="font-size: 0.9rem;">${parseDescription(group.description || 'No description available.')}</div>
+                        
+                        ${techCount > 0 ? `
+                            <div class="group-coverage-bar-container" style="border-color: rgba(${theme.accentRGB}, 0.15);">
+                                <div class="group-coverage-bar-label">Technique Query Coverage</div>
+                                <div class="group-coverage-bar-track">
+                                    <div class="group-coverage-bar-fill" style="width: ${coveragePct}%; background: ${theme.accentHex}; box-shadow: 0 0 10px rgba(${theme.accentRGB}, 0.35);"></div>
+                                </div>
+                                <div class="group-coverage-bar-stats">
+                                    <span class="group-coverage-stat covered" style="color: ${theme.accentHex};"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
+                                    <span class="group-coverage-stat uncovered"><i class="bi bi-x-circle"></i> ${techCount - coveredCount} uncovered</span>
+                                    <button class="btn btn-sm btn-outline-primary ms-auto group-view-matrix-btn" data-group-id="${groupId_display}">
+                                        <i class="bi bi-grid-3x2"></i> View in Matrix
+                                    </button>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${goals.length ? `
+                            <div class="group-section">
+                                <h6 class="group-section-title"><i class="bi bi-target"></i> Group Goals</h6>
+                                <ul class="group-goals-list text-sm pl-4 mb-0" style="list-style-type: square; color: var(--on-surface-secondary); line-height: 1.6;">
+                                    ${goals.map(g => `<li>${escapeHtml(g)}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        ${relatedTechniques.length ? `
+                            <div class="group-section">
+                                <h6 class="group-section-title"><i class="bi bi-grid"></i> Top Techniques</h6>
+                                <div class="group-tech-preview">
+                                    ${relatedTechniques.slice(0, 12).map(tech => {
+                                        const techId = tech.external_references?.[0]?.external_id || '';
+                                        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === techId);
+                                        const hasQuery = ann?.queries && ann.queries.length > 0;
+                                        return `<div class="group-tech-chip entity-chip-clickable ${hasQuery ? 'group-tech-chip-covered' : ''}" data-tech-id="${techId}">
+                                            ${hasQuery ? '<i class="bi bi-check-circle-fill group-tech-query-indicator"></i>' : ''}
+                                            <span class="group-tech-chip-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex};">${techId}</span>
+                                            <span class="group-tech-chip-name">${escapeHtml(tech.name)}</span>
+                                        </div>`;
+                                    }).join('')}
+                                    ${relatedTechniques.length > 12 ? `<span class="group-tech-more">+${relatedTechniques.length - 12} more</span>` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${liveFeedHtml}
+                    </div>
+
+                    <!-- Sidebar Content Column -->
+                    <div class="group-overview-sidebar">
+                        <div class="group-meta-grid" style="grid-template-columns: 1fr; margin-bottom: 0;">
+                            ${created ? `<div class="group-meta-item"><span class="group-meta-label">Created</span><span class="group-meta-value">${created}</span></div>` : ''}
+                            ${modified ? `<div class="group-meta-item"><span class="group-meta-label">Modified</span><span class="group-meta-value">${modified}</span></div>` : ''}
+                            ${firstSeen ? `<div class="group-meta-item"><span class="group-meta-label">First Observed</span><span class="group-meta-value">${firstSeen}</span></div>` : ''}
+                            ${lastSeen ? `<div class="group-meta-item"><span class="group-meta-label">Last Observed</span><span class="group-meta-value">${lastSeen}</span></div>` : ''}
+                            ${sophistication ? `<div class="group-meta-item"><span class="group-meta-label">Sophistication</span><span class="group-meta-value">${escapeHtml(sophistication)}</span></div>` : ''}
+                            ${resourceLevel ? `<div class="group-meta-item"><span class="group-meta-label">Resource Level</span><span class="group-meta-value">${escapeHtml(resourceLevel)}</span></div>` : ''}
+                            ${techCount > 0 ? `<div class="group-meta-item"><span class="group-meta-label">Query Coverage</span><span class="group-meta-value" style="color: ${theme.accentHex}; font-weight: bold; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.2);">${coveragePct}% (${coveredCount}/${techCount})</span></div>` : ''}
+                        </div>
+                        
+                        ${domains.length ? `
+                            <div class="group-section mb-0">
+                                <h6 class="group-section-title"><i class="bi bi-globe"></i> Domains</h6>
+                                <div class="group-tags">${domains.map(d => `<span class="group-tag">${escapeHtml(d)}</span>`).join('')}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${aliases.length ? `
+                            <div class="group-section mb-0">
+                                <h6 class="group-section-title"><i class="bi bi-tag"></i> Aliases</h6>
+                                <div class="group-tags">${aliases.map(a => `<span class="group-tag group-tag-alias">${escapeHtml(a)}</span>`).join('')}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${motivations.length ? `
+                            <div class="group-section mb-0">
+                                <h6 class="group-section-title"><i class="bi bi-heart"></i> Motivations</h6>
+                                <div class="group-tags">${motivations.map(m => `<span class="group-tag group-tag-motivation" style="background: rgba(${theme.accentRGB}, 0.08); border-color: rgba(${theme.accentRGB}, 0.2); color: ${theme.accentHex};">${escapeHtml(m)}</span>`).join('')}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${contributors.length ? `
+                            <div class="group-section mb-0">
+                                <h6 class="group-section-title"><i class="bi bi-person-fill-check"></i> Contributors</h6>
+                                <div class="group-tags">${contributors.map(c => `<span class="group-tag group-tag-contributor">${escapeHtml(c)}</span>`).join('')}</div>
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
-                
-                ${techCount > 0 ? `
-                    <div class="group-coverage-bar-container" style="border-color: rgba(${theme.accentRGB}, 0.15);">
-                        <div class="group-coverage-bar-label">Technique Query Coverage</div>
-                        <div class="group-coverage-bar-track">
-                            <div class="group-coverage-bar-fill" style="width: ${coveragePct}%; background: ${theme.accentHex}; box-shadow: 0 0 10px rgba(${theme.accentRGB}, 0.35);"></div>
-                        </div>
-                        <div class="group-coverage-bar-stats">
-                            <span class="group-coverage-stat covered" style="color: ${theme.accentHex};"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
-                            <span class="group-coverage-stat uncovered"><i class="bi bi-x-circle"></i> ${techCount - coveredCount} uncovered</span>
-                            <button class="btn btn-sm btn-outline-primary ms-auto group-view-matrix-btn" data-group-id="${groupId_display}">
-                                <i class="bi bi-grid-3x2"></i> View in Matrix
-                            </button>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${goals.length ? `
-                    <div class="group-section">
-                        <h6 class="group-section-title"><i class="bi bi-target"></i> Group Goals</h6>
-                        <ul class="group-goals-list text-sm pl-4 mb-0" style="list-style-type: square; color: var(--on-surface-secondary); line-height: 1.6;">
-                            ${goals.map(g => `<li>${escapeHtml(g)}</li>`).join('')}
-                        </ul>
-                    </div>
-                ` : ''}
-                
-                ${domains.length ? `
-                    <div class="group-section">
-                        <h6 class="group-section-title"><i class="bi bi-globe"></i> Domains</h6>
-                        <div class="group-tags">${domains.map(d => `<span class="group-tag">${escapeHtml(d)}</span>`).join('')}</div>
-                    </div>
-                ` : ''}
-                
-                ${aliases.length ? `
-                    <div class="group-section">
-                        <h6 class="group-section-title"><i class="bi bi-tag"></i> Aliases</h6>
-                        <div class="group-tags">${aliases.map(a => `<span class="group-tag group-tag-alias">${escapeHtml(a)}</span>`).join('')}</div>
-                    </div>
-                ` : ''}
-                
-                ${motivations.length ? `
-                    <div class="group-section">
-                        <h6 class="group-section-title"><i class="bi bi-heart"></i> Motivations</h6>
-                        <div class="group-tags">${motivations.map(m => `<span class="group-tag group-tag-motivation" style="background: rgba(${theme.accentRGB}, 0.08); border-color: rgba(${theme.accentRGB}, 0.2); color: ${theme.accentHex};">${escapeHtml(m)}</span>`).join('')}</div>
-                    </div>
-                ` : ''}
-                
-                ${contributors.length ? `
-                    <div class="group-section">
-                        <h6 class="group-section-title"><i class="bi bi-person-fill-check"></i> Contributors</h6>
-                        <div class="group-tags">${contributors.map(c => `<span class="group-tag group-tag-contributor">${escapeHtml(c)}</span>`).join('')}</div>
-                    </div>
-                ` : ''}
-                
-                ${relatedTechniques.length ? `
-                    <div class="group-section">
-                        <h6 class="group-section-title"><i class="bi bi-grid"></i> Top Techniques</h6>
-                        <div class="group-tech-preview">
-                            ${relatedTechniques.slice(0, 12).map(tech => {
-                                const techId = tech.external_references?.[0]?.external_id || '';
-                                const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === techId);
-                                const hasQuery = ann?.queries && ann.queries.length > 0;
-                                return `<div class="group-tech-chip entity-chip-clickable ${hasQuery ? 'group-tech-chip-covered' : ''}" data-tech-id="${techId}">
-                                    ${hasQuery ? '<i class="bi bi-check-circle-fill group-tech-query-indicator"></i>' : ''}
-                                    <span class="group-tech-chip-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex};">${techId}</span>
-                                    <span class="group-tech-chip-name">${escapeHtml(tech.name)}</span>
-                                </div>`;
-                            }).join('')}
-                            ${relatedTechniques.length > 12 ? `<span class="group-tech-more">+${relatedTechniques.length - 12} more</span>` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${liveFeedHtml}
             </div>
         `;
         
@@ -293,7 +301,7 @@ export function showGroupModal(groupId) {
                             <span class="group-sw-type ${swTypeClass}">${swType}</span>
                             <span class="group-sw-name">${escapeHtml(sw.name)}</span>
                         </div>
-                        ${sw.description ? `<p class="group-sw-desc">${escapeHtml(sw.description.substring(0, 150))}${sw.description.length > 150 ? '...' : ''}</p>` : ''}
+                        ${sw.description ? `<div class="group-sw-desc">${parseDescription(sw.description)}</div>` : ''}
                     </div>
                 `;
             }
@@ -433,7 +441,7 @@ export function showGroupModal(groupId) {
                                 </div>
                                 <div class="tech-modal-header-content" style="flex: 1; min-width: 0;">
                                     <div class="tech-modal-badges" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                        <span class="tech-badge-id" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-weight: bold; border-radius: 4px; padding: 2px 6px; font-size: 0.72rem;">${groupId_display}</span>
+                                        ${groupId_display && groupId_display !== 'N/A' && groupId_display.trim() !== '' ? `<span class="tech-badge-id" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-weight: bold; border-radius: 4px; padding: 2px 6px; font-size: 0.72rem;">${escapeHtml(groupId_display)}</span>` : ''}
                                         <span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
                                     </div>
                                     <h3 class="tech-modal-title" style="margin: 0; font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; gap: 6px; color: var(--on-surface-primary);">

@@ -2243,34 +2243,41 @@ export function generateDynamicMonthlyFocus(report) {
     const month = report.reportMonth || report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     if (!month) return '';
     
-    const stats = getMonthStats(month);
+    const byMonth = getTechniquesByMonth();
+    const techniques = byMonth[month] || [];
     
-    if (stats.queries === 0 && stats.mainTechs === 0 && stats.subTechs === 0) return '';
+    if (techniques.length === 0) return 'No new techniques were added to the detection portfolio this month. Engineering efforts were focused on maintaining and tuning existing analytics.';
     
-    const tacticCounts = {};
-    stats.techIds.forEach(techId => {
-        const tactics = getTechniqueTactics(techId);
-        tactics.forEach(tactic => {
-            tacticCounts[tactic] = (tacticCounts[tactic] || 0) + 1;
+    const groupHits = {};
+    if (state.groups) {
+        techniques.forEach(ann => {
+            const hasNewQueries = ann.queries?.some(q => {
+                const qMonth = window.resolveQueryMonth ? window.resolveQueryMonth(q, ann) : (q.monthAdded || q.created?.slice(0, 7));
+                return qMonth === month;
+            });
+            if (!hasNewQueries) return;
+            state.groups.forEach(group => {
+                if (group.techniques?.includes(ann.techniqueID)) {
+                    groupHits[group.name] = (groupHits[group.name] || 0) + 1;
+                }
+            });
         });
-    });
-    
-    const topTactics = Object.entries(tacticCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([tactic]) => tactic);
-    
-    let focus = `This month's threat hunting activities focused on ${topTactics.length > 0 ? topTactics.join(', ') + ' tactics' : 'multiple tactics'}. `;
-    focus += `Added ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} with ${stats.queries} detection queries. `;
-    
-    if (topTactics.length > 0) {
-        focus += `Primary focus areas include ${topTactics[0]} (${tacticCounts[topTactics[0]]} techniques) `;
-        if (topTactics.length > 1) {
-            focus += `and ${topTactics[1]} (${tacticCounts[topTactics[1]]} techniques)`;
-        }
-        focus += `. `;
     }
-    focus += `Continue expanding coverage in high-priority tactics while maintaining detection quality across all implemented hunts.`;
+    
+    const topGroups = Object.entries(groupHits)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(([name]) => name);
+    
+    let focus = `Engineering efforts this month prioritized contextual threat modeling and targeted visibility gaps. `;
+    
+    if (topGroups.length > 0) {
+        focus += `Specifically, our recent deployments directly counter known behaviors associated with advanced persistent threats such as ${topGroups.join(' and ')}. `;
+    } else {
+        focus += `Specifically, our recent deployments target novel evasion techniques and emerging adversary playbooks. `;
+    }
+    
+    focus += `By aligning our detection engineering cycle against verified threat intelligence, we ensure that our defenses evolve dynamically in response to the changing landscape.`;
     
     return focus;
 }

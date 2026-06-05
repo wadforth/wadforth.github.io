@@ -105,27 +105,30 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
-    background: var(--surface-elevated);
+    background: transparent;
     overflow: hidden;
 }
 
 .mitigation-card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius);
     padding: 1.25rem;
     transition: var(--transition);
     position: relative;
-    border-left: 3px solid var(--border);
-    box-shadow: var(--shadow-sm);
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .mitigation-card:hover {
     border-color: var(--primary);
-    background: var(--surface-variant);
-    box-shadow: var(--shadow-md), 0 0 12px var(--primary-light);
+    background: rgba(15, 23, 42, 0.5);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25), 0 0 12px var(--primary-light);
+    transform: translateY(-2px);
 }
 
 .mitigation-card[data-status="implemented"] {
@@ -475,6 +478,129 @@
 .mitigation-list-details {
     margin-top: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     animation: mitFadeIn 0.2s ease;
+}
+
+/* ============================================
+   Circular Maturity Chart
+   ============================================ */
+.mitigation-maturity-ring {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mitigation-maturity-ring svg {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.mitigation-maturity-ring circle.bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 4;
+}
+
+.mitigation-maturity-ring circle.progress {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.5s ease;
+}
+
+.mitigation-maturity-ring .percentage {
+    position: absolute;
+    font-size: 0.65rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+/* ============================================
+   Mitigation Detail Modal Layout
+   ============================================ */
+
+#mitigation-detail-modal .modal-content {
+    background: rgba(15, 23, 42, 0.25) !important;
+    backdrop-filter: blur(50px) !important;
+    -webkit-backdrop-filter: blur(50px) !important;
+}
+
+#mitigation-detail-modal .modal-dialog {
+    max-width: 900px;
+}
+
+#mitigation-detail-modal .mit-modal-scroll {
+    padding: 2rem;
+    display: block;
+    overflow-y: auto;
+    max-height: calc(85vh - 120px);
+}
+
+#mitigation-detail-modal .mitigation-tab-nav {
+    margin: -2rem -2rem 2rem;
+    padding: 0 2rem;
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+#mitigation-detail-modal .mitigation-tab-pane {
+    padding-top: 0.5rem;
+    display: none;
+}
+
+#mitigation-detail-modal .mitigation-tab-pane.active {
+    display: block;
+}
+
+.mitigation-overview-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 2rem;
+    align-items: start;
+}
+
+.mitigation-overview-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.mitigation-overview-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 0;
+}
+
+@media (max-width: 992px) {
+    .mitigation-overview-layout {
+        grid-template-columns: 1fr;
+    }
+    .mitigation-overview-sidebar {
+        position: static;
+    }
+}
+
+#mitigation-detail-modal .mitigation-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(15px);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }

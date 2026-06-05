@@ -61,7 +61,7 @@
     
     /* Typography - Geometric LINE Seed优先 */
     --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-    --font-sans: 'LINE Seed JP', 'LINE Seed Sans', 'LINE Seed', 'Outfit', 'Inter', -apple-system, sans-serif;
+    --font-sans: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* Light Theme Override - Clean Enterprise Slate Light */

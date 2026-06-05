@@ -298,20 +298,22 @@
     font-size: 0.82rem;
     font-family: var(--font-sans);
     padding: 0.45rem 0.7rem;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-sm);
-    background: var(--surface-subtle);
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     color: var(--on-surface);
     transition: var(--transition);
     width: 100%;
-    box-shadow: var(--shadow-sm);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .form-control:focus, .form-select:focus {
     outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 2px var(--primary-light);
-    background: var(--surface-elevated);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    background: rgba(15, 23, 42, 0.5);
 }
 
 .form-label {

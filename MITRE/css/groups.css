@@ -105,26 +105,30 @@
     display: flex;
     flex-direction: column;
     gap: 0;
-    border: 1px solid var(--border);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
-    background: var(--surface-elevated);
+    background: rgba(15, 23, 42, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     overflow: hidden;
 }
 
 .group-card {
-    background: var(--surface-elevated);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    background: rgba(15, 23, 42, 0.25);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 1.25rem;
     padding: 1.25rem;
-    transition: var(--transition);
+    transition: all 0.2s ease;
     position: relative;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 .group-card:hover {
-    background: var(--surface-variant);
     border-color: var(--primary);
-    box-shadow: var(--shadow-md), 0 0 12px var(--primary-light);
+    box-shadow: 0 4px 12px rgba(88, 76, 244, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
 }
 
 .group-card-header {
@@ -224,7 +228,7 @@
 .group-card-list {
     padding: 0.75rem 1rem;
     border: none !important;
-    border-bottom: 1px solid var(--border) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     border-left: 3px solid transparent !important;
     border-radius: 0 !important;
     background: transparent !important;
@@ -238,7 +242,7 @@
 
 .group-card-list:hover {
     transform: none !important;
-    background: var(--surface-variant) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
 }
 
 /* Geopolitical attribution list borders */
@@ -348,13 +352,15 @@
 #group-detail-modal .group-tab-nav {
     margin: -2rem -2rem 2rem;
     padding: 0 2rem;
-    background: var(--surface-elevated);
-    border-bottom: 1px solid var(--border);
+    background: transparent;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-wrap: wrap;
     position: sticky;
     top: 0;
     z-index: 10;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 #group-detail-modal .group-tab-pane {
@@ -386,10 +392,10 @@
 .group-tab-nav {
     display: flex;
     gap: 0.25rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin: -2rem -2rem 2rem;
     padding: 0 2rem;
-    background: var(--surface-elevated);
+    background: transparent;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -467,9 +473,11 @@
     gap: 1.5rem;
     margin-bottom: 1.75rem;
     padding: 1.25rem 1.5rem;
-    background: var(--surface);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .group-meta-item {
@@ -582,10 +590,10 @@
     font-size: 0.7rem;
     padding: 0.25em 0.65em;
     border-radius: var(--radius-pill);
-    background: rgba(21, 27, 43, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(55, 65, 81, 0.3);
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--on-surface-secondary);
 }
 
@@ -984,4 +992,338 @@
 .group-live-card:hover {
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   Group Modal Grid Layouts & Enhancements
+   ============================================ */
+
+/* Techniques List */
+.group-tactic-section {
+    margin-bottom: 1.5rem;
+}
+
+.group-tactic-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.group-tactic-techs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.group-tech-item {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.group-tech-item:hover {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(88, 76, 244, 0.15);
+    transform: translateY(-1px);
+}
+
+.group-tech-item-covered {
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.group-tech-item-covered:hover {
+    border-color: var(--accent-green);
+    background: rgba(74, 222, 128, 0.15);
+}
+
+/* Software List */
+.group-software-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.group-sw-item {
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.group-sw-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.group-sw-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.group-sw-desc a {
+    color: var(--primary);
+    text-decoration: none;
+}
+.group-theme-state-sponsored {
+    border-color: rgba(255, 107, 59, 0.25) !important;
+}
+.group-theme-state-sponsored:hover {
+    border-color: #ff6b3b !important;
+    box-shadow: 0 4px 20px rgba(255, 107, 59, 0.15), 0 0 15px rgba(255, 107, 59, 0.1) !important;
+}
+
+.group-theme-financial {
+    border-color: rgba(16, 185, 129, 0.25) !important;
+}
+.group-theme-financial:hover {
+    border-color: #10b981 !important;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15), 0 0 15px rgba(16, 185, 129, 0.1) !important;
+}
+
+.group-theme-general {
+    border-color: rgba(168, 85, 247, 0.25) !important;
+}
+.group-theme-general:hover {
+    border-color: #a855f7 !important;
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.15), 0 0 15px rgba(168, 85, 247, 0.1) !important;
+}
+
+/* Attribution Pill Tags */
+.badge-attribution-state {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #ff6b3b;
+    background: rgba(255, 107, 59, 0.12);
+    border: 1px solid rgba(255, 107, 59, 0.2);
+    padding: 0.15em 0.5em;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.badge-attribution-financial {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    padding: 0.15em 0.5em;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.badge-attribution-general {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #a855f7;
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    padding: 0.15em 0.5em;
+    border-radius: var(--radius-pill);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Live Correlation Widgets styling */
+.group-live-feed-container {
+    background: rgba(21, 27, 43, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 1.25rem;
+    margin-top: 1.5rem;
+}
+
+.group-live-feed-header {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--on-surface);
+    letter-spacing: 0.04em;
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.group-live-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.group-live-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
+   Group Modal Grid Layouts & Enhancements
+   ============================================ */
+
+/* Techniques List */
+.group-tactic-section {
+    margin-bottom: 1.5rem;
+}
+
+.group-tactic-header {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.group-tactic-techs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 0.75rem;
+}
+
+.group-tech-item {
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.group-tech-item:hover {
+    background: rgba(15, 23, 42, 0.6);
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(88, 76, 244, 0.15);
+    transform: translateY(-1px);
+}
+
+.group-tech-item-covered {
+    border-color: rgba(74, 222, 128, 0.3);
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.group-tech-item-covered:hover {
+    border-color: var(--accent-green);
+    background: rgba(74, 222, 128, 0.15);
+}
+
+/* Software List */
+.group-software-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.group-sw-item {
+    background: rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    transition: var(--transition);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+}
+
+.group-sw-item:hover {
+    border-color: var(--primary);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.group-sw-item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.group-sw-desc a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.group-sw-desc a:hover {
+    text-decoration: underline;
+}
+
+/* Make Modal Background Glassmorphic */
+#group-detail-modal .modal-content {
+    background: rgba(15, 23, 42, 0.25) !important;
+    backdrop-filter: blur(50px) !important;
+    -webkit-backdrop-filter: blur(50px) !important;
+}
+
+/* Two-column Layout for Overview */
+.group-overview-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 2rem;
+    align-items: start;
+}
+
+.group-overview-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.group-overview-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 0;
+}
+
+@media (max-width: 992px) {
+    .group-overview-layout {
+        grid-template-columns: 1fr;
+    }
+    .group-overview-sidebar {
+        position: static;
+    }
 }

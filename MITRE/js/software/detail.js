@@ -102,86 +102,94 @@ export function showSoftwareModal(softwareId) {
         
         let overviewHtml = `
             <div class="software-tab-pane active" id="software-tab-overview">
-                <div class="software-detail-desc">${parseDescription(software.description || 'No description available.')}</div>
-                
-                <div class="software-meta-grid">
-                    ${created ? `<div class="software-meta-item"><span class="software-meta-label">Created</span><span class="software-meta-value">${created}</span></div>` : ''}
-                    ${modified ? `<div class="software-meta-item"><span class="software-meta-label">Modified</span><span class="software-meta-value">${modified}</span></div>` : ''}
-                    <div class="software-meta-item"><span class="software-meta-label">Type</span><span class="software-meta-value"><span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span></span></div>
-                    <div class="software-meta-item"><span class="software-meta-label">Query Coverage</span><span class="software-meta-value ${coveragePct > 0 ? 'software-coverage-good' : 'software-coverage-none'}" style="${coverageValueStyle}">${coveragePct}% (${coveredCount}/${techCount})</span></div>
+                <div class="software-overview-layout">
+                    <!-- Main Content Column -->
+                    <div class="software-overview-main">
+                        <div class="software-detail-desc" style="font-size: 0.9rem;">${parseDescription(software.description || 'No description available.')}</div>
+                        
+                        ${techCount > 0 ? `
+                            <div class="software-coverage-bar-container" style="border-color: rgba(${theme.accentRGB}, 0.15) !important;">
+                                <div class="software-coverage-bar-label">Technique Query Coverage</div>
+                                <div class="software-coverage-bar-track">
+                                    <div class="software-coverage-bar-fill" style="width: ${coveragePct}%; background: linear-gradient(90deg, ${theme.accentHex}, #20c997); box-shadow: 0 0 10px rgba(${theme.accentRGB}, 0.35);"></div>
+                                </div>
+                                <div class="software-coverage-bar-stats">
+                                    <span class="software-coverage-stat covered" style="color: ${theme.accentHex} !important; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
+                                    <span class="software-coverage-stat uncovered"><i class="bi bi-x-circle"></i> ${techCount - coveredCount} uncovered</span>
+                                    <button class="btn btn-sm btn-outline-primary ms-auto software-view-matrix-btn" style="color: ${theme.accentHex} !important; border-color: rgba(${theme.accentRGB}, 0.4) !important;" data-sw-id="${swId_display}">
+                                        <i class="bi bi-grid-3x2"></i> View in Matrix
+                                    </button>
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${relatedTechniques.length ? `
+                            <div class="software-section">
+                                <h6 class="software-section-title"><i class="bi bi-grid"></i> Top Techniques</h6>
+                                <div class="software-tech-preview">
+                                    ${relatedTechniques.slice(0, 12).map(tech => {
+                                        const techId = tech.external_references?.[0]?.external_id || '';
+                                        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === techId);
+                                        const hasQuery = ann?.queries && ann.queries.length > 0;
+                                        return `<div class="software-tech-chip entity-chip-clickable ${hasQuery ? 'software-tech-chip-covered' : ''}" data-tech-id="${techId}">
+                                            ${hasQuery ? '<i class="bi bi-check-circle-fill software-tech-query-indicator"></i>' : ''}
+                                            <span class="software-tech-chip-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex}; font-weight: 700;">${techId}</span>
+                                            <span class="software-tech-chip-name">${escapeHtml(tech.name)}</span>
+                                        </div>`;
+                                    }).join('')}
+                                    ${relatedTechniques.length > 12 ? `<span class="software-tech-more">+${relatedTechniques.length - 12} more</span>` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Sidebar Content Column -->
+                    <div class="software-overview-sidebar">
+                        <div class="software-meta-grid" style="grid-template-columns: 1fr; margin-bottom: 0;">
+                            ${created ? `<div class="software-meta-item"><span class="software-meta-label">Created</span><span class="software-meta-value">${created}</span></div>` : ''}
+                            ${modified ? `<div class="software-meta-item"><span class="software-meta-label">Modified</span><span class="software-meta-value">${modified}</span></div>` : ''}
+                            <div class="software-meta-item"><span class="software-meta-label">Type</span><span class="software-meta-value"><span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span></span></div>
+                            <div class="software-meta-item"><span class="software-meta-label">Query Coverage</span><span class="software-meta-value ${coveragePct > 0 ? 'software-coverage-good' : 'software-coverage-none'}" style="${coverageValueStyle}">${coveragePct}% (${coveredCount}/${techCount})</span></div>
+                        </div>
+                        
+                        ${aliases.length ? `
+                            <div class="software-section mb-0">
+                                <h6 class="software-section-title"><i class="bi bi-tag"></i> Aliases</h6>
+                                <div class="software-tags flex flex-wrap gap-2">${aliases.map(a => `<span class="detail-tag">${escapeHtml(a)}</span>`).join('')}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${platforms.length ? `
+                            <div class="software-section mb-0">
+                                <h6 class="software-section-title"><i class="bi bi-laptop"></i> Platforms</h6>
+                                <div class="software-tags flex flex-wrap gap-2">${platformBadgesHtml}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${contributors.length ? `
+                            <div class="software-section mb-0">
+                                <h6 class="software-section-title"><i class="bi bi-person-fill-check"></i> Contributors</h6>
+                                <div class="software-tags flex flex-wrap gap-2">${contributors.map(c => `<span class="detail-tag">${escapeHtml(c)}</span>`).join('')}</div>
+                            </div>
+                        ` : ''}
+                        
+                        ${relatedGroups.length ? `
+                            <div class="software-section mb-0">
+                                <h6 class="software-section-title"><i class="bi bi-people"></i> Associated Groups</h6>
+                                <div class="software-group-preview">
+                                    ${relatedGroups.slice(0, 8).map(g => {
+                                        const gId = g.external_references?.[0]?.external_id || '';
+                                        return `<div class="software-group-chip entity-chip-clickable" data-group-id="${g.id}">
+                                            <span class="software-group-chip-id" style="background: rgba(${theme.accentRGB}, 0.08); color: ${theme.accentHex}; font-weight: 700;">${gId}</span>
+                                            <span class="software-group-chip-name">${escapeHtml(g.name)}</span>
+                                        </div>`;
+                                    }).join('')}
+                                    ${relatedGroups.length > 8 ? `<span class="software-group-more">+${relatedGroups.length - 8} more</span>` : ''}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
-                
-                ${techCount > 0 ? `
-                    <div class="software-coverage-bar-container" style="border-color: rgba(${theme.accentRGB}, 0.15) !important;">
-                        <div class="software-coverage-bar-label">Technique Query Coverage</div>
-                        <div class="software-coverage-bar-track">
-                            <div class="software-coverage-bar-fill" style="width: ${coveragePct}%; background: linear-gradient(90deg, ${theme.accentHex}, #20c997); box-shadow: 0 0 10px rgba(${theme.accentRGB}, 0.35);"></div>
-                        </div>
-                        <div class="software-coverage-bar-stats">
-                            <span class="software-coverage-stat covered" style="color: ${theme.accentHex} !important; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> ${coveredCount} covered</span>
-                            <span class="software-coverage-stat uncovered"><i class="bi bi-x-circle"></i> ${techCount - coveredCount} uncovered</span>
-                            <button class="btn btn-sm btn-outline-primary ms-auto software-view-matrix-btn" style="color: ${theme.accentHex} !important; border-color: rgba(${theme.accentRGB}, 0.4) !important;" data-sw-id="${swId_display}">
-                                <i class="bi bi-grid-3x2"></i> View in Matrix
-                            </button>
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${aliases.length ? `
-                    <div class="software-section">
-                        <h6 class="software-section-title"><i class="bi bi-tag"></i> Aliases</h6>
-                        <div class="software-tags flex flex-wrap gap-2">${aliases.map(a => `<span class="detail-tag">${escapeHtml(a)}</span>`).join('')}</div>
-                    </div>
-                ` : ''}
-                
-                ${platforms.length ? `
-                    <div class="software-section">
-                        <h6 class="software-section-title"><i class="bi bi-laptop"></i> Platforms</h6>
-                        <div class="software-tags flex flex-wrap gap-2">${platformBadgesHtml}</div>
-                    </div>
-                ` : ''}
-                
-                ${contributors.length ? `
-                    <div class="software-section">
-                        <h6 class="software-section-title"><i class="bi bi-person-fill-check"></i> Contributors</h6>
-                        <div class="software-tags flex flex-wrap gap-2">${contributors.map(c => `<span class="detail-tag">${escapeHtml(c)}</span>`).join('')}</div>
-                    </div>
-                ` : ''}
-                
-                ${relatedTechniques.length ? `
-                    <div class="software-section">
-                        <h6 class="software-section-title"><i class="bi bi-grid"></i> Top Techniques</h6>
-                        <div class="software-tech-preview">
-                            ${relatedTechniques.slice(0, 12).map(tech => {
-                                const techId = tech.external_references?.[0]?.external_id || '';
-                                const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === techId);
-                                const hasQuery = ann?.queries && ann.queries.length > 0;
-                                return `<div class="software-tech-chip entity-chip-clickable ${hasQuery ? 'software-tech-chip-covered' : ''}" data-tech-id="${techId}">
-                                    ${hasQuery ? '<i class="bi bi-check-circle-fill software-tech-query-indicator"></i>' : ''}
-                                    <span class="software-tech-chip-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex}; font-weight: 700;">${techId}</span>
-                                    <span class="software-tech-chip-name">${escapeHtml(tech.name)}</span>
-                                </div>`;
-                            }).join('')}
-                            ${relatedTechniques.length > 12 ? `<span class="software-tech-more">+${relatedTechniques.length - 12} more</span>` : ''}
-                        </div>
-                    </div>
-                ` : ''}
-                
-                ${relatedGroups.length ? `
-                    <div class="software-section">
-                        <h6 class="software-section-title"><i class="bi bi-people"></i> Associated Groups</h6>
-                        <div class="software-group-preview">
-                            ${relatedGroups.slice(0, 8).map(g => {
-                                const gId = g.external_references?.[0]?.external_id || '';
-                                return `<div class="software-group-chip entity-chip-clickable" data-group-id="${g.id}">
-                                    <span class="software-group-chip-id" style="background: rgba(${theme.accentRGB}, 0.08); color: ${theme.accentHex}; font-weight: 700;">${gId}</span>
-                                    <span class="software-group-chip-name">${escapeHtml(g.name)}</span>
-                                </div>`;
-                            }).join('')}
-                            ${relatedGroups.length > 8 ? `<span class="software-group-more">+${relatedGroups.length - 8} more</span>` : ''}
-                        </div>
-                    </div>
-                ` : ''}
             </div>
         `;
         
@@ -319,7 +327,7 @@ export function showSoftwareModal(softwareId) {
                                 </div>
                                 <div class="tech-modal-header-content" style="display: flex; flex-direction: column; gap: 0.25rem;">
                                     <div class="tech-modal-badges" style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <span class="tech-badge-id" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${swId_display}</span>
+                                        ${swId_display && swId_display !== 'N/A' && swId_display.trim() !== '' ? `<span class="tech-badge-id" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${escapeHtml(swId_display)}</span>` : ''}
                                         <span class="${theme.badgeClass}"><i class="bi ${theme.icon}"></i> ${theme.name}</span>
                                     </div>
                                     <h3 class="tech-modal-title" style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--on-surface); text-shadow: 0 0 12px rgba(${theme.accentRGB}, 0.15);">${escapeHtml(software.name)}</h3>

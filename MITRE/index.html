@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ATT&CK Explorer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/line-seed-jp/line-seed-jp.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link href="css/variables.css" rel="stylesheet">
@@ -73,42 +73,69 @@
     </nav>
 
     <div id="landing-view" class="landing-view">
+        <div class="landing-ambient-bg">
+            <div class="ambient-orb orb-1"></div>
+            <div class="ambient-orb orb-2"></div>
+            <div class="ambient-orb orb-3"></div>
+            <div class="ambient-orb orb-4"></div>
+        </div>
+        
+        <div class="landing-top-bar">
+            <div class="landing-brand">
+                <i class="bi bi-shield-check"></i>
+                <span class="brand-text">ATT&CK Explorer</span>
+            </div>
+            <button id="landing-theme-toggle" class="btn btn-ghost landing-theme-btn" title="Toggle dark mode">
+                <i class="bi bi-moon-fill"></i>
+            </button>
+        </div>
+        
         <div class="landing-container">
-            <div class="landing-header">
-                <div class="brand-icon-lg mr-3">
-                    <i class="bi bi-shield-check"></i>
+            <div class="command-box">
+                <div class="command-box-header">
+                    <div class="command-box-icon"><i class="bi bi-stars"></i></div>
+                    <h2>How can I help you hunt today?</h2>
+                    <p>Analyze, annotate, and explore the MITRE ATT&CK framework.</p>
                 </div>
-                <div>
-                    <h1 class="landing-title">ATT&CK Explorer</h1>
-                    <p class="landing-subtitle text-on-surface-secondary">Analyze, annotate, and hunt across MITRE ATT&CK</p>
+                
+                <div class="command-box-controls" style="justify-content: center;">
+                    <div class="control-group" style="max-width: 300px;">
+                        <label style="text-align: center; width: 100%;">ATT&CK Version</label>
+                        <select id="landing-version-select" class="form-select custom-glass-select" style="text-align: center;">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="command-box-actions">
+                    <button class="pill-btn primary" id="btn-create-new">
+                        <i class="bi bi-plus-lg"></i> New Layer
+                    </button>
+                    <button class="pill-btn secondary" id="btn-import-layer">
+                        <i class="bi bi-upload"></i> Import JSON
+                    </button>
+                    <button class="pill-btn secondary" id="btn-view-matrix">
+                        <i class="bi bi-grid-3x3-gap"></i> Browse Matrix
+                    </button>
                 </div>
             </div>
 
-            <div class="landing-actions">
-                <div class="action-card" id="btn-create-new">
-                    <div class="action-icon"><i class="bi bi-plus-lg"></i></div>
-                    <h5>Create New Layer</h5>
-                    <p class="text-on-surface-tertiary text-sm">Start fresh with a selected domain and version</p>
+            <div id="recent-layers-section" class="recent-layers-panel hidden">
+                <div class="panel-header">
+                    <span><i class="bi bi-clock-history mr-2"></i> Recent Layers</span>
                 </div>
-                <div class="action-card" id="btn-import-layer">
-                    <div class="action-icon"><i class="bi bi-upload"></i></div>
-                    <h5>Import Layer</h5>
-                    <p class="text-on-surface-tertiary text-sm">Load a JSON layer file or Navigator export</p>
-                </div>
-                <div class="action-card" id="btn-view-matrix">
-                    <div class="action-icon"><i class="bi bi-grid-3x3-gap"></i></div>
-                    <h5>Browse Matrix</h5>
-                    <p class="text-on-surface-tertiary text-sm">View ATT&CK without annotations</p>
-                </div>
-            </div>
-
-            <div id="recent-layers-section" class="hidden">
-                <h6 class="text-on-surface-tertiary uppercase text-sm font-semibold mb-3">Recent Layers</h6>
-                <div id="recent-layers-list" class="recent-layers"></div>
+                <div id="recent-layers-list" class="recent-layers-grid"></div>
             </div>
         </div>
     </div>
 
+    <div class="workspace-ambient-bg">
+        <div class="ambient-orb orb-1"></div>
+        <div class="ambient-orb orb-2"></div>
+        <div class="ambient-orb orb-3"></div>
+        <div class="ambient-orb orb-4"></div>
+    </div>
+    
     <div id="workspace-view" class="workspace-view hidden">
         <div class="layer-toolbar">
             <div class="container-fluid px-4 flex items-center justify-between">
@@ -1082,7 +1109,7 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex gap-2 mt-3 pt-2" style="border-top: 1px solid var(--border);">
+                            <div class="d-flex gap-2 mt-auto pt-3 align-items-center" style="border-top: 1px solid var(--border);">
                                 <button class="btn btn-sm btn-outline-secondary w-50" id="sim-btn-reset">Revert / Reset</button>
                                 <button class="btn btn-sm btn-primary w-50" id="sim-btn-commit">
                                     <i class="bi bi-check-circle mr-1"></i>Apply Changes

@@ -399,6 +399,7 @@ export function renderRecentLayers() {
     const recent = JSON.parse(localStorage.getItem('attack-explorer-recent') || '[]');
     const section = document.getElementById('recent-layers-section');
     const list = document.getElementById('recent-layers-list');
+    const countBadge = document.getElementById('recent-layers-count');
 
     if (recent.length === 0) {
         section.classList.add('hidden');
@@ -406,7 +407,8 @@ export function renderRecentLayers() {
     }
 
     section.classList.remove('hidden');
-    list.className = 'recent-layers';
+    if (countBadge) countBadge.textContent = recent.length;
+    list.className = 'recent-layers-grid';
     list.innerHTML = recent.map(l => {
         const domainLabel = l.domain ? (l.domain.replace('-attack', '').charAt(0).toUpperCase() + l.domain.replace('-attack', '').slice(1)) : 'Enterprise';
         return `

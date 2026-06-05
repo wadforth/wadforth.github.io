@@ -6,14 +6,35 @@ export function showLoading(show, text = 'Fetching STIX bundle...') {
 }
 
 export function showLanding() {
+    document.body.classList.add('landing-active');
     document.getElementById('landing-view').classList.remove('hidden');
     document.getElementById('workspace-view').classList.add('hidden');
     document.querySelector('.top-nav').classList.add('hidden');
+    
+    // Sync landing dropdowns
+    const landDom = document.getElementById('landing-domain-select');
+    const landVer = document.getElementById('landing-version-select');
+    const realDom = document.getElementById('domain-select');
+    const realVer = document.getElementById('version-select');
+    
+    if (landDom && realDom) {
+        landDom.innerHTML = realDom.innerHTML;
+        landDom.value = realDom.value;
+        landDom.onchange = (e) => { realDom.value = e.target.value; realDom.dispatchEvent(new Event('change')); };
+    }
+    
+    if (landVer && realVer) {
+        landVer.innerHTML = realVer.innerHTML;
+        landVer.value = realVer.value;
+        landVer.onchange = (e) => { realVer.value = e.target.value; realVer.dispatchEvent(new Event('change')); };
+    }
+    
     if (window.renderRecentLayers) window.renderRecentLayers();
     setTimeout(() => { if (window.enhanceLandingPage) window.enhanceLandingPage() }, 100);
 }
 
 export function showWorkspace() {
+    document.body.classList.remove('landing-active');
     document.getElementById('landing-view').classList.add('hidden');
     document.getElementById('workspace-view').classList.remove('hidden');
     document.querySelector('.top-nav').classList.remove('hidden');
@@ -23,18 +44,28 @@ export function initTheme() {
     const saved = localStorage.getItem('attack-explorer-theme');
     if (saved === 'dark') {
         document.documentElement.setAttribute('data-theme', 'dark');
-        document.getElementById('theme-toggle').innerHTML = '<i class="bi bi-sun-fill"></i>';
+        const themeBtn = document.getElementById('theme-toggle');
+        const landingThemeBtn = document.getElementById('landing-theme-toggle');
+        if (themeBtn) themeBtn.innerHTML = '<i class="bi bi-sun-fill"></i>';
+        if (landingThemeBtn) landingThemeBtn.innerHTML = '<i class="bi bi-sun-fill"></i>';
     }
 }
 
-document.getElementById('theme-toggle')?.addEventListener('click', () => {
+const toggleTheme = () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    document.getElementById('theme-toggle').innerHTML = isDark
-        ? '<i class="bi bi-moon-fill"></i>'
-        : '<i class="bi bi-sun-fill"></i>';
+    const newIcon = isDark ? '<i class="bi bi-moon-fill"></i>' : '<i class="bi bi-sun-fill"></i>';
+    
+    const themeBtn = document.getElementById('theme-toggle');
+    const landingThemeBtn = document.getElementById('landing-theme-toggle');
+    if (themeBtn) themeBtn.innerHTML = newIcon;
+    if (landingThemeBtn) landingThemeBtn.innerHTML = newIcon;
+    
     localStorage.setItem('attack-explorer-theme', isDark ? 'light' : 'dark');
-});
+};
+
+document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+document.getElementById('landing-theme-toggle')?.addEventListener('click', toggleTheme);
 
 window.triggerVersionUpgrade = function(targetVersion) {
     const select = document.getElementById('version-select');
