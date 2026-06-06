@@ -107,7 +107,7 @@
     padding: 0.65rem 0.65rem;
     cursor: pointer;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: var(--transition);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     background: transparent;
 }
@@ -121,6 +121,13 @@
 .technique-cell:hover {
     background: var(--surface-variant);
     z-index: 2;
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+[data-theme="light"] .technique-cell:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .technique-cell.has-children {
@@ -135,6 +142,24 @@
 
 .technique-cell.annotated {
     font-weight: 600;
+}
+
+.technique-cell.annotated::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: currentColor;
+    opacity: 0.8;
+    box-shadow: 0 0 8px currentColor;
+    border-radius: 2px 0 0 2px;
+    z-index: 1;
+}
+
+.technique-cell.annotated.has-children::before {
+    left: -3px; /* Offset for the primary left border */
 }
 
 .expand-btn {

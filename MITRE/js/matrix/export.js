@@ -567,7 +567,6 @@ export async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated
         
         html += '</div>';
     }
-    
     html += '<script>window.onload = () => { window.print(); };</script>';
     html += '</body></html>';
     
@@ -729,7 +728,9 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
             : techniques.filter(t => !isSub(t));
         
         const x = i * colWidth;
+        const spectrumColor = window.getSpectrumColor ? window.getSpectrumColor(i) : accentColor;
         svg += `<rect x="${x}" y="0" width="${colWidth - 2}" height="${headerHeight}" fill="${tacticBgFill}" rx="3"/>`;
+        svg += `<rect x="${x}" y="0" width="${colWidth - 2}" height="3" fill="${spectrumColor}"/>`;
         svg += `<text x="${x + colWidth / 2 - 1}" y="16" font-family="'Inter', sans-serif" font-size="9" font-weight="600" fill="white" text-anchor="middle">${escapeSvgText(tactic.name)}</text>`;
         svg += `<text x="${x + colWidth / 2 - 1}" y="26" font-family="'JetBrains Mono', monospace" font-size="7" fill="rgba(255,255,255,0.8)" text-anchor="middle">${sanitizeSvgAttr(short)}</text>`;
         svg += `<text x="${x + colWidth / 2 - 1}" y="33" font-family="'Inter', sans-serif" font-size="6" fill="rgba(255,255,255,0.6)" text-anchor="middle">${filtered.length}</text>`;
@@ -769,11 +770,13 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
             const cellOpacity = (effectiveColor && !isAutoColor) ? ' fill-opacity="0.8"' : '';
             
             const hasQueries = ann?.queries && ann.queries.length > 0;
-            const textX = hasQueries ? x + 7 : x + 4;
+            const isAnnotated = effectiveColor || hasQueries;
+            const textX = x + 7;
             
             svg += `<rect x="${x + 1}" y="${cellY}" width="${colWidth - 4}" height="${rowHeight - 1}" fill="${cellFill}"${cellOpacity} rx="2"/>`;
-            if (hasQueries) {
-                svg += `<rect x="${x + 2}" y="${cellY + 2}" width="2.5" height="${rowHeight - 5}" fill="${accentColor}" rx="1.25"/>`;
+            if (isAnnotated) {
+                const markerColor = effectiveColor ? cellText : accentColor;
+                svg += `<rect x="${x + 1}" y="${cellY}" width="3" height="${rowHeight - 1}" fill="${markerColor}" opacity="0.8"/>`;
             }
             svg += `<text x="${textX}" y="${cellY + 10}" font-family="'JetBrains Mono', monospace" font-size="7" font-weight="600" fill="${cellText}">${id}</text>`;
             svg += `<text x="${textX}" y="${cellY + 18}" font-family="'Inter', sans-serif" font-size="6" fill="${cellText}">${escapeSvgText(name).substring(0, 22)}</text>`;
@@ -793,11 +796,13 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
                     const subOpacity = (subColor && !isSubAuto) ? ' fill-opacity="0.8"' : '';
                     
                     const subHasQueries = subAnn?.queries && subAnn.queries.length > 0;
-                    const subTextX = subHasQueries ? x + 14 : x + 11;
+                    const isSubAnnotated = subColor || subHasQueries;
+                    const subTextX = x + 14;
                     
                     svg += `<rect x="${x + 8}" y="${cellY}" width="${colWidth - 12}" height="${rowHeight - 2}" fill="${subFill}"${subOpacity} rx="2"/>`;
-                    if (subHasQueries) {
-                        svg += `<rect x="${x + 9}" y="${cellY + 2}" width="2.5" height="${rowHeight - 6}" fill="${accentColor}" rx="1.25"/>`;
+                    if (isSubAnnotated) {
+                        const subMarkerColor = subColor ? subText : accentColor;
+                        svg += `<rect x="${x + 8}" y="${cellY}" width="3" height="${rowHeight - 2}" fill="${subMarkerColor}" opacity="0.8"/>`;
                     }
                     svg += `<text x="${subTextX}" y="${cellY + 9}" font-family="'JetBrains Mono', monospace" font-size="6" font-weight="600" fill="${subText}">${subId}</text>`;
                     svg += `<text x="${subTextX}" y="${cellY + 16}" font-family="'Inter', sans-serif" font-size="5" fill="${subText}">${escapeSvgText(subName).substring(0, 18)}</text>`;

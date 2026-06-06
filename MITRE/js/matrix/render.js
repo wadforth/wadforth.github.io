@@ -3,6 +3,16 @@ export function renderAll() {
     renderMatrix();
 }
 
+export const KILL_CHAIN_COLORS = [
+    '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', 
+    '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', 
+    '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef'
+];
+
+export function getSpectrumColor(index) {
+    return KILL_CHAIN_COLORS[index % KILL_CHAIN_COLORS.length];
+}
+
 export function renderPlatformFilters() {
     const container = document.getElementById('platform-filters');
     const sorted = [...state.platforms].sort();
@@ -66,11 +76,14 @@ export function renderMatrix() {
 
     let hasAnyVisible = false;
     let html = '<table class="matrix-table"><thead><tr>';
+    let tacticIndex = 0;
     for (const tactic of tacticOrder) {
         const short = tactic.x_mitre_shortname;
         const count = techniqueMap[short]?.length || 0;
         if (count > 0) hasAnyVisible = true;
-        html += `<th><div class="font-bold">${tactic.name}</div><div class="tactic-short">${short}</div><div class="tactic-count">${count} techniques</div></th>`;
+        const spectrumColor = getSpectrumColor(tacticIndex);
+        html += `<th style="border-top: 3px solid ${spectrumColor};"><div class="font-bold">${tactic.name}</div><div class="tactic-short">${short}</div><div class="tactic-count">${count} techniques</div></th>`;
+        tacticIndex++;
     }
     html += '</tr></thead><tbody><tr>';
 
@@ -278,3 +291,5 @@ window.getFilteredTechniques = getFilteredTechniques;
 window.renderMatrix = renderMatrix;
 window.toggleSubTechniques = toggleSubTechniques;
 window.buildTechniqueCell = buildTechniqueCell;
+window.KILL_CHAIN_COLORS = KILL_CHAIN_COLORS;
+window.getSpectrumColor = getSpectrumColor;

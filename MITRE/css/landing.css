@@ -95,9 +95,9 @@ body.landing-active {
 }
 
 @keyframes orbFloat {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(40px, -60px) scale(1.1); }
-    66% { transform: translate(-50px, 30px) scale(0.9); }
+    0%, 100% { transform: translate(calc(var(--mouse-x, 0px) * 0.05), calc(var(--mouse-y, 0px) * 0.05)) scale(1); }
+    33% { transform: translate(calc(40px + var(--mouse-x, 0px) * 0.08), calc(-60px + var(--mouse-y, 0px) * 0.08)) scale(1.1); }
+    66% { transform: translate(calc(-50px + var(--mouse-x, 0px) * 0.03), calc(30px + var(--mouse-y, 0px) * 0.03)) scale(0.9); }
 }
 
 /* Top Bar */
@@ -164,7 +164,18 @@ body.landing-active {
     align-items: center;
     gap: 2rem;
     padding: 2rem;
-    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Staggered Animations */
+.stagger-1 { animation: fadeInSpring 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.1s both; }
+.stagger-2 { animation: fadeInSpring 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s both; }
+.stagger-3 { animation: fadeInSpring 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s both; }
+.stagger-4 { animation: fadeInSpring 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.4s both; }
+.stagger-5 { animation: fadeInSpring 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.5s both; }
+
+@keyframes fadeInSpring {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeIn {
@@ -188,6 +199,9 @@ body.landing-active {
     text-align: center;
     position: relative;
     overflow: hidden;
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    transform-style: preserve-3d;
+    perspective: 1000px;
 }
 
 /* Subtle inner glow for command box */
@@ -218,12 +232,15 @@ body.landing-active {
     box-shadow: var(--glow-primary);
 }
 
-.command-box h2 {
+.command-box h2.text-gradient {
     font-size: 2.2rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: var(--on-surface);
+    font-weight: 700;
+    letter-spacing: -0.03em;
     margin: 0 0 0.75rem;
+    background: linear-gradient(135deg, var(--on-surface) 0%, var(--primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .command-box p {
@@ -233,6 +250,60 @@ body.landing-active {
     max-width: 500px;
     margin-left: auto;
     margin-right: auto;
+}
+
+/* Universal Search Bar */
+.landing-search-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+}
+
+.landing-search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1.5rem;
+    padding: 0.75rem 1.5rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 10px 20px -5px rgba(0,0,0,0.3);
+    transition: var(--transition);
+}
+
+.landing-search-bar:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--primary-light), inset 0 2px 4px rgba(0,0,0,0.1);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.landing-search-bar i {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin-right: 1rem;
+}
+
+.landing-search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--on-surface);
+    font-size: 1.1rem;
+    outline: none;
+}
+
+.landing-search-bar input::placeholder {
+    color: var(--on-surface-tertiary);
+}
+
+.search-shortcut {
+    background: var(--surface-variant);
+    border: 1px solid var(--border);
+    border-radius: 0.3rem;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--on-surface-secondary);
+    font-weight: 600;
 }
 
 /* Controls */
@@ -483,6 +554,16 @@ body.landing-active {
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.8);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+[data-theme="light"] .landing-search-bar {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .landing-search-bar:focus-within {
+    background: #ffffff;
+    border-color: var(--primary);
 }
 
 [data-theme="light"] .command-box::before {

@@ -12,16 +12,8 @@ export function showLanding() {
     document.querySelector('.top-nav').classList.add('hidden');
     
     // Sync landing dropdowns
-    const landDom = document.getElementById('landing-domain-select');
     const landVer = document.getElementById('landing-version-select');
-    const realDom = document.getElementById('domain-select');
     const realVer = document.getElementById('version-select');
-    
-    if (landDom && realDom) {
-        landDom.innerHTML = realDom.innerHTML;
-        landDom.value = realDom.value;
-        landDom.onchange = (e) => { realDom.value = e.target.value; realDom.dispatchEvent(new Event('change')); };
-    }
     
     if (landVer && realVer) {
         landVer.innerHTML = realVer.innerHTML;
@@ -186,12 +178,10 @@ export async function init() {
     // Restore current layer if exists
     const savedLayer = window.loadCurrentLayer ? await window.loadCurrentLayer() : null;
     if (savedLayer) {
-        state.currentDomain = localStorage.getItem('attack-explorer-current-domain') || 'enterprise-attack';
+        state.currentDomain = 'enterprise-attack';
         state.currentVersion = localStorage.getItem('attack-explorer-current-version') || state.currentVersion;
         const savedExpanded = JSON.parse(localStorage.getItem('attack-explorer-expanded') || '[]');
         if (state.expandedTechniques) state.expandedTechniques = new Set(savedExpanded);
-
-        if (document.getElementById('domain-select')) document.getElementById('domain-select').value = state.currentDomain;
         if (document.getElementById('version-select')) document.getElementById('version-select').value = state.currentVersion;
         showWorkspace();
         if (window.loadSTIX) await window.loadSTIX(state.currentDomain, state.currentVersion, savedLayer);

@@ -54,49 +54,87 @@ export function parseDescription(text) {
 }
 
 export function highlightQuerySyntax(query, language) {
-    let escaped = escapeHtml(query);
+    if (!query) return '';
     
     const rules = {
-        splunk: [
-            { regex: /\b(index|search|stats|count|by|where|eval|table|sort|head|tail|dedup|rename|fields|join|append|union|inputlookup|outputlookup|makeresults|streamstats|eventstats|timechart|chart|top|rare|transaction|rex|replace|convert|fillnull|filldown|appendpipe|like|match|searchmatch)\b/gi, cls: 'hl-keyword' },
-            { regex: /\b(\d+\.?\d*)\b/g, cls: 'hl-number' },
-            { regex: /(["'][^"']*["'])/g, cls: 'hl-string' },
-            { regex: /(\/\/.*$|#.*$)/gm, cls: 'hl-comment' },
-            { regex: /(\|=|\|<|\|>|\|==|\|!=|AND|OR|NOT)\b/gi, cls: 'hl-operator' },
-        ],
         kql: [
-            { regex: /\b(where|summarize|extend|project|order|take|join|union|let|print|range|datatable|make-series|render|partition|scan|fork|search|find|arg_max|arg_min|top-nested|top-hitters|mv-expand|mv-apply|parse|parse-where|parse-kv|bag-expand|bag-unpack|evaluate|ingestion-time|now|ago|datetime|timespan|dynamic|guid|ipaddress|long|real|string|timespan|uuid)\b/gi, cls: 'hl-keyword' },
-            { regex: /\b(\d+\.?\d*)\b/g, cls: 'hl-number' },
-            { regex: /(["'][^"']*["'])/g, cls: 'hl-string' },
-            { regex: /(\/\/.*$)/gm, cls: 'hl-comment' },
-            { regex: /(\|=|\|<|\|>|\|==|\|!=|and|or|not|has|!has|contains|!contains|startswith|endswith|matches regex)\b/gi, cls: 'hl-operator' },
+            { type: 'comment', regex: /\/\/.*/ },
+            { type: 'string', regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/ },
+            { type: 'operator', regex: /==|!=|<=|>=|<|>|=|!|\+|-|\*|\/|\||\band\b|\bor\b|\bnot\b|\bhas\b|\b!has\b|\bcontains\b|\b!contains\b/ },
+            { type: 'keyword', regex: /\b(where|summarize|extend|project|order|take|join|union|let|print|range|datatable|make-series|render|partition|scan|fork|search|find|evaluate|now|ago|datetime|timespan|dynamic|guid|ipaddress|long|real|string|uuid|by|on|asc|desc|as|kind|leftouter|rightouter|inner|fullouter|leftanti|rightanti|leftsemi|rightsemi)\b/ },
+            { type: 'function', regex: /\b([a-zA-Z_]\w*)\s*(?=\()/ },
+            { type: 'number', regex: /\b\d+(\.\d+)?([eE][+-]?\d+)?\b/ },
+        ],
+        splunk: [
+            { type: 'comment', regex: /`comment\(.*?\)`|\/\/.*/ },
+            { type: 'string', regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/ },
+            { type: 'operator', regex: /==|!=|<=|>=|<|>|=|!|\+|-|\*|\/|\||\bAND\b|\bOR\b|\bNOT\b/ },
+            { type: 'keyword', regex: /\b(index|search|stats|count|by|where|eval|table|sort|head|tail|dedup|rename|fields|join|append|union|inputlookup|outputlookup|makeresults|streamstats|eventstats|timechart|chart|top|rare|transaction|rex|replace|convert|fillnull|filldown|appendpipe|like|match|searchmatch|as)\b/ },
+            { type: 'function', regex: /\b([a-zA-Z_]\w*)\s*(?=\()/ },
+            { type: 'number', regex: /\b\d+(\.\d+)?([eE][+-]?\d+)?\b/ },
         ],
         sigma: [
-            { regex: /^(title|id|status|description|references|author|date|modified|logsource|detection|falsepositives|level|tags|fields):/gm, cls: 'hl-field' },
-            { regex: /\b(true|false|null)\b/gi, cls: 'hl-keyword' },
-            { regex: /(["'][^"']*["'])/g, cls: 'hl-string' },
-            { regex: /(\/\/.*$|#.*$)/gm, cls: 'hl-comment' },
-            { regex: /(\*|\?|all|of|them|selection)/g, cls: 'hl-operator' },
+            { type: 'comment', regex: /#.*/ },
+            { type: 'string', regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/ },
+            { type: 'field', regex: /^[ \t]*([a-zA-Z_-]+)[ \t]*:/ },
+            { type: 'operator', regex: /\||\*|\?|\ball\s+of\b|\b1\s+of\b|\bthem\b|\bselection\b/ },
+            { type: 'keyword', regex: /\b(true|false|null|and|or|not)\b/ },
+            { type: 'number', regex: /\b\d+(\.\d+)?([eE][+-]?\d+)?\b/ },
         ],
         elastic: [
-            { regex: /\b(AND|OR|NOT|TO)\b/g, cls: 'hl-keyword' },
-            { regex: /\b(\d+\.?\d*)\b/g, cls: 'hl-number' },
-            { regex: /(["'][^"']*["'])/g, cls: 'hl-string' },
-            { regex: /(\/\/.*$|#.*$)/gm, cls: 'hl-comment' },
-            { regex: /([<>]=?|==|!=)/g, cls: 'hl-operator' },
-        ],
+            { type: 'comment', regex: /\/\/.*/ },
+            { type: 'string', regex: /"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/ },
+            { type: 'operator', regex: /:|\*|\?|>=|<=|>|<|==|!=/ },
+            { type: 'keyword', regex: /\b(AND|OR|NOT|TO)\b/ },
+            { type: 'number', regex: /\b\d+(\.\d+)?([eE][+-]?\d+)?\b/ },
+        ]
     };
     
-    const langRules = rules[language] || [];
+    const langRules = rules[language] || rules.kql;
     
-    for (const rule of langRules) {
-        const flags = rule.regex.flags || '';
-        const source = rule.regex.source;
-        const safeRegex = new RegExp(`${source}(?![^<]*>)`, flags);
-        escaped = escaped.replace(safeRegex, `<span class="${rule.cls}">$1</span>`);
+    const escapeHtml = (str) => {
+        return str.replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        })[m]);
+    };
+    
+    const masterRegex = new RegExp(
+        langRules.map(r => `(${r.regex.source})`).join('|'),
+        'gmi'
+    );
+    
+    let lastIndex = 0;
+    let result = '';
+    let match;
+    
+    while ((match = masterRegex.exec(query)) !== null) {
+        if (match.index === masterRegex.lastIndex) {
+            masterRegex.lastIndex++;
+        }
+        
+        result += escapeHtml(query.substring(lastIndex, match.index));
+        
+        let matchedIndex = -1;
+        for (let i = 1; i < match.length; i++) {
+            if (match[i] !== undefined) {
+                matchedIndex = i - 1;
+                break;
+            }
+        }
+        
+        if (matchedIndex !== -1) {
+            const rule = langRules[matchedIndex];
+            result += `<span class="hl-${rule.type}">${escapeHtml(match[0])}</span>`;
+        } else {
+            result += escapeHtml(match[0]);
+        }
+        
+        lastIndex = masterRegex.lastIndex;
     }
     
-    return escaped;
+    result += escapeHtml(query.substring(lastIndex));
+    
+    return result;
 }
 
 // Legacy Window Bindings

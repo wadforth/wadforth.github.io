@@ -23,9 +23,10 @@ export function compileSigmaToKQL(yamlText, platform = 'mde') {
     const logsource = rule.logsource || {};
     const category = logsource.category || '';
     const product = logsource.product || '';
+    const service = logsource.service || '';
     
     // Determine target KQL Table
-    const table = getKqlTable(category, product, platform);
+    const table = getKqlTable(category, product, service, platform);
     
     // Extract condition
     const condition = rule.detection.condition;
@@ -39,7 +40,7 @@ export function compileSigmaToKQL(yamlText, platform = 'mde') {
         // Skip metadata keys
         if (['condition', 'timeframe', 'fields', 'falsepositives'].includes(key)) continue;
         
-        const frag = compileSelectionNode(value, category, platform);
+        const frag = compileSelectionNode(value, category, service, platform);
         if (frag) {
             selectionKqlFragments[key] = frag;
         }
@@ -53,6 +54,17 @@ export function compileSigmaToKQL(yamlText, platform = 'mde') {
     if (conditionKql) {
         kql += `| where ${conditionKql}\n`;
     }
+
+    // Project specified fields if the Sigma rule requests it
+    if (rule.fields && Array.isArray(rule.fields)) {
+        const kqlFieldsToProject = rule.fields.map(f => getKqlField(f, category, service, platform));
+        // Ensure uniqueness
+        const uniqueProjectFields = [...new Set(kqlFieldsToProject)];
+        if (uniqueProjectFields.length > 0) {
+            kql += `| project ${uniqueProjectFields.join(', ')}\n`;
+        }
+    }
+
     kql += `// NOTE: This KQL was auto-translated via AST parser and best-effort schema mapping.`;
     
     return kql;
@@ -61,7 +73,7 @@ export function compileSigmaToKQL(yamlText, platform = 'mde') {
 /**
  * Recursively compiles a selection node (Dictionary, Array, or String) into KQL
  */
-function compileSelectionNode(node, category, platform) {
+function compileSelectionNode(node, category, service, platform) {
     if (!node) return '';
 
     // Handle primitive values (e.g., keyword lists in Sigma)
@@ -73,7 +85,7 @@ function compileSelectionNode(node, category, platform) {
 
     // If node is an array (e.g. list of dictionaries or list of keywords)
     if (Array.isArray(node)) {
-        const clauses = node.map(item => compileSelectionNode(item, category, platform)).filter(Boolean);
+        const clauses = node.map(item => compileSelectionNode(item, category, service, platform)).filter(Boolean);
         if (clauses.length === 0) return '';
         if (clauses.length === 1) return clauses[0];
         // List items are implicitly OR'd together
@@ -93,13 +105,34 @@ function compileSelectionNode(node, category, platform) {
             const modifier = modifiers.find(m => ['contains', 'endswith', 'startswith', 're'].includes(m)) || '';
             const isAll = modifiers.includes('all');
             
-            const kqlField = getKqlField(sigmaField, category, platform);
+            const kqlField = getKqlField(sigmaField, category, service, platform);
 
             // Value could be a list (e.g. `CommandLine: ['a', 'b']`)
             let valArray = Array.isArray(val) ? val : [val];
             
+            // Optimization for exactly matching arrays or 'contains' arrays
+            if (valArray.length > 1 && !isAll) {
+                // If it's a list of exact matches, use `in~`
+                if (!modifier && !valArray.some(v => typeof v === 'string' && (v.startsWith('*') || v.endsWith('*')))) {
+                    const mappedVals = valArray.map(v => `"${String(v).replace(/\\/g, '\\\\')}"`);
+                    fieldClauses.push(`${kqlField} in~ (${mappedVals.join(', ')})`);
+                    continue;
+                }
+                
+                // If it's a list of contains matches, use `has_any`
+                const allAreWildcardBounded = valArray.every(v => typeof v === 'string' && v.startsWith('*') && v.endsWith('*'));
+                if (modifier === 'contains' || allAreWildcardBounded) {
+                    const mappedVals = valArray.map(v => `"${String(v).replace(/\\/g, '\\\\').replace(/^\*/, '').replace(/\*$/, '')}"`);
+                    fieldClauses.push(`${kqlField} has_any (${mappedVals.join(', ')})`);
+                    continue;
+                }
+            }
+
             const valClauses = valArray.map(v => {
-                if (v === null || v === undefined) return '';
+                if (v === null || v === undefined) {
+                    return `isempty(${kqlField})`; // Sigma syntax for null/empty checks
+                }
+
                 let strVal = String(v);
                 
                 // Escape backslashes for KQL string literals
@@ -142,7 +175,7 @@ function compileSelectionNode(node, category, platform) {
 }
 
 /**
- * Tokenizes and evaluates the Sigma condition string into a fully resolved KQL condition.
+ * Tokenizes and evaluates the Sigma condition string into a fully resolved KQL condition safely.
  */
 function evaluateCondition(conditionStr, fragmentsMap) {
     if (Array.isArray(conditionStr)) {
@@ -151,34 +184,46 @@ function evaluateCondition(conditionStr, fragmentsMap) {
     
     let expr = String(conditionStr);
     
-    // 1. Resolve Aggregation Wildcards (e.g. `1 of selection*`, `all of filter*`)
+    // 1. Resolve Aggregation Wildcards natively (e.g. `1 of selection*`)
     expr = expr.replace(/1 of ([a-zA-Z0-9_*]+)/gi, (match, pattern) => {
         const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
         const matchingKeys = Object.keys(fragmentsMap).filter(k => regexPattern.test(k));
         if (matchingKeys.length === 0) return 'false /* No matching selections for 1 of */';
-        return '(' + matchingKeys.map(k => `(${fragmentsMap[k]})`).join(' or ') + ')';
+        return '(' + matchingKeys.join(' or ') + ')';
     });
     
     expr = expr.replace(/all of ([a-zA-Z0-9_*]+)/gi, (match, pattern) => {
         const regexPattern = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
         const matchingKeys = Object.keys(fragmentsMap).filter(k => regexPattern.test(k));
         if (matchingKeys.length === 0) return 'true /* No matching selections for all of */';
-        return '(' + matchingKeys.map(k => `(${fragmentsMap[k]})`).join(' and ') + ')';
+        return '(' + matchingKeys.join(' and ') + ')';
     });
     
-    // 2. Resolve specific selection keys with their fragments
-    // Sort keys by length descending so 'selection10' replaces before 'selection1'
-    const sortedKeys = Object.keys(fragmentsMap).sort((a, b) => b.length - a.length);
-    for (const key of sortedKeys) {
-        // Use word boundary to replace exact keys safely
-        const regex = new RegExp(`\\b${key}\\b`, 'g');
-        expr = expr.replace(regex, `(${fragmentsMap[key]})`);
+    // 2. Tokenize logic to prevent recursive string replacement issues
+    const tokens = [];
+    const regex = /([a-zA-Z0-9_]+)|(\()|(\))|(\s+)|([^a-zA-Z0-9_\(\)\s]+)/gi;
+    let match;
+
+    while ((match = regex.exec(expr)) !== null) {
+        let token = match[0];
+        if (match[4]) {
+            tokens.push(token); // whitespace
+            continue;
+        }
+
+        if (match[1]) { // Identifier
+            const lower = token.toLowerCase();
+            if (lower === 'and' || lower === 'or' || lower === 'not') {
+                tokens.push(lower);
+            } else if (fragmentsMap[token]) {
+                tokens.push(`(${fragmentsMap[token]})`);
+            } else {
+                tokens.push(token); // e.g. unknown or unresolved
+            }
+        } else {
+            tokens.push(token); // parenthesis or other symbols
+        }
     }
     
-    // 3. Normalize Boolean Operators
-    expr = expr.replace(/\band\b/gi, 'and');
-    expr = expr.replace(/\bor\b/gi, 'or');
-    expr = expr.replace(/\bnot\b/gi, 'not');
-    
-    return expr;
+    return tokens.join('');
 }

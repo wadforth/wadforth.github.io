@@ -60,11 +60,6 @@
                 <select id="version-select" class="form-select form-select-sm" style="width: auto;">
                     <option value="">Loading...</option>
                 </select>
-                <select id="domain-select" class="form-select form-select-sm hidden" style="display: none !important;">
-                    <option value="enterprise-attack" selected>Enterprise</option>
-                    <option value="mobile-attack">Mobile</option>
-                    <option value="ics-attack">ICS</option>
-                </select>
                 <button id="theme-toggle" class="btn btn-sm btn-ghost" title="Toggle dark mode">
                     <i class="bi bi-moon-fill"></i>
                 </button>
@@ -92,13 +87,21 @@
         
         <div class="landing-container">
             <div class="command-box">
-                <div class="command-box-header">
+                <div class="command-box-header stagger-1">
                     <div class="command-box-icon"><i class="bi bi-stars"></i></div>
-                    <h2>How can I help you hunt today?</h2>
+                    <h2 class="text-gradient">How can I help you hunt today?</h2>
                     <p>Analyze, annotate, and explore the MITRE ATT&CK framework.</p>
                 </div>
                 
-                <div class="command-box-controls" style="justify-content: center;">
+                <div class="landing-search-container stagger-2">
+                    <div class="landing-search-bar">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="landing-universal-search" placeholder="Search techniques, groups, or rules...">
+                        <div class="search-shortcut">/</div>
+                    </div>
+                </div>
+                
+                <div class="command-box-controls stagger-3" style="justify-content: center;">
                     <div class="control-group" style="max-width: 300px;">
                         <label style="text-align: center; width: 100%;">ATT&CK Version</label>
                         <select id="landing-version-select" class="form-select custom-glass-select" style="text-align: center;">
@@ -107,7 +110,7 @@
                     </div>
                 </div>
 
-                <div class="command-box-actions">
+                <div class="command-box-actions stagger-4">
                     <button class="pill-btn primary" id="btn-create-new">
                         <i class="bi bi-plus-lg"></i> New Layer
                     </button>
@@ -145,7 +148,6 @@
                     </div>
                     <span id="company-name-display" class="company-name-display hidden"></span>
                     <span class="layer-name-display" id="layer-name-display">Untitled Layer</span>
-                    <span class="badge bg-secondary" id="layer-domain-badge">Enterprise</span>
                     <span class="badge bg-secondary" id="layer-version-badge">v19.1</span>
                     <button class="btn btn-sm btn-outline-info hidden" id="btn-changelog" title="View Version Changelog" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;">
                         <i class="bi bi-journal-text mr-1"></i>Changelog

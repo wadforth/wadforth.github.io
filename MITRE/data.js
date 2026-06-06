@@ -136,8 +136,11 @@ export function updateLayerToolbar() {
     if (!layer) return;
     document.getElementById('layer-name-display').textContent = layer.name;
     const domainLabel = layer.domain.replace('-attack', '').charAt(0).toUpperCase() + layer.domain.replace('-attack', '').slice(1);
-    document.getElementById('layer-domain-badge').textContent = domainLabel;
-    document.getElementById('layer-version-badge').textContent = layer.attackVersion || state.currentVersion;
+    const domainBadge = document.getElementById('layer-domain-badge');
+    if (domainBadge) domainBadge.textContent = domainLabel;
+    
+    const versionBadge = document.getElementById('layer-version-badge');
+    if (versionBadge) versionBadge.textContent = layer.attackVersion || state.currentVersion;
     
     const logoContainer = document.getElementById('company-logo-container');
     const logoImg = document.getElementById('company-logo-img');

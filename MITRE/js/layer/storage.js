@@ -437,10 +437,12 @@ export function renderRecentLayers() {
             if (e.target.closest('.recent-layer-delete')) return;
             const layer = recent.find(l => l.id === item.dataset.id);
             if (layer) {
-                state.currentDomain = layer.domain;
+                state.currentDomain = layer.domain || 'enterprise-attack';
                 state.currentVersion = layer.versions?.attack || layer.attackVersion;
-                document.getElementById('domain-select').value = state.currentDomain;
-                document.getElementById('version-select').value = state.currentVersion;
+                const domainSelect = document.getElementById('domain-select');
+                if (domainSelect) domainSelect.value = state.currentDomain;
+                const versionSelect = document.getElementById('version-select');
+                if (versionSelect) versionSelect.value = state.currentVersion;
                 showWorkspace();
                 loadSTIX(state.currentDomain, state.currentVersion, layer.data);
             }
