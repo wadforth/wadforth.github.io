@@ -396,7 +396,8 @@ export function bindQueriesToolbar() {
 
     // Expand/Collapse handler
     const queriesList = document.getElementById('queries-list');
-    if (queriesList) {
+    if (queriesList && !queriesList.dataset.expandBound) {
+        queriesList.dataset.expandBound = 'true';
         queriesList.addEventListener('click', (e) => {
             const expandBtn = e.target.closest('.btn-expand-query');
             if (expandBtn) {
