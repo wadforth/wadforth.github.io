@@ -1,3 +1,5 @@
+import { debounce } from '../utils/performance.js';
+
 export let queriesSortBy = 'date';
 export let queriesSortDir = 'desc';
 export let queriesViewMode = 'grid';
@@ -462,7 +464,7 @@ export function bindQueryCardActions(queries) {
     });
 }
 
-document.getElementById('query-search-input')?.addEventListener('input', renderQueriesView);
+document.getElementById('query-search-input')?.addEventListener('input', debounce(renderQueriesView, 250));
 document.getElementById('query-language-filter')?.addEventListener('change', renderQueriesView);
 
 document.getElementById('btn-queries-cards')?.addEventListener('click', () => {

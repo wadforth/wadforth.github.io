@@ -1,3 +1,5 @@
+import { debounce } from '../utils/performance.js';
+
 export function showContextMenu(e, techniqueId) {
     state.contextTarget = techniqueId;
     
@@ -161,11 +163,11 @@ export const matrixSearchInput = document.getElementById('matrix-search-input');
 export const matrixSearchClear = document.getElementById('matrix-search-clear');
 
 if (matrixSearchInput) {
-    matrixSearchInput.addEventListener('input', (e) => {
+    matrixSearchInput.addEventListener('input', debounce((e) => {
         state.matrixSearchQuery = e.target.value.trim();
         matrixSearchClear?.classList.toggle('hidden', !state.matrixSearchQuery);
         renderMatrix();
-    });
+    }, 250));
 }
 
 if (matrixSearchClear) {
