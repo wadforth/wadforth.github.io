@@ -45,6 +45,7 @@ export function setTechniqueAnnotation(techniqueId, updates) {
     }
     Object.assign(ann, updates);
     renderMatrix();
+    if (typeof window.autoSaveLayer === 'function') window.autoSaveLayer();
 }
 
 export function buildAutoLegendSections() {
@@ -89,7 +90,7 @@ export function getAutoColorForTechnique(techniqueId, allSubs = []) {
         for (const sub of allSubs) {
             const subId = sub.external_references?.[0]?.external_id || '';
             const subAnn = getTechniqueAnnotation(subId);
-            if (subAnn?.queries?.length > 0) coveredCount++;
+            if (subAnn?.queries?.some(q => !q.archived)) coveredCount++;
         }
         const pct = allSubs.length > 0 ? (coveredCount / allSubs.length) * 100 : 0;
         
@@ -109,7 +110,7 @@ export function getAutoColorForTechnique(techniqueId, allSubs = []) {
         }
         return null;
     } else {
-        const queryCount = ann?.queries?.length || 0;
+        const queryCount = ann?.queries?.filter(q => !q.archived).length || 0;
         
         if (queryCount === 0) return null;
         

@@ -126,7 +126,7 @@ export function updateExportPreview() {
     const logoPlaceholder = document.getElementById('preview-logo-placeholder');
     if (logoPlaceholder) {
         if (state.companyLogo) {
-            logoPlaceholder.innerHTML = `<img src="${state.companyLogo}" style="height: 100%; max-height: 14px; object-fit: contain;">`;
+            logoPlaceholder.innerHTML = `<img src="${safeImageSrc(state.companyLogo)}" style="height: 100%; max-height: 14px; object-fit: contain;">`;
         } else if (state.companyName) {
             logoPlaceholder.textContent = state.companyName.substring(0, 8).toUpperCase();
         } else {
@@ -229,7 +229,7 @@ export async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated
         html += `
             <div class="matrix-export-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 12px; border-radius: 6px; background: ${headerBackground}; color: white; box-shadow: ${useNebula ? `0 4px 15px ${accentColor}25` : 'none'};">
                 <div class="matrix-export-header-left" style="display: flex; align-items: center; gap: 1rem;">
-                    ${state.companyLogo ? `<img src="${state.companyLogo}" class="matrix-export-logo" style="height: 30px; max-width: 120px; object-fit: contain; border-radius: 4px;" alt="Logo">` : ''}
+                    ${state.companyLogo ? `<img src="${safeImageSrc(state.companyLogo)}" class="matrix-export-logo" style="height: 30px; max-width: 120px; object-fit: contain; border-radius: 4px;" alt="Logo">` : ''}
                     <div>
                         <h1 class="matrix-export-title" style="font-size: 1.15rem; font-weight: 700; color: white; margin: 0; text-shadow: 0 1px 2px rgba(0,0,0,0.15);">${domainLabel} ATT&CK Matrix</h1>
                         <p class="matrix-export-subtitle" style="font-size: 0.7rem; color: rgba(255,255,255,0.85); margin: 0.15rem 0 0;">${state.currentLayer?.name || 'Untitled Layer'} • ATT&CK ${version}</p>
@@ -344,11 +344,14 @@ export async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated
     exportContainer.innerHTML = html;
     await new Promise(resolve => setTimeout(resolve, 150));
     
-    const canvas = await html2canvas(exportContainer, {
-        scale: 2,
-        useCORS: true,
+    if (!window.htmlToImage?.toPng) {
+        throw new Error('PNG export library is not loaded');
+    }
+
+    const dataUrl = await window.htmlToImage.toPng(exportContainer, {
+        pixelRatio: 2,
         backgroundColor: exportBg,
-        logging: false,
+        cacheBust: true,
         width: 1600,
     });
     
@@ -358,8 +361,14 @@ export async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated
     const domain = state.currentDomain.replace('-attack', '');
     const timestamp = new Date().toISOString().slice(0, 10);
     link.download = `mitre-${domain}-matrix-${timestamp}.png`;
-    link.href = canvas.toDataURL('image/png', 1.0);
+    link.href = dataUrl;
     link.click();
+}
+
+function safeImageSrc(value) {
+    const src = String(value || '').trim();
+    if (/^(data:image\/|blob:|https?:\/\/)/i.test(src)) return escapeHtml(src);
+    return '';
 }
 
 export async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#7c3aed', useNebula = true) {
@@ -447,7 +456,7 @@ export async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated
             html += `
                 <div class="matrix-export-header">
                     <div class="matrix-export-header-left">
-                        ${state.companyLogo ? `<img src="${state.companyLogo}" class="matrix-export-logo" alt="Logo">` : ''}
+                        ${state.companyLogo ? `<img src="${safeImageSrc(state.companyLogo)}" class="matrix-export-logo" alt="Logo">` : ''}
                         <div>
                             <h1 class="matrix-export-title">${domainLabel} ATT&CK Matrix</h1>
                             <p class="matrix-export-subtitle">${state.currentLayer?.name || 'Untitled Layer'} • ATT&CK ${version}</p>
@@ -668,7 +677,7 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
         
         let logoX = padding + 12;
         if (state.companyLogo) {
-            svg += `<image x="${logoX}" y="${yPos + 9}" width="30" height="30" href="${state.companyLogo}" preserveAspectRatio="xMidYMid meet"/>`;
+            svg += `<image x="${logoX}" y="${yPos + 9}" width="30" height="30" href="${safeImageSrc(state.companyLogo)}" preserveAspectRatio="xMidYMid meet"/>`;
             logoX += 40;
         }
         

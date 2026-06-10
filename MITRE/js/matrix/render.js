@@ -19,8 +19,8 @@ export function renderPlatformFilters() {
     if (sorted.length === 0) { container.innerHTML = ''; return; }
 
     container.innerHTML = sorted.map(p => `
-        <input type="checkbox" class="btn-check platform-check" id="pf-${p}" value="${p}" checked autocomplete="off">
-        <label class="btn" for="pf-${p}">${p}</label>
+        <input type="checkbox" class="btn-check platform-check" id="pf-${safeId(p)}" value="${escapeHtml(p)}" checked autocomplete="off">
+        <label class="btn" for="pf-${safeId(p)}">${escapeHtml(p)}</label>
     `).join('');
 
     container.querySelectorAll('.platform-check').forEach(cb => {
@@ -33,24 +33,43 @@ export function renderPlatformFilters() {
 }
 
 export function getFilteredTechniques() {
-    return state.techniques.filter(t => {
+    const platformFiltered = state.techniques.filter(t => {
         const platforms = t.x_mitre_platforms || [];
         const platformMatch = platforms.length === 0 || platforms.some(p => state.activePlatforms.has(p));
-        
-        if (!platformMatch) return false;
-        
-        if (state.matrixSearchQuery) {
-            const query = state.matrixSearchQuery.toLowerCase();
-            const id = t.external_references?.[0]?.external_id || '';
-            const name = t.name || '';
-            const desc = t.description || '';
-            return id.toLowerCase().includes(query) || 
-                   name.toLowerCase().includes(query) || 
-                   desc.toLowerCase().includes(query);
-        }
-        
-        return true;
+        return platformMatch;
     });
+
+    if (!state.matrixSearchQuery) return platformFiltered;
+
+    const query = state.matrixSearchQuery.toLowerCase();
+    const byId = new Map(platformFiltered.map(t => [t.external_references?.[0]?.external_id || '', t]));
+    const matched = new Set();
+
+    for (const t of platformFiltered) {
+        const id = t.external_references?.[0]?.external_id || '';
+        const name = t.name || '';
+        const desc = t.description || '';
+        const isMatch = id.toLowerCase().includes(query) ||
+            name.toLowerCase().includes(query) ||
+            desc.toLowerCase().includes(query);
+
+        if (!isMatch) continue;
+        matched.add(t);
+
+        if (t.x_mitre_is_subtechnique) {
+            const parent = byId.get(id.split('.')[0]);
+            if (parent) matched.add(parent);
+        } else {
+            for (const candidate of platformFiltered) {
+                const candidateId = candidate.external_references?.[0]?.external_id || '';
+                if (candidate.x_mitre_is_subtechnique && candidateId.split('.')[0] === id) {
+                    matched.add(candidate);
+                }
+            }
+        }
+    }
+
+    return [...matched];
 }
 
 export function renderMatrix() {
@@ -122,14 +141,17 @@ export function renderMatrix() {
         });
     });
 
-    container.addEventListener('contextmenu', (e) => {
-        const cell = e.target.closest('.technique-cell[data-id]');
-        if (cell) {
-            e.preventDefault();
-            e.stopPropagation();
-            showContextMenu(e, cell.dataset.id);
-        }
-    });
+    if (!container.dataset.contextMenuBound) {
+        container.addEventListener('contextmenu', (e) => {
+            const cell = e.target.closest('.technique-cell[data-id]');
+            if (cell) {
+                e.preventDefault();
+                e.stopPropagation();
+                showContextMenu(e, cell.dataset.id);
+            }
+        });
+        container.dataset.contextMenuBound = 'true';
+    }
 
     container.querySelectorAll('.expand-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -180,6 +202,10 @@ export function renderMatrix() {
             </div>
         `).join('');
     }
+}
+
+function safeId(value) {
+    return String(value || '').replace(/[^a-zA-Z0-9_-]/g, '-');
 }
 
 export function toggleSubTechniques(pid, btnElement) {

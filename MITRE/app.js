@@ -18,7 +18,10 @@ export function showLanding() {
     if (landVer && realVer) {
         landVer.innerHTML = realVer.innerHTML;
         landVer.value = realVer.value;
-        landVer.onchange = (e) => { realVer.value = e.target.value; realVer.dispatchEvent(new Event('change')); };
+        landVer.onchange = (e) => {
+            realVer.value = e.target.value;
+            if (window.state) window.state.currentVersion = e.target.value;
+        };
     }
     
     if (window.renderRecentLayers) window.renderRecentLayers();
@@ -134,25 +137,33 @@ export async function init() {
     // Sigma module is lazy-loaded on first access (code splitting)
     let sigmaModuleLoaded = false;
     let sigmaModule = null;
+    let sigmaModulePromise = null;
     
     window.loadSigmaModule = async function() {
+        if (sigmaModulePromise) return sigmaModulePromise;
         if (!sigmaModuleLoaded) {
-            sigmaModule = await import('./js/intel/sigma.js?v=' + Date.now());
-            sigmaModuleLoaded = true;
-            window.sigmaModule = sigmaModule;
-            await sigmaModule.initSigmaModule();
-            
-            // Expose candidates functions globally for onclick handlers
-            window.toggleCandidatesView = sigmaModule.toggleCandidatesView;
-            window.renderCandidatesList = sigmaModule.renderCandidatesList;
-            window.updateCandidatesBadge = sigmaModule.updateCandidatesBadge;
-            window.isRuleCandidate = sigmaModule.isRuleCandidate;
-            window.toggleRuleCandidate = sigmaModule.toggleRuleCandidate;
-            window.removeCandidate = sigmaModule.removeCandidate;
-            window.clearAllCandidates = sigmaModule.clearAllCandidates;
-            window.exportCandidatesList = sigmaModule.exportCandidatesList;
-            window.deployCandidate = sigmaModule.deployCandidate;
-            window.viewCandidateDetails = sigmaModule.viewCandidateDetails;
+            sigmaModulePromise = (async () => {
+                sigmaModule = await import('./js/intel/sigma.js');
+                sigmaModuleLoaded = true;
+                window.sigmaModule = sigmaModule;
+                await sigmaModule.initSigmaModule();
+                
+                // Expose candidates functions globally for onclick handlers
+                window.toggleCandidatesView = sigmaModule.toggleCandidatesView;
+                window.renderCandidatesList = sigmaModule.renderCandidatesList;
+                window.updateCandidatesBadge = sigmaModule.updateCandidatesBadge;
+                window.isRuleCandidate = sigmaModule.isRuleCandidate;
+                window.toggleRuleCandidate = sigmaModule.toggleRuleCandidate;
+                window.removeCandidate = sigmaModule.removeCandidate;
+                window.clearAllCandidates = sigmaModule.clearAllCandidates;
+                window.exportCandidatesList = sigmaModule.exportCandidatesList;
+                window.deployCandidate = sigmaModule.deployCandidate;
+                window.viewCandidateDetails = sigmaModule.viewCandidateDetails;
+                return sigmaModule;
+            })().finally(() => {
+                sigmaModulePromise = null;
+            });
+            return sigmaModulePromise;
         }
         return sigmaModule;
     };

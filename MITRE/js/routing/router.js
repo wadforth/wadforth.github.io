@@ -37,7 +37,7 @@ export class Router {
         // Toggle view sections
         document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
         const targetView = document.getElementById(`${view}-view`);
-        if (targetView) targetView.classList.remove('hidden');
+        if (targetView && view !== 'sigma') targetView.classList.remove('hidden');
         
         // Trigger specific logic for views (using global functions due to legacy migration)
         if (view === 'queries' && window.renderQueriesView) {
@@ -54,6 +54,7 @@ export class Router {
         } else if (view === 'sigma') {
             if (window.loadSigmaModule) {
                 const sigma = await window.loadSigmaModule();
+                if (targetView) targetView.classList.remove('hidden');
                 if (sigma && sigma.renderSigmaView) {
                     sigma.renderSigmaView();
                 }

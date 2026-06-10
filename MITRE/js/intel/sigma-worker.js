@@ -111,10 +111,11 @@ export function handleParseYAML(rule) {
     }
 }
 
-export function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
+export function handleFilterAndSort({ requestId, filters, coverageMap, sort }) {
     const { searchQuery, logsource, tactic, level, coverage, product, date } = filters;
+    const recentCutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
     
-    let filtered = rules.filter(rule => {
+    let filtered = sigmaRulesCache.filter(rule => {
         // Text search
         const q = searchQuery;
         const matchText = !q ||
@@ -151,7 +152,7 @@ export function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
         // Date filter
         let matchDate = true;
         if (date === 'new') {
-            matchDate = rule.detectedType === 'new' || rule.detectedType === 'modified';
+            matchDate = (rule.detectedType === 'new' || rule.detectedType === 'modified') && (rule.detectedAt || 0) >= recentCutoff;
         }
         
         return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate;
@@ -176,7 +177,7 @@ export function handleFilterAndSort({ rules, filters, coverageMap, sort }) {
             break;
     }
     
-    self.postMessage({ type: 'FILTER_COMPLETE', filtered, total: filtered.length });
+    self.postMessage({ type: 'FILTER_COMPLETE', requestId, ids: filtered.map(rule => rule.id), total: filtered.length });
 }
 
 export function extractLevelFromYaml(yamlText) {
@@ -204,5 +205,4 @@ export function getEffectiveDate(rule) {
     if (latest > 0) return latest;
     return 0;
 }
-
 

@@ -22,6 +22,14 @@ window.DOMSanitizer = {
                     node.remove();
                     return;
                 }
+
+                for (const attr of Array.from(node.attributes || [])) {
+                    const name = attr.name.toLowerCase();
+                    const value = String(attr.value || '').trim().toLowerCase();
+                    if (name.startsWith('on') || value.startsWith('javascript:') || value.startsWith('data:text/html')) {
+                        node.removeAttribute(attr.name);
+                    }
+                }
             }
             
             // Recurse down the tree

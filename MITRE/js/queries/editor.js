@@ -33,8 +33,8 @@ export function renderTechniqueSelector(selectedIds = [], lockedIds = []) {
         const tacticObj = state.tactics.find(t => t.x_mitre_shortname === tactic);
         const tacticName = tacticObj?.name || tactic;
         
-        html += `<div class="technique-tactic-group" data-tactic="${tactic}">`;
-        html += `<span class="technique-tactic-label">${tacticName}</span>`;
+        html += `<div class="technique-tactic-group" data-tactic="${escapeHtml(tactic)}">`;
+        html += `<span class="technique-tactic-label">${escapeHtml(tacticName)}</span>`;
         
         const sorted = techs.sort((a, b) => {
             const idA = a.external_references?.[0]?.external_id || '';
@@ -51,10 +51,10 @@ export function renderTechniqueSelector(selectedIds = [], lockedIds = []) {
             const disabled = isLocked ? 'disabled' : '';
             const lockedClass = isLocked ? 'technique-locked' : '';
             
-            html += `<div class="technique-checkbox-item ${lockedClass}" data-id="${id}" data-name="${name.toLowerCase()}">
+            html += `<div class="technique-checkbox-item ${lockedClass}" data-id="${escapeHtml(id)}" data-name="${escapeHtml(name.toLowerCase())}">
                 <label class="technique-checkbox-label">
-                    <input type="checkbox" class="technique-cb" data-tech-id="${id}" value="${id}" ${checked} ${disabled}>
-                    <span class="tech-id">${id}</span> ${escapeHtml(name)}
+                    <input type="checkbox" class="technique-cb" data-tech-id="${escapeHtml(id)}" value="${escapeHtml(id)}" ${checked} ${disabled}>
+                    <span class="tech-id">${escapeHtml(id)}</span> ${escapeHtml(name)}
                     ${isLocked ? '<span class="technique-locked-badge" title="Locked by linked Sigma rule"><i class="bi bi-lock-fill"></i></span>' : ''}
                 </label>
             </div>`;
@@ -110,16 +110,6 @@ export function getTechniquesFromSigmaRules(sigmaRuleIds) {
 }
 
 export async function openQueryEditor(queryData = null, techniqueId = null) {
-    // Ensure Sigma module is loaded and initialized
-    if (!window.sigmaModule && window.loadSigmaModule) {
-        await window.loadSigmaModule();
-    }
-    
-    // Ensure sigmaRules is populated
-    if (window.sigmaModule && (!window.sigmaModule.sigmaRules || window.sigmaModule.sigmaRules.length === 0)) {
-        await window.sigmaModule.initSigmaModule();
-    }
-    
     document.getElementById('query-modal-title').textContent = queryData ? 'Edit Query' : 'Add Query';
     document.getElementById('query-edit-id').value = queryData?.id || '';
     document.getElementById('query-name').value = queryData?.name || '';
@@ -136,7 +126,7 @@ export async function openQueryEditor(queryData = null, techniqueId = null) {
     const selectGroup = document.getElementById('query-technique-select-group');
     const hiddenInput = document.getElementById('query-technique-id');
     
-    state.currentModalTechniqueId = null;
+    state.currentModalTechniqueId = techniqueId || null;
     selectGroup.classList.remove('hidden');
     hiddenInput.value = '';
     
@@ -198,6 +188,14 @@ export async function openQueryEditor(queryData = null, techniqueId = null) {
     // Always reinitialize Sigma Search bindings when modal opens
     if (window.sigmaModule && typeof window.sigmaModule.initQueryModalSigmaSearch === 'function') {
         window.sigmaModule.initQueryModalSigmaSearch();
+    } else if (window.loadSigmaModule) {
+        const sigmaSearch = document.getElementById('query-sigma-search');
+        sigmaSearch?.addEventListener('focus', async () => {
+            const sigma = await window.loadSigmaModule();
+            if (sigma && typeof sigma.initQueryModalSigmaSearch === 'function') {
+                sigma.initQueryModalSigmaSearch();
+            }
+        }, { once: true });
     }
     
     const queryModal = new bootstrap.Modal(document.getElementById('query-modal'));
@@ -244,11 +242,13 @@ export function saveQuery() {
     
     // Generate one query ID for all techniques to avoid duplicates
     const queryId = editId || ('q-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5));
+    let existingQuery = null;
     
     // When editing, remove the query from ALL techniques first (it may have been on multiple)
     if (editId) {
         for (const tech of state.currentLayer.techniques) {
             if (tech.queries) {
+                existingQuery = existingQuery || tech.queries.find(q => q.id === editId);
                 tech.queries = tech.queries.filter(q => q.id !== editId);
             }
         }
@@ -267,7 +267,12 @@ export function saveQuery() {
         ann.queries.push({
             id: queryId,
             name, language, query: queryText, description, source,
-            created: now, lastModified: now, favorite: false,
+            created: existingQuery?.created || now,
+            lastModified: now,
+            favorite: existingQuery?.favorite || false,
+            archived: existingQuery?.archived || false,
+            archivedAt: existingQuery?.archivedAt,
+            archiveReason: existingQuery?.archiveReason,
             monthAdded,
             sigmaRuleId: sigmaRuleId,
             sigmaRuleTitle: sigmaRuleTitle,

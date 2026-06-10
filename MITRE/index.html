@@ -102,6 +102,14 @@
                 </div>
                 
                 <div class="command-box-controls stagger-3" style="justify-content: center;">
+                    <div class="control-group" style="max-width: 220px;">
+                        <label style="text-align: center; width: 100%;">ATT&CK Domain</label>
+                        <select id="domain-select" class="form-select custom-glass-select" style="text-align: center;">
+                            <option value="enterprise-attack">Enterprise</option>
+                            <option value="mobile-attack">Mobile</option>
+                            <option value="ics-attack">ICS</option>
+                        </select>
+                    </div>
                     <div class="control-group" style="max-width: 300px;">
                         <label style="text-align: center; width: 100%;">ATT&CK Version</label>
                         <select id="landing-version-select" class="form-select custom-glass-select" style="text-align: center;">
@@ -148,6 +156,7 @@
                     </div>
                     <span id="company-name-display" class="company-name-display hidden"></span>
                     <span class="layer-name-display" id="layer-name-display">Untitled Layer</span>
+                    <span class="badge bg-secondary" id="layer-domain-badge">Enterprise</span>
                     <span class="badge bg-secondary" id="layer-version-badge">v19.1</span>
                     <button class="btn btn-sm btn-outline-info hidden" id="btn-changelog" title="View Version Changelog" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;">
                         <i class="bi bi-journal-text mr-1"></i>Changelog
@@ -1208,7 +1217,6 @@
     <script type="module" src="search.js"></script>
     <script type="module" src="js/modal/highlight.js"></script>
     <script type="module" src="js/modal/technique.js"></script>
-    <script type="module" src="js/modal/entity.js"></script>
     <script type="module" src="js/groups/view.js"></script>
     <script type="module" src="js/groups/detail.js"></script>
     <script type="module" src="js/software/view.js"></script>

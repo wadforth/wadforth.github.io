@@ -52,12 +52,14 @@ export function showContextMenu(e, techniqueId) {
     }
     
     document.getElementById('context-add-comment').onclick = () => {
+        document.getElementById('comment-modal').dataset.techniqueId = techniqueId;
         hideContextMenu();
         document.getElementById('comment-text').value = ann?.comment || '';
         new bootstrap.Modal(document.getElementById('comment-modal')).show();
     };
     
     document.getElementById('context-set-score').onclick = () => {
+        document.getElementById('score-modal').dataset.techniqueId = techniqueId;
         hideContextMenu();
         document.getElementById('score-value').value = ann?.score || 0;
         new bootstrap.Modal(document.getElementById('score-modal')).show();
@@ -114,15 +116,21 @@ document.addEventListener('contextmenu', (e) => {
 });
 
 document.getElementById('btn-save-comment').addEventListener('click', () => {
-    if (state.contextTarget) {
-        setTechniqueAnnotation(state.contextTarget, { comment: document.getElementById('comment-text').value });
+    const modal = document.getElementById('comment-modal');
+    const target = modal.dataset.techniqueId || state.contextTarget;
+    if (target) {
+        setTechniqueAnnotation(target, { comment: document.getElementById('comment-text').value });
+        delete modal.dataset.techniqueId;
     }
     bootstrap.Modal.getInstance(document.getElementById('comment-modal')).hide();
 });
 
 document.getElementById('btn-save-score').addEventListener('click', () => {
-    if (state.contextTarget) {
-        setTechniqueAnnotation(state.contextTarget, { score: parseInt(document.getElementById('score-value').value) || 0 });
+    const modal = document.getElementById('score-modal');
+    const target = modal.dataset.techniqueId || state.contextTarget;
+    if (target) {
+        setTechniqueAnnotation(target, { score: parseInt(document.getElementById('score-value').value) || 0 });
+        delete modal.dataset.techniqueId;
     }
     bootstrap.Modal.getInstance(document.getElementById('score-modal')).hide();
 });

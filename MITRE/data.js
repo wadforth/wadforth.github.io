@@ -47,6 +47,7 @@ export function populateVersionSelect() {
 
 export async function loadSTIX(domain, version, layerData = null) {
     if (typeof version === 'string') version = version.replace(/^v+/, 'v');
+    state.currentDomain = domain;
     state.currentVersion = version;
     showLoading(true, 'Fetching STIX bundle...');
     try {
@@ -65,11 +66,16 @@ export async function loadSTIX(domain, version, layerData = null) {
 
         if (layerData) {
             state.currentLayer = layerData;
+            state.currentLayer.domain = domain;
+            state.currentLayer.attackVersion = version;
             if (!state.currentLayer.legend) state.currentLayer.legend = [...defaultLegend];
             if (!state.currentLayer.metadata) state.currentLayer.metadata = [];
             if (!state.currentLayer.techniques) state.currentLayer.techniques = [];
             if (!state.currentLayer.mitigationStatus) state.currentLayer.mitigationStatus = {};
             if (state.currentLayer.autoColorByQueries === undefined) state.currentLayer.autoColorByQueries = true;
+            const attackVersionMeta = state.currentLayer.metadata.find(m => m.name === 'ATT&CK Version');
+            if (attackVersionMeta) attackVersionMeta.value = version;
+            else state.currentLayer.metadata.push({ name: 'ATT&CK Version', value: version });
             state.autoColorByQueries = state.currentLayer.autoColorByQueries;
         } else {
             state.currentLayer = createNewLayer(domain, version);
@@ -93,9 +99,10 @@ export async function loadSTIX(domain, version, layerData = null) {
             <div class="text-center py-5">
                 <i class="bi bi-exclamation-triangle text-warning mb-3" style="font-size: 2rem;"></i>
                 <h5>Failed to load data</h5>
-                <p class="text-on-surface-secondary">${err.message}</p>
-                <button class="btn btn-primary btn-sm" onclick="loadSTIX('${domain}', '${version}')">Retry</button>
+                <p class="text-on-surface-secondary">${escapeHtml(err.message)}</p>
+                <button class="btn btn-primary btn-sm" id="btn-retry-stix-load">Retry</button>
             </div>`;
+        document.getElementById('btn-retry-stix-load')?.addEventListener('click', () => loadSTIX(domain, version));
     } finally {
         showLoading(false);
     }

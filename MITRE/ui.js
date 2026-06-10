@@ -8,12 +8,14 @@ export function showToast(message, type = 'info', duration = 3000) {
         info: 'bi-info-circle-fill',
         warning: 'bi-exclamation-triangle-fill'
     };
+    const toastType = icons[type] ? type : 'info';
+    const safeMessage = window.escapeHtml ? window.escapeHtml(message) : String(message || '');
     const id = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const html = `
-        <div id="${id}" class="toast app-toast toast-${type} toast-enter" role="alert">
+        <div id="${id}" class="toast app-toast toast-${toastType} toast-enter" role="alert">
             <div class="toast-body">
-                <i class="bi ${icons[type] || icons.info} toast-icon"></i>
-                <span>${escapeHtml ? escapeHtml(message) : message}</span>
+                <i class="bi ${icons[toastType]} toast-icon"></i>
+                <span>${safeMessage}</span>
             </div>
         </div>
     `;
@@ -118,16 +120,19 @@ export function showToastWithOptions(message, options = {}) {
         warning: 'bi-exclamation-triangle-fill'
     };
     
+    const toastType = icons[type] ? type : 'info';
+    const safeMessage = window.escapeHtml ? window.escapeHtml(message) : String(message || '');
+    const safeActionLabel = window.escapeHtml ? window.escapeHtml(actionLabel) : String(actionLabel || 'Action');
     const id = 'toast-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     const actionHtml = action 
-        ? `<button class="toast-action-btn" onclick="(${action.toString()})()">${actionLabel}</button>` 
+        ? `<button class="toast-action-btn" data-toast-action="${id}">${safeActionLabel}</button>` 
         : '';
     
     const html = `
-        <div id="${id}" class="toast app-toast toast-${type} toast-enter" role="alert">
+        <div id="${id}" class="toast app-toast toast-${toastType} toast-enter" role="alert">
             <div class="toast-body">
-                <i class="bi ${icon || icons[type] || icons.info} toast-icon"></i>
-                <span>${escapeHtml ? escapeHtml(message) : message}</span>
+                <i class="bi ${icon || icons[toastType]} toast-icon"></i>
+                <span>${safeMessage}</span>
                 ${actionHtml}
             </div>
         </div>
@@ -135,6 +140,7 @@ export function showToastWithOptions(message, options = {}) {
     container.insertAdjacentHTML('beforeend', html);
     
     const el = document.getElementById(id);
+    el?.querySelector('[data-toast-action]')?.addEventListener('click', action);
     setTimeout(() => {
         if (el) {
             el.classList.remove('toast-enter');
@@ -208,13 +214,10 @@ export const keyboardShortcuts = {
         
         if (shortcuts.length === 0) return;
         
-        let html = '<div class="keyboard-shortcuts-help">';
-        html += '<h5>Keyboard Shortcuts</h5>';
-        html += '<div class="shortcuts-list">';
+        let html = 'Keyboard Shortcuts\n';
         shortcuts.forEach(({ key, description }) => {
-            html += `<div class="shortcut-row"><kbd>${key}</kbd><span>${description}</span></div>`;
+            html += `${key}: ${description}\n`;
         });
-        html += '</div></div>';
         
         showToast(html, 'info', 8000);
     }
@@ -224,7 +227,7 @@ document.addEventListener('keydown', (e) => keyboardShortcuts.handle(e));
 
 export function registerDefaultShortcuts() {
     keyboardShortcuts.register('ctrl+k', () => {
-        const searchInput = document.querySelector('#matrix-search, #search-input');
+        const searchInput = document.querySelector('#matrix-search-input, #query-search-input, #groups-search-input, #software-search-input, #mitigations-search-input, #sigma-search-input');
         if (searchInput) {
             searchInput.focus();
             searchInput.select();

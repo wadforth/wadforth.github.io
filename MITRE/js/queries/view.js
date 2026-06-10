@@ -130,12 +130,13 @@ export function renderQueriesView() {
     }
     
     if (query) {
-        queries = queries.filter(q =>
-            q.name.toLowerCase().includes(query) ||
-            q.query.toLowerCase().includes(query) ||
-            (q.description || '').toLowerCase().includes(query) ||
-            q.techniqueID.toLowerCase().includes(query)
-        );
+        queries = queries.filter(q => {
+            const techniqueIds = q.techniqueIDs || [q.techniqueID].filter(Boolean);
+            return String(q.name || '').toLowerCase().includes(query) ||
+                String(q.query || '').toLowerCase().includes(query) ||
+                String(q.description || '').toLowerCase().includes(query) ||
+                techniqueIds.some(id => String(id || '').toLowerCase().includes(query));
+        });
     }
     
     if (lang !== 'all') {
@@ -266,13 +267,13 @@ export function renderQueryCard(q) {
     
     if (queriesViewMode === 'list') {
         return `
-            <div class="query-card query-card-list" data-query-id="${q.id}">
+            <div class="query-card query-card-list ${q.archived ? 'query-card-archived' : ''}" data-query-id="${q.id}">
                 <div class="query-list-row">
                     <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
                         <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
                     </button>
                     <div class="query-list-info">
-                        <span class="query-list-name">${escapeHtml(q.name)}</span>
+                        <span class="query-list-name">${escapeHtml(q.name)}${q.archived ? '<span class="query-archived-badge" title="Archived"><i class="bi bi-archive"></i> Archived</span>' : ''}</span>
                         <span class="query-list-tech">${escapeHtml(primaryTechName)}</span>
                     </div>
                     <div class="query-list-badges">
@@ -288,6 +289,10 @@ export function renderQueryCard(q) {
                         <button class="btn btn-ghost btn-sm btn-edit-query" data-query-id="${q.id}" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
+                        ${q.archived 
+                            ? `<button class="btn btn-ghost btn-sm btn-unarchive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Restore query"><i class="bi bi-arrow-counterclockwise"></i></button>`
+                            : `<button class="btn btn-ghost btn-sm btn-archive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Archive query"><i class="bi bi-archive"></i></button>`
+                        }
                         <button class="btn btn-ghost btn-sm btn-delete-query" data-query-id="${q.id}" title="Delete">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -489,8 +494,9 @@ export function renderQueriesHeatmap(container) {
     
     const techQueries = {};
     for (const tech of state.currentLayer.techniques) {
-        if (tech.queries && tech.queries.length > 0) {
-            techQueries[tech.techniqueID] = tech.queries.length;
+        const activeQueries = tech.queries?.filter(q => !q.archived) || [];
+        if (activeQueries.length > 0) {
+            techQueries[tech.techniqueID] = activeQueries.length;
         }
     }
     

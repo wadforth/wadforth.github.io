@@ -7,6 +7,7 @@ export const STORE_DELTAS = 'layer_deltas';
 export let autoSaveTimer = null;
 export let pendingSave = false;
 export let lastSnapshotHash = null;
+export let lastSavedLayer = null;
 export let deltaBuffer = [];
 export const DELTA_FLUSH_THRESHOLD = 5; // Consolidate after this many deltas
 
@@ -205,6 +206,7 @@ export async function consolidateDeltas(layer) {
     const newHash = await storeSnapshot(layer);
     await clearDeltas(layer.id);
     lastSnapshotHash = newHash;
+    lastSavedLayer = JSON.parse(JSON.stringify(layer));
     deltaBuffer = [];
 }
 
@@ -227,14 +229,17 @@ export async function saveCurrentLayer() {
         if (!lastSnapshotHash) {
             // First save - store full snapshot
             lastSnapshotHash = await storeSnapshot(state.currentLayer);
+            lastSavedLayer = JSON.parse(JSON.stringify(state.currentLayer));
         } else if (currentHash !== lastSnapshotHash) {
             // Compute and store delta
-            const snapshot = await getSnapshot(state.currentLayer.id);
-            if (snapshot) {
-                const ops = computeDelta(snapshot.data, state.currentLayer);
+            const baseline = lastSavedLayer || (await getSnapshot(state.currentLayer.id))?.data;
+            if (baseline) {
+                const ops = computeDelta(baseline, state.currentLayer);
                 if (ops.length > 0) {
                     deltaBuffer.push(ops);
                     await storeDelta(state.currentLayer.id, ops);
+                    lastSnapshotHash = currentHash;
+                    lastSavedLayer = JSON.parse(JSON.stringify(state.currentLayer));
                     
                     // Consolidate if buffer is large
                     if (deltaBuffer.length >= DELTA_FLUSH_THRESHOLD) {
@@ -244,6 +249,7 @@ export async function saveCurrentLayer() {
             } else {
                 // Snapshot missing - create new one
                 lastSnapshotHash = await storeSnapshot(state.currentLayer);
+                lastSavedLayer = JSON.parse(JSON.stringify(state.currentLayer));
             }
         }
         
@@ -338,7 +344,8 @@ export async function loadLayerFromIndexedDB(layerId) {
         }
         
         state.currentLayer = layer;
-        lastSnapshotHash = snapshot.hash;
+        lastSnapshotHash = computeHash(layer);
+        lastSavedLayer = JSON.parse(JSON.stringify(layer));
         
         // Update localStorage reference
         localStorage.setItem('attack-explorer-current-layer', JSON.stringify(layer));
@@ -372,6 +379,8 @@ export function loadLayerFromLocalStorage() {
         }
         
         state.currentLayer = layer;
+        lastSnapshotHash = computeHash(layer);
+        lastSavedLayer = JSON.parse(JSON.stringify(layer));
         saveCurrentLayerNow();
         return layer;
     } catch {
@@ -503,6 +512,7 @@ document.getElementById('btn-close-layer').addEventListener('click', async () =>
     if (confirmed) {
         state.currentLayer = null;
         lastSnapshotHash = null;
+        lastSavedLayer = null;
         deltaBuffer = [];
         localStorage.removeItem('attack-explorer-current-layer');
         if (window.loadReportsList) {
@@ -520,6 +530,7 @@ window.STORE_DELTAS = STORE_DELTAS;
 window.autoSaveTimer = autoSaveTimer;
 window.pendingSave = pendingSave;
 window.lastSnapshotHash = lastSnapshotHash;
+window.lastSavedLayer = lastSavedLayer;
 window.deltaBuffer = deltaBuffer;
 window.DELTA_FLUSH_THRESHOLD = DELTA_FLUSH_THRESHOLD;
 window.openLayerDB = openLayerDB;

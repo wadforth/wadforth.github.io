@@ -37,13 +37,17 @@ export let sigmaSearchDebounceTimer = null;
 export let sigmaWorker = null;
 export let workerPendingParses = new Map(); // ruleId -> resolve/reject
 export let workerPendingFilter = null;
+export let workerFilterRequestId = 0;
+export let sigmaModuleInitialized = false;
+export let sigmaModuleInitPromise = null;
 
 export function initSigmaWorker() {
+    if (sigmaWorker) return;
     try {
-        const workerUrl = new URL(`sigma-worker.js?v=${Date.now()}`, import.meta.url);
+        const workerUrl = new URL('sigma-worker.js', import.meta.url);
         sigmaWorker = new Worker(workerUrl, { type: 'module' });
         sigmaWorker.onmessage = function(e) {
-            const { type, rule, ruleId, error, filtered, total, count } = e.data;
+            const { type, rule, ruleId, error, ids, requestId, total, count } = e.data;
             
             switch (type) {
                 case 'INIT_COMPLETE':
@@ -67,10 +71,10 @@ export function initSigmaWorker() {
                     break;
                     
                 case 'FILTER_COMPLETE':
-                    if (workerPendingFilter) {
-                        const resolve = workerPendingFilter;
+                    if (workerPendingFilter && workerPendingFilter.requestId === requestId) {
+                        const apply = workerPendingFilter.apply;
                         workerPendingFilter = null;
-                        resolve({ filtered, total });
+                        apply({ ids, total });
                     }
                     break;
             }
@@ -79,9 +83,10 @@ export function initSigmaWorker() {
             console.warn('Sigma Worker error, falling back to main thread:', err);
             sigmaWorker = null;
             if (workerPendingFilter) {
-                const resolve = workerPendingFilter;
+                const resolve = workerPendingFilter.resolvePromise;
                 workerPendingFilter = null;
-                resolve(refreshSigmaFilteredCacheSync());
+                refreshSigmaFilteredCacheSync();
+                resolve();
             }
         };
     } catch (err) {
@@ -99,6 +104,10 @@ export function initSigmaWorker() {
 // ---- Section 4: Init & Cache Management ----
 
 export async function initSigmaModule() {
+    if (sigmaModuleInitialized) return;
+    if (sigmaModuleInitPromise) return sigmaModuleInitPromise;
+
+    sigmaModuleInitPromise = (async () => {
     initSigmaWorker();
     
     try {
@@ -116,7 +125,7 @@ export async function initSigmaModule() {
         const cleanRules = (cachedRules || []).filter(r => !r.isOfflineBaseline);
         if (cleanRules.length !== (cachedRules || []).length) {
             console.log(`Purged ${(cachedRules || []).length - cleanRules.length} offline baseline rules from cache.`);
-            await idbBatchPut('rules', cleanRules);
+            await idbReplaceAll('rules', cleanRules);
         }
 
         if (cleanRules && cleanRules.length > 100) {
@@ -142,11 +151,6 @@ export async function initSigmaModule() {
             }
             startAutoSyncCountdown();
 
-            // Auto-hydrate any remaining virtual rules from cache
-            const remainingVirtual = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === '')).length;
-            if (remainingVirtual > 0) {
-                setTimeout(() => autoHydrateAllVirtualRules(), 3000);
-            }
             return;
         }
 
@@ -164,6 +168,14 @@ export async function initSigmaModule() {
     } catch (err) {
         console.error("Error initializing SigmaHQ explorer:", err);
         bindSigmaEvents();
+    }
+    })();
+
+    try {
+        await sigmaModuleInitPromise;
+        sigmaModuleInitialized = true;
+    } finally {
+        sigmaModuleInitPromise = null;
     }
 }
 
@@ -312,6 +324,12 @@ export async function executeSyncFromGitHub(isBackground) {
         sigmaRules = sigmaRules.filter(r => !r.isOfflineBaseline);
         window.sigmaRules = sigmaRules;
 
+        const livePathSet = new Set(allRulePaths.map(item => item.path));
+        const beforeRemoved = sigmaRules.length;
+        sigmaRules = sigmaRules.filter(r => !r.path || livePathSet.has(r.path));
+        window.sigmaRules = sigmaRules;
+        const removedCount = beforeRemoved - sigmaRules.length;
+
         // Build a lookup of existing rules by ID for fast merge
         const existingMap = new Map();
         sigmaRules.forEach(r => existingMap.set(r.id, r));
@@ -397,12 +415,12 @@ export async function executeSyncFromGitHub(isBackground) {
         await idbSetMeta('sigmaDirectories', sortedDirs);
 
         // Save all rules to IndexedDB
-        await idbBatchPut('rules', sigmaRules);
+        await idbReplaceAll('rules', sigmaRules);
         await idbSetMeta('lastSyncTimestamp', now);
         await idbSetMeta('previousSyncTimestamp', previousSyncTimestamp);
         await idbSetMeta('totalRulesCount', sigmaRules.length);
 
-        showSigmaSyncProgress(true, 100, `Synced! ${newCount > 0 ? newCount + ' new rules' : 'Up to date'}${updatedCount > 0 ? ', ' + updatedCount + ' modified' : ''}`);
+        showSigmaSyncProgress(true, 100, `Synced! ${newCount > 0 ? newCount + ' new rules' : 'Up to date'}${updatedCount > 0 ? ', ' + updatedCount + ' modified' : ''}${removedCount > 0 ? ', ' + removedCount + ' removed' : ''}`);
 
         isLiveSigmaConnected = true;
         window.sigmaRules = sigmaRules;
@@ -411,7 +429,7 @@ export async function executeSyncFromGitHub(isBackground) {
         syncRulesToWorker();
 
         if (!isBackground) {
-            showToast(`SigmaHQ synced! ${sigmaRules.length.toLocaleString()} rules cached from ${sortedDirs.length} directories.${newCount > 0 ? ' ' + newCount + ' new.' : ''}`, 'success');
+            showToast(`SigmaHQ synced! ${sigmaRules.length.toLocaleString()} rules cached from ${sortedDirs.length} directories.${newCount > 0 ? ' ' + newCount + ' new.' : ''}${removedCount > 0 ? ' ' + removedCount + ' removed.' : ''}`, 'success');
         } else if (newCount > 0) {
             showToast(`SigmaHQ updated: ${newCount} new rule${newCount > 1 ? 's' : ''} found.`, 'info');
         }
@@ -428,9 +446,6 @@ export async function executeSyncFromGitHub(isBackground) {
 
         // Start auto-sync countdown
         startAutoSyncCountdown();
-
-        // Auto-hydrate all virtual rules in background
-        setTimeout(() => autoHydrateAllVirtualRules(), 3000);
 
     } catch (err) {
         console.error("Failed to sync SigmaHQ:", err);
@@ -835,10 +850,31 @@ export function getSigmaCoverageStatus(rule) {
     return 'gap';
 }
 
+export function buildSigmaCoverageMap() {
+    const activeRuleIds = new Set();
+    const activeRuleTitles = new Set();
+    if (state?.currentLayer?.techniques) {
+        for (const tech of state.currentLayer.techniques) {
+            for (const q of tech.queries || []) {
+                if (q.archived) continue;
+                if (q.sigmaRuleId) q.sigmaRuleId.split('|').filter(Boolean).forEach(id => activeRuleIds.add(id));
+                if (q.sigmaRuleTitle) q.sigmaRuleTitle.split('|').filter(Boolean).forEach(title => activeRuleTitles.add(title));
+            }
+        }
+    }
+
+    const coverageMap = {};
+    for (const rule of sigmaRules) {
+        coverageMap[rule.id] = activeRuleIds.has(rule.id) || activeRuleTitles.has(rule.title) ? 'active' : 'gap';
+    }
+    return coverageMap;
+}
+
 export function getSigmaCoverageStats() {
     let active = 0, gap = 0;
+    const coverageMap = buildSigmaCoverageMap();
     for (const rule of sigmaRules) {
-        if (getSigmaCoverageStatus(rule) === 'active') active++; else gap++;
+        if (coverageMap[rule.id] === 'active') active++; else gap++;
     }
     return { active, gap, total: sigmaRules.length };
 }
@@ -859,24 +895,30 @@ export function getUniqueProducts() {
 
 export async function refreshSigmaFilteredCache() {
     // Build coverage map for worker
-    const coverageMap = {};
-    for (const rule of sigmaRules) {
-        coverageMap[rule.id] = getSigmaCoverageStatus(rule);
-    }
+    const coverageMap = buildSigmaCoverageMap();
     
     if (sigmaWorker && sigmaRules.length > 500) {
         // Use worker for large rule sets
         return new Promise((resolve) => {
-            workerPendingFilter = (result) => {
-                sigmaFilteredCache = result.filtered;
-                applySigmaSort(); // Sort is fast, keep on main thread for responsiveness
-                resolve();
+            if (workerPendingFilter) {
+                workerPendingFilter.resolvePromise();
+                workerPendingFilter = null;
+            }
+            const requestId = ++workerFilterRequestId;
+            workerPendingFilter = {
+                requestId,
+                resolvePromise: resolve,
+                apply: (result) => {
+                    const byId = new Map(sigmaRules.map(rule => [rule.id, rule]));
+                    sigmaFilteredCache = (result.ids || []).map(id => byId.get(id)).filter(Boolean);
+                    resolve();
+                }
             };
-            
+
             sigmaWorker.postMessage({
                 type: 'FILTER_AND_SORT',
                 payload: {
-                    rules: sigmaRules,
+                    requestId,
                     filters: {
                         searchQuery: sigmaSearchQuery,
                         logsource: selectedSigmaLogsource,
@@ -890,10 +932,10 @@ export async function refreshSigmaFilteredCache() {
                     sort: selectedSigmaSort
                 }
             });
-            
+
             // Timeout fallback after 5 seconds
             setTimeout(() => {
-                if (workerPendingFilter) {
+                if (workerPendingFilter?.requestId === requestId) {
                     workerPendingFilter = null;
                     refreshSigmaFilteredCacheSync(coverageMap);
                     resolve();
@@ -907,12 +949,13 @@ export async function refreshSigmaFilteredCache() {
 }
 
 export function refreshSigmaFilteredCacheSync(coverageMap) {
+    const recentCutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
     sigmaFilteredCache = sigmaRules.filter(rule => {
         // Text search
         const q = sigmaSearchQuery;
         const matchText = !q ||
-            rule.title.toLowerCase().includes(q) ||
-            rule.description.toLowerCase().includes(q) ||
+            String(rule.title || '').toLowerCase().includes(q) ||
+            String(rule.description || '').toLowerCase().includes(q) ||
             (rule.technique_id && rule.technique_id.toLowerCase().includes(q)) ||
             (rule.tactic && rule.tactic.toLowerCase().includes(q)) ||
             (rule.yaml && rule.yaml.toLowerCase().includes(q));
@@ -944,7 +987,7 @@ export function refreshSigmaFilteredCacheSync(coverageMap) {
         // Date filter
         let matchDate = true;
         if (selectedSigmaDate === 'new') {
-            matchDate = rule.detectedType === 'new' || rule.detectedType === 'modified';
+            matchDate = (rule.detectedType === 'new' || rule.detectedType === 'modified') && (rule.detectedAt || 0) >= recentCutoff;
         }
 
         return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate;
@@ -1430,7 +1473,7 @@ export function renderSigmaCard(rule, idx) {
     }
 
     return `
-        <div class="sigma-card ${isActive ? 'active' : ''}" data-idx="${idx}" data-rule-id="${rule.id}">
+        <div class="sigma-card ${isActive ? 'active' : ''}" data-idx="${idx}" data-rule-id="${escapeHtml(rule.id)}">
             <div class="sigma-card-header">
                 <div class="sigma-card-header-left">
                     ${rule.technique_id ? `<span class="sigma-card-tech">${escapeHtml(rule.technique_id)}</span>` : ''}
@@ -1440,7 +1483,7 @@ export function renderSigmaCard(rule, idx) {
                 </div>
                 <div class="sigma-card-header-right">
                     ${coverage === 'active' ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active</span>' : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Gap</span>'}
-                    ${level ? `<span class="sigma-card-level level-${level}">${level}</span>` : ''}
+                    ${level ? `<span class="sigma-card-level level-${escapeHtml(level)}">${escapeHtml(level)}</span>` : ''}
                     <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" onclick="event.stopPropagation(); toggleRuleCandidate(sigmaRules[${idx}])" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
                         <i class="bi ${isCandidate ? 'bi-bookmark-fill' : 'bi-bookmark'}"></i>
                     </button>
@@ -1452,12 +1495,12 @@ export function renderSigmaCard(rule, idx) {
                 <div class="sigma-card-footer-top">
                     <div class="sigma-card-logsource">
                         <i class="bi bi-terminal"></i>
-                        <span>${rule.logsource.product}/${rule.logsource.category}</span>
+                        <span>${escapeHtml(rule.logsource?.product || 'unknown')}/${escapeHtml(rule.logsource?.category || 'unknown')}</span>
                     </div>
-                    ${dateStr ? `<span class="sigma-card-date" title="Rule date">${dateStr}</span>` : ''}
+                    ${dateStr ? `<span class="sigma-card-date" title="Rule date">${escapeHtml(dateStr)}</span>` : ''}
                 </div>
                 <div class="sigma-card-footer-bottom">
-                    ${folder ? `<span class="sigma-card-folder" title="SigmaHQ/${folder}"><i class="bi bi-folder2"></i> ${escapeHtml(folder)}</span>` : ''}
+                    ${folder ? `<span class="sigma-card-folder" title="SigmaHQ/${escapeHtml(folder)}"><i class="bi bi-folder2"></i> ${escapeHtml(folder)}</span>` : ''}
                     ${fileName ? `<span class="sigma-card-file" title="${escapeHtml(fileName)}"><i class="bi bi-file-earmark-code"></i> ${escapeHtml(fileName)}</span>` : ''}
                 </div>
             </div>
@@ -1529,20 +1572,20 @@ export function renderSigmaDetails() {
     panel.innerHTML = `
         <div class="sigma-details-header">
             <div class="sigma-details-meta">
-                ${level ? `<span class="sigma-card-level level-${level}">${level}</span>` : ''}
+                ${level ? `<span class="sigma-card-level level-${escapeHtml(level)}">${escapeHtml(level)}</span>` : ''}
                 ${coverage === 'active'
                     ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active Coverage</span>'
                     : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Defensive Gap</span>'}
-                ${statusLabel ? `<span class="sigma-details-status-badge status-${rule.ruleStatus}">${statusLabel}</span>` : ''}
+                ${statusLabel ? `<span class="sigma-details-status-badge status-${escapeHtml(rule.ruleStatus)}">${escapeHtml(statusLabel)}</span>` : ''}
                 ${rule.isOfflineBaseline ? '<span class="sigma-details-status-badge" style="background: rgba(99,102,241,0.1); color: #818cf8; border-color: rgba(99,102,241,0.2);">Offline Baseline</span>' : ''}
-                <span>UUID: ${rule.id.includes('/') ? 'GitHub Index' : rule.id}</span>
+                <span>UUID: ${rule.id.includes('/') ? 'GitHub Index' : escapeHtml(rule.id)}</span>
             </div>
             <h3 class="sigma-details-title">${escapeHtml(rule.title)}</h3>
             <div class="sigma-details-tags">
-                ${rule.technique_id && rule.technique_id !== 'N/A' ? `<span class="sigma-details-tag"><i class="bi bi-shield-check mr-1 text-primary"></i> ${rule.technique_id}</span>` : ''}
-                ${rule.tactic && rule.tactic !== 'Unknown' ? `<span class="sigma-details-tag"><i class="bi bi-tag-fill mr-1 text-primary"></i> ${rule.tactic}</span>` : ''}
-                <span class="sigma-details-tag"><i class="bi bi-hdd-network mr-1 text-primary"></i> ${rule.logsource.product}/${rule.logsource.category}</span>
-                ${dateStr ? `<span class="sigma-details-tag"><i class="bi bi-calendar3 mr-1 text-primary"></i> ${dateStr}</span>` : ''}
+                ${rule.technique_id && rule.technique_id !== 'N/A' ? `<span class="sigma-details-tag"><i class="bi bi-shield-check mr-1 text-primary"></i> ${escapeHtml(rule.technique_id)}</span>` : ''}
+                ${rule.tactic && rule.tactic !== 'Unknown' ? `<span class="sigma-details-tag"><i class="bi bi-tag-fill mr-1 text-primary"></i> ${escapeHtml(rule.tactic)}</span>` : ''}
+                <span class="sigma-details-tag"><i class="bi bi-hdd-network mr-1 text-primary"></i> ${escapeHtml(rule.logsource?.product || 'unknown')}/${escapeHtml(rule.logsource?.category || 'unknown')}</span>
+                ${dateStr ? `<span class="sigma-details-tag"><i class="bi bi-calendar3 mr-1 text-primary"></i> ${escapeHtml(dateStr)}</span>` : ''}
             </div>
         </div>
 
@@ -1725,6 +1768,8 @@ export function initQueryModalSigmaSearch() {
     let modalSearchTimer = null;
 
     if (!searchInput || !resultsContainer) return;
+    if (searchInput.dataset.sigmaSearchBound) return;
+    searchInput.dataset.sigmaSearchBound = 'true';
 
     searchInput.addEventListener('input', (e) => {
         clearTimeout(modalSearchTimer);
@@ -1751,12 +1796,12 @@ export function initQueryModalSigmaSearch() {
             }
 
             resultsContainer.innerHTML = matches.map(rule => `
-                <div class="sigma-attach-item" data-id="${rule.id}" data-title="${escapeHtml(rule.title)}" data-url="${rule.url}">
+                <div class="sigma-attach-item" data-id="${escapeHtml(rule.id)}" data-title="${escapeHtml(rule.title)}" data-url="${escapeHtml(rule.url || '')}">
                     <div class="sigma-attach-item-title">${escapeHtml(rule.title)}</div>
                     <div class="sigma-attach-item-meta">
-                        <span>${rule.technique_id || ''}</span>
+                        <span>${escapeHtml(rule.technique_id || '')}</span>
                         <span>•</span>
-                        <span>${rule.logsource.product}/${rule.logsource.category}</span>
+                        <span>${escapeHtml(rule.logsource?.product || 'unknown')}/${escapeHtml(rule.logsource?.category || 'unknown')}</span>
                         ${rule.isVirtual ? `<span class="ms-auto text-primary text-xs"><i class="bi bi-cloud-arrow-down-fill"></i> GitHub</span>` : ''}
                     </div>
                 </div>`).join('');

@@ -26,7 +26,7 @@ export async function loadReportsList() {
         }
     } catch (err) {
         const container = document.getElementById('reports-list');
-        if (container) container.innerHTML = `<p class="text-danger">Failed to load reports: ${err.message}</p>`;
+        if (container) container.innerHTML = `<p class="text-danger">Failed to load reports: ${escapeHtml(err.message)}</p>`;
     }
 }
 
@@ -826,8 +826,53 @@ export function openThreatHuntReportModal(selectedMonth = null) {
 
 export function snapshotDynamicContent(report) {
     if (!report.attckVersion) {
-        report.attckVersion = '19.1';
+        report.attckVersion = (state.currentVersion || 'master').toString().replace(/^v/i, '');
     }
+    if (!report.reportMonth && report.selectedMonth) report.reportMonth = getMonthLabel(report.selectedMonth);
+    if (!report.selectedMonth && report.generatedAt) report.selectedMonth = report.generatedAt.slice(0, 7);
+
+    const dynamic = getReportDynamicContent(report);
+    if (!report.executiveSummary) report.executiveSummary = dynamic.executiveSummary;
+    if (!report.leadershipOverview) report.leadershipOverview = dynamic.leadershipOverview;
+    if (!report.monthlyFocus) report.monthlyFocus = dynamic.monthlyFocus;
+    if (!report.gapAnalysis) report.gapAnalysis = dynamic.gapAnalysis;
+    if (!report.recommendations) report.recommendations = dynamic.recommendations;
+    report.appendix = mergeAppendixDefaults(dynamic.appendix, report.appendix, { customOnly: true });
+}
+
+export function getReportMonth(report) {
+    return report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+}
+
+export function getReportMonthLabel(report) {
+    const month = getReportMonth(report);
+    return month ? getMonthLabel(month) : (report.reportMonth || report.generatedDate || 'Current Period');
+}
+
+export function getReportTitle(report) {
+    const layer = report.layerName || state.currentLayer?.name || 'MITRE ATT&CK';
+    return report.type === 'initial'
+        ? `${layer} - Initial Coverage Assessment`
+        : `${layer} - ${getReportMonthLabel(report)} Coverage Update`;
+}
+
+export function getReportDynamicContent(report) {
+    return {
+        executiveSummary: report.executiveSummary || generateDynamicExecutiveSummary(report),
+        leadershipOverview: report.leadershipOverview || generateLeadershipOverview(report),
+        monthlyFocus: report.monthlyFocus || generateDynamicMonthlyFocus(report),
+        gapAnalysis: report.gapAnalysis || generateDynamicGapAnalysis(report),
+        recommendations: report.recommendations || generateDynamicRecommendations(report),
+        appendix: generateDynamicAppendix(report)
+    };
+}
+
+export function getReportMetricLabel() {
+    return 'Threat Coverage Impact';
+}
+
+export function getReportMetricDetail() {
+    return 'threat groups & tools mapped';
 }
 
 export function viewReport(reportId) {
@@ -843,7 +888,7 @@ export function viewReport(reportId) {
     const body = document.getElementById('report-view-body');
     
     const logoHtml = report.companyLogo 
-        ? `<img src="${report.companyLogo}" alt="Company Logo" class="company-logo">` 
+        ? `<img src="${safeImageSrc(report.companyLogo)}" alt="Company Logo" class="company-logo">` 
         : '';
     
     const changesHtml = report.changes?.all?.length > 0 
@@ -870,7 +915,8 @@ export function viewReport(reportId) {
     const techniquesAtRiskHtml = buildTechniquesAtRisk(report);
 
     const availableMonths = getAvailableMonths();
-    const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const currentMonth = getReportMonth(report);
+    const reportMonthLabel = getReportMonthLabel(report);
     const currentTheme = report.bannerTheme || 'blue';
     const themeOptionsHtml = Object.entries(BANNER_THEMES).map(([key, t]) =>
         `<option value="${key}" ${key === currentTheme ? 'selected' : ''}>${t.label}</option>`
@@ -976,9 +1022,9 @@ export function viewReport(reportId) {
                     <div class="posture-card-detail">techniques covered this period</div>
                 </div>
                 <div class="posture-card posture-card-threats">
-                    <div class="posture-card-label">Threats Disrupted</div>
+                    <div class="posture-card-label">${getReportMetricLabel()}</div>
                     <div class="posture-card-value">${threatsDisrupted}</div>
-                    <div class="posture-card-detail">threat groups & tools impacted</div>
+                    <div class="posture-card-detail">${getReportMetricDetail()}</div>
                 </div>
             </div>
             <div class="posture-grade-card">
@@ -1005,7 +1051,7 @@ export function viewReport(reportId) {
                 ${logoHtml}
                 <h2>${escapeHtml(report.companyName) || 'MITRE ATT&CK Coverage Report'}</h2>
                 <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
-                <div class="report-date">${escapeHtml(report.reportMonth) || escapeHtml(report.generatedDate)}</div>
+                <div class="report-date">${escapeHtml(reportMonthLabel)}</div>
                 ${report.layerName ? `<div class="report-date"><i class="bi bi-layers mr-1"></i>Layer: ${escapeHtml(report.layerName)}</div>` : ''}
                 <div class="report-date" style="display: inline-flex; align-items: center; gap: 4px;">
                     <i class="bi bi-person mr-1"></i>Prepared by: 
@@ -1023,7 +1069,7 @@ export function viewReport(reportId) {
                 <div class="report-tier-content">
                     <div class="report-section">
                         <h4><i class="bi bi-journal-text"></i> Executive Summary</h4>
-                        <textarea rows="5" onchange="updateReportField('${report.id}', 'executiveSummary', this.value)" placeholder="Provide a high-level overview of the threat hunting activities, key findings, and overall coverage status...">${report.executiveSummary || generateDynamicExecutiveSummary(report)}</textarea>
+                        <textarea rows="5" onchange="updateReportField('${report.id}', 'executiveSummary', this.value)" placeholder="Provide a high-level overview of the threat hunting activities, key findings, and overall coverage status...">${escapeHtml(report.executiveSummary || generateDynamicExecutiveSummary(report))}</textarea>
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-bar-chart-line"></i> Key Metrics at a Glance</h4>
@@ -1040,8 +1086,8 @@ export function viewReport(reportId) {
                             </div>
                             <div class="key-metric-card">
                                 <div class="key-metric-value" style="color: #fbbf24;">${threatsDisrupted}</div>
-                                <div class="key-metric-label">Threats Disrupted</div>
-                                <div class="key-metric-detail">APT groups & tools impacted</div>
+                                <div class="key-metric-label">${getReportMetricLabel()}</div>
+                                <div class="key-metric-detail">${getReportMetricDetail()}</div>
                             </div>
                             <div class="key-metric-card">
                                 <div class="key-metric-value" style="color: #ef4444;">${techniquesWithGaps}</div>
@@ -1053,12 +1099,12 @@ export function viewReport(reportId) {
                     <div class="report-section leadership-section">
                         <h4><i class="bi bi-people"></i> Leadership Overview</h4>
                         <div class="leadership-content">
-                            <p>${report.leadershipOverview || generateLeadershipOverview(report)}</p>
+                            <p>${markdownToHtml(report.leadershipOverview || generateLeadershipOverview(report))}</p>
                         </div>
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-bullseye"></i> Monthly Focus Areas</h4>
-                        <textarea rows="4" onchange="updateReportField('${report.id}', 'monthlyFocus', this.value)" placeholder="Describe the key focus areas and objectives for this reporting period...">${report.monthlyFocus || generateDynamicMonthlyFocus(report)}</textarea>
+                        <textarea rows="4" onchange="updateReportField('${report.id}', 'monthlyFocus', this.value)" placeholder="Describe the key focus areas and objectives for this reporting period...">${escapeHtml(report.monthlyFocus || generateDynamicMonthlyFocus(report))}</textarea>
                     </div>
                 </div>
             </div>
@@ -1072,7 +1118,7 @@ export function viewReport(reportId) {
                     <div class="report-section">
                         <h4><i class="bi bi-lightbulb"></i> Strategic Recommendations</h4>
                         <p class="text-on-surface-secondary mb-3">Prioritized action items based on coverage gaps, threat relevance, and resource allocation. These recommendations are designed to maximize defensive impact with available resources.</p>
-                        <textarea rows="5" onchange="updateReportField('${report.id}', 'recommendations', this.value)" placeholder="Outline strategic recommendations for improving detection coverage, prioritizing high-impact techniques, and allocating resources effectively...">${report.recommendations || generateDynamicRecommendations(report)}</textarea>
+                        <textarea rows="5" onchange="updateReportField('${report.id}', 'recommendations', this.value)" placeholder="Outline strategic recommendations for improving detection coverage, prioritizing high-impact techniques, and allocating resources effectively...">${escapeHtml(report.recommendations || generateDynamicRecommendations(report))}</textarea>
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-people-fill"></i> Team Assignments & Focus Areas</h4>
@@ -1089,7 +1135,7 @@ export function viewReport(reportId) {
                     ${techniquesAtRiskHtml}
                     <div class="report-section">
                         <h4><i class="bi bi-graph-up"></i> Gap Analysis & Prioritization</h4>
-                        <textarea rows="5" onchange="updateReportField('${report.id}', 'gapAnalysis', this.value)" placeholder="Identify coverage gaps, prioritize techniques based on threat relevance, and outline next steps for improving detection capabilities...">${report.gapAnalysis || generateDynamicGapAnalysis(report)}</textarea>
+                        <textarea rows="5" onchange="updateReportField('${report.id}', 'gapAnalysis', this.value)" placeholder="Identify coverage gaps, prioritize techniques based on threat relevance, and outline next steps for improving detection capabilities...">${escapeHtml(report.gapAnalysis || generateDynamicGapAnalysis(report))}</textarea>
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-grid-3x2"></i> Risk Heat Map</h4>
@@ -1167,7 +1213,7 @@ export function viewReport(reportId) {
                     </div>
                     <div class="col-md-4">
                         <label class="text-xs font-semibold mb-1 d-block" style="font-size: 0.72rem; color: var(--report-text-muted);">Sender Email</label>
-                        <input type="text" id="eml-sender-email" class="form-control form-control-sm" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--report-border); color: var(--report-text);" placeholder="Sender Email" value="noreply@mitre-attack-explorer">
+                        <input type="text" id="eml-sender-email" class="form-control form-control-sm" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--report-border); color: var(--report-text);" placeholder="Sender Email" value="reports@attack-explorer.local">
                     </div>
                     <div class="col-md-4">
                         <label class="text-xs font-semibold mb-1 d-block" style="font-size: 0.72rem; color: var(--report-text-muted);">Recipient Email</label>
@@ -1311,7 +1357,7 @@ export function buildMethodology(report) {
     html += `
         <div class="mt-3">
             <label class="form-label text-on-surface-tertiary text-sm">Additional Notes</label>
-            <textarea class="form-control" rows="2" onchange="updateReportField('${report.id}', 'methodologyNotes', this.value)" placeholder="Any additional methodology notes...">${report.methodologyNotes || ''}</textarea>
+            <textarea class="form-control" rows="2" onchange="updateReportField('${report.id}', 'methodologyNotes', this.value)" placeholder="Any additional methodology notes...">${escapeHtml(report.methodologyNotes || '')}</textarea>
         </div>
     `;
     
@@ -1653,13 +1699,11 @@ export function buildTechniquesAtRisk(report) {
     const threatGroups = {};
     state.relationships.forEach(rel => {
         if (rel.relationship_type !== 'uses') return;
-        if (!zeroCoverageTechs.has(rel.target_ref)) return;
+        const techId = getTechniqueIdFromStix(rel.target_ref);
+        if (!techId || !zeroCoverageTechs.has(techId)) return;
         
         const group = state.groups.find(g => g.id === rel.source_ref);
         if (!group) return;
-        
-        const techId = getTechniqueIdFromStix(rel.target_ref);
-        if (!techId) return;
         
         if (monthTechStixIds.size > 0 && monthTechStixIds.has(rel.target_ref)) {
             if (!threatGroups[group.name]) threatGroups[group.name] = new Set();
@@ -1871,16 +1915,16 @@ export function buildThreatsSection(report) {
         const readinessHtml = `
             <div class="roi-card-readiness mt-2" style="border-top: 1px solid ${isDarkTheme ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}; padding-top: 8px; font-size: 0.72rem; width: 100%;">
                 <div class="d-flex justify-content-between mb-1" style="color: var(--on-surface-secondary); font-size: 11px;">
-                    <span>[SHIELD] Defensive Readiness against <strong>${escapeHtml(t.name)}</strong>:</span>
+                    <span>${reportIcon('shield', '#38bdf8', 12)}Defensive Readiness against <strong>${escapeHtml(t.name)}</strong>:</span>
                     <span style="font-weight: 700; color: ${t.coveragePct >= 70 ? 'var(--accent-green)' : t.coveragePct >= 40 ? 'var(--accent-tan)' : 'var(--accent-red)'};">${t.coveragePct}%</span>
                 </div>
                 <div class="progress" style="height: 5px; background: ${isDarkTheme ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
                     <div class="progress-bar" style="width: ${t.coveragePct}%; height: 100%; background: ${t.coveragePct >= 70 ? 'var(--accent-green)' : t.coveragePct >= 40 ? 'var(--accent-tan)' : 'var(--accent-red)'}; border-radius: 3px;"></div>
                 </div>
                 <div class="d-flex justify-content-between text-xs" style="color: var(--on-surface-tertiary); font-size: 10px;">
-                    <span>[OK] ${t.coveredCount} / ${t.techCount} Covered Techniques</span>
+                    <span>${reportIcon('check', '#10b981', 11)}${t.coveredCount} / ${t.techCount} Covered Techniques</span>
                     <span style="color: ${t.gaps > 0 ? 'var(--accent-red)' : 'var(--accent-green)'}; font-weight: 600;">
-                        ${t.gaps > 0 ? `[!] ${t.gaps} Gaps` : '[OK] 100% Covered'}
+                        ${t.gaps > 0 ? `${reportIcon('warning', '#ef4444', 11)}${t.gaps} Gaps` : `${reportIcon('check', '#10b981', 11)}100% Covered`}
                     </span>
                 </div>
             </div>
@@ -2028,7 +2072,7 @@ export function buildDetectionResults(report) {
                 <div class="detection-result-card-header d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2 flex-grow-1 mr-3">
                         <i class="bi bi-crosshair text-primary fs-5"></i>
-                        <input type="text" class="form-control form-control-sm border-0 bg-transparent text-white fw-bold px-0 focus-ring-none" placeholder="Enter Hunt Name..." value="${result.huntName || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'huntName', this.value)" style="box-shadow: none; font-size: 0.95rem;">
+                        <input type="text" class="form-control form-control-sm border-0 bg-transparent text-white fw-bold px-0 focus-ring-none" placeholder="Enter Hunt Name..." value="${escapeHtml(result.huntName || '')}" onchange="updateDetectionResult('${report.id}', ${idx}, 'huntName', this.value)" style="box-shadow: none; font-size: 0.95rem;">
                     </div>
                     <button class="btn btn-sm btn-link text-danger p-0" onclick="removeDetectionResult('${report.id}', ${idx})" title="Remove Result">
                         <i class="bi bi-trash3 fs-6"></i>
@@ -2039,12 +2083,12 @@ export function buildDetectionResults(report) {
                         <div class="col-md-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-ticket-perforated"></i></span>
-                                <input type="text" class="form-control border-start-0" placeholder="SIR Ticket (optional)" value="${result.sirTicket || ''}" onchange="updateDetectionResult('${report.id}', ${idx}, 'sirTicket', this.value)">
+                                <input type="text" class="form-control border-start-0" placeholder="SIR Ticket (optional)" value="${escapeHtml(result.sirTicket || '')}" onchange="updateDetectionResult('${report.id}', ${idx}, 'sirTicket', this.value)">
                             </div>
                         </div>
                         <div class="col-12 mt-2">
                             <label class="text-xs text-on-surface-tertiary font-semibold mb-1 d-block"><i class="bi bi-card-text mr-1"></i>Hunt Notes & Key Findings</label>
-                            <textarea class="form-control form-control-sm" rows="3" placeholder="Describe the outcome, detections triggered, log sources verified, or key observations..." onchange="updateDetectionResult('${report.id}', ${idx}, 'notes', this.value)">${result.notes || ''}</textarea>
+                            <textarea class="form-control form-control-sm" rows="3" placeholder="Describe the outcome, detections triggered, log sources verified, or key observations..." onchange="updateDetectionResult('${report.id}', ${idx}, 'notes', this.value)">${escapeHtml(result.notes || '')}</textarea>
                         </div>
                     </div>
                 </div>
@@ -2134,44 +2178,70 @@ export function buildReferences(report) {
 }
 
 export function buildAppendix(report) {
-    const appendix = report.appendix || {};
-    const dynamicAppendix = generateDynamicAppendix(report);
+    const appendix = mergeAppendixDefaults(generateDynamicAppendix(report), report.appendix);
     
     return `
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Methodology</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'methodology', this.value)" placeholder="Describe the methodology used for this assessment...">${appendix.methodology || dynamicAppendix.methodology}</textarea>
+            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'methodology', this.value)" placeholder="Describe the methodology used for this assessment...">${escapeHtml(appendix.methodology)}</textarea>
         </div>
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Scope</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'scope', this.value)" placeholder="Define the scope of this assessment...">${appendix.scope || dynamicAppendix.scope}</textarea>
+            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'scope', this.value)" placeholder="Define the scope of this assessment...">${escapeHtml(appendix.scope)}</textarea>
         </div>
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Limitations</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'limitations', this.value)" placeholder="Document any limitations or constraints...">${appendix.limitations || dynamicAppendix.limitations}</textarea>
+            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'limitations', this.value)" placeholder="Document any limitations or constraints...">${escapeHtml(appendix.limitations)}</textarea>
         </div>
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Additional Notes</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'additionalNotes', this.value)" placeholder="Any additional notes or context...">${appendix.additionalNotes || dynamicAppendix.additionalNotes}</textarea>
+            <textarea class="form-control" rows="3" onchange="updateAppendixField('${report.id}', 'additionalNotes', this.value)" placeholder="Any additional notes or context...">${escapeHtml(appendix.additionalNotes)}</textarea>
         </div>
     `;
 }
 
 export function generateDynamicAppendix(report) {
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7);
+    const month = getReportMonth(report);
+    const monthLabel = getReportMonthLabel(report);
     const byMonth = getTechniquesByMonth();
     const techniques = byMonth[month] || [];
-    
-    const totalQueries = techniques.reduce((sum, ann) => sum + (ann.queries?.length || 0), 0);
-    const tactics = report.coverageByTactic || getCoverageByTactic();
-    const overallCoverage = tactics.length > 0 ? Math.round(tactics.reduce((sum, t) => sum + t.coverage, 0) / tactics.length) : 0;
+    const coverageStats = getOverallCoverageStatsUpToMonth(month);
+    const totalQueries = getTotalUniqueActiveQueriesUpToMonth(month);
+    const newQueries = getMonthStats(month).queries;
+    const layerName = report.layerName || state.currentLayer?.name || 'the selected ATT&CK layer';
+    const assignedTeams = (report.teamAssignments || [])
+        .map(teamId => TEAM_OPTIONS.find(team => team.id === teamId)?.label)
+        .filter(Boolean);
+    const teamText = assignedTeams.length ? assignedTeams.join(', ') : 'No dedicated teams assigned in this report';
     
     return {
-        methodology: `This assessment utilized a combination of signature-based detection, behavioral analysis, and threat intelligence-driven hunting. Detection queries were developed based on MITRE ATT&CK technique descriptions and validated against known threat actor TTPs. All hunts were tested in a controlled environment before deployment to production systems.`,
-        scope: `Coverage assessment includes ${techniques.length} techniques with ${totalQueries} detection queries across all monitored environments. Assessment period: ${report.reportMonth || month}. Overall coverage: ${overallCoverage}%.`,
-        limitations: `This assessment is limited to techniques with available detection queries. Some techniques may not have applicable detection methods in the current telemetry environment. Coverage percentages are based on logged techniques and may not reflect the full ATT&CK matrix. Threat associations are based on publicly available intelligence and may not represent all potential threat actors.`,
-        additionalNotes: `Report generated on ${report.generatedDate || new Date().toLocaleDateString()}. Data sourced from MITRE ATT&CK framework. For questions or clarifications, contact the threat hunting team.`
+        methodology: `This report evaluates ${layerName} coverage against MITRE ATT&CK using the selected report month (${monthLabel}), active threat hunt queries, technique annotations, tactic coverage, and current ATT&CK relationship data loaded in the explorer. Metrics count active, non-archived detections up to the report month and distinguish parent techniques from sub-techniques where possible.`,
+        scope: `Assessment period: ${monthLabel}. Current coverage is ${coverageStats.pct.toFixed(1)}% across ${coverageStats.covered}/${coverageStats.total} mapped techniques (${coverageStats.parents.covered}/${coverageStats.parents.total} parent techniques and ${coverageStats.subs.covered}/${coverageStats.subs.total} sub-techniques). This period includes ${techniques.length} technique entries, ${newQueries} newly recorded queries, and ${totalQueries} active unique detection queries up to the report month. Assigned teams: ${teamText}.`,
+        limitations: `Coverage percentages reflect techniques represented in the loaded ATT&CK dataset and the active layer/query annotations available at export time. Archived queries are excluded from active coverage counts. Threat group and software mappings are based on public ATT&CK relationships and should be interpreted as defensive coverage overlap, not proof that an adversary has been disrupted. Telemetry availability, data quality, and environment-specific logging gaps can affect validation confidence.`,
+        additionalNotes: `Report generated on ${report.generatedDate || new Date().toLocaleDateString()} for ATT&CK v${report.attckVersion || state.currentVersion || 'unknown'}. Re-export the report after changing the report month, layer, team assignments, archived query state, or ATT&CK dataset to refresh dynamic metrics.`
     };
+}
+
+export function mergeAppendixDefaults(defaults = {}, appendix = {}, options = {}) {
+    const merged = options.customOnly ? {} : { ...defaults };
+    ['methodology', 'scope', 'limitations', 'additionalNotes'].forEach(field => {
+        const value = appendix?.[field];
+        if (typeof value === 'string' && value.trim() && !isGeneratedAppendixValue(field, value)) {
+            merged[field] = value;
+        }
+    });
+    return merged;
+}
+
+function isGeneratedAppendixValue(field, value) {
+    const text = String(value || '').trim();
+    const generatedPrefixes = {
+        methodology: ['This assessment utilized ', 'This report evaluates '],
+        scope: ['Coverage assessment includes ', 'Assessment period: '],
+        limitations: ['This assessment is limited ', 'Coverage percentages reflect '],
+        additionalNotes: ['Report generated on ']
+    };
+    return (generatedPrefixes[field] || []).some(prefix => text.startsWith(prefix));
 }
 
 export function updateReportField(reportId, field, value) {
@@ -2186,6 +2256,13 @@ export function changeReportMonth(reportId, newMonth) {
     const report = state._cachedReports?.find(r => r.id === reportId);
     if (report) {
         report.selectedMonth = newMonth;
+        report.reportMonth = getMonthLabel(newMonth);
+        report.title = getReportTitle(report);
+        report.periodStart = `${newMonth}-01T00:00:00.000Z`;
+        const end = new Date(`${newMonth}-01T00:00:00.000Z`);
+        end.setMonth(end.getMonth() + 1);
+        end.setMilliseconds(end.getMilliseconds() - 1);
+        report.periodEnd = end.toISOString();
         saveReport(report).then(() => {
             viewReport(reportId);
         });
@@ -2204,10 +2281,37 @@ export function changeReportTheme(reportId, newTheme) {
 
 export function markdownToHtml(text) {
     if (!text) return '';
-    return text
+    return escapeHtml(text)
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.+?)\*/g, '<em>$1</em>')
         .replace(/\n/g, '<br>');
+}
+
+export function safeImageSrc(value) {
+    const src = String(value || '').trim();
+    if (/^(data:image\/|blob:|https?:\/\/)/i.test(src)) return escapeHtml(src);
+    return '';
+}
+
+export function safeEmailImageSrc(value) {
+    const src = String(value || '').trim();
+    if (/^https?:\/\//i.test(src)) return escapeHtml(src);
+    return '';
+}
+
+function reportIcon(name, color = '#3b82f6', size = 14) {
+    const paths = {
+        robot: '<path d="M7 2h2v2h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2Zm-3 4v5h8V6H4Zm1.5 2.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm5 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM5 14h6v1H5v-1Z"/>',
+        shield: '<path d="M8 1.3 2.5 3.4v4.2c0 3.4 2.3 6.5 5.5 7.3 3.2-.8 5.5-3.9 5.5-7.3V3.4L8 1.3Zm2.8 5.2L7.4 10 5.7 8.3l.8-.8.9.9 2.6-2.7.8.8Z"/>',
+        check: '<path d="M6.3 11.2 2.9 7.8l1.1-1.1 2.3 2.3L12 3.3l1.1 1.1-6.8 6.8Z"/>',
+        warning: '<path d="M8 1.6 15 14H1L8 1.6Zm0 3.5c-.4 0-.7.3-.7.7v3.4c0 .4.3.7.7.7s.7-.3.7-.7V5.8c0-.4-.3-.7-.7-.7Zm0 7.2a.9.9 0 1 0 0-1.8.9.9 0 0 0 0 1.8Z"/>',
+        archive: '<path d="M2 3h12v3H2V3Zm1 4h10v6.5A1.5 1.5 0 0 1 11.5 15h-7A1.5 1.5 0 0 1 3 13.5V7Zm3 2v1.2h4V9H6Z"/>',
+        restore: '<path d="M8 3a5 5 0 1 1-4.4 7.4l1.3-.7A3.5 3.5 0 1 0 4.8 6H7v1.5H2.3V2.8h1.5v2A5 5 0 0 1 8 3Z"/>',
+        search: '<path d="M6.8 2a4.8 4.8 0 0 1 3.8 7.7l3 3-1.1 1.1-3-3A4.8 4.8 0 1 1 6.8 2Zm0 1.5a3.3 3.3 0 1 0 0 6.6 3.3 3.3 0 0 0 0-6.6Z"/>',
+        image: '<path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5v-9Zm1.5 0v6.8l2.2-2.1 2 1.9 3-3.3 1.8 2V3.5h-9Zm9 8.9-1.8-2-3 3.3-2-1.9-2.2 2.1v.1h9v-1.6ZM5.4 6.4a1.1 1.1 0 1 0 0-2.2 1.1 1.1 0 0 0 0 2.2Z"/>'
+    };
+    const path = paths[name] || paths.check;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 16 16" aria-hidden="true" style="display:inline-block;vertical-align:-2px;margin-right:4px;fill:${escapeHtml(color)};">${path}</svg>`;
 }
 
 export function validateReport(report) {
@@ -2512,6 +2616,69 @@ export function getTeamRecommendations(teamId, report) {
     return recommendations[teamId] || { focus: 'General Security Operations', actions: ['Review coverage gaps', 'Develop detections', 'Monitor threats'], priority: 'Standard' };
 }
 
+export function getSentinelCandidatesForReport(report) {
+    const candidates = [];
+    const seenIds = new Set();
+    const targetMonth = getReportMonth(report);
+    const techniques = report.snapshot?.techniques || state.currentLayer?.techniques || [];
+
+    techniques.forEach(ann => {
+        (ann.queries || []).forEach(q => {
+            const qMonth = typeof resolveQueryMonth === 'function'
+                ? resolveQueryMonth(q, ann)
+                : (q.monthAdded || (q.created ? q.created.slice(0, 7) : targetMonth));
+            if (qMonth !== targetMonth) return;
+
+            let isSentinel = q.sentinelCandidate;
+            const activeTech = state.currentLayer?.techniques?.find(t => t.techniqueID === ann.techniqueID);
+            const activeQuery = activeTech?.queries?.find(lq => lq.id === q.id || (lq.name === q.name && lq.language === q.language));
+            if (activeQuery && isSentinel === undefined) isSentinel = activeQuery.sentinelCandidate;
+
+            const candidateKey = q.id || `${ann.techniqueID}:${q.name || ''}:${q.language || ''}`;
+            if (isSentinel && !seenIds.has(candidateKey)) {
+                seenIds.add(candidateKey);
+                candidates.push({
+                    id: q.id || candidateKey,
+                    name: q.name || 'Unnamed Query',
+                    techniqueID: ann.techniqueID,
+                    techniqueName: getTechniqueName(ann.techniqueID) || ann.techniqueID,
+                    language: q.language || 'Unknown'
+                });
+            }
+        });
+    });
+
+    return candidates;
+}
+
+function buildSentinelCandidatesExport(report, isDark = false) {
+    const candidates = getSentinelCandidatesForReport(report);
+    if (!candidates.length) return '';
+
+    return `
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-top: 10px; background-color: ${isDark ? '#0c1424' : '#eff6ff'}; border: 1px solid ${isDark ? '#1e3a8a' : '#bfdbfe'};">
+            <tr>
+                <td style="padding: 10px 12px; border: none;">
+                    <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;">${reportIcon('robot', '#3b82f6', 14)}Microsoft Sentinel Candidate Queue (${candidates.length})</div>
+                    ${candidates.map(c => `
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; border-top: 1px solid ${isDark ? '#1e3a8a' : '#bfdbfe'};">
+                            <tr>
+                                <td style="padding: 6px 0; border: none; vertical-align: top;">
+                                    <div style="font-size: 12px; font-weight: 600; color: ${isDark ? '#e2e8f0' : '#0f172a'};">${escapeHtml(c.name)}</div>
+                                    <div style="font-size: 10px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-top: 2px; font-style: italic;">Please see Tier 4: New Threat Hunt Queries for full details.</div>
+                                </td>
+                                <td align="right" style="padding: 6px 0 6px 8px; border: none; vertical-align: top; width: 90px;">
+                                    <span style="font-size: 9px; font-weight: 700; color: ${isDark ? '#bfdbfe' : '#1d4ed8'}; background-color: ${isDark ? '#172554' : '#dbeafe'}; padding: 2px 6px; display: inline-block;">${escapeHtml(c.language)}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    `).join('')}
+                </td>
+            </tr>
+        </table>
+    `;
+}
+
 export function buildTeamAssignmentsSection(report) {
     const assignedTeams = report.teamAssignments || [];
     
@@ -2544,35 +2711,7 @@ export function buildTeamAssignmentsSection(report) {
             
             let sentinelHtml = '';
             if (teamId === 'engineering') {
-                const candidates = [];
-                const seenIds = new Set();
-                const targetMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
-                const techniques = report.snapshot?.techniques || window.state?.currentLayer?.techniques || [];
-                techniques.forEach(ann => {
-                    if (ann.queries) {
-                        ann.queries.forEach(q => {
-                            const qMonth = window.resolveQueryMonth ? window.resolveQueryMonth(q, ann) : (q.monthAdded || (q.created ? q.created.slice(0, 7) : targetMonth));
-                            if (qMonth !== targetMonth) return;
-                            
-                            let isSentinel = q.sentinelCandidate;
-                            if (window.state?.currentLayer?.techniques) {
-                                const activeTech = window.state.currentLayer.techniques.find(t => t.techniqueID === ann.techniqueID);
-                                const activeQuery = activeTech?.queries?.find(lq => lq.id === q.id || (lq.name === q.name && lq.language === q.language));
-                                if (activeQuery && isSentinel === undefined) isSentinel = activeQuery.sentinelCandidate;
-                            }
-                            if (isSentinel && !seenIds.has(q.id)) {
-                                seenIds.add(q.id);
-                                candidates.push({
-                                    id: q.id,
-                                    name: q.name || 'Unnamed Query',
-                                    techniqueID: ann.techniqueID,
-                                    techniqueName: getTechniqueName(ann.techniqueID) || ann.techniqueID,
-                                    language: q.language
-                                });
-                            }
-                        });
-                    }
-                });
+                const candidates = getSentinelCandidatesForReport(report);
                 
                 if (candidates.length > 0) {
                     sentinelHtml = `
@@ -2937,41 +3076,40 @@ export async function exportReportPDF(reportId) {
         return;
     }
 
-    showToast('Generating PDF...', 'info');
-    
-    if (typeof window.html2pdf === 'undefined') {
-        showToast('PDF library not loaded', 'error');
+    showToast('Opening print-ready PDF view...', 'info');
+    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const htmlContent = buildEmailHTML(report, isDark, { isPrint: true }).replace('<body>', '<body class="is-pdf">');
+    const printBodyBg = isDark ? '#070814' : '#ffffff';
+    const printWindow = window.open('', '_blank', 'width=900,height=1100');
+
+    if (!printWindow) {
+        showToast('Pop-up blocked. Allow pop-ups to export PDF.', 'warning');
         return;
     }
-    
-    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
-    const htmlContent = buildEmailHTML(report, isDark);
-    
-    const container = document.createElement('div');
-    container.classList.add('is-pdf');
-    container.style.cssText = isDark
-        ? 'width:794px;background:#070814;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#cbd5e1;'
-        : 'width:794px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;';
-    container.innerHTML = htmlContent;
-    document.body.appendChild(container);
-    
+
     try {
-        const opt = {
-            margin: 0,
-            filename: `report_${reportId}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
-        
-        await window.html2pdf().set(opt).from(container).save();
-        showToast('PDF exported', 'success');
+        printWindow.document.open();
+        printWindow.document.write(htmlContent.replace('</style>', `
+            @page { size: A4; margin: 14mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            @media print {
+                body { background: ${printBodyBg} !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .email-wrapper { max-width: none !important; width: 100% !important; padding: 0 !important; }
+                .container { box-shadow: none !important; border-radius: 0 !important; background-color: ${isDark ? '#0f1123' : '#ffffff'} !important; }
+                .content { background-color: ${isDark ? '#0f1123' : '#ffffff'} !important; }
+                .pdf-page-break { break-before: page; page-break-before: always; }
+                a { color: inherit; text-decoration: none; }
+            }
+        </style>`));
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+        showToast('Print dialog opened. Choose Save as PDF.', 'success');
     } catch (e) {
-        console.error('PDF generation failed:', e);
-        showToast('Failed to generate PDF: ' + e.message, 'error');
-    } finally {
-        document.body.removeChild(container);
+        console.error('PDF print export failed:', e);
+        showToast('Failed to open PDF print view: ' + e.message, 'error');
     }
 }
 
@@ -3013,7 +3151,7 @@ export function copyReportHTML(reportId) {
         });
 }
 
-export function exportReportEML(reportId) {
+export async function exportReportEML(reportId) {
     const report = state._cachedReports?.find(r => r.id === reportId);
     if (!report) {
         showToast('Report not found', 'error');
@@ -3024,52 +3162,75 @@ export function exportReportEML(reportId) {
     const senderEmailInput = document.getElementById('eml-sender-email');
     const recipientEmailInput = document.getElementById('eml-recipient-email');
 
-    const senderName = senderNameInput ? senderNameInput.value.trim() : (report.author || state.author || 'MITRE ATT&CK Coverage Tool');
-    const senderEmail = senderEmailInput ? senderEmailInput.value.trim() : 'noreply@mitre-attack-explorer';
-    const recipientEmail = recipientEmailInput ? recipientEmailInput.value.trim() : 'recipient@example.com';
+    const senderName = sanitizeHeaderValue(senderNameInput ? senderNameInput.value.trim() : (report.author || state.author || 'MITRE ATT&CK Coverage Tool'));
+    const senderEmail = sanitizeHeaderValue(senderEmailInput ? senderEmailInput.value.trim() : 'reports@attack-explorer.local');
+    const recipientEmail = sanitizeHeaderValue(recipientEmailInput ? recipientEmailInput.value.trim() : 'recipient@example.com');
 
     if (!senderName) {
         showToast('EML Export: Sender Name is required', 'warning');
         senderNameInput?.focus();
         return;
     }
-    if (!senderEmail || !senderEmail.includes('@')) {
+    if (!isValidEmailAddress(senderEmail)) {
         showToast('EML Export: Valid Sender Email is required', 'warning');
         senderEmailInput?.focus();
         return;
     }
-    if (!recipientEmail || !recipientEmail.includes('@')) {
+    if (!isValidEmailAddress(recipientEmail)) {
         showToast('EML Export: Valid Recipient Email is required', 'warning');
         recipientEmailInput?.focus();
         return;
     }
 
     const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
-    const htmlContent = buildEmailHTML(report, isDark);
-    const subject = `MITRE ATT&CK Coverage Report - ${report.reportMonth || report.generatedDate}`;
-    
-    // Base64 encode the HTML to prevent line length issues in EML viewers
-    const utf8Bytes = new TextEncoder().encode(htmlContent);
-    let binaryString = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
-        binaryString += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
+    const htmlContent = buildEmailHTML(report, isDark, { isEmail: true });
+    const textContent = buildPlainTextReport(report);
+    let svgAttachment;
+    try {
+        svgAttachment = await buildReportSvgAttachment(report, isDark);
+    } catch (e) {
+        console.error('Failed to generate EML SVG attachment:', e);
+        showToast('EML Export: SVG attachment could not be generated. Export cancelled.', 'error');
+        return;
     }
-    const base64Content = btoa(binaryString);
-    // Split base64 into 76 character lines per RFC 2045
-    const formattedBase64 = base64Content.match(/.{1,76}/g).join('\r\n');
-    
+    const subject = `MITRE ATT&CK Coverage Report - ${getReportMonthLabel(report)}`;
+    const mixedBoundary = `----=_ATTACK_EXPLORER_MIXED_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const altBoundary = `----=_ATTACK_EXPLORER_ALT_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
     const emlContent = [
         'X-Unsent: 1',
-        `From: "${senderName.replace(/"/g, '')}" <${senderEmail}>`,
+        `From: ${formatEmailDisplayName(senderName)} <${senderEmail}>`,
         `To: <${recipientEmail}>`,
-        `Subject: ${subject}`,
+        `Subject: ${encodeMimeHeader(subject)}`,
         `Date: ${new Date().toUTCString()}`,
         'MIME-Version: 1.0',
+        `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`,
+        '',
+        `--${mixedBoundary}`,
+        `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
+        '',
+        `--${altBoundary}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        'Content-Transfer-Encoding: base64',
+        '',
+        formatBase64(encodeBase64Utf8(textContent)),
+        '',
+        `--${altBoundary}`,
         'Content-Type: text/html; charset="UTF-8"',
         'Content-Transfer-Encoding: base64',
         '',
-        formattedBase64
+        formatBase64(encodeBase64Utf8(htmlContent)),
+        '',
+        `--${altBoundary}--`,
+        '',
+        `--${mixedBoundary}`,
+        `Content-Type: image/svg+xml; name="${svgAttachment.filename}"`,
+        'Content-Transfer-Encoding: base64',
+        `Content-Disposition: attachment; filename="${svgAttachment.filename}"`,
+        '',
+        formatBase64(encodeBase64Utf8(svgAttachment.content)),
+        '',
+        `--${mixedBoundary}--`
     ].join('\r\n');
 
     const blob = new Blob([emlContent], { type: 'message/rfc822' });
@@ -3079,6 +3240,71 @@ export function exportReportEML(reportId) {
     link.click();
     URL.revokeObjectURL(link.href);
     showToast('EML file exported successfully', 'success');
+}
+
+async function buildReportSvgAttachment(report, isDark = false) {
+    if (typeof window.htmlToImage === 'undefined') {
+        throw new Error('SVG export library not loaded');
+    }
+
+    const htmlContent = buildEmailHTML(report, isDark);
+    const container = document.createElement('div');
+    container.style.cssText = isDark
+        ? 'width:794px;background:#070814;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#cbd5e1;position:absolute;top:-9999px;left:-9999px;'
+        : 'width:794px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;position:absolute;top:-9999px;left:-9999px;';
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
+
+    try {
+        const svgDataUrl = await window.htmlToImage.toSvg(container, {
+            filter: (node) => node.tagName !== 'SCRIPT'
+        });
+        const commaIdx = svgDataUrl.indexOf(',');
+        const payload = commaIdx >= 0 ? svgDataUrl.slice(commaIdx + 1) : svgDataUrl;
+        const content = svgDataUrl.startsWith('data:image/svg+xml;base64,')
+            ? decodeURIComponent(escape(atob(payload)))
+            : decodeURIComponent(payload);
+        return {
+            filename: `report_${report.id || getReportMonth(report)}.svg`,
+            content
+        };
+    } finally {
+        document.body.removeChild(container);
+    }
+}
+
+function sanitizeHeaderValue(value) {
+    return String(value || '').replace(/[\r\n]+/g, ' ').trim();
+}
+
+function isValidEmailAddress(value) {
+    return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(String(value || ''));
+}
+
+function encodeMimeHeader(value) {
+    const clean = sanitizeHeaderValue(value);
+    if (/^[\x20-\x7E]*$/.test(clean)) return clean.replace(/"/g, '');
+    return `=?UTF-8?B?${encodeBase64Utf8(clean)}?=`;
+}
+
+function formatEmailDisplayName(value) {
+    const clean = sanitizeHeaderValue(value);
+    if (!/^[\x20-\x7E]*$/.test(clean)) return encodeMimeHeader(clean);
+    return `"${clean.replace(/["\\]/g, '')}"`;
+}
+
+function encodeBase64Utf8(value) {
+    const utf8Bytes = new TextEncoder().encode(String(value || ''));
+    let binaryString = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < utf8Bytes.length; i += chunkSize) {
+        binaryString += String.fromCharCode.apply(null, utf8Bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binaryString);
+}
+
+function formatBase64(base64Content) {
+    return (base64Content.match(/.{1,76}/g) || ['']).join('\r\n');
 }
 
 export async function exportReportSVG(reportId) {
@@ -3166,7 +3392,7 @@ export function buildGapAnalysisVisual(report, theme, isDark = false) {
         html += `
             <div style="background-color: ${isDark ? '#140c0c' : '#fffafb'}; border: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'}; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
                 <div style="font-size: 12px; font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                    [!] CRITICAL VISIBILITY GAPS (&lt;50% COVERAGE)
+                    ${reportIcon('warning', '#ef4444', 13)}CRITICAL VISIBILITY GAPS (&lt;50% COVERAGE)
                 </div>
                 ${items}
                 <div style="font-size: 11px; color: ${isDark ? '#fca5a5' : '#7f1d1d'}; margin-top: 10px; font-style: italic;">
@@ -3247,7 +3473,9 @@ export function buildGapAnalysisVisual(report, theme, isDark = false) {
     return html;
 }
 
-export function buildEmailHTML(report, isDark = false) {
+export function buildEmailHTML(report, isDark = false, options = {}) {
+    const isPrint = !!options.isPrint;
+    const isEmail = !!options.isEmail;
     const fullStats = report.fullStats || getFullCoverageStats();
     const tactics = report.coverageByTactic || getCoverageByTactic();
     const theme = BANNER_THEMES[report.bannerTheme || 'blue'] || BANNER_THEMES.blue;
@@ -3273,12 +3501,54 @@ export function buildEmailHTML(report, isDark = false) {
     const fallbackBg = THEME_SOLID_FALLBACKS[report.bannerTheme || 'blue'] || THEME_SOLID_FALLBACKS.blue;
     
     // Month stats for stats bar
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    const month = getReportMonth(report);
+    const reportMonthLabel = getReportMonthLabel(report);
+    const reportTitle = getReportTitle(report);
+    const logoSrc = safeImageSrc(report.companyLogo);
     
     const execSummary = report.executiveSummary || generateDynamicExecutiveSummary(report);
     const monthlyFocus = report.monthlyFocus || generateDynamicMonthlyFocus(report);
     const gapAnalysis = report.gapAnalysis || generateDynamicGapAnalysis(report);
     const leadership = report.leadershipOverview || generateLeadershipOverview(report);
+    const recommendations = report.recommendations || generateDynamicRecommendations(report);
+    const bodyInline = isEmail
+        ? isDark
+            ? ' style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#070814;"'
+            : ' style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1e293b;background-color:#f8fafc;"'
+        : isDark
+            ? ' style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#070814;"'
+            : ' style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;line-height:1.6;color:#1e293b;background-color:#f8fafc;"';
+    const wrapperInline = isEmail
+        ? isDark
+            ? ' style="width:680px;margin:0 auto;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#070814;"'
+            : ' style="width:680px;margin:0 auto;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1e293b;background-color:#f8fafc;"'
+        : isDark
+            ? ' style="max-width:680px;margin:0 auto;padding:24px 16px;color:#cbd5e1;background-color:#070814;"'
+            : ' style="max-width:680px;margin:0 auto;padding:24px 16px;color:#1e293b;background-color:#f8fafc;"';
+    const containerInline = isEmail
+        ? isDark
+            ? ' style="width:680px;background-color:#0f1123;border:1px solid #25263b;color:#cbd5e1;"'
+            : ' style="width:680px;background-color:#ffffff;border:1px solid #e2e8f0;color:#1e293b;"'
+        : isDark
+            ? ` style="background-color:#0f1123;border:1px solid rgba(${accentRgb},0.2);border-radius:12px;overflow:hidden;color:#cbd5e1;"`
+            : ' style="background-color:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;color:#1e293b;"';
+    const headerInline = isEmail
+        ? ` style="background-color:${fallbackBg};color:#ffffff;padding:28px;text-align:center;border-bottom:3px solid ${theme.accent};font-family:Arial,Helvetica,sans-serif;"`
+        : ` style="background-color:${fallbackBg};color:#ffffff;padding:32px 28px 28px;text-align:center;border-bottom:3px solid ${theme.accent};"`;
+    const contentInline = isEmail
+        ? isDark
+            ? ' style="padding:24px 28px;font-family:Arial,Helvetica,sans-serif;background-color:#0f1123;color:#cbd5e1;"'
+            : ' style="padding:24px 28px;font-family:Arial,Helvetica,sans-serif;background-color:#ffffff;color:#1e293b;"'
+        : isDark
+            ? ' style="padding:24px 28px;background-color:#0f1123;color:#cbd5e1;"'
+            : ' style="padding:24px 28px;background-color:#ffffff;color:#1e293b;"';
+    const footerInline = isEmail
+        ? isDark
+            ? ' style="background-color:#070814;padding:16px 28px;text-align:center;border-top:1px solid #25263b;font-family:Arial,Helvetica,sans-serif;color:#64748b;"'
+            : ' style="background-color:#f8fafc;padding:16px 28px;text-align:center;border-top:1px solid #e2e8f0;font-family:Arial,Helvetica,sans-serif;color:#94a3b8;"'
+        : isDark
+            ? ' style="background-color:#070814;padding:16px 28px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);color:#64748b;"'
+            : ' style="background-color:#f8fafc;padding:16px 28px;text-align:center;border-top:1px solid #e2e8f0;color:#94a3b8;"';
     
     let gapAnalysisHtml = '';
     if (gapAnalysis) {
@@ -3327,7 +3597,7 @@ export function buildEmailHTML(report, isDark = false) {
         return desc ? `<strong style="color: ${isDark ? '#e2e8f0' : '#1e293b'};">${name}:</strong> ${desc}` : name;
     }) : [];
     
-    if (selectedMethods.length > 0 || selectedScopes.length > 0) {
+    if (selectedMethods.length > 0 || selectedScopes.length > 0 || report.methodologyNotes) {
         let notesHtml = '';
         if (report.methodologyNotes) {
             notesHtml = `
@@ -3417,7 +3687,7 @@ export function buildEmailHTML(report, isDark = false) {
                         const bg = isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(14, 165, 233, 0.08)';
                         const text = isDark ? '#38bdf8' : '#0369a1';
                         const border = isDark ? 'rgba(56, 189, 248, 0.3)' : 'rgba(14, 165, 233, 0.2)';
-                        return `<span style="background-color: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(p.name)}">${p.id}</span>`;
+                        return `<span style="background-color: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(p.name)}">${escapeHtml(p.id)}</span>`;
                     }).join(' ');
                     badgesHtml += `</div>`;
                 }
@@ -3427,7 +3697,7 @@ export function buildEmailHTML(report, isDark = false) {
                         const bg = isDark ? 'rgba(52, 211, 153, 0.15)' : 'rgba(16, 185, 129, 0.08)';
                         const text = isDark ? '#34d399' : '#047857';
                         const border = isDark ? 'rgba(52, 211, 153, 0.3)' : 'rgba(16, 185, 129, 0.2)';
-                        return `<span style="background-color: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(s.name)}">${s.id}</span>`;
+                        return `<span style="background-color: ${bg}; color: ${text}; border: 1px solid ${border}; padding: 1px 4px; font-weight: 600; font-family: monospace; font-size: 9px; margin-right: 4px; display: inline-block; white-space: nowrap;" title="${escapeHtml(s.name)}">${escapeHtml(s.id)}</span>`;
                     }).join(' ');
                     badgesHtml += `</div>`;
                 }
@@ -3435,10 +3705,10 @@ export function buildEmailHTML(report, isDark = false) {
                 
                 return `
                     <li style="margin-bottom: 12px; list-style-type: none; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px;">
-                        <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${queryName}</strong>
-                        <span style="background-color: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle; display: inline-block;">${q.language}</span>
-                        ${q.sentinelCandidate ? `<span style="background-color: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; vertical-align: middle; display: inline-block; border-radius: 3px;"><i class="bi bi-robot"></i> Sentinel Candidate</span>` : ''}
-                        ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${q.description}</div>` : ''}
+                        <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${escapeHtml(queryName)}</strong>
+                        <span style="background-color: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle; display: inline-block;">${escapeHtml(q.language || '')}</span>
+                        ${q.sentinelCandidate ? `<span style="background-color: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; vertical-align: middle; display: inline-block;">${reportIcon('robot', '#3b82f6', 11)}Sentinel Candidate</span>` : ''}
+                        ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${escapeHtml(q.description)}</div>` : ''}
                         ${badgesHtml}
                     </li>
                 `;
@@ -3494,7 +3764,7 @@ export function buildEmailHTML(report, isDark = false) {
                         <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top; border: none;">
                             <div style="border: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2'}; background-color: ${isDark ? 'rgba(239, 68, 68, 0.05)' : '#fffafb'}; padding: 12px; min-height: 180px;">
                                 <div style="font-size: 11px; font-weight: 700; color: #ef4444; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(239, 68, 68, 0.1)' : '#fee2e2'}; padding-bottom: 4px;">
-                                    [!] Critical (<50%) [${criticalGaps.length}]
+                                    ${reportIcon('warning', '#ef4444', 13)}Critical (&lt;50%) [${criticalGaps.length}]
                                 </div>
                                 ${renderListEmail(criticalGaps, '#ef4444')}
                             </div>
@@ -3510,7 +3780,7 @@ export function buildEmailHTML(report, isDark = false) {
                         <td valign="top" style="width: 32%; vertical-align: top; border: none;">
                             <div style="border: 1px solid ${isDark ? 'rgba(16, 185, 129, 0.2)' : '#dcfce7'}; background-color: ${isDark ? 'rgba(16, 185, 129, 0.05)' : '#f5fdf8'}; padding: 12px; min-height: 180px;">
                                 <div style="font-size: 11px; font-weight: 700; color: ${isDark ? '#34d399' : '#16a34a'}; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid ${isDark ? 'rgba(16, 185, 129, 0.1)' : '#dcfce7'}; padding-bottom: 4px;">
-                                    [OK] Strong (&ge;80%) [${strongCoverage.length}]
+                                    ${reportIcon('check', isDark ? '#34d399' : '#16a34a', 13)}Strong (&ge;80%) [${strongCoverage.length}]
                                 </div>
                                 ${renderListEmail(strongCoverage, isDark ? '#34d399' : '#16a34a')}
                             </div>
@@ -3569,8 +3839,8 @@ export function buildEmailHTML(report, isDark = false) {
     
     // Appendix
     let appendixHtml = '';
-    if (report.appendix) {
-        const app = report.appendix;
+    {
+        const app = mergeAppendixDefaults(generateDynamicAppendix(report), report.appendix);
         const sections = [];
         if (app.methodology) sections.push(`<div class="subsection"><h4>Methodology</h4><p>${markdownToHtml(app.methodology)}</p></div>`);
         if (app.scope) sections.push(`<div class="subsection"><h4>Scope</h4><p>${markdownToHtml(app.scope)}</p></div>`);
@@ -3700,9 +3970,9 @@ export function buildEmailHTML(report, isDark = false) {
                     </td>
                     <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
                         <div style="background-color: #1a150c; border: 1px solid rgba(251, 191, 36, 0.2); padding: 14px; min-height: 90px;">
-                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Threats Disrupted</div>
+                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">${getReportMetricLabel()}</div>
                             <div style="font-size: 26px; font-weight: 800; color: #fbbf24; margin-top: 4px; line-height: 1;">${threatsDisrupted}</div>
-                            <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">threat groups &amp; tools impacted</div>
+                            <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">${getReportMetricDetail()}</div>
                         </div>
                     </td>
                 </tr>
@@ -3717,7 +3987,7 @@ export function buildEmailHTML(report, isDark = false) {
                                     <td style="vertical-align: middle; border: none; padding: 0;">
                                         <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Security Posture Grade</div>
                                         <div style="font-size: 18px; font-weight: 800; color: ${gradeColor}; margin-top: 6px; line-height: 1.2;">${maturityGrade}</div>
-                                        <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 4px;">standard framework grade</div>
+                                        <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 4px;">standard framework grade &bull; ${coverageStats.total - coverageStats.covered} critical gaps</div>
                                     </td>
                                     <td width="55" style="vertical-align: middle; text-align: right; border: none; padding: 0 0 0 5px;">
                                         <!--[if !mso]><!-->
@@ -3785,9 +4055,9 @@ export function buildEmailHTML(report, isDark = false) {
                     </td>
                     <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
                         <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 14px; min-height: 90px;">
-                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Threats Disrupted</div>
+                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">${getReportMetricLabel()}</div>
                             <div style="font-size: 26px; font-weight: 800; color: #b45309; margin-top: 4px; line-height: 1;">${threatsDisrupted}</div>
-                            <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">threat groups &amp; tools impacted</div>
+                            <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">${getReportMetricDetail()}</div>
                         </div>
                     </td>
                 </tr>
@@ -3802,7 +4072,7 @@ export function buildEmailHTML(report, isDark = false) {
                                     <td style="vertical-align: middle; border: none; padding: 0;">
                                         <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Security Posture Grade</div>
                                         <div style="font-size: 18px; font-weight: 800; color: ${gradeColor}; margin-top: 6px; line-height: 1.2;">${maturityGrade}</div>
-                                        <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 4px;">standard framework grade</div>
+                                        <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 4px;">standard framework grade &bull; ${coverageStats.total - coverageStats.covered} critical gaps</div>
                                     </td>
                                     <td width="55" style="vertical-align: middle; text-align: right; border: none; padding: 0 0 0 5px;">
                                         <!--[if !mso]><!-->
@@ -4028,30 +4298,29 @@ export function buildEmailHTML(report, isDark = false) {
         ${stylesHtml}
     </style>
 </head>
-<body>
-    <div class="email-wrapper">
-        <div class="container">
-            <!-- Disclaimer for EML formats -->
-            <div class="advisory-bar" style="background-color: ${isDark ? '#1d1607' : '#fffbeb'}; border-bottom: 1.5px solid ${isDark ? 'rgba(251,191,36,0.15)' : '#fde68a'}; padding: 10px 16px; font-size: 11px; color: ${isDark ? '#fbbf24' : '#b45309'}; text-align: center; font-family: sans-serif; font-weight: 600; line-height: 1.4;">
-                [!] Format Advisory: Replying directly to this email may break the structured column layout in thread responses.
-            </div>
+<body${bodyInline}>
+    <div class="email-wrapper"${wrapperInline}>
+        <div class="container"${containerInline}>
+            ${isEmail ? `<div class="advisory-bar" style="background-color: #fffbeb; border-bottom: 1.5px solid #fde68a; padding: 10px 16px; font-size: 11px; color: #b45309; text-align: center; font-family: Arial, Helvetica, sans-serif; font-weight: 600; line-height: 1.4;">
+                Outlook-safe summary generated from the interactive MITRE ATT&amp;CK report. Some live dashboard controls are intentionally omitted.
+            </div>` : ''}
             <!-- Disclaimer for PDF formats (Pristine layout advisory) -->
             <div class="pdf-advisory-bar" style="display: none; background-color: ${isDark ? '#16101d' : '#fcfaff'}; border-bottom: 1.5px solid ${isDark ? 'rgba(168,85,247,0.15)' : '#f5f3ff'}; padding: 10px 16px; font-size: 11px; color: ${isDark ? '#c084fc' : '#6d28d9'}; text-align: center; font-family: sans-serif; font-weight: 600; line-height: 1.4;">
-                Document Snapshot: This PDF is a high-fidelity visual snapshot of the interactive dashboard. Text elements within this PDF are non-selectable. For an interactive or text-selectable format, please view the live web report.
+                Print Export: This PDF is generated by the browser print engine for selectable text and cleaner pagination.
             </div>
-            <div class="header">
-                ${report.companyLogo ? `<img src="${report.companyLogo}" class="logo" alt="Logo">` : ''}
-                <h1>THREAT HUNTING MITRE MONTHLY UPDATE</h1>
+            <div class="header"${headerInline}>
+                ${logoSrc ? `<img src="${logoSrc}" class="logo" alt="Logo">` : ''}
+                <h1>${escapeHtml(reportTitle)}</h1>
                 <p class="subtitle">${escapeHtml(report.companyName) || 'MITRE ATT&amp;CK Coverage Report'}</p>
                 <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
-                <p class="report-date">${escapeHtml(report.reportMonth) || escapeHtml(report.generatedDate)}</p>
+                <p class="report-date">${escapeHtml(reportMonthLabel)}</p>
                 ${report.attckVersion ? `<p class="attck-version">ATT&amp;CK Framework v${escapeHtml(report.attckVersion)}</p>` : ''}
                 ${report.author || state.author ? `<p class="author">Prepared by: ${escapeHtml(report.author || state.author)}</p>` : ''}
             </div>
 
             ${statsBarHtml}
 
-            <div class="content">
+            <div class="content"${contentInline}>
                 ${tocIndexHtml}
 
                 <!-- Tier 1: Executive Security Posture Briefing -->
@@ -4108,6 +4377,8 @@ export function buildEmailHTML(report, isDark = false) {
                     ${buildThreatsSectionEmail(report, isDark) ? `<div id="adversary-mapper"><a name="adversary-mapper"></a>${buildThreatsSectionEmail(report, isDark)}</div>` : ''}
                     
                     ${buildTechniquesAtRiskEmail(report, isDark) ? `<div id="techniques-at-risk"><a name="techniques-at-risk"></a>${buildTechniquesAtRiskEmail(report, isDark)}</div>` : ''}
+
+                    ${recommendations ? `<div class="section" id="recommendations" style="page-break-inside: avoid;"><a name="recommendations"></a><h3>Strategic Recommendations</h3><div style="background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; color: ${isDark ? '#cbd5e1' : '#334155'}; padding: 16px; font-size: 13px; line-height: 1.6;">${markdownToHtml(recommendations)}</div></div>` : ''}
                     
                     ${gapAnalysisHtml}
                     
@@ -4120,24 +4391,26 @@ export function buildEmailHTML(report, isDark = false) {
                             const team = TEAM_OPTIONS.find(t => t.id === teamId);
                             if (!team) return;
                             const rec = getTeamRecommendations(teamId, report);
+                            const sentinelHtml = teamId === 'engineering' ? buildSentinelCandidatesExport(report, isDark) : '';
                             teamHtml += `
                                 <tr>
-                                    <td style="padding: 12px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}; vertical-align: top; background-color: ${isDark ? 'rgba(255,255,255,0.02)' : '#fafafa'};">
+                                    <td style="padding: 12px; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; vertical-align: top; background-color: ${isDark ? '#121324' : '#fafafa'};">
                                         <div style="font-size: 12px; font-weight: 700; color: ${team.color}; margin-bottom: 6px;">
-                                            ${team.label}
+                                            ${escapeHtml(team.label)}
                                         </div>
                                         <div style="font-size: 11px; color: ${isDark ? '#cbd5e1' : '#475569'}; margin-bottom: 4px;">
-                                            <strong>Focus:</strong> ${rec.focus}
+                                            <strong>Focus:</strong> ${escapeHtml(rec.focus)}
                                         </div>
                                         <div style="font-size: 11px; color: ${isDark ? '#cbd5e1' : '#475569'}; margin-bottom: 4px;">
-                                            <strong>Priority:</strong> ${rec.priority}
+                                            <strong>Priority:</strong> ${escapeHtml(rec.priority)}
                                         </div>
                                         <div style="font-size: 11px; color: ${isDark ? '#cbd5e1' : '#475569'};">
                                             <strong>Actions:</strong>
                                             <ul style="margin: 4px 0 0 0; padding-left: 16px;">
-                                                ${rec.actions.map(a => `<li style="margin-bottom: 2px;">${a}</li>`).join('')}
+                                                ${rec.actions.map(a => `<li style="margin-bottom: 2px;">${escapeHtml(a)}</li>`).join('')}
                                             </ul>
                                         </div>
+                                        ${sentinelHtml}
                                     </td>
                                 </tr>`;
                         });
@@ -4194,7 +4467,7 @@ export function buildEmailHTML(report, isDark = false) {
                                 const color = riskColor(impact, likelihood);
                                 heatHtml += `<td style="padding: 8px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}; background-color: ${color}10; vertical-align: top; min-height: 60px;">
                                     ${groups.length > 0 ? groups.map(g => `
-                                        <div style="font-size: 10px; font-weight: 600; color: ${color}; margin-bottom: 2px;">${g.name.split(' ')[0]}</div>
+                                        <div style="font-size: 10px; font-weight: 600; color: ${color}; margin-bottom: 2px;">${escapeHtml(g.name.split(' ')[0])}</div>
                                         <div style="font-size: 9px; color: ${isDark ? '#94a3b8' : '#64748b'};">${g.coveragePct}% cov, ${g.gaps} gaps</div>
                                     `).join('') : '<span style="font-size: 10px; color: #94a3b8;">-</span>'}
                                 </td>`;
@@ -4218,6 +4491,7 @@ export function buildEmailHTML(report, isDark = false) {
                     </div>
                     
                     ${buildEmailMonthlyActivity(report, theme, isDark)}
+                    ${tacticsGraphHtml}
                     
                     ${report.detectionResults?.length > 0 ? `
                         <div class="section" style="page-break-inside: avoid;">
@@ -4227,9 +4501,9 @@ export function buildEmailHTML(report, isDark = false) {
                                 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse; margin-bottom:12px;" class="detection-item">
                                     <tr>
                                         <td style="padding:14px 18px; border:none; vertical-align:middle; text-align:left;">
-                                            <strong>${r.huntName || 'Untitled'}</strong>
-                                            ${r.sirTicket ? `<span class="badge-yellow">SIR: ${r.sirTicket}</span>` : ''}
-                                            ${r.notes ? `<div class="notes" style="margin-top:8px;">${r.notes}</div>` : ''}
+                                            <strong>${escapeHtml(r.huntName || 'Untitled')}</strong>
+                                            ${r.sirTicket ? `<span class="badge-yellow">SIR: ${escapeHtml(r.sirTicket)}</span>` : ''}
+                                            ${r.notes ? `<div class="notes" style="margin-top:8px;">${markdownToHtml(r.notes)}</div>` : ''}
                                         </td>
                                     </tr>
                                 </table>
@@ -4316,33 +4590,14 @@ export function buildEmailHTML(report, isDark = false) {
                     ${appendixHtml}
                     
                     <div style="background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; margin-top: 20px; padding: 14px 18px; overflow: hidden; text-align: left;">
-                        <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; border: none; background: transparent;">
-                            <tr>
-                                <td style="padding: 0; border: none; width: 40px; vertical-align: middle; font-size: 24px; line-height: 1; text-align: left;">
-                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="${isDark ? '#38bdf8' : '#0284c7'}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                                </td>
-                                <td style="padding: 0; border: none; vertical-align: middle; text-align: left;">
-                                    <h4 style="margin: 0 0 3px 0; font-size: 13px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'};">Full MITRE ATT&CK Matrix SVG Attached</h4>
-                                    <p style="margin: 0; font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; line-height: 1.4;">A complete visual representation of the MITRE ATT&CK matrix with coverage highlights is attached to this email.</p>
-                                </td>
-                            </tr>
-                        </table>
-                        
-                        <!-- Bottom Row: Strategic Leadership Guidance (Full Width) -->
-                        ${leadership ? `
-                        <div style="background-color: ${isDark ? 'rgba(168,85,247,0.05)' : '#faf5ff'}; border: 1px solid ${isDark ? 'rgba(168,85,247,0.15)' : '#e9d5ff'}; padding: 14px;">
-                            <strong style="color: ${isDark ? '#a855f7' : '#7c3aed'}; display: block; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-family: sans-serif;">Strategic Leadership Guidance</strong>
-                            <div style="font-size: 12.5px; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
-                                ${markdownToHtml(leadership)}
-                            </div>
-                        </div>
-                        ` : ''}
+                        <h4 style="margin: 0 0 3px 0; font-size: 13px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'};">${reportIcon('image', isDark ? '#38bdf8' : '#0284c7', 14)}Export Note</h4>
+                        <p style="margin: 0; font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; line-height: 1.4;">A report SVG is included as the visual companion artifact for this export. In EML exports, the SVG is attached to the email for recipients who need the full formatted report snapshot.</p>
                     </div>
                 </div>
                 <div class="page-number-footer" style="display:none; text-align:center; font-size:9px; color:#94a3b8; padding:8px 0; border-top:1px solid #e2e8f0; margin-top:15px;">Page 5 of 5</div>
             </div>
  
-            <div class="footer">
+            <div class="footer"${footerInline}>
                 <p>Generated by MITRE ATT&amp;CK Coverage Tool | ${report.generatedDate || new Date().toLocaleDateString()}</p>
                 <p class="tool-info">ATT&amp;CK v${report.attckVersion || '19.1'} | Data sourced from MITRE ATT&amp;CK Framework</p>
                 <p class="confidential">Confidential - For authorized recipients only</p>
@@ -4392,15 +4647,15 @@ export function buildThreatsSectionEmail(report, isDark = false) {
         // Determine exposure risk based on count of techniques used
         let exposureLevel = 'Medium';
         let expColor = '#38bdf8';
-        let expBg = 'rgba(56, 189, 248, 0.1)';
+        let expBg = isDark ? '#0c1424' : '#eff6ff';
         if (t.techCount >= 40) {
             exposureLevel = 'Critical';
             expColor = '#ef4444';
-            expBg = 'rgba(239, 68, 68, 0.1)';
+            expBg = isDark ? '#1a0b0b' : '#fef2f2';
         } else if (t.techCount >= 20) {
             exposureLevel = 'High';
             expColor = '#fbbf24';
-            expBg = 'rgba(245, 158, 11, 0.1)';
+            expBg = isDark ? '#1c150c' : '#fffbeb';
         }
         
         // Truncate techniques list to top 6 elements
@@ -4410,19 +4665,21 @@ export function buildThreatsSectionEmail(report, isDark = false) {
         const techList = truncatedTechIds.join(', ') + (extraCount > 0 ? `, +${extraCount} more` : '');
         
         const progressColor = t.coveragePct >= 70 ? '#10b981' : t.coveragePct >= 40 ? '#f59e0b' : '#ef4444';
-        const progressBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+        const progressBg = isDark ? '#25263b' : '#e2e8f0';
         
         cardsHtml += `
-            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; background-color: ${isDark ? 'rgba(255,255,255,0.02)' : '#fafafa'}; border: 1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'};">
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'};">
                 <tr>
                     <td style="padding: 10px 14px; border: none; vertical-align: middle; width: 60%;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                            <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">${typeLabel}</span>
-                            <span style="font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; background-color: ${expBg}; color: ${expColor}; letter-spacing: 0.5px;">${exposureLevel} Risk</span>
-                        </div>
-                        <div style="font-size: 14px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'}; margin-bottom: 2px;">${t.name}</div>
-                        <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; font-family: monospace; background-color: ${isDark ? 'rgba(255,255,255,0.03)' : '#f1f5f9'}; padding: 3px 8px; display: inline-block;">
-                            TTPs: ${techList}
+                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 0 4px 0; width: auto;">
+                            <tr>
+                                <td style="border: none; padding: 0 8px 0 0;"><span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">${typeLabel}</span></td>
+                                <td style="border: none; padding: 0;"><span style="font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; background-color: ${expBg}; color: ${expColor}; letter-spacing: 0.5px;">${exposureLevel} Risk</span></td>
+                            </tr>
+                        </table>
+                        <div style="font-size: 14px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'}; margin-bottom: 2px;">${escapeHtml(t.name)}</div>
+                        <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; font-family: monospace; background-color: ${isDark ? '#0f1123' : '#f1f5f9'}; padding: 3px 8px; display: inline-block;">
+                            TTPs: ${escapeHtml(techList)}
                         </div>
                     </td>
                     <td style="padding: 10px 14px; border: none; vertical-align: middle; width: 40%; text-align: right;">
@@ -4433,7 +4690,7 @@ export function buildThreatsSectionEmail(report, isDark = false) {
                         </div>
                         <div style="font-size: 10px; color: ${isDark ? '#94a3b8' : '#64748b'};">
                             ✓ ${t.coveredCount}/${t.techCount} covered
-                            <span style="margin-left: 8px; font-weight: 600; color: ${t.gaps > 0 ? '#ef4444' : '#10b981'};">${t.gaps > 0 ? `[!] ${t.gaps} gaps` : '[OK] Complete'}</span>
+                            <span style="margin-left: 8px; font-weight: 600; color: ${t.gaps > 0 ? '#ef4444' : '#10b981'};">${t.gaps > 0 ? `${reportIcon('warning', '#ef4444', 11)}${t.gaps} gaps` : `${reportIcon('check', '#10b981', 11)}Complete`}</span>
                         </div>
                     </td>
                 </tr>
@@ -4478,13 +4735,12 @@ export function buildTechniquesAtRiskEmail(report, isDark = false) {
     const threatGroups = {};
     state.relationships.forEach(rel => {
         if (rel.relationship_type !== 'uses') return;
-        if (!zeroCoverageTechs.has(rel.target_ref)) return;
+        const tid = getTechniqueIdFromStix(rel.target_ref);
+        if (!tid || !zeroCoverageTechs.has(tid)) return;
         
         if (monthTechStixIds.size > 0 && monthTechStixIds.has(rel.target_ref)) {
             const group = state.groups.find(g => g.id === rel.source_ref);
             if (!group) return;
-            const tid = getTechniqueIdFromStix(rel.target_ref);
-            if (!tid) return;
             if (!threatGroups[group.name]) threatGroups[group.name] = new Set();
             threatGroups[group.name].add(tid);
         }
@@ -4503,12 +4759,12 @@ export function buildTechniquesAtRiskEmail(report, isDark = false) {
     atRisk.slice(0, 8).forEach(item => {
         const techList = item.techniques.map(id => {
             const name = getTechniqueName(id);
-            return `<span style="display: inline-block; padding: 2px 6px; margin: 2px; ${isDark ? 'background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5;' : 'background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;'} font-size: 11px;">${id}${name ? ' - ' + name : ''}</span>`;
+            return `<span style="display: inline-block; padding: 2px 6px; margin: 2px; ${isDark ? 'background: #1a0b0b; border: 1px solid #7f1d1d; color: #fca5a5;' : 'background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;'} font-size: 11px;">${escapeHtml(id)}${name ? ' - ' + escapeHtml(name) : ''}</span>`;
         }).join('');
         const moreText = item.count > 3 ? ` <span style="color: #64748b; font-size: 11px;">+${item.count - 3} more</span>` : '';
         
-        html += `<div style="padding: 8px 10px; margin-bottom: 6px; ${isDark ? 'background: rgba(239, 68, 68, 0.04); border-left: 3px solid #ef4444;' : 'background: #fef2f2; border-left: 3px solid #ef4444;'}">
-            <strong style="font-size: 13px; color: ${isDark ? '#fca5a5' : '#991b1b'};">${item.group}</strong>
+        html += `<div style="padding: 8px 10px; margin-bottom: 6px; ${isDark ? 'background: #140c0c; border-left: 3px solid #ef4444;' : 'background: #fef2f2; border-left: 3px solid #ef4444;'}">
+            <strong style="font-size: 13px; color: ${isDark ? '#fca5a5' : '#991b1b'};">${escapeHtml(item.group)}</strong>
             <span style="font-size: 11px; color: ${isDark ? '#cbd5e1' : '#64748b'}; margin-left: 8px;">${item.count} techniques</span>
             <div style="margin-top: 4px;">${techList}${moreText}</div>
         </div>`;
@@ -4580,6 +4836,7 @@ window.generateDynamicGapAnalysis = generateDynamicGapAnalysis;
 window.generateDynamicRecommendations = generateDynamicRecommendations;
 window.TEAM_OPTIONS = TEAM_OPTIONS;
 window.getTeamRecommendations = getTeamRecommendations;
+window.getSentinelCandidatesForReport = getSentinelCandidatesForReport;
 window.buildTeamAssignmentsSection = buildTeamAssignmentsSection;
 window.buildRiskHeatMap = buildRiskHeatMap;
 window.generateDynamicExecutiveSummary = generateDynamicExecutiveSummary;
@@ -4608,6 +4865,62 @@ window.buildMonthlyChangelog = buildMonthlyChangelog;
 window.getQueryAssociations = getQueryAssociations;
 
 // Markdown Export Implementation
+export function buildReportMarkdown(report) {
+    const currentMonth = getReportMonth(report);
+    const monthLabel = getReportMonthLabel(report);
+    const coverageStats = getOverallCoverageStatsUpToMonth(currentMonth);
+    const totalQueries = getTotalUniqueActiveQueriesUpToMonth(currentMonth);
+    const stats = getMonthStats(currentMonth);
+    const threatsDisrupted = getThreatsDisruptedCount(currentMonth);
+    const techniquesWithGaps = coverageStats.total - coverageStats.covered;
+    const maturityGrade = getMaturityGradeLabel(coverageStats.pct);
+    const dynamic = getReportDynamicContent(report);
+
+    let md = `# ${escapeMarkdownText(getReportTitle(report))}\n\n`;
+    md += `**Company:** ${escapeMarkdownText(report.companyName || 'N/A')}\n`;
+    md += `**Layer:** ${escapeMarkdownText(report.layerName || state.currentLayer?.name || 'N/A')}\n`;
+    md += `**Report Month:** ${escapeMarkdownText(monthLabel)}\n`;
+    md += `**ATT&CK Version:** ${escapeMarkdownText(report.attckVersion || state.currentVersion || 'N/A')}\n`;
+    md += `**Prepared By:** ${escapeMarkdownText(report.author || state.author || 'Security Operations Team')}\n\n`;
+
+    md += `## 1. Executive Security Posture\n\n`;
+    md += `### Executive Summary\n\n${dynamic.executiveSummary}\n\n`;
+    md += `### Key Metrics\n\n`;
+    md += `| Metric | Value |\n|---|---|\n`;
+    md += `| Overall Framework Coverage | ${coverageStats.pct.toFixed(1)}% |\n`;
+    md += `| Parent Technique Coverage | ${coverageStats.parents.covered}/${coverageStats.parents.total} (${coverageStats.parents.pct.toFixed(1)}%) |\n`;
+    md += `| Sub-technique Coverage | ${coverageStats.subs.covered}/${coverageStats.subs.total} (${coverageStats.subs.pct.toFixed(1)}%) |\n`;
+    md += `| Active Detection Queries | ${totalQueries} |\n`;
+    md += `| Queries Added This Period | ${stats.queries} |\n`;
+    md += `| Techniques Covered This Period | ${stats.techIds.size} |\n`;
+    md += `| ${getReportMetricLabel()} | ${threatsDisrupted} |\n`;
+    md += `| Critical Gaps | ${techniquesWithGaps} |\n`;
+    md += `| Security Posture Grade | ${maturityGrade} |\n\n`;
+    md += `### Leadership Overview\n\n${dynamic.leadershipOverview}\n\n`;
+    md += `### Monthly Focus Areas\n\n${dynamic.monthlyFocus}\n\n`;
+
+    md += `## 2. Threat Landscape & Strategic Gaps\n\n`;
+    md += `### Strategic Recommendations\n\n${dynamic.recommendations}\n\n`;
+    md += `### Gap Analysis & Prioritization\n\n${dynamic.gapAnalysis}\n\n`;
+    md += buildMarkdownTacticRadar(currentMonth);
+    md += buildMarkdownTechniquesAtRisk(report);
+    md += buildMarkdownTeamAssignments(report);
+
+    md += `## 3. Operational Hunt Progress\n\n`;
+    md += buildMarkdownActivitySummary(report);
+    md += buildMarkdownDetectionResults(report);
+    md += buildMarkdownCoverageChanges(report);
+
+    md += `## 4. Telemetry Proof & Appendix\n\n`;
+    md += buildMarkdownNewQueries(currentMonth);
+    md += buildMarkdownMethodologyScope(report);
+    md += buildMarkdownReferences(report);
+    md += buildMarkdownAppendix(report);
+    md += `### Export Note\n\nA report SVG is included as the visual companion artifact for full formatted exports. In EML exports, the SVG is attached to the email for recipients who need the full formatted report snapshot.\n\n`;
+
+    return md;
+}
+
 export async function exportReportMarkdown(reportId) {
     const report = state._cachedReports?.find(r => r.id === reportId);
     if (!report) {
@@ -4615,86 +4928,8 @@ export async function exportReportMarkdown(reportId) {
         return;
     }
 
-    const currentMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
-    const coverageStats = getOverallCoverageStatsUpToMonth(currentMonth);
-    const totalQueries = getTotalUniqueActiveQueriesUpToMonth(currentMonth);
-    const threatsDisrupted = getThreatsDisruptedCount(currentMonth);
-    
-    const getMaturityGrade = (pct) => {
-        if (pct >= 80) return 'A+ Excellent';
-        if (pct >= 70) return 'A Strong';
-        if (pct >= 60) return 'B+ Capable';
-        if (pct >= 50) return 'B Good';
-        if (pct >= 40) return 'C+ Developing';
-        if (pct >= 30) return 'C Baseline';
-        if (pct >= 20) return 'D Lacking';
-        return 'F Critical Gaps';
-    };
-    const maturityGrade = getMaturityGrade(coverageStats.pct);
-
-    let md = `# MITRE ATT&CK Coverage Report\n\n`;
-    md += `**Company:** ${report.companyName || 'N/A'}\n`;
-    md += `**Report Month:** ${getMonthLabel(currentMonth)}\n`;
-    md += `**Prepared By:** ${report.author || state.author || 'Security Operations Team'}\n\n`;
-    
-    md += `## 1. Executive Summary\n\n`;
-    md += `${report.executiveSummary || 'No executive summary provided.'}\n\n`;
-    
-    md += `### Key Metrics at a Glance\n\n`;
-    md += `| Metric | Value |\n|---|---|\n`;
-    md += `| Overall Framework Coverage | ${coverageStats.pct.toFixed(1)}% |\n`;
-    md += `| Active Detection Queries | ${totalQueries} |\n`;
-    md += `| Threats Disrupted | ${threatsDisrupted} |\n`;
-    md += `| Security Posture Grade | ${maturityGrade} |\n\n`;
-
-    md += `## 2. Threat Landscape & Strategic Gaps\n\n`;
-    md += `### Strategic Recommendations\n\n${report.recommendations || 'None.'}\n\n`;
-    md += `### Gap Analysis & Prioritization\n\n${report.gapAnalysis || 'None.'}\n\n`;
-
-    md += `## 3. Detection Results\n\n`;
-    const detectionResults = report.detectionResults || [];
-    if (detectionResults.length > 0) {
-        md += `| Technique | Metric | Status |\n|---|---|---|\n`;
-        detectionResults.forEach(dr => {
-            md += `| ${dr.techniqueId} | ${dr.metric} | ${dr.status} |\n`;
-        });
-        md += `\n`;
-    } else {
-        md += `No detection results recorded for this period.\n\n`;
-    }
-
-    md += `## 4. Methodology & Scope\n\n`;
-    const methNames = { 'sig-based': 'Signature-Based Detection', 'behavioral': 'Behavioral Analysis', 'threat-intel': 'Threat Intelligence Driven' };
-    const activeMeth = Object.keys(report.methodology || {}).filter(k => report.methodology[k]).map(k => methNames[k] || k);
-    md += `**Methodologies:** ${activeMeth.length > 0 ? activeMeth.join(', ') : 'None specified'}\n\n`;
-    md += `**Additional Notes:** ${report.methodologyNotes || 'None.'}\n\n`;
-    
-    // Automatically extract new queries for the month
-    const byMonth = typeof getTechniquesByMonth === 'function' ? getTechniquesByMonth() : {};
-    const techniques = byMonth[currentMonth] || [];
-    const newQueries = [];
-    techniques.forEach(ann => {
-        if (ann.queries) {
-            ann.queries.forEach(q => {
-                if (!newQueries.some(existing => existing.id === q.id)) {
-                    newQueries.push({ ...q, techniqueID: ann.techniqueID });
-                }
-            });
-        }
-    });
-
-    if (newQueries.length > 0) {
-        md += `## 5. New Threat Hunt Queries Deployed\n\n`;
-        newQueries.forEach(q => {
-            md += `### [${q.techniqueID}] ${q.name || 'Unnamed Query'}\n`;
-            md += `**Language:** ${q.language || 'Unknown'}\n`;
-            if (q.description) md += `*${q.description}*\n\n`;
-            
-            // Format query code properly
-            let codeBlock = q.query || q.code || '';
-            md += `\`\`\`${(q.language || '').toLowerCase()}\n${codeBlock}\n\`\`\`\n\n`;
-        });
-    }
+    const currentMonth = getReportMonth(report);
+    const md = buildReportMarkdown(report);
 
     // Trigger download
     const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
@@ -4708,6 +4943,221 @@ export async function exportReportMarkdown(reportId) {
     URL.revokeObjectURL(url);
     
     showToast('Report exported as Markdown successfully!', 'success');
+}
+
+export function buildPlainTextReport(report) {
+    return buildReportMarkdown(report)
+        .replace(/^#+\s*/gm, '')
+        .replace(/\*\*/g, '')
+        .replace(/`{3}[\s\S]*?`{3}/g, '[query code omitted in plain-text preview]')
+        .replace(/\|/g, ' ');
+}
+
+function getMaturityGradeLabel(pct) {
+    if (pct >= 80) return 'A+ Excellent';
+    if (pct >= 70) return 'A Strong';
+    if (pct >= 60) return 'B+ Capable';
+    if (pct >= 50) return 'B Good';
+    if (pct >= 40) return 'C+ Developing';
+    if (pct >= 30) return 'C Baseline';
+    if (pct >= 20) return 'D Lacking';
+    return 'F Critical Gaps';
+}
+
+function buildMarkdownTacticRadar(month) {
+    const tactics = getCoverageByTacticUpToMonth(month);
+    if (!tactics.length) return '';
+    let md = `### Tactic Gap Triage Radar\n\n`;
+    md += `| Tactic | Coverage | Category |\n|---|---:|---|\n`;
+    tactics.forEach(t => {
+        const pct = t.coverage % 1 === 0 ? t.coverage : t.coverage.toFixed(1);
+        const category = t.coverage < 50 ? 'Critical Gap' : t.coverage < 80 ? 'Moderate Coverage' : 'Strong Coverage';
+        md += `| ${escapeMarkdownTableCell(formatTacticName(t.tactic))} | ${pct}% | ${category} |\n`;
+    });
+    return md + '\n';
+}
+
+function buildMarkdownTechniquesAtRisk(report) {
+    const html = buildTechniquesAtRiskEmail(report, false);
+    if (!html) return '';
+    return `### Techniques at Risk\n\nSee the HTML/PDF report for the formatted threat-group risk cards. These are zero-coverage techniques that overlap with known threat-group behavior for the selected reporting period.\n\n`;
+}
+
+function buildMarkdownTeamAssignments(report) {
+    const assignedTeams = report.teamAssignments || [];
+    if (!assignedTeams.length) return '';
+    let md = `### Team Assignments & Focus Areas\n\n`;
+    assignedTeams.forEach(teamId => {
+        const team = TEAM_OPTIONS.find(t => t.id === teamId);
+        if (!team) return;
+        const rec = getTeamRecommendations(teamId, report);
+        md += `#### ${team.label}\n\n`;
+        md += `**Focus:** ${rec.focus}\n\n`;
+        md += `**Priority:** ${rec.priority}\n\n`;
+        md += rec.actions.map(action => `- ${action}`).join('\n') + '\n\n';
+        if (teamId === 'engineering') {
+            const candidates = getSentinelCandidatesForReport(report);
+            if (candidates.length) {
+                md += `**Microsoft Sentinel Candidate Queue (${candidates.length}):**\n\n`;
+                md += candidates.map(c => `- ${c.name} (${c.language}) - see Tier 4: New Threat Hunt Queries for full details.`).join('\n') + '\n\n';
+            }
+        }
+    });
+    return md;
+}
+
+function buildMarkdownActivitySummary(report) {
+    const month = getReportMonth(report);
+    const byMonth = getTechniquesByMonth();
+    const techniques = byMonth[month] || [];
+    const existingIds = getExistingTechniqueIds(month);
+    const colorChanges = getColorChangesForMonth(month);
+    const newTechniques = techniques.filter(t => !existingIds.has(t.techniqueID));
+    const newHunts = getNewHuntsForExistingTechniques(month, existingIds);
+
+    let md = `### Monthly Activity Feed\n\n`;
+    md += `| Activity Type | Count |\n|---|---:|\n`;
+    md += `| New Techniques | ${newTechniques.length} |\n`;
+    md += `| New Hunts on Existing Techniques | ${newHunts.length} |\n`;
+    md += `| Status/Coverage Changes | ${colorChanges.length} |\n\n`;
+
+    const highlights = [...newTechniques.slice(0, 5).map(t => `${t.techniqueID} ${getTechniqueName(t.techniqueID) || ''}`), ...newHunts.slice(0, 5).map(h => `${h.techniqueID} ${h.query?.name || h.name || ''}`)];
+    if (highlights.length) md += highlights.map(item => `- ${item.trim()}`).join('\n') + '\n\n';
+    return md;
+}
+
+function buildMarkdownDetectionResults(report) {
+    const detectionResults = report.detectionResults || [];
+    let md = `### Detection Results\n\n`;
+    if (!detectionResults.length) return md + `No detection results recorded for this period.\n\n`;
+    md += `| Hunt Name | SIR Ticket | Notes |\n|---|---|---|\n`;
+    detectionResults.forEach(dr => {
+        md += `| ${escapeMarkdownTableCell(dr.huntName || '')} | ${escapeMarkdownTableCell(dr.sirTicket || '')} | ${escapeMarkdownTableCell(dr.notes || '')} |\n`;
+    });
+    return md + '\n';
+}
+
+function buildMarkdownCoverageChanges(report) {
+    const month = getReportMonth(report);
+    const availableMonths = getAvailableMonths().sort((a, b) => b.localeCompare(a));
+    const currentIdx = availableMonths.indexOf(month);
+    const prevMonth = currentIdx !== -1 && currentIdx + 1 < availableMonths.length ? availableMonths[currentIdx + 1] : null;
+    let md = `### Coverage Changes\n\n`;
+    if (!prevMonth) return md + `No previous month data to compare against.\n\n`;
+    const currentTactics = getCoverageByTacticUpToMonth(month);
+    const lastTactics = getCoverageByTacticUpToMonth(prevMonth);
+    const allTactics = new Set([...currentTactics.map(t => t.tactic), ...lastTactics.map(t => t.tactic)]);
+    md += `Compared against ${getMonthLabel(prevMonth)}.\n\n`;
+    md += `| Tactic | Previous | Current | Change |\n|---|---:|---:|---:|\n`;
+    allTactics.forEach(tactic => {
+        const cur = currentTactics.find(t => t.tactic === tactic);
+        const last = lastTactics.find(t => t.tactic === tactic);
+        const curPct = cur?.coverage || 0;
+        const lastPct = last?.coverage || 0;
+        const change = curPct - lastPct;
+        md += `| ${escapeMarkdownTableCell(formatTacticName(tactic))} | ${lastPct.toFixed(1)}% | ${curPct.toFixed(1)}% | ${change > 0 ? '+' : ''}${change.toFixed(1)}% |\n`;
+    });
+    return md + '\n';
+}
+
+function buildMarkdownNewQueries(month) {
+    const byMonth = getTechniquesByMonth();
+    const techniques = byMonth[month] || [];
+    const seen = new Set();
+    const queries = [];
+    techniques.forEach(ann => {
+        (ann.queries || []).forEach(q => {
+            if (seen.has(q.id)) return;
+            seen.add(q.id);
+            queries.push({ ...q, techniqueID: ann.techniqueID });
+        });
+    });
+    if (!queries.length) return `### New Threat Hunt Queries\n\nNo new threat hunt queries were recorded for this period.\n\n`;
+    let md = `### New Threat Hunt Queries\n\n`;
+    queries.forEach(q => {
+        md += `#### [${q.techniqueID}] ${q.name || 'Unnamed Query'}\n\n`;
+        md += `**Language:** ${q.language || 'Unknown'}\n\n`;
+        if (q.description) md += `${q.description}\n\n`;
+        const codeBlock = q.query || q.code || '';
+        if (codeBlock) md += `\`\`\`${(q.language || '').toLowerCase()}\n${codeBlock}\n\`\`\`\n\n`;
+    });
+    return md;
+}
+
+function buildMarkdownMethodologyScope(report) {
+    const methodLabels = {
+        'sig-based': 'Signature-Based Detection',
+        behavioral: 'Behavioral Analysis',
+        'threat-intel': 'Threat Intelligence Driven',
+        lolbins: 'LOLBINs/Living off the Land',
+        hypothesis: 'Hypothesis-Driven',
+        'data-driven': 'Data-Driven',
+        compliance: 'Compliance-Driven'
+    };
+    const scopeLabels = {
+        endpoints: 'Endpoints',
+        network: 'Network',
+        cloud: 'Cloud Infrastructure',
+        identity: 'Identity Systems',
+        email: 'Email Systems',
+        applications: 'Applications'
+    };
+    const activeMethods = Object.keys(report.methodology || {}).filter(k => report.methodology[k]).map(k => methodLabels[k] || k);
+    const activeScopes = Object.keys(report.scope || {}).filter(k => report.scope[k]).map(k => scopeLabels[k] || k);
+    let md = `### Methodology & Scope\n\n`;
+    md += `**Methodologies:** ${activeMethods.length ? activeMethods.join(', ') : 'None specified'}\n\n`;
+    md += `**Scope:** ${activeScopes.length ? activeScopes.join(', ') : 'None specified'}\n\n`;
+    md += `**Additional Notes:** ${report.methodologyNotes || 'None.'}\n\n`;
+    return md;
+}
+
+function buildMarkdownReferences(report) {
+    const refs = getReportReferences(report);
+    if (!refs.length) return `### References\n\nNo references recorded.\n\n`;
+    return `### References\n\n${refs.map(ref => `- ${ref}`).join('\n')}\n\n`;
+}
+
+function buildMarkdownAppendix(report) {
+    const appendix = mergeAppendixDefaults(generateDynamicAppendix(report), report.appendix);
+    let md = `### Appendix\n\n`;
+    md += `#### Methodology\n\n${appendix.methodology || 'None.'}\n\n`;
+    md += `#### Scope\n\n${appendix.scope || 'None.'}\n\n`;
+    md += `#### Limitations\n\n${appendix.limitations || 'None.'}\n\n`;
+    md += `#### Additional Notes\n\n${appendix.additionalNotes || 'None.'}\n\n`;
+    return md;
+}
+
+function getReportReferences(report) {
+    const references = [...(report.references || [])];
+    const seenUrls = new Set(references);
+    const month = getReportMonth(report);
+    const byMonth = getTechniquesByMonth();
+    const techniques = byMonth[month] || [];
+    techniques.forEach(ann => {
+        (ann.queries || []).forEach(q => {
+            if (!q.sigmaRuleUrl) return;
+            const urls = q.sigmaRuleUrl.split('|').filter(Boolean);
+            const titles = q.sigmaRuleTitle ? q.sigmaRuleTitle.split('|').filter(Boolean) : [];
+            urls.forEach((url, i) => {
+                if (seenUrls.has(url)) return;
+                seenUrls.add(url);
+                references.push(`[SigmaHQ] ${titles[i] || 'SigmaHQ Rule'}: ${url}`);
+            });
+        });
+    });
+    return references;
+}
+
+function formatTacticName(tactic) {
+    return String(tactic || '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function escapeMarkdownText(value) {
+    return String(value || '').replace(/\r?\n/g, ' ').trim();
+}
+
+function escapeMarkdownTableCell(value) {
+    return String(value || '').replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
 }
 
 window.exportReportMarkdown = exportReportMarkdown;

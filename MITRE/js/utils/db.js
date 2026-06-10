@@ -11,11 +11,8 @@ export function openSigmaDB() {
         const req = indexedDB.open(SIGMA_IDB.name, SIGMA_IDB.version);
         req.onupgradeneeded = (e) => {
             const db = e.target.result;
-            // Delete old stores if upgrading
-            if (db.objectStoreNames.contains('rules')) db.deleteObjectStore('rules');
-            if (db.objectStoreNames.contains('meta')) db.deleteObjectStore('meta');
-            db.createObjectStore('rules', { keyPath: 'id' });
-            db.createObjectStore('meta', { keyPath: 'key' });
+            if (!db.objectStoreNames.contains('rules')) db.createObjectStore('rules', { keyPath: 'id' });
+            if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
         };
         req.onsuccess = (e) => { sigmaDB = e.target.result; resolve(sigmaDB); };
         req.onerror = (e) => reject(e.target.error);
@@ -67,6 +64,17 @@ export async function idbBatchPut(store, records) {
     }
 }
 
+export async function idbReplaceAll(store, records) {
+    if (!sigmaDB) return;
+    await new Promise((resolve, reject) => {
+        const tx = sigmaDB.transaction(store, 'readwrite');
+        tx.objectStore(store).clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+    await idbBatchPut(store, records);
+}
+
 export function idbSetMeta(key, value) {
     return idbPut('meta', { key, value });
 }
@@ -86,5 +94,6 @@ window.idbGet = idbGet;
 window.idbPut = idbPut;
 window.idbGetAll = idbGetAll;
 window.idbBatchPut = idbBatchPut;
+window.idbReplaceAll = idbReplaceAll;
 window.idbSetMeta = idbSetMeta;
 window.idbGetMeta = idbGetMeta;
