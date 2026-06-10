@@ -42,7 +42,20 @@ export function getFilteredTechniques() {
     if (!state.matrixSearchQuery) return platformFiltered;
 
     const query = state.matrixSearchQuery.toLowerCase();
-    const byId = new Map(platformFiltered.map(t => [t.external_references?.[0]?.external_id || '', t]));
+    const byId = new Map();
+    const subsByParentId = new Map();
+
+    for (const t of platformFiltered) {
+        const id = t.external_references?.[0]?.external_id || '';
+        byId.set(id, t);
+
+        if (t.x_mitre_is_subtechnique) {
+            const parent = id.split('.')[0];
+            if (!subsByParentId.has(parent)) subsByParentId.set(parent, []);
+            subsByParentId.get(parent).push(t);
+        }
+    }
+
     const matched = new Set();
 
     for (const t of platformFiltered) {
@@ -60,12 +73,7 @@ export function getFilteredTechniques() {
             const parent = byId.get(id.split('.')[0]);
             if (parent) matched.add(parent);
         } else {
-            for (const candidate of platformFiltered) {
-                const candidateId = candidate.external_references?.[0]?.external_id || '';
-                if (candidate.x_mitre_is_subtechnique && candidateId.split('.')[0] === id) {
-                    matched.add(candidate);
-                }
-            }
+            for (const subTechnique of subsByParentId.get(id) || []) matched.add(subTechnique);
         }
     }
 
