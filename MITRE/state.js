@@ -11,6 +11,14 @@ export const _internalState = {
     software: [],
     mitigations: [],
     relationships: [],
+    relationshipsBySource: new Map(),
+    relationshipsByTarget: new Map(),
+    techniquesByStixId: new Map(),
+    techniquesByExternalId: new Map(),
+    groupsByStixId: new Map(),
+    softwareByStixId: new Map(),
+    softwareByExternalId: new Map(),
+    mitigationsByStixId: new Map(),
     dataSources: [],
     dataComponents: [],
     platforms: new Set(),
@@ -51,9 +59,46 @@ window.StateManager = {
         _internalState.dataComponents = data.dataComponents;
         _internalState.platforms = data.platforms;
         _internalState.activePlatforms = new Set(data.platforms);
+        _internalState.relationshipsBySource = groupBy(data.relationships, 'source_ref');
+        _internalState.relationshipsByTarget = groupBy(data.relationships, 'target_ref');
+        _internalState.techniquesByStixId = mapBy(data.techniques, 'id');
+        _internalState.techniquesByExternalId = mapByExternalId(data.techniques);
+        _internalState.groupsByStixId = mapBy(data.groups, 'id');
+        _internalState.softwareByStixId = mapBy(data.software, 'id');
+        _internalState.softwareByExternalId = mapByExternalId(data.software);
+        _internalState.mitigationsByStixId = mapBy(data.mitigations, 'id');
         document.dispatchEvent(new CustomEvent('stix-data-updated'));
     }
 };
+
+function groupBy(items, key) {
+    const grouped = new Map();
+    for (const item of items || []) {
+        const value = item?.[key];
+        if (!value) continue;
+        if (!grouped.has(value)) grouped.set(value, []);
+        grouped.get(value).push(item);
+    }
+    return grouped;
+}
+
+function mapBy(items, key) {
+    const mapped = new Map();
+    for (const item of items || []) {
+        const value = item?.[key];
+        if (value) mapped.set(value, item);
+    }
+    return mapped;
+}
+
+function mapByExternalId(items) {
+    const mapped = new Map();
+    for (const item of items || []) {
+        const externalId = item?.external_references?.[0]?.external_id;
+        if (externalId) mapped.set(externalId, item);
+    }
+    return mapped;
+}
 
 export const state = new Proxy(_internalState, {
     set(target, prop, value) {

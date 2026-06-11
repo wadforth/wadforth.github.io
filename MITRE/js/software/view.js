@@ -1,35 +1,33 @@
+import { debounce } from '../utils/performance.js';
+
 export let softwareSortBy = 'name';
 export let softwareSortDir = 'asc';
 export let softwareViewMode = 'grid';
 export let softwareFilterType = 'all';
+export let softwareRenderToken = 0;
 
 
 
 export function getSoftwareTechniqueCount(softwareId) {
-    const sw = state.software.find(s => {
-        const sid = s.external_references?.[0]?.external_id || '';
-        return sid === softwareId;
-    });
+    const sw = state.softwareByExternalId?.get(softwareId);
     if (!sw) return 0;
-    return state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === sw.id).length;
+    return (state.relationshipsBySource?.get(sw.id) || []).filter(r => r.relationship_type === 'uses').length;
 }
 
 export function getSoftwareGroupCount(softwareId) {
-    const sw = state.software.find(s => {
-        const sid = s.external_references?.[0]?.external_id || '';
-        return sid === softwareId;
-    });
+    const sw = state.softwareByExternalId?.get(softwareId);
     if (!sw) return 0;
     const techIds = new Set(
-        state.relationships
-            .filter(r => r.relationship_type === 'uses' && r.source_ref === sw.id)
+        (state.relationshipsBySource?.get(sw.id) || [])
+            .filter(r => r.relationship_type === 'uses')
             .map(r => r.target_ref)
     );
-    const groupIds = new Set(
-        state.relationships
-            .filter(r => r.relationship_type === 'uses' && techIds.has(r.target_ref))
-            .map(r => r.source_ref)
-    );
+    const groupIds = new Set();
+    techIds.forEach(techId => {
+        (state.relationshipsByTarget?.get(techId) || []).forEach(r => {
+            if (r.relationship_type === 'uses' && r.source_ref?.startsWith('intrusion-set--')) groupIds.add(r.source_ref);
+        });
+    });
     return state.groups.filter(g => groupIds.has(g.id)).length;
 }
 
@@ -63,6 +61,7 @@ export function sortSoftware(software) {
 }
 
 export function renderSoftwareView() {
+    const renderToken = ++softwareRenderToken;
     const container = document.getElementById('software-list');
     const controlsContainer = document.getElementById('software-controls');
     const searchInput = document.getElementById('software-search-input');
@@ -113,20 +112,10 @@ export function renderSoftwareView() {
 
     // 2. Perform indexed O(1) relationships calculation on a deferred event loop task
     setTimeout(() => {
-        // Index relationships uses for O(1) retrieval
-        const relsBySource = new Map();
-        const techById = new Map();
-        
-        state.techniques.forEach(t => techById.set(t.id, t));
-        
-        state.relationships.forEach(r => {
-            if (r.relationship_type === 'uses') {
-                if (!relsBySource.has(r.source_ref)) {
-                    relsBySource.set(r.source_ref, []);
-                }
-                relsBySource.get(r.source_ref).push(r);
-            }
-        });
+        if (renderToken !== softwareRenderToken) return;
+
+        const relsBySource = state.relationshipsBySource || new Map();
+        const techById = state.techniquesByStixId || new Map();
         
         // Cache technique count per software external ID
         const indexedTechCounts = new Map();
@@ -307,7 +296,7 @@ export function renderSoftwareView() {
                 </div>`;
 
                 return `
-                    <div class="software-card software-card-list software-card-glass ${themeClass}" data-sw-id="${swId}" style="cursor: pointer;">
+                    <div class="software-card software-card-list software-card-glass ${themeClass}" data-sw-id="${swId}" role="button" tabindex="0" aria-label="View software details for ${escapeHtml(s.name)}" style="cursor: pointer;">
                         <div class="software-list-row">
                             <div class="software-avatar-container" style="width: 26px; height: 26px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
                                 ${avatarSvg}
@@ -331,7 +320,7 @@ export function renderSoftwareView() {
             }
             
             return `
-                <div class="software-card software-card-glass ${themeClass}" data-sw-id="${swId}" style="cursor: pointer;">
+                <div class="software-card software-card-glass ${themeClass}" data-sw-id="${swId}" role="button" tabindex="0" aria-label="View software details for ${escapeHtml(s.name)}" style="cursor: pointer;">
                     <div class="software-card-avatar-row" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem;">
                         <div class="software-avatar-container" style="width: 42px; height: 42px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
                             ${avatarSvg}
@@ -412,10 +401,16 @@ export function bindSoftwareCardActions() {
         card.addEventListener('click', () => {
             showSoftwareModal(card.dataset.swId);
         });
+        card.addEventListener('keydown', (event) => {
+            if (event.target !== card) return;
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            showSoftwareModal(card.dataset.swId);
+        });
     });
 }
 
-document.getElementById('software-search-input')?.addEventListener('input', renderSoftwareView);
+document.getElementById('software-search-input')?.addEventListener('input', debounce(renderSoftwareView, 250));
 document.getElementById('software-type-filter')?.addEventListener('change', (e) => {
     softwareFilterType = e.target.value;
     renderSoftwareView();

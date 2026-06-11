@@ -1,3 +1,5 @@
+import { debounce } from '../utils/performance.js';
+
 export let groupsSortBy = 'name';
 export let groupsSortDir = 'asc';
 export let groupsViewMode = 'grid';
@@ -5,17 +7,19 @@ export let groupsViewMode = 'grid';
 
 
 export function getGroupTechniqueCount(groupId) {
-    return state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === groupId).length;
+    return (state.relationshipsBySource?.get(groupId) || [])
+        .filter(r => r.relationship_type === 'uses')
+        .length;
 }
 
 export function getGroupSoftwareCount(groupId) {
     const techIds = new Set(
-        state.relationships
-            .filter(r => r.relationship_type === 'uses' && r.source_ref === groupId)
+        (state.relationshipsBySource?.get(groupId) || [])
+            .filter(r => r.relationship_type === 'uses')
             .map(r => r.target_ref)
     );
     return state.software.filter(s =>
-        state.relationships.some(r => r.relationship_type === 'uses' && r.source_ref === s.id && techIds.has(r.target_ref))
+        (state.relationshipsBySource?.get(s.id) || []).some(r => r.relationship_type === 'uses' && techIds.has(r.target_ref))
     ).length;
 }
 
@@ -157,9 +161,9 @@ export function renderGroupsView() {
         const newBadge = isNew ? `<span class="badge bg-success text-xxs shadow-sm" style="font-size: 0.55rem; padding: 2px 4px; margin-left: 4px; vertical-align: middle;">NEW</span>` : '';
 
         // Retrieve techniques related to this group
-        const groupTechniques = state.relationships
-            .filter(r => r.relationship_type === 'uses' && r.source_ref === g.id)
-            .map(r => state.techniques.find(t => t.id === r.target_ref))
+        const groupTechniques = (state.relationshipsBySource?.get(g.id) || [])
+            .filter(r => r.relationship_type === 'uses')
+            .map(r => state.techniquesByStixId?.get(r.target_ref))
             .filter(Boolean);
             
         // Build 12-block tactical sparkline indicators representing covered/gap status
@@ -182,7 +186,7 @@ export function renderGroupsView() {
         
         if (groupsViewMode === 'list') {
             return `
-                <div class="group-card group-card-list group-card-glass ${themeClass}" data-group-id="${g.id}" style="cursor: pointer;">
+                <div class="group-card group-card-list group-card-glass ${themeClass}" data-group-id="${g.id}" role="button" tabindex="0" aria-label="View group details for ${escapeHtml(g.name)}" style="cursor: pointer;">
                     <div class="group-list-row">
                         <div class="group-avatar-container" style="width: 26px; height: 26px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
                             ${avatarSvg}
@@ -206,7 +210,7 @@ export function renderGroupsView() {
         }
         
         return `
-            <div class="group-card group-card-glass ${themeClass}" data-group-id="${g.id}" style="cursor: pointer;">
+            <div class="group-card group-card-glass ${themeClass}" data-group-id="${g.id}" role="button" tabindex="0" aria-label="View group details for ${escapeHtml(g.name)}" style="cursor: pointer;">
                 <div class="group-card-avatar-row" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem;">
                     <div class="group-avatar-container" style="width: 42px; height: 42px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
                         ${avatarSvg}
@@ -283,10 +287,16 @@ export function bindGroupCardActions() {
         card.addEventListener('click', () => {
             showGroupModal(card.dataset.groupId);
         });
+        card.addEventListener('keydown', (event) => {
+            if (event.target !== card) return;
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            showGroupModal(card.dataset.groupId);
+        });
     });
 }
 
-document.getElementById('groups-search-input')?.addEventListener('input', renderGroupsView);
+document.getElementById('groups-search-input')?.addEventListener('input', debounce(renderGroupsView, 250));
 
 // Legacy Window Bindings
 window.groupsSortBy = groupsSortBy;

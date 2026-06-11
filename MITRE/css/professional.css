@@ -1042,6 +1042,13 @@ body.landing-active {
     box-shadow: var(--shadow-md) !important;
 }
 
+.group-card[role="button"]:focus-visible,
+.software-card[role="button"]:focus-visible,
+.mitigation-card[role="button"]:focus-visible {
+    outline: 2px solid rgba(129, 140, 248, 0.8);
+    outline-offset: 2px;
+}
+
 .queries-toolbar,
 .sigma-top-bar,
 .sigma-filters-row,

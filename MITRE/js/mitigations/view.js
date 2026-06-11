@@ -1,15 +1,17 @@
+import { debounce } from '../utils/performance.js';
+
 export let mitigationsSortBy = 'name';
 export let mitigationsSortDir = 'asc';
 export let mitigationsViewMode = 'grid';
 export let mitigationsStatusFilter = 'all';
 
 export function getMitigationTechniques(mitigationId) {
-    const mit = state.mitigations.find(m => m.id === mitigationId);
+    const mit = state.mitigationsByStixId?.get(mitigationId) || state.mitigations.find(m => m.id === mitigationId);
     if (!mit) return [];
-    return state.relationships
-        .filter(r => r.relationship_type === 'mitigates' && r.source_ref === mit.id)
+    return (state.relationshipsBySource?.get(mit.id) || [])
+        .filter(r => r.relationship_type === 'mitigates')
         .map(r => {
-            const tech = state.techniques.find(t => t.id === r.target_ref);
+            const tech = state.techniquesByStixId?.get(r.target_ref);
             return tech || null;
         })
         .filter(Boolean);
@@ -220,7 +222,7 @@ export function renderMitigationsView() {
             ` : `<div style="width: 48px; text-align: center; font-size: 0.62rem; color: var(--on-surface-tertiary); font-style: italic;">N/A</div>`;
 
             return `
-                <div class="mitigation-card mitigation-card-list mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" style="cursor: pointer;">
+                <div class="mitigation-card mitigation-card-list mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" role="button" tabindex="0" aria-label="View mitigation details for ${escapeHtml(m.name)}" style="cursor: pointer;">
                     <div class="mitigation-list-row" style="display: grid !important; grid-template-columns: 28px minmax(200px, 2fr) minmax(130px, 1.2fr) 60px minmax(150px, 1.5fr) 20px !important; align-items: center; gap: 1rem !important; width: 100%;">
                         <button class="btn btn-sm mit-status-toggle ${status}" data-mit="${m.id}" title="Toggle status" style="flex-shrink: 0;">
                             <i class="bi ${status === 'implemented' ? 'bi-check-circle-fill' : status === 'planned' ? 'bi-clock-fill' : 'bi-circle'}"></i>
@@ -246,7 +248,7 @@ export function renderMitigationsView() {
         }
         
         return `
-            <div class="mitigation-card mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" style="cursor: pointer; display: flex; flex-direction: column; height: 100%;">
+            <div class="mitigation-card mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" role="button" tabindex="0" aria-label="View mitigation details for ${escapeHtml(m.name)}" style="cursor: pointer; display: flex; flex-direction: column; height: 100%;">
                 <div class="mitigation-card-header">
                     <div class="mitigation-card-header-left">
                         <span class="mitigation-id-badge" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${mitId}</span>
@@ -341,6 +343,13 @@ export function bindMitigationCardActions() {
             const mitId = btn.dataset.mit;
             if (mitId) showMitigationModal(mitId);
         });
+        btn.addEventListener('keydown', (event) => {
+            if (event.target !== btn) return;
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            const mitId = btn.dataset.mit;
+            if (mitId) showMitigationModal(mitId);
+        });
     });
 }
 
@@ -364,12 +373,12 @@ export function showMitigationModal(mitigationId) {
     let relatedSoftwareMap = new Map();
     
     techs.forEach(t => {
-        state.relationships.filter(r => r.relationship_type === 'uses' && r.target_ref === t.id).forEach(r => {
+        (state.relationshipsByTarget?.get(t.id) || []).filter(r => r.relationship_type === 'uses').forEach(r => {
             if (r.source_ref.startsWith('intrusion-set--')) {
-                const group = state.groups.find(g => g.id === r.source_ref);
+                const group = state.groupsByStixId?.get(r.source_ref);
                 if (group) relatedGroupsMap.set(group.id, group);
             } else if (r.source_ref.startsWith('malware--') || r.source_ref.startsWith('tool--')) {
-                const sw = state.software.find(s => s.id === r.source_ref);
+                const sw = state.softwareByStixId?.get(r.source_ref);
                 if (sw) relatedSoftwareMap.set(sw.id, sw);
             }
         });
@@ -523,7 +532,7 @@ export function showMitigationModal(mitigationId) {
     });
 }
 
-document.getElementById('mitigations-search-input')?.addEventListener('input', renderMitigationsView);
+document.getElementById('mitigations-search-input')?.addEventListener('input', debounce(renderMitigationsView, 250));
 
 // Legacy Window Bindings
 window.mitigationsSortBy = mitigationsSortBy;
