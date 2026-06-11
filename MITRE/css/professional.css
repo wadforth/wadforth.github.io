@@ -390,6 +390,13 @@ kbd {
     transform: none;
 }
 
+.technique-cell:focus-visible,
+.expand-btn:focus-visible,
+.sub-toggle:focus-visible {
+    outline: 2px solid rgba(129, 140, 248, 0.8);
+    outline-offset: -2px;
+}
+
 .technique-cell.has-children {
     border-left-color: rgba(129, 140, 248, 0.7);
 }

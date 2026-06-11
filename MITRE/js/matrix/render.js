@@ -160,14 +160,6 @@ export function renderMatrix() {
         state.matrixFocusPending = false;
     }
 
-    container.querySelectorAll('.technique-cell[data-id]').forEach(el => {
-        el.addEventListener('click', (e) => {
-            if (!e.target.closest('.expand-btn') && !e.target.closest('.sub-toggle')) {
-                showTechniqueModal(el.dataset.id);
-            }
-        });
-    });
-
     if (!container.dataset.contextMenuBound) {
         container.addEventListener('contextmenu', (e) => {
             const cell = e.target.closest('.technique-cell[data-id]');
@@ -180,19 +172,11 @@ export function renderMatrix() {
         container.dataset.contextMenuBound = 'true';
     }
 
-    container.querySelectorAll('.expand-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleSubTechniques(btn.dataset.parent, btn);
-        });
-    });
-
-    container.querySelectorAll('.sub-toggle').forEach(el => {
-        el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleSubTechniques(el.dataset.parent, el);
-        });
-    });
+    if (!container.dataset.clickBound) {
+        container.addEventListener('click', handleMatrixInteraction);
+        container.addEventListener('keydown', handleMatrixKeyboardInteraction);
+        container.dataset.clickBound = 'true';
+    }
 
     const domainLabel = state.currentDomain.replace('-attack', '').charAt(0).toUpperCase() + state.currentDomain.replace('-attack', '').slice(1);
     document.getElementById('matrix-title').textContent = `${domainLabel} ATT&CK Matrix`;
@@ -229,6 +213,35 @@ export function renderMatrix() {
             </div>
         `).join('');
     }
+}
+
+function handleMatrixInteraction(event) {
+    const toggle = event.target.closest('.expand-btn, .sub-toggle');
+    if (toggle) {
+        event.stopPropagation();
+        toggleSubTechniques(toggle.dataset.parent, toggle);
+        return;
+    }
+
+    const cell = event.target.closest('.technique-cell[data-id]');
+    if (cell) showTechniqueModal(cell.dataset.id);
+}
+
+function handleMatrixKeyboardInteraction(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+
+    const toggle = event.target.closest('.expand-btn, .sub-toggle');
+    if (toggle) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleSubTechniques(toggle.dataset.parent, toggle);
+        return;
+    }
+
+    const cell = event.target.closest('.technique-cell[data-id]');
+    if (!cell || event.target !== cell) return;
+    event.preventDefault();
+    showTechniqueModal(cell.dataset.id);
 }
 
 function safeId(value) {
@@ -270,7 +283,7 @@ export function buildTechniqueCell(tech, subs = []) {
     const id = tech.external_references?.[0]?.external_id || '';
     const name = tech.name;
     const hasSubs = subs.length > 0;
-    const expandBtn = hasSubs ? `<span class="expand-btn" data-parent="${id}" title="Toggle sub-techniques"><i class="bi bi-chevron-down"></i></span>` : '';
+    const expandBtn = hasSubs ? `<span class="expand-btn" data-parent="${id}" title="Toggle sub-techniques" role="button" tabindex="0" aria-label="Toggle sub-techniques for ${escapeHtml(id)}"><i class="bi bi-chevron-down"></i></span>` : '';
     
     const autoColor = getAutoColorForTechnique(id, subs);
     const ann = getTechniqueAnnotation(id);
@@ -298,7 +311,7 @@ export function buildTechniqueCell(tech, subs = []) {
     const isNew = state.changelogDiff?.added?.techniques?.has(id);
     const newBadge = isNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm mr-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: top;">NEW</span>' : '';
 
-    let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass} ${focusedClass}" data-id="${id}" ${colorStyle}>
+    let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass} ${focusedClass}" data-id="${id}" role="button" tabindex="0" aria-label="View technique ${escapeHtml(id)} ${escapeHtml(name)}" ${colorStyle}>
         <div class="tech-id" ${textColor ? `style="color: ${textColor};"` : ''}>${displayId}</div>
         <div class="tech-name" ${textColor ? `style="color: ${textColor};"` : ''}>${displayName}</div>
         <div class="matrix-badges">
@@ -328,7 +341,7 @@ export function buildTechniqueCell(tech, subs = []) {
             const isSubNew = state.changelogDiff?.added?.techniques?.has(subId);
             const subNewBadge = isSubNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm ml-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: middle;">NEW</span>' : '';
 
-            return `<div class="technique-cell sub-technique ${subAnnotated} ${subFocusedClass}" data-id="${subId}" ${subColor}>
+            return `<div class="technique-cell sub-technique ${subAnnotated} ${subFocusedClass}" data-id="${subId}" role="button" tabindex="0" aria-label="View technique ${escapeHtml(subId)} ${escapeHtml(subName)}" ${subColor}>
                 <span class="sub-connector"></span>
                 <span class="tech-id" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayId}</span> <span class="tech-name" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayName}</span>${subNewBadge}
             </div>`;
