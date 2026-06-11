@@ -420,6 +420,39 @@ kbd {
     outline-offset: -2px;
 }
 
+html[data-performance-mode="low"] *,
+html[data-performance-mode="low"] *::before,
+html[data-performance-mode="low"] *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+}
+
+html[data-performance-mode="low"] .workspace-ambient-bg,
+html[data-performance-mode="low"] .ambient-orb,
+html[data-performance-mode="low"] .landing-bg-stars,
+html[data-performance-mode="low"] .landing-orb,
+html[data-performance-mode="low"] .matrix-bg::before,
+html[data-performance-mode="low"] .matrix-bg::after {
+    display: none !important;
+}
+
+html[data-performance-mode="low"] .workspace-view,
+html[data-performance-mode="low"] .landing-view,
+html[data-performance-mode="low"] .card,
+html[data-performance-mode="low"] .report-card,
+html[data-performance-mode="low"] .sigma-card,
+html[data-performance-mode="low"] .technique-cell,
+html[data-performance-mode="low"] .modal-content {
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+}
+
+html[data-performance-mode="low"] #btn-performance-mode {
+    color: var(--accent-cyan);
+    border-color: rgba(56, 189, 248, 0.45);
+}
+
 .tech-id {
     color: var(--secondary);
     letter-spacing: 0.01em;

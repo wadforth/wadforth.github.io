@@ -202,6 +202,9 @@
                     <button class="btn btn-sm btn-ghost" id="btn-set-author" title="Set Author">
                         <i class="bi bi-person"></i>
                     </button>
+                    <button class="btn btn-sm btn-ghost" id="btn-performance-mode" title="Toggle performance mode" aria-pressed="false">
+                        <i class="bi bi-speedometer2"></i>
+                    </button>
                     <div class="vr mx-1" style="width: 1px; height: 16px; background: var(--border); display: inline-block; vertical-align: middle;"></div>
                     <button class="btn btn-sm btn-ghost" id="btn-legend-editor" title="Edit Legend">
                         <i class="bi bi-palette mr-1"></i>Legend
@@ -425,12 +428,12 @@
                             <input type="text" id="sigma-search-input" placeholder="Search rules by title, keyword, ID, or technique...">
                         </div>
                         
-                        <div class="sigma-multi-select" id="sigma-multi-logsource" tabindex="0">
-                            <div class="sigma-multi-select-header" onclick="document.querySelectorAll('.sigma-multi-select.open').forEach(el => { if (el !== this.parentElement) el.classList.remove('open') }); this.parentElement.classList.toggle('open'); event.stopPropagation();">
+                        <div class="sigma-multi-select" id="sigma-multi-logsource">
+                            <div class="sigma-multi-select-header" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
                                 <span class="sigma-multi-select-label">Services: All</span>
                                 <i class="bi bi-chevron-down"></i>
                             </div>
-                            <div class="sigma-multi-select-dropdown" id="sigma-logsource-options" onclick="event.stopPropagation();">
+                            <div class="sigma-multi-select-dropdown" id="sigma-logsource-options" role="listbox" aria-label="Sigma services">
                                 <!-- Checkboxes injected dynamically -->
                             </div>
                         </div>
@@ -485,12 +488,12 @@
                         <option value="active">Active Coverage</option>
                         <option value="gap">Defensive Gaps</option>
                     </select>
-                    <div class="sigma-multi-select" id="sigma-multi-product" tabindex="0">
-                        <div class="sigma-multi-select-header" onclick="document.querySelectorAll('.sigma-multi-select.open').forEach(el => { if (el !== this.parentElement) el.classList.remove('open') }); this.parentElement.classList.toggle('open'); event.stopPropagation();">
+                    <div class="sigma-multi-select" id="sigma-multi-product">
+                        <div class="sigma-multi-select-header" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
                             <span class="sigma-multi-select-label">Products: All</span>
                             <i class="bi bi-chevron-down"></i>
                         </div>
-                        <div class="sigma-multi-select-dropdown" id="sigma-product-options" onclick="event.stopPropagation();">
+                        <div class="sigma-multi-select-dropdown" id="sigma-product-options" role="listbox" aria-label="Sigma products">
                             <!-- Checkboxes injected dynamically -->
                         </div>
                     </div>
@@ -1213,24 +1216,58 @@
 
     <script type="module" src="js/layer/migration.js"></script>
     <script type="module" src="js/utils/modal.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <script type="module" src="state.js"></script>
+    <script type="module" src="js/utils/assets.js"></script>
     <script type="module" src="js/utils/format.js?v=2"></script>
     <script type="module" src="js/utils/sanitize.js"></script>
     <script type="module" src="js/utils/theme.js"></script>
+    <script type="module" src="js/utils/performance.js"></script>
     <script type="module" src="js/utils/version.js"></script>
     <script type="module" src="js/utils/db.js"></script>
     <script type="module" src="js/intel/sigma-parser.js?v=2"></script>
     <script type="module" src="js/intel/changelog.js?v=2"></script>
     <script type="module" src="ui.js?v=2"></script>
     <script>
-        document.addEventListener('click', function() {
+        function closeSigmaMultiSelects(except) {
             document.querySelectorAll('.sigma-multi-select.open').forEach(function(el) {
-                el.classList.remove('open');
+                if (el !== except) {
+                    el.classList.remove('open');
+                    el.querySelector('.sigma-multi-select-header')?.setAttribute('aria-expanded', 'false');
+                }
             });
+        }
+
+        document.addEventListener('click', function(event) {
+            const header = event.target.closest('.sigma-multi-select-header');
+            if (header) {
+                const parent = header.closest('.sigma-multi-select');
+                const isOpen = parent.classList.contains('open');
+                closeSigmaMultiSelects(parent);
+                parent.classList.toggle('open', !isOpen);
+                header.setAttribute('aria-expanded', String(!isOpen));
+                event.stopPropagation();
+                return;
+            }
+
+            if (event.target.closest('.sigma-multi-select-dropdown')) {
+                event.stopPropagation();
+                return;
+            }
+
+            closeSigmaMultiSelects();
+        });
+
+        document.addEventListener('keydown', function(event) {
+            const header = event.target.closest('.sigma-multi-select-header');
+            if (!header) return;
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                header.click();
+            } else if (event.key === 'Escape') {
+                closeSigmaMultiSelects();
+                header.focus();
+            }
         });
     </script>
     <script type="module" src="data.js?v=2"></script>

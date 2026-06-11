@@ -27,7 +27,11 @@ export class Router {
     }
 
     static async navigate(view) {
-        localStorage.setItem('attack-explorer-current-view', view);
+        try {
+            localStorage.setItem('attack-explorer-current-view', view);
+        } catch (err) {
+            console.warn('Unable to persist current view:', err);
+        }
         
         // Update navigation active states
         document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));

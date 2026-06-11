@@ -11,6 +11,10 @@ function getSafeQueryLanguage(language) {
     };
 }
 
+function getInlineCallArg(value) {
+    return `decodeURIComponent('${encodeURIComponent(String(value || ''))}')`;
+}
+
 export function showTechniqueModal(techniqueId, skipHistory = false) {
     const tech = state.techniques.find(t => t.external_references?.[0]?.external_id === techniqueId);
     if (!tech) return;
@@ -73,7 +77,7 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
         monthsEl.innerHTML = `
             <div class="month-selector">
                 <label class="text-on-surface-tertiary text-sm mb-1">Logged Month</label>
-                <select class="form-select form-select-sm" onchange="updateTechniqueMonth('${techniqueId}', this.value)">
+                <select class="form-select form-select-sm" onchange="updateTechniqueMonth(${getInlineCallArg(techniqueId)}, this.value)">
                     ${monthOptions.join('')}
                 </select>
             </div>

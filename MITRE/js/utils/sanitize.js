@@ -14,11 +14,23 @@ window.DOMSanitizer = {
         const parser = new DOMParser();
         const doc = parser.parseFromString(dirtyHtml, 'text/html');
         
+        const isSafeUrl = (value) => {
+            const raw = String(value || '').trim();
+            if (!raw) return true;
+            if (raw.startsWith('#') || raw.startsWith('/') || raw.startsWith('./') || raw.startsWith('../')) return true;
+            try {
+                const url = new URL(raw, window.location.href);
+                return ['http:', 'https:', 'mailto:', 'blob:'].includes(url.protocol) || raw.startsWith('data:image/');
+            } catch {
+                return false;
+            }
+        };
+
         const removeScripts = (node) => {
             // Remove dangerous tags
             if (node.tagName) {
                 const tag = node.tagName.toLowerCase();
-                if (['script', 'iframe', 'object', 'embed', 'style'].includes(tag)) {
+                if (['script', 'iframe', 'object', 'embed', 'style', 'foreignobject', 'meta', 'base', 'link'].includes(tag)) {
                     node.remove();
                     return;
                 }
@@ -26,7 +38,14 @@ window.DOMSanitizer = {
                 for (const attr of Array.from(node.attributes || [])) {
                     const name = attr.name.toLowerCase();
                     const value = String(attr.value || '').trim().toLowerCase();
-                    if (name.startsWith('on') || value.startsWith('javascript:') || value.startsWith('data:text/html')) {
+                    if (
+                        name.startsWith('on') ||
+                        name === 'srcdoc' ||
+                        value.startsWith('javascript:') ||
+                        value.startsWith('vbscript:') ||
+                        value.startsWith('data:text/html') ||
+                        (['href', 'src', 'xlink:href', 'formaction'].includes(name) && !isSafeUrl(attr.value))
+                    ) {
                         node.removeAttribute(attr.name);
                     }
                 }

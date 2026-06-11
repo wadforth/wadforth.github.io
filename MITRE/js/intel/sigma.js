@@ -30,6 +30,24 @@ export let isLiveSigmaConnected = false;
 export const SIGMA_PAGINATION_CHUNK = 20;
 export let currentVisibleCount = 20;
 
+function getInlineCallArg(value) {
+    return `decodeURIComponent('${encodeURIComponent(String(value || ''))}')`;
+}
+
+function safeClassToken(value) {
+    return String(value || '').toLowerCase().replace(/[^a-z0-9_-]/g, '-').slice(0, 40);
+}
+
+function safeLocalStorageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (err) {
+        console.warn(`Unable to persist ${key}:`, err);
+        return false;
+    }
+}
+
 export let sigmaFilteredCache = [];
 export let sigmaSearchDebounceTimer = null;
 
@@ -1092,7 +1110,7 @@ function populateDynamicFilters(rules) {
         for (const p of prodArray) {
             const checked = selectedSigmaProduct.includes(p) ? 'checked' : '';
             html += `
-                <label class="sigma-multi-select-option">
+                <label class="sigma-multi-select-option" role="option" aria-selected="${checked ? 'true' : 'false'}">
                     <input type="checkbox" value="${escapeHtml(p)}" ${checked} onchange="toggleSigmaMultiFilter('product', this.value, this.checked)">
                     ${escapeHtml(p)}
                 </label>
@@ -1109,7 +1127,7 @@ function populateDynamicFilters(rules) {
         for (const s of servArray) {
             const checked = selectedSigmaLogsource.includes(s) ? 'checked' : '';
             html += `
-                <label class="sigma-multi-select-option">
+                <label class="sigma-multi-select-option" role="option" aria-selected="${checked ? 'true' : 'false'}">
                     <input type="checkbox" value="${escapeHtml(s)}" ${checked} onchange="toggleSigmaMultiFilter('logsource', this.value, this.checked)">
                     ${escapeHtml(s)}
                 </label>
@@ -1131,7 +1149,7 @@ window.toggleSigmaMultiFilter = function(type, value, isChecked) {
             selectedSigmaProduct = selectedSigmaProduct.filter(p => p !== value);
         }
         updateMultiSelectLabel('sigma-multi-product', 'Products', selectedSigmaProduct.length, document.querySelectorAll('#sigma-product-options input').length);
-        localStorage.setItem('sigma_filter_products', JSON.stringify(selectedSigmaProduct));
+        safeLocalStorageSet('sigma_filter_products', JSON.stringify(selectedSigmaProduct));
     } else {
         if (isChecked) {
             if (!selectedSigmaLogsource.includes(value)) selectedSigmaLogsource.push(value);
@@ -1139,7 +1157,7 @@ window.toggleSigmaMultiFilter = function(type, value, isChecked) {
             selectedSigmaLogsource = selectedSigmaLogsource.filter(s => s !== value);
         }
         updateMultiSelectLabel('sigma-multi-logsource', 'Services', selectedSigmaLogsource.length, document.querySelectorAll('#sigma-logsource-options input').length);
-        localStorage.setItem('sigma_filter_services', JSON.stringify(selectedSigmaLogsource));
+        safeLocalStorageSet('sigma_filter_services', JSON.stringify(selectedSigmaLogsource));
     }
     
     updateDynamicFilterStates();
@@ -1484,7 +1502,7 @@ export function renderSigmaCard(rule, idx) {
                 </div>
                 <div class="sigma-card-header-right">
                     ${coverage === 'active' ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active</span>' : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Gap</span>'}
-                    ${level ? `<span class="sigma-card-level level-${escapeHtml(level)}">${escapeHtml(level)}</span>` : ''}
+                    ${level ? `<span class="sigma-card-level level-${safeClassToken(level)}">${escapeHtml(level)}</span>` : ''}
                     <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" onclick="event.stopPropagation(); toggleRuleCandidateById(this.closest('.sigma-card')?.dataset.ruleId)" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}" aria-label="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
                         <i class="bi ${isCandidate ? 'bi-bookmark-fill' : 'bi-bookmark'}"></i>
                     </button>
@@ -1573,11 +1591,11 @@ export function renderSigmaDetails() {
     panel.innerHTML = `
         <div class="sigma-details-header">
             <div class="sigma-details-meta">
-                ${level ? `<span class="sigma-card-level level-${escapeHtml(level)}">${escapeHtml(level)}</span>` : ''}
+                ${level ? `<span class="sigma-card-level level-${safeClassToken(level)}">${escapeHtml(level)}</span>` : ''}
                 ${coverage === 'active'
                     ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active Coverage</span>'
                     : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Defensive Gap</span>'}
-                ${statusLabel ? `<span class="sigma-details-status-badge status-${escapeHtml(rule.ruleStatus)}">${escapeHtml(statusLabel)}</span>` : ''}
+                ${statusLabel ? `<span class="sigma-details-status-badge status-${safeClassToken(rule.ruleStatus)}">${escapeHtml(statusLabel)}</span>` : ''}
                 ${rule.isOfflineBaseline ? '<span class="sigma-details-status-badge" style="background: rgba(99,102,241,0.1); color: #818cf8; border-color: rgba(99,102,241,0.2);">Offline Baseline</span>' : ''}
                 <span>UUID: ${rule.id.includes('/') ? 'GitHub Index' : escapeHtml(rule.id)}</span>
             </div>
@@ -1969,7 +1987,7 @@ export function loadCandidates() {
 }
 
 export function saveCandidates() {
-    localStorage.setItem('sigma_candidates', JSON.stringify(sigmaCandidates));
+    safeLocalStorageSet('sigma_candidates', JSON.stringify(sigmaCandidates));
     updateCandidatesBadge();
 }
 
@@ -2047,12 +2065,13 @@ export function renderCandidatesList() {
     
     let html = '<div class="candidates-grid">';
     sigmaCandidates.forEach(c => {
-        const severityClass = c.severity ? `severity-${c.severity.toLowerCase()}` : '';
+        const severityClass = c.severity ? `severity-${safeClassToken(c.severity)}` : '';
+        const candidateIdArg = getInlineCallArg(c.id);
         html += `
-            <div class="candidate-card" data-candidate-id="${c.id}">
+            <div class="candidate-card" data-candidate-id="${escapeHtml(c.id)}">
                 <div class="candidate-card-header">
-                    <span class="candidate-severity ${severityClass}">${c.severity || 'N/A'}</span>
-                    <button class="candidate-remove-btn" onclick="removeCandidate('${c.id}')" data-tooltip="Remove from candidates">
+                    <span class="candidate-severity ${severityClass}">${escapeHtml(c.severity || 'N/A')}</span>
+                    <button class="candidate-remove-btn" onclick="removeCandidate(${candidateIdArg})" data-tooltip="Remove from candidates" aria-label="Remove candidate">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
@@ -2062,10 +2081,10 @@ export function renderCandidatesList() {
                     <span class="candidate-date">Added: ${formatCandidateDate(c.addedAt)}</span>
                 </div>
                 <div class="candidate-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="deployCandidate('${c.id}')">
+                    <button class="btn btn-sm btn-outline-primary" onclick="deployCandidate(${candidateIdArg})">
                         <i class="bi bi-play-fill"></i> Deploy
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="viewCandidateDetails('${c.id}')">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="viewCandidateDetails(${candidateIdArg})">
                         <i class="bi bi-eye"></i> View
                     </button>
                 </div>

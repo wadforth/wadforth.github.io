@@ -10,6 +10,75 @@ export let lastSnapshotHash = null;
 export let lastSavedLayer = null;
 export let deltaBuffer = [];
 export const DELTA_FLUSH_THRESHOLD = 5; // Consolidate after this many deltas
+const CURRENT_LAYER_KEY = 'attack-explorer-current-layer';
+const RECENT_LAYERS_KEY = 'attack-explorer-recent';
+const MAX_RECENT_LAYERS = 6;
+
+function isQuotaExceededError(err) {
+    return err && (
+        err.name === 'QuotaExceededError' ||
+        err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+        err.code === 22 ||
+        err.code === 1014
+    );
+}
+
+function safeLocalStorageSet(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (err) {
+        if (!isQuotaExceededError(err)) {
+            console.warn(`Unable to persist ${key}:`, err);
+            return false;
+        }
+        recoverLocalStorageQuota();
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (retryErr) {
+            console.warn(`Unable to persist ${key} after quota recovery:`, retryErr);
+            return false;
+        }
+    }
+}
+
+function recoverLocalStorageQuota() {
+    try {
+        const recent = JSON.parse(localStorage.getItem(RECENT_LAYERS_KEY) || '[]')
+            .slice(0, 3)
+            .map(compactRecentLayer);
+        localStorage.setItem(RECENT_LAYERS_KEY, JSON.stringify(recent));
+    } catch {}
+}
+
+function compactLayerRef(layer) {
+    return {
+        id: layer.id,
+        storage: 'indexeddb',
+        name: layer.name,
+        domain: layer.domain || state.currentDomain,
+        attackVersion: layer.versions?.attack || layer.attackVersion || state.currentVersion,
+        timestamp: Date.now()
+    };
+}
+
+function compactRecentLayer(layer, preserveLegacyData = false) {
+    const compact = {
+        id: layer.id || `${layer.name || 'layer'}${layer.domain || ''}`,
+        layerId: layer.layerId || layer.id,
+        name: layer.name || 'Untitled Layer',
+        domain: layer.domain || 'enterprise-attack',
+        attackVersion: layer.attackVersion || layer.versions?.attack,
+        timestamp: layer.timestamp || Date.now()
+    };
+    if (preserveLegacyData && layer.data) compact.data = layer.data;
+    return compact;
+}
+
+function persistCurrentLayerReference(layer) {
+    safeLocalStorageSet(CURRENT_LAYER_KEY, JSON.stringify(compactLayerRef(layer)));
+}
 
 // IndexedDB initialization
 export function openLayerDB() {
@@ -219,9 +288,9 @@ export async function saveCurrentLayer() {
     state.currentLayer.autoColorRules = state.autoColorRules;
     
     // Also persist to localStorage for backward compatibility and quick access
-    localStorage.setItem('attack-explorer-current-domain', state.currentDomain);
-    localStorage.setItem('attack-explorer-current-version', state.currentVersion);
-    localStorage.setItem('attack-explorer-expanded', JSON.stringify([...state.expandedTechniques]));
+    safeLocalStorageSet('attack-explorer-current-domain', state.currentDomain);
+    safeLocalStorageSet('attack-explorer-current-version', state.currentVersion);
+    safeLocalStorageSet('attack-explorer-expanded', JSON.stringify([...state.expandedTechniques]));
     
     try {
         const currentHash = computeHash(state.currentLayer);
@@ -253,11 +322,11 @@ export async function saveCurrentLayer() {
             }
         }
         
-        // Update localStorage fallback
-        localStorage.setItem('attack-explorer-current-layer', JSON.stringify(state.currentLayer));
+        // Keep localStorage compact; IndexedDB stores the full layer payload.
+        persistCurrentLayerReference(state.currentLayer);
     } catch (err) {
         console.error('IndexedDB save failed, falling back to localStorage:', err);
-        localStorage.setItem('attack-explorer-current-layer', JSON.stringify(state.currentLayer));
+        safeLocalStorageSet(CURRENT_LAYER_KEY, JSON.stringify(state.currentLayer));
     }
 }
 
@@ -287,7 +356,7 @@ export function saveCurrentLayerNow() {
 // Load layer from IndexedDB with delta replay
 export async function loadCurrentLayer() {
     // Try IndexedDB first
-    const savedId = localStorage.getItem('attack-explorer-current-layer');
+    const savedId = localStorage.getItem(CURRENT_LAYER_KEY);
     if (!savedId) {
         // Try to parse old format
         try {
@@ -301,6 +370,9 @@ export async function loadCurrentLayer() {
     
     try {
         const layerData = JSON.parse(savedId);
+        if (layerData?.storage === 'indexeddb' && layerData.id) {
+            return await loadLayerFromIndexedDB(layerData.id);
+        }
         if (layerData && layerData.id) {
             return await loadLayerFromIndexedDB(layerData.id);
         }
@@ -347,8 +419,8 @@ export async function loadLayerFromIndexedDB(layerId) {
         lastSnapshotHash = computeHash(layer);
         lastSavedLayer = JSON.parse(JSON.stringify(layer));
         
-        // Update localStorage reference
-        localStorage.setItem('attack-explorer-current-layer', JSON.stringify(layer));
+        // Update compact localStorage reference
+        persistCurrentLayerReference(layer);
         
         return layer;
     } catch (err) {
@@ -358,10 +430,11 @@ export async function loadLayerFromIndexedDB(layerId) {
 }
 
 export function loadLayerFromLocalStorage() {
-    const saved = localStorage.getItem('attack-explorer-current-layer');
+    const saved = localStorage.getItem(CURRENT_LAYER_KEY);
     if (!saved) return null;
     try {
         const layer = JSON.parse(saved);
+        if (layer?.storage === 'indexeddb' && !layer.techniques) return null;
         state.companyName = layer.companyName || '';
         state.companyLogo = layer.companyLogo || null;
         state.author = layer.author || '';
@@ -390,22 +463,23 @@ export function loadLayerFromLocalStorage() {
 
 
 export function saveRecentLayer(layer) {
-    let recent = JSON.parse(localStorage.getItem('attack-explorer-recent') || '[]');
-    recent = recent.filter(l => l.id !== layer.name + layer.domain);
-    recent.unshift({
-        id: layer.name + layer.domain,
+    let recent = JSON.parse(localStorage.getItem(RECENT_LAYERS_KEY) || '[]');
+    const item = compactRecentLayer({
+        id: layer.id,
+        layerId: layer.id,
         name: layer.name,
-        domain: layer.domain,
-        attackVersion: layer.versions?.attack || layer.attackVersion,
-        timestamp: Date.now(),
-        data: layer,
+        domain: layer.domain || state.currentDomain,
+        attackVersion: layer.versions?.attack || layer.attackVersion || state.currentVersion,
+        timestamp: Date.now()
     });
-    recent = recent.slice(0, 10);
-    localStorage.setItem('attack-explorer-recent', JSON.stringify(recent));
+    recent = recent.filter(l => (l.layerId || l.id) !== item.layerId);
+    recent.unshift(item);
+    recent = recent.slice(0, MAX_RECENT_LAYERS).map(compactRecentLayer);
+    safeLocalStorageSet(RECENT_LAYERS_KEY, JSON.stringify(recent));
 }
 
 export function renderRecentLayers() {
-    const recent = JSON.parse(localStorage.getItem('attack-explorer-recent') || '[]');
+    const recent = JSON.parse(localStorage.getItem(RECENT_LAYERS_KEY) || '[]').map(layer => compactRecentLayer(layer, true));
     const section = document.getElementById('recent-layers-section');
     const list = document.getElementById('recent-layers-list');
     const countBadge = document.getElementById('recent-layers-count');
@@ -420,21 +494,22 @@ export function renderRecentLayers() {
     list.className = 'recent-layers-grid';
     list.innerHTML = recent.map(l => {
         const domainLabel = l.domain ? (l.domain.replace('-attack', '').charAt(0).toUpperCase() + l.domain.replace('-attack', '').slice(1)) : 'Enterprise';
+        const versionLabel = l.attackVersion === 'master' ? 'master' : ((l.attackVersion || '').toString().startsWith('v') ? '' : 'v') + (l.attackVersion || '');
         return `
-            <div class="recent-layer-card" data-id="${l.id}">
+            <div class="recent-layer-card" data-id="${escapeHtml(l.id)}" role="button" tabindex="0">
                 <div class="recent-layer-icon">
                     <i class="bi bi-layers"></i>
                 </div>
                 <div class="recent-layer-info">
                     <div class="recent-layer-name">${escapeHtml(l.name)}</div>
                     <div class="recent-layer-meta">
-                        <span class="recent-layer-badge">${domainLabel}</span>
-                        <span>${l.attackVersion === 'master' ? 'master' : ((l.attackVersion || '').toString().startsWith('v') ? '' : 'v') + l.attackVersion}</span>
+                        <span class="recent-layer-badge">${escapeHtml(domainLabel)}</span>
+                        <span>${escapeHtml(versionLabel)}</span>
                         <span>&bull;</span>
                         <span>${new Date(l.timestamp).toLocaleDateString()}</span>
                     </div>
                 </div>
-                <button class="recent-layer-delete" data-id="${l.id}" title="Delete Saved Layer">
+                <button class="recent-layer-delete" data-id="${escapeHtml(l.id)}" title="Delete Saved Layer" aria-label="Delete saved layer ${escapeHtml(l.name)}">
                     <i class="bi bi-trash"></i>
                 </button>
             </div>
@@ -442,7 +517,7 @@ export function renderRecentLayers() {
     }).join('');
 
     list.querySelectorAll('.recent-layer-card').forEach(item => {
-        item.addEventListener('click', (e) => {
+        const openRecentLayer = async (e) => {
             if (e.target.closest('.recent-layer-delete')) return;
             const layer = recent.find(l => l.id === item.dataset.id);
             if (layer) {
@@ -453,7 +528,19 @@ export function renderRecentLayers() {
                 const versionSelect = document.getElementById('version-select');
                 if (versionSelect) versionSelect.value = state.currentVersion;
                 showWorkspace();
-                loadSTIX(state.currentDomain, state.currentVersion, layer.data);
+                const layerData = layer.data || await loadLayerFromIndexedDB(layer.layerId || layer.id);
+                if (layerData) {
+                    loadSTIX(state.currentDomain, state.currentVersion, layerData);
+                } else {
+                    showToast('Saved layer data could not be loaded', 'error');
+                }
+            }
+        };
+        item.addEventListener('click', openRecentLayer);
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openRecentLayer(e);
             }
         });
     });
@@ -461,9 +548,9 @@ export function renderRecentLayers() {
     list.querySelectorAll('.recent-layer-delete').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            let r = JSON.parse(localStorage.getItem('attack-explorer-recent') || '[]');
+            let r = JSON.parse(localStorage.getItem(RECENT_LAYERS_KEY) || '[]');
             r = r.filter(l => l.id !== btn.dataset.id);
-            localStorage.setItem('attack-explorer-recent', JSON.stringify(r));
+            safeLocalStorageSet(RECENT_LAYERS_KEY, JSON.stringify(r));
             renderRecentLayers();
         });
     });
@@ -489,7 +576,7 @@ document.getElementById('btn-export-layer').addEventListener('click', () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${state.currentLayer.name.replace(/\s+/g, '_')}.json`;
+    a.download = `${String(state.currentLayer.name || 'layer').replace(/[^a-z0-9_-]+/gi, '_')}.json`;
     a.click();
     URL.revokeObjectURL(url);
     showToast('Layer exported!', 'success');
@@ -514,7 +601,7 @@ document.getElementById('btn-close-layer').addEventListener('click', async () =>
         lastSnapshotHash = null;
         lastSavedLayer = null;
         deltaBuffer = [];
-        localStorage.removeItem('attack-explorer-current-layer');
+        localStorage.removeItem(CURRENT_LAYER_KEY);
         if (window.loadReportsList) {
             window.loadReportsList().catch(() => {});
         }

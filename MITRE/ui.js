@@ -512,6 +512,41 @@ export function updateTooltip(text) {
     }
 }
 
+export function initAccessibility() {
+    const apply = () => {
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            const title = modal.querySelector('.modal-title, .tech-modal-title, h3, h5, h6');
+            if (title) {
+                if (!title.id) title.id = `${modal.id || 'modal'}-title`;
+                modal.setAttribute('aria-labelledby', title.id);
+            }
+        });
+
+        document.querySelectorAll('.btn-close:not([aria-label])').forEach(btn => {
+            btn.setAttribute('aria-label', 'Close');
+        });
+
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+            tab.setAttribute('role', 'tab');
+            const target = tab.getAttribute('data-bs-target') || tab.getAttribute('href');
+            if (target?.startsWith('#')) {
+                const panel = document.querySelector(target);
+                if (panel) {
+                    panel.setAttribute('role', 'tabpanel');
+                    if (!panel.id) panel.id = target.slice(1);
+                    tab.setAttribute('aria-controls', panel.id);
+                }
+            }
+        });
+    };
+
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
 /* ============================================
    Initialize UI Utilities
    ============================================ */
@@ -519,6 +554,7 @@ export function updateTooltip(text) {
 export function initUI() {
     registerDefaultShortcuts();
     initTooltips();
+    initAccessibility();
 }
 
 
@@ -544,4 +580,5 @@ window.initTooltips = initTooltips;
 window.showTooltip = showTooltip;
 window.hideTooltip = hideTooltip;
 window.updateTooltip = updateTooltip;
+window.initAccessibility = initAccessibility;
 window.initUI = initUI;

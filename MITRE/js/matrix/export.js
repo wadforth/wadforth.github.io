@@ -344,6 +344,12 @@ export async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated
     exportContainer.innerHTML = html;
     await new Promise(resolve => setTimeout(resolve, 150));
     
+    try {
+        await window.ensureHtmlToImage?.();
+    } catch (e) {
+        console.error('PNG export library failed to load:', e);
+    }
+
     if (!window.htmlToImage?.toPng) {
         throw new Error('PNG export library is not loaded');
     }
