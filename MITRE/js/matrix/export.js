@@ -232,7 +232,7 @@ export async function exportMatrixPNG(selectedTactics, expandSubs, onlyAnnotated
                     ${state.companyLogo ? `<img src="${safeImageSrc(state.companyLogo)}" class="matrix-export-logo" style="height: 30px; max-width: 120px; object-fit: contain; border-radius: 4px;" alt="Logo">` : ''}
                     <div>
                         <h1 class="matrix-export-title" style="font-size: 1.15rem; font-weight: 700; color: white; margin: 0; text-shadow: 0 1px 2px rgba(0,0,0,0.15);">${domainLabel} ATT&CK Matrix</h1>
-                        <p class="matrix-export-subtitle" style="font-size: 0.7rem; color: rgba(255,255,255,0.85); margin: 0.15rem 0 0;">${state.currentLayer?.name || 'Untitled Layer'} • ATT&CK ${version}</p>
+                        <p class="matrix-export-subtitle" style="font-size: 0.7rem; color: rgba(255,255,255,0.85); margin: 0.15rem 0 0;">${escapeHtml(state.currentLayer?.name || 'Untitled Layer')} • ATT&CK ${escapeHtml(version)}</p>
                     </div>
                 </div>
                 <div class="matrix-export-header-right" style="text-align: right;">
@@ -459,7 +459,7 @@ export async function exportMatrixPDF(selectedTactics, expandSubs, onlyAnnotated
                         ${state.companyLogo ? `<img src="${safeImageSrc(state.companyLogo)}" class="matrix-export-logo" alt="Logo">` : ''}
                         <div>
                             <h1 class="matrix-export-title">${domainLabel} ATT&CK Matrix</h1>
-                            <p class="matrix-export-subtitle">${state.currentLayer?.name || 'Untitled Layer'} • ATT&CK ${version}</p>
+                            <p class="matrix-export-subtitle">${escapeHtml(state.currentLayer?.name || 'Untitled Layer')} • ATT&CK ${escapeHtml(version)}</p>
                         </div>
                     </div>
                     <div class="matrix-export-header-right">

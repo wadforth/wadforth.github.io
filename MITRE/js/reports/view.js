@@ -8,6 +8,17 @@ export const BANNER_THEMES = {
     slate: { bg: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', accent: '#94a3b8', label: 'Slate' },
 };
 
+function getSafeReportLanguage(language) {
+    const raw = String(language || 'Unknown').slice(0, 32);
+    const className = raw.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const known = new Set(['splunk', 'kql', 'sigma', 'elastic', 'custom', 'unknown']);
+    return {
+        raw,
+        label: escapeHtml(raw),
+        className: known.has(className) ? className : 'custom'
+    };
+}
+
 export async function loadReportsList() {
     if (!state.currentLayer) {
         const container = document.getElementById('reports-list');
@@ -185,7 +196,7 @@ export function renderReportsList(reports) {
         <div class="reports-container">
             <div class="reports-header">
                 <div>
-                    <h2>${state.currentLayer.name || 'Coverage Reports'}</h2>
+                    <h2>${escapeHtml(state.currentLayer.name || 'Coverage Reports')}</h2>
                     <p>Track and analyze your MITRE ATT&CK detection coverage over time</p>
                 </div>
                 <div class="reports-actions">
@@ -213,7 +224,7 @@ export function renderReportsList(reports) {
                     <div class="stat-label">Coverage</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-value">${version}</div>
+                    <div class="stat-value">${escapeHtml(version)}</div>
                     <div class="stat-label">ATT&CK Version</div>
                 </div>
                 <div class="stat-card">
@@ -225,7 +236,7 @@ export function renderReportsList(reports) {
             <div class="month-selector-bar mb-4">
                 <label class="text-on-surface-tertiary text-sm mr-2">View by Month:</label>
                 <select class="form-select form-select-sm" style="width: auto; min-width: 200px;" onchange="renderMonthChangelog(this.value)">
-                    ${availableMonths.map(m => `<option value="${m}" ${m === selectedMonth ? 'selected' : ''}>${getMonthLabel(m)}</option>`).join('')}
+                    ${availableMonths.map(m => `<option value="${escapeHtml(m)}" ${m === selectedMonth ? 'selected' : ''}>${escapeHtml(getMonthLabel(m))}</option>`).join('')}
                 </select>
             </div>
 
@@ -244,16 +255,17 @@ export function renderReportsList(reports) {
         reports.forEach(report => {
             const changeCount = report.changes?.all?.length || 0;
             const typeClass = report.type === 'initial' ? 'initial' : 'update';
+            const reportIdParam = encodeURIComponent(report.id || '');
             html += `
-                <div class="report-card" onclick="viewReport('${report.id}')">
-                    <span class="report-type-badge ${typeClass}">${report.type}</span>
+                <div class="report-card" onclick="viewReport(decodeURIComponent('${reportIdParam}'))">
+                    <span class="report-type-badge ${typeClass}">${escapeHtml(report.type || 'update')}</span>
                     <div class="report-info">
-                        <div class="report-title">${report.reportMonth || report.generatedDate}</div>
-                        <p class="report-summary">${report.executiveSummary?.substring(0, 150)}...</p>
+                        <div class="report-title">${escapeHtml(report.reportMonth || report.generatedDate || 'Untitled Report')}</div>
+                        <p class="report-summary">${escapeHtml((report.executiveSummary || '').substring(0, 150))}...</p>
                     </div>
                     <div class="report-meta">
                         ${changeCount > 0 ? `<span class="report-changes">${changeCount} change${changeCount > 1 ? 's' : ''}</span>` : ''}
-                        <button class="report-delete" onclick="event.stopPropagation(); confirmDeleteReport('${report.id}')" title="Delete report">
+                        <button class="report-delete" onclick="event.stopPropagation(); confirmDeleteReport(decodeURIComponent('${reportIdParam}'))" title="Delete report">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -1039,7 +1051,7 @@ export function viewReport(reportId) {
             </div>
             <div class="posture-note">
                 Note: <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: ≥70%, B: 50%-70%, C: 30%-50%, D/F: <30%).
-                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || state.author || 'the Security Operations Team'}</strong>.
+                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${escapeHtml(report.author || state.author || 'the Security Operations Team')}</strong>.
             </div>
         </div>
     `;
@@ -1639,14 +1651,15 @@ export function buildNewQueriesSection(report) {
         const parents = assoc.filter(x => !x.isSub);
         const subs = assoc.filter(x => x.isSub);
         
+        const language = getSafeReportLanguage(q.language);
         const langColors = { 'KQL': '#0078d4', 'Splunk': '#01adef', 'Sigma': '#4caf50', 'Elastic': '#f04e23', 'Carbon Black': '#ff6b35' };
-        const langColor = langColors[q.language] || '#64748b';
+        const langColor = langColors[language.raw] || '#64748b';
         
         html += `
             <div class="new-query-card">
                 <div class="new-query-header">
                     <div class="new-query-header-badges">
-                        <span class="new-query-lang" style="background: ${langColor}20; color: ${langColor}; border-color: ${langColor}40;">${q.language}</span>
+                        <span class="new-query-lang" style="background: ${langColor}20; color: ${langColor}; border-color: ${langColor}40;">${language.label}</span>
                         ${q.sentinelCandidate ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.15rem 0.45rem;font-size:0.65rem;font-weight:600;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);border-radius:0.35rem;text-transform:uppercase;letter-spacing:0.02em;" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
                     </div>
                     <span class="new-query-date">${formatTimestamp(q.created)}</span>
@@ -2720,15 +2733,17 @@ export function buildTeamAssignmentsSection(report) {
                                 <i class="bi bi-robot"></i> Microsoft Sentinel Candidate Queue (${candidates.length})
                             </h6>
                             <div class="candidates-list" style="max-height: 200px; overflow-y: auto;">
-                                ${candidates.map(c => `
+                                ${candidates.map(c => {
+                                    const language = getSafeReportLanguage(c.language);
+                                    return `
                                     <div class="candidate-item" style="display: flex; justify-content: space-between; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                                         <div>
                                             <div style="font-size: 12px; font-weight: 500; color: var(--on-surface);">${escapeHtml(c.name)}</div>
                                             <div style="font-size: 10px; color: var(--on-surface-muted); margin-top: 2px;"><i>(View full details in Tier 4: New Queries)</i></div>
                                         </div>
-                                        <span class="query-lang-badge ${c.language.toLowerCase()}" style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--surface-subtle);">${c.language}</span>
+                                        <span class="query-lang-badge ${language.className}" style="font-size: 9px; padding: 2px 6px; border-radius: 4px; background: var(--surface-subtle);">${language.label}</span>
                                     </div>
-                                `).join('')}
+                                `}).join('')}
                             </div>
                         </div>
                     `;
@@ -4017,7 +4032,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             </table>
             <div style="margin-top: 14px; padding: 10px 14px; background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: #a2a6cc; text-align: center; line-height: 1.4; font-family: sans-serif;">
                 Note: <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
-                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || state.author || 'the Security Operations Team'}</strong>.
+                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${escapeHtml(report.author || state.author || 'the Security Operations Team')}</strong>.
             </div>
         </div>
     ` : `
@@ -4102,7 +4117,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             </table>
             <div style="margin-top: 14px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; font-size: 11px; color: #64748b; text-align: center; line-height: 1.4; font-family: sans-serif;">
                 Note: <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
-                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${report.author || state.author || 'the Security Operations Team'}</strong>.
+                For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${escapeHtml(report.author || state.author || 'the Security Operations Team')}</strong>.
             </div>
         </div>
     `;
@@ -4999,7 +5014,7 @@ function buildMarkdownTeamAssignments(report) {
             const candidates = getSentinelCandidatesForReport(report);
             if (candidates.length) {
                 md += `**Microsoft Sentinel Candidate Queue (${candidates.length}):**\n\n`;
-                md += candidates.map(c => `- ${c.name} (${c.language}) - see Tier 4: New Threat Hunt Queries for full details.`).join('\n') + '\n\n';
+                md += candidates.map(c => `- ${escapeMarkdownText(c.name)} (${escapeMarkdownText(c.language || 'Unknown')}) - see Tier 4: New Threat Hunt Queries for full details.`).join('\n') + '\n\n';
             }
         }
     });
@@ -5022,7 +5037,7 @@ function buildMarkdownActivitySummary(report) {
     md += `| Status/Coverage Changes | ${colorChanges.length} |\n\n`;
 
     const highlights = [...newTechniques.slice(0, 5).map(t => `${t.techniqueID} ${getTechniqueName(t.techniqueID) || ''}`), ...newHunts.slice(0, 5).map(h => `${h.techniqueID} ${h.query?.name || h.name || ''}`)];
-    if (highlights.length) md += highlights.map(item => `- ${item.trim()}`).join('\n') + '\n\n';
+    if (highlights.length) md += highlights.map(item => `- ${escapeMarkdownText(item)}`).join('\n') + '\n\n';
     return md;
 }
 
@@ -5075,11 +5090,11 @@ function buildMarkdownNewQueries(month) {
     if (!queries.length) return `### New Threat Hunt Queries\n\nNo new threat hunt queries were recorded for this period.\n\n`;
     let md = `### New Threat Hunt Queries\n\n`;
     queries.forEach(q => {
-        md += `#### [${q.techniqueID}] ${q.name || 'Unnamed Query'}\n\n`;
-        md += `**Language:** ${q.language || 'Unknown'}\n\n`;
-        if (q.description) md += `${q.description}\n\n`;
+        md += `#### [${escapeMarkdownText(q.techniqueID)}] ${escapeMarkdownText(q.name || 'Unnamed Query')}\n\n`;
+        md += `**Language:** ${escapeMarkdownText(q.language || 'Unknown')}\n\n`;
+        if (q.description) md += `${escapeMarkdownText(q.description)}\n\n`;
         const codeBlock = q.query || q.code || '';
-        if (codeBlock) md += `\`\`\`${(q.language || '').toLowerCase()}\n${codeBlock}\n\`\`\`\n\n`;
+        if (codeBlock) md += `\`\`\`${getMarkdownFenceLanguage(q.language)}\n${codeBlock}\n\`\`\`\n\n`;
     });
     return md;
 }
@@ -5153,7 +5168,16 @@ function formatTacticName(tactic) {
 }
 
 function escapeMarkdownText(value) {
-    return String(value || '').replace(/\r?\n/g, ' ').trim();
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\r?\n/g, ' ')
+        .trim();
+}
+
+function getMarkdownFenceLanguage(language) {
+    return String(language || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32);
 }
 
 function escapeMarkdownTableCell(value) {

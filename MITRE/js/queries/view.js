@@ -262,14 +262,19 @@ export function renderQueryCard(q) {
     const primaryTechName = primaryTech?.name || techIds[0];
     const modifiedStr = formatTimestamp(q.lastModified || q.created);
     const createdStr = formatTimestamp(q.created);
-    const techBadges = techIds.map(tid => `<span class="query-tech-ref">${tid}</span>`).join('');
+    const language = getSafeQueryLanguage(q.language);
+    const safeQueryId = escapeHtml(q.id);
+    const safeTechniqueId = escapeHtml(q.techniqueID);
+    const safeModifiedDate = escapeHtml(q.lastModified || q.created || '');
+    const techIdList = escapeHtml(techIds.join(', '));
+    const techBadges = techIds.map(tid => `<span class="query-tech-ref">${escapeHtml(tid)}</span>`).join('');
     const multiTechLabel = techIds.length > 1 ? `<span class="text-on-surface-tertiary text-xs">+${techIds.length - 1} more</span>` : `<span class="text-on-surface-tertiary text-xs">${escapeHtml(primaryTechName)}</span>`;
     
     if (queriesViewMode === 'list') {
         return `
-            <div class="query-card query-card-list ${q.archived ? 'query-card-archived' : ''}" data-query-id="${q.id}">
+            <div class="query-card query-card-list ${q.archived ? 'query-card-archived' : ''}" data-query-id="${safeQueryId}">
                 <div class="query-list-row">
-                    <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
+                    <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${safeTechniqueId}" data-query="${safeQueryId}" title="Toggle favorite">
                         <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
                     </button>
                     <div class="query-list-info">
@@ -278,22 +283,22 @@ export function renderQueryCard(q) {
                     </div>
                     <div class="query-list-badges">
                         ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
-                        <span class="query-lang-badge ${q.language}">${q.language}</span>
+                        <span class="query-lang-badge ${language.className}">${language.label}</span>
                     </div>
-                    <span class="query-list-id">${techIds.join(', ')}</span>
-                    <span class="query-list-modified" title="${q.lastModified || q.created}">${modifiedStr}</span>
+                    <span class="query-list-id">${techIdList}</span>
+                    <span class="query-list-modified" title="${safeModifiedDate}">${modifiedStr}</span>
                     <div class="query-list-actions">
-                        <button class="btn btn-ghost btn-sm btn-copy-query" data-query-id="${q.id}" title="Copy query">
+                        <button class="btn btn-ghost btn-sm btn-copy-query" data-query-id="${safeQueryId}" title="Copy query">
                             <i class="bi bi-clipboard"></i>
                         </button>
-                        <button class="btn btn-ghost btn-sm btn-edit-query" data-query-id="${q.id}" title="Edit">
+                        <button class="btn btn-ghost btn-sm btn-edit-query" data-query-id="${safeQueryId}" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
                         ${q.archived 
-                            ? `<button class="btn btn-ghost btn-sm btn-unarchive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Restore query"><i class="bi bi-arrow-counterclockwise"></i></button>`
-                            : `<button class="btn btn-ghost btn-sm btn-archive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Archive query"><i class="bi bi-archive"></i></button>`
+                            ? `<button class="btn btn-ghost btn-sm btn-unarchive-query" data-query-id="${safeQueryId}" data-tech="${safeTechniqueId}" title="Restore query"><i class="bi bi-arrow-counterclockwise"></i></button>`
+                            : `<button class="btn btn-ghost btn-sm btn-archive-query" data-query-id="${safeQueryId}" data-tech="${safeTechniqueId}" title="Archive query"><i class="bi bi-archive"></i></button>`
                         }
-                        <button class="btn btn-ghost btn-sm btn-delete-query" data-query-id="${q.id}" title="Delete">
+                        <button class="btn btn-ghost btn-sm btn-delete-query" data-query-id="${safeQueryId}" title="Delete">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -303,35 +308,35 @@ export function renderQueryCard(q) {
     }
     
     return `
-        <div class="query-card ${q.archived ? 'query-card-archived' : ''}" data-query-id="${q.id}">
+        <div class="query-card ${q.archived ? 'query-card-archived' : ''}" data-query-id="${safeQueryId}">
             <div class="query-card-header">
                 <div class="query-card-header-left">
-                    <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${q.techniqueID}" data-query="${q.id}" title="Toggle favorite">
+                    <button class="btn btn-sm btn-ghost query-fav-btn ${q.favorite ? 'query-fav-active' : ''}" data-tech="${safeTechniqueId}" data-query="${safeQueryId}" title="Toggle favorite">
                         <i class="bi bi-star${q.favorite ? '-fill' : ''}"></i>
                     </button>
                     <div>
                         <h6 class="query-card-title">${escapeHtml(q.name)}${q.archived ? '<span class="query-archived-badge" title="Archived"><i class="bi bi-archive"></i> Archived</span>' : ''}</h6>
                         <div class="query-header-badges">
                             ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
-                            <span class="query-lang-badge ${q.language}">${q.language}</span>
+                            <span class="query-lang-badge ${language.className}">${language.label}</span>
                         </div>
                     </div>
                 </div>
                 <div class="query-card-actions">
-                    <button class="btn btn-ghost btn-expand-query" data-query-id="${q.id}" title="Expand/Collapse">
+                    <button class="btn btn-ghost btn-expand-query" data-query-id="${safeQueryId}" title="Expand/Collapse">
                         <i class="bi bi-chevron-down"></i>
                     </button>
-                    <button class="btn btn-ghost btn-copy-query" data-query-id="${q.id}" title="Copy query">
+                    <button class="btn btn-ghost btn-copy-query" data-query-id="${safeQueryId}" title="Copy query">
                         <i class="bi bi-clipboard"></i>
                     </button>
-                    <button class="btn btn-ghost btn-edit-query" data-query-id="${q.id}" title="Edit">
+                    <button class="btn btn-ghost btn-edit-query" data-query-id="${safeQueryId}" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </button>
                     ${q.archived 
-                        ? `<button class="btn btn-ghost btn-unarchive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Restore query"><i class="bi bi-arrow-counterclockwise"></i></button>`
-                        : `<button class="btn btn-ghost btn-archive-query" data-query-id="${q.id}" data-tech="${q.techniqueID}" title="Archive query"><i class="bi bi-archive"></i></button>`
+                        ? `<button class="btn btn-ghost btn-unarchive-query" data-query-id="${safeQueryId}" data-tech="${safeTechniqueId}" title="Restore query"><i class="bi bi-arrow-counterclockwise"></i></button>`
+                        : `<button class="btn btn-ghost btn-archive-query" data-query-id="${safeQueryId}" data-tech="${safeTechniqueId}" title="Archive query"><i class="bi bi-archive"></i></button>`
                     }
-                    <button class="btn btn-ghost btn-delete-query" data-query-id="${q.id}" title="Delete">
+                    <button class="btn btn-ghost btn-delete-query" data-query-id="${safeQueryId}" title="Delete">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
@@ -357,6 +362,16 @@ export function renderQueryCard(q) {
             </div>
         </div>
     `;
+}
+
+function getSafeQueryLanguage(language) {
+    const raw = String(language || 'custom').slice(0, 32);
+    const className = raw.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const known = new Set(['splunk', 'kql', 'sigma', 'elastic', 'custom']);
+    return {
+        label: escapeHtml(raw),
+        className: known.has(className) ? className : 'custom'
+    };
 }
 
 export function bindQueriesToolbar() {

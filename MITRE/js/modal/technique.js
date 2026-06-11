@@ -1,6 +1,16 @@
 export let techNavHistory = [];
 export let currentTechId = null;
 
+function getSafeQueryLanguage(language) {
+    const raw = String(language || 'custom').slice(0, 32);
+    const className = raw.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const known = new Set(['splunk', 'kql', 'sigma', 'elastic', 'custom']);
+    return {
+        label: escapeHtml(raw),
+        className: known.has(className) ? className : 'custom'
+    };
+}
+
 export function showTechniqueModal(techniqueId, skipHistory = false) {
     const tech = state.techniques.find(t => t.external_references?.[0]?.external_id === techniqueId);
     if (!tech) return;
@@ -107,6 +117,7 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
     ` + (queries.length
         ? queries.map(q => {
             const modifiedStr = formatTimestamp(q.lastModified || q.created);
+            const language = getSafeQueryLanguage(q.language);
             return `
             <div class="tech-card query-card-item ${q.archived ? 'query-card-archived' : ''}">
                 <div class="tech-card-header">
@@ -118,7 +129,7 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
                     </div>
                     <div class="query-header-badges">
                         ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
-                        <span class="query-lang-badge ${q.language}">${q.language}</span>
+                        <span class="query-lang-badge ${language.className}">${language.label}</span>
                     </div>
                 </div>
                 ${q.archived && q.archiveReason ? `<div class="query-archive-reason"><i class="bi bi-info-circle"></i> ${escapeHtml(q.archiveReason)}</div>` : ''}
@@ -609,6 +620,7 @@ export function refreshTechniqueModalQueries() {
     ` + (queries.length
         ? queries.map(q => {
             const modifiedStr = formatTimestamp(q.lastModified || q.created);
+            const language = getSafeQueryLanguage(q.language);
             return `
             <div class="tech-card query-card-item ${q.archived ? 'query-card-archived' : ''}">
                 <div class="tech-card-header">
@@ -620,7 +632,7 @@ export function refreshTechniqueModalQueries() {
                     </div>
                     <div class="query-header-badges">
                         ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
-                        <span class="query-lang-badge ${q.language}">${q.language}</span>
+                        <span class="query-lang-badge ${language.className}">${language.label}</span>
                     </div>
                 </div>
                 ${q.archived && q.archiveReason ? `<div class="query-archive-reason"><i class="bi bi-info-circle"></i> ${escapeHtml(q.archiveReason)}</div>` : ''}
