@@ -204,7 +204,7 @@ export function renderReportsList(reports) {
                     <p>Track and analyze your MITRE ATT&CK detection coverage over time</p>
                 </div>
                 <div class="reports-actions">
-                    <button class="btn btn-outline-success" onclick="openThreatHuntReportModal()">
+                    <button class="btn btn-outline-success" data-report-action="open-threat-hunt">
                         <i class="bi bi-crosshair mr-2"></i>Threat Hunt Report
                     </button>
                 </div>
@@ -239,7 +239,7 @@ export function renderReportsList(reports) {
 
             <div class="month-selector-bar mb-4">
                 <label class="text-on-surface-tertiary text-sm mr-2">View by Month:</label>
-                <select class="form-select form-select-sm" style="width: auto; min-width: 200px;" onchange="renderMonthChangelog(this.value)">
+                <select class="form-select form-select-sm" style="width: auto; min-width: 200px;" data-report-action="month-changelog">
                     ${availableMonths.map(m => `<option value="${escapeHtml(m)}" ${m === selectedMonth ? 'selected' : ''}>${escapeHtml(getMonthLabel(m))}</option>`).join('')}
                 </select>
             </div>
@@ -259,9 +259,9 @@ export function renderReportsList(reports) {
         reports.forEach(report => {
             const changeCount = report.changes?.all?.length || 0;
             const typeClass = report.type === 'initial' ? 'initial' : 'update';
-            const reportIdParam = encodeURIComponent(report.id || '');
+            const safeReportId = escapeHtml(report.id || '');
             html += `
-                <div class="report-card" onclick="viewReport(decodeURIComponent('${reportIdParam}'))">
+                <div class="report-card" data-report-action="view-report" data-report-id="${safeReportId}" role="button" tabindex="0">
                     <span class="report-type-badge ${typeClass}">${escapeHtml(report.type || 'update')}</span>
                     <div class="report-info">
                         <div class="report-title">${escapeHtml(report.reportMonth || report.generatedDate || 'Untitled Report')}</div>
@@ -269,7 +269,7 @@ export function renderReportsList(reports) {
                     </div>
                     <div class="report-meta">
                         ${changeCount > 0 ? `<span class="report-changes">${changeCount} change${changeCount > 1 ? 's' : ''}</span>` : ''}
-                        <button class="report-delete" onclick="event.stopPropagation(); confirmDeleteReport(decodeURIComponent('${reportIdParam}'))" title="Delete report">
+                        <button class="report-delete" data-report-action="delete-report" data-report-id="${safeReportId}" title="Delete report" aria-label="Delete report">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -934,7 +934,6 @@ export function viewReport(reportId) {
     const currentMonth = getReportMonth(report);
     const reportMonthLabel = getReportMonthLabel(report);
     const currentTheme = report.bannerTheme || 'blue';
-    const reportIdArg = getInlineCallArg(report.id);
     const safeReportId = escapeHtml(report.id || '');
     const themeOptionsHtml = Object.entries(BANNER_THEMES).map(([key, t]) =>
         `<option value="${key}" ${key === currentTheme ? 'selected' : ''}>${t.label}</option>`
@@ -942,11 +941,11 @@ export function viewReport(reportId) {
     const monthSelectorHtml = `
         <div class="report-month-selector">
             <label class="text-on-surface-tertiary text-sm mr-2">Report Month:</label>
-            <select class="form-select form-select-sm" style="width: auto; min-width: 180px;" onchange="changeReportMonth(${reportIdArg}, this.value)">
+            <select class="form-select form-select-sm" style="width: auto; min-width: 180px;" data-report-action="change-month" data-report-id="${safeReportId}">
                 ${availableMonths.map(m => `<option value="${escapeHtml(m)}" ${m === currentMonth ? 'selected' : ''}>${escapeHtml(getMonthLabel(m))}</option>`).join('')}
             </select>
             <label class="text-on-surface-tertiary text-sm ml-3 mr-2">Banner Theme:</label>
-            <select class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="changeReportTheme(${reportIdArg}, this.value)">
+            <select class="form-select form-select-sm" style="width: auto; min-width: 140px;" data-report-action="change-theme" data-report-id="${safeReportId}">
                 ${themeOptionsHtml}
             </select>
         </div>
@@ -1073,7 +1072,7 @@ export function viewReport(reportId) {
                 ${report.layerName ? `<div class="report-date"><i class="bi bi-layers mr-1"></i>Layer: ${escapeHtml(report.layerName)}</div>` : ''}
                 <div class="report-date" style="display: inline-flex; align-items: center; gap: 4px;">
                     <i class="bi bi-person mr-1"></i>Prepared by: 
-                    <input type="text" class="report-author-input border-0 bg-transparent text-white fw-semibold px-1 py-0" style="outline: none; border-bottom: 1px dashed rgba(255, 255, 255, 0.3) !important; color: rgba(255, 255, 255, 0.85) !important; font-size: inherit; width: 180px;" value="${escapeHtml(report.author || state.author || '')}" onchange="updateReportField(${reportIdArg}, 'author', this.value)" placeholder="Enter author name...">
+                    <input type="text" class="report-author-input border-0 bg-transparent text-white fw-semibold px-1 py-0" style="outline: none; border-bottom: 1px dashed rgba(255, 255, 255, 0.3) !important; color: rgba(255, 255, 255, 0.85) !important; font-size: inherit; width: 180px;" value="${escapeHtml(report.author || state.author || '')}" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="author" placeholder="Enter author name...">
                 </div>
             </div>
 
@@ -1087,7 +1086,7 @@ export function viewReport(reportId) {
                 <div class="report-tier-content">
                     <div class="report-section">
                         <h4><i class="bi bi-journal-text"></i> Executive Summary</h4>
-                        <textarea rows="5" onchange="updateReportField(${reportIdArg}, 'executiveSummary', this.value)" placeholder="Provide a high-level overview of the threat hunting activities, key findings, and overall coverage status...">${escapeHtml(report.executiveSummary || generateDynamicExecutiveSummary(report))}</textarea>
+                        <textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="executiveSummary" placeholder="Provide a high-level overview of the threat hunting activities, key findings, and overall coverage status...">${escapeHtml(report.executiveSummary || generateDynamicExecutiveSummary(report))}</textarea>
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-bar-chart-line"></i> Key Metrics at a Glance</h4>
@@ -1122,7 +1121,7 @@ export function viewReport(reportId) {
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-bullseye"></i> Monthly Focus Areas</h4>
-                        <textarea rows="4" onchange="updateReportField(${reportIdArg}, 'monthlyFocus', this.value)" placeholder="Describe the key focus areas and objectives for this reporting period...">${escapeHtml(report.monthlyFocus || generateDynamicMonthlyFocus(report))}</textarea>
+                        <textarea rows="4" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="monthlyFocus" placeholder="Describe the key focus areas and objectives for this reporting period...">${escapeHtml(report.monthlyFocus || generateDynamicMonthlyFocus(report))}</textarea>
                     </div>
                 </div>
             </div>
@@ -1136,7 +1135,7 @@ export function viewReport(reportId) {
                     <div class="report-section">
                         <h4><i class="bi bi-lightbulb"></i> Strategic Recommendations</h4>
                         <p class="text-on-surface-secondary mb-3">Prioritized action items based on coverage gaps, threat relevance, and resource allocation. These recommendations are designed to maximize defensive impact with available resources.</p>
-                        <textarea rows="5" onchange="updateReportField(${reportIdArg}, 'recommendations', this.value)" placeholder="Outline strategic recommendations for improving detection coverage, prioritizing high-impact techniques, and allocating resources effectively...">${escapeHtml(report.recommendations || generateDynamicRecommendations(report))}</textarea>
+                        <textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="recommendations" placeholder="Outline strategic recommendations for improving detection coverage, prioritizing high-impact techniques, and allocating resources effectively...">${escapeHtml(report.recommendations || generateDynamicRecommendations(report))}</textarea>
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-people-fill"></i> Team Assignments & Focus Areas</h4>
@@ -1153,7 +1152,7 @@ export function viewReport(reportId) {
                     ${techniquesAtRiskHtml}
                     <div class="report-section">
                         <h4><i class="bi bi-graph-up"></i> Gap Analysis & Prioritization</h4>
-                        <textarea rows="5" onchange="updateReportField(${reportIdArg}, 'gapAnalysis', this.value)" placeholder="Identify coverage gaps, prioritize techniques based on threat relevance, and outline next steps for improving detection capabilities...">${escapeHtml(report.gapAnalysis || generateDynamicGapAnalysis(report))}</textarea>
+                        <textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="gapAnalysis" placeholder="Identify coverage gaps, prioritize techniques based on threat relevance, and outline next steps for improving detection capabilities...">${escapeHtml(report.gapAnalysis || generateDynamicGapAnalysis(report))}</textarea>
                     </div>
                     <div class="report-section">
                         <h4><i class="bi bi-grid-3x2"></i> Risk Heat Map</h4>
@@ -1250,28 +1249,28 @@ export function viewReport(reportId) {
             </div>
 
             <div class="report-actions">
-                <button class="btn btn-success" onclick="saveAndValidateReport(${reportIdArg})">
+                <button class="btn btn-success" data-report-action="save-validate" data-report-id="${safeReportId}">
                     <i class="bi bi-check-circle mr-2"></i>Save & Validate
                 </button>
-                <button class="btn btn-primary" onclick="exportReportPDF(${reportIdArg})">
+                <button class="btn btn-primary" data-report-action="export-pdf" data-report-id="${safeReportId}">
                     <i class="bi bi-file-earmark-pdf mr-2"></i>Export PDF
                 </button>
-                <button class="btn btn-primary" onclick="exportReportMarkdown(${reportIdArg})" style="background-color: var(--accent-purple); border-color: var(--accent-purple);">
+                <button class="btn btn-primary" data-report-action="export-markdown" data-report-id="${safeReportId}" style="background-color: var(--accent-purple); border-color: var(--accent-purple);">
                     <i class="bi bi-markdown mr-2"></i>Export Markdown
                 </button>
-                <button class="btn btn-outline-primary" onclick="exportReportEmail(${reportIdArg})">
+                <button class="btn btn-outline-primary" data-report-action="export-email" data-report-id="${safeReportId}">
                     <i class="bi bi-file-earmark-html mr-2"></i>Export HTML
                 </button>
-                <button class="btn btn-outline-secondary" onclick="copyReportHTML(${reportIdArg})" title="Copy report HTML to clipboard">
+                <button class="btn btn-outline-secondary" data-report-action="copy-html" data-report-id="${safeReportId}" title="Copy report HTML to clipboard">
                     <i class="bi bi-clipboard mr-2"></i>Copy HTML
                 </button>
-                <button class="btn btn-outline-info" onclick="exportReportEML(${reportIdArg})">
+                <button class="btn btn-outline-info" data-report-action="export-eml" data-report-id="${safeReportId}">
                     <i class="bi bi-envelope mr-2"></i>Export EML
                 </button>
-                <button class="btn btn-outline-secondary" onclick="exportReportSVG(${reportIdArg})">
+                <button class="btn btn-outline-secondary" data-report-action="export-svg" data-report-id="${safeReportId}">
                     <i class="bi bi-filetype-svg mr-2"></i>Export SVG
                 </button>
-                <button class="btn btn-outline-secondary" onclick="printReport()">
+                <button class="btn btn-outline-secondary" data-report-action="print">
                     <i class="bi bi-printer mr-2"></i>Print
                 </button>
             </div>
@@ -1318,7 +1317,7 @@ export function buildMonthlyChangelog(report) {
 export function buildMethodology(report) {
     const methodology = report.methodology || {};
     const scope = report.scope || {};
-    const reportIdArg = getInlineCallArg(report.id);
+    const safeReportId = escapeHtml(report.id || '');
     
     const methodologyOptions = [
         { id: 'sig-based', label: 'Signature-Based Detection', desc: 'Rule-based matching against known patterns' },
@@ -1346,7 +1345,7 @@ export function buildMethodology(report) {
         const checked = methodology[opt.id] ? 'checked' : '';
         html += `
             <div class="methodology-option">
-                <input type="checkbox" id="meth-${opt.id}" ${checked} onchange="updateMethodologyField(${reportIdArg}, 'methodology', '${opt.id}', this.checked)">
+                <input type="checkbox" id="meth-${opt.id}" ${checked} data-report-action="update-methodology" data-report-id="${safeReportId}" data-report-section="methodology" data-report-option="${escapeHtml(opt.id)}">
                 <label for="meth-${opt.id}">
                     <strong>${opt.label}</strong>
                     <span>${opt.desc}</span>
@@ -1361,7 +1360,7 @@ export function buildMethodology(report) {
         const checked = scope[opt.id] ? 'checked' : '';
         html += `
             <div class="methodology-option">
-                <input type="checkbox" id="scope-${opt.id}" ${checked} onchange="updateMethodologyField(${reportIdArg}, 'scope', '${opt.id}', this.checked)">
+                <input type="checkbox" id="scope-${opt.id}" ${checked} data-report-action="update-methodology" data-report-id="${safeReportId}" data-report-section="scope" data-report-option="${escapeHtml(opt.id)}">
                 <label for="scope-${opt.id}">
                     <strong>${opt.label}</strong>
                     <span>${opt.desc}</span>
@@ -1376,7 +1375,7 @@ export function buildMethodology(report) {
     html += `
         <div class="mt-3">
             <label class="form-label text-on-surface-tertiary text-sm">Additional Notes</label>
-            <textarea class="form-control" rows="2" onchange="updateReportField(${reportIdArg}, 'methodologyNotes', this.value)" placeholder="Any additional methodology notes...">${escapeHtml(report.methodologyNotes || '')}</textarea>
+            <textarea class="form-control" rows="2" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="methodologyNotes" placeholder="Any additional methodology notes...">${escapeHtml(report.methodologyNotes || '')}</textarea>
         </div>
     `;
     
@@ -2079,7 +2078,7 @@ export function buildCoverageChanges(report) {
 
 export function buildDetectionResults(report) {
     const results = report.detectionResults || [];
-    const reportIdArg = getInlineCallArg(report.id);
+    const safeReportId = escapeHtml(report.id || '');
     
     let html = '<div id="detection-results-container" class="detection-results-grid">';
     
@@ -2093,9 +2092,9 @@ export function buildDetectionResults(report) {
                 <div class="detection-result-card-header d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2 flex-grow-1 mr-3">
                         <i class="bi bi-crosshair text-primary fs-5"></i>
-                        <input type="text" class="form-control form-control-sm border-0 bg-transparent text-white fw-bold px-0 focus-ring-none" placeholder="Enter Hunt Name..." value="${escapeHtml(result.huntName || '')}" onchange="updateDetectionResult(${reportIdArg}, ${idx}, 'huntName', this.value)" style="box-shadow: none; font-size: 0.95rem;">
+                        <input type="text" class="form-control form-control-sm border-0 bg-transparent text-white fw-bold px-0 focus-ring-none" placeholder="Enter Hunt Name..." value="${escapeHtml(result.huntName || '')}" data-report-action="update-detection" data-report-id="${safeReportId}" data-report-index="${idx}" data-report-field="huntName" style="box-shadow: none; font-size: 0.95rem;">
                     </div>
-                    <button class="btn btn-sm btn-link text-danger p-0" onclick="removeDetectionResult(${reportIdArg}, ${idx})" title="Remove Result">
+                    <button class="btn btn-sm btn-link text-danger p-0" data-report-action="remove-detection" data-report-id="${safeReportId}" data-report-index="${idx}" title="Remove Result">
                         <i class="bi bi-trash3 fs-6"></i>
                     </button>
                 </div>
@@ -2104,12 +2103,12 @@ export function buildDetectionResults(report) {
                         <div class="col-md-4">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-ticket-perforated"></i></span>
-                                <input type="text" class="form-control border-start-0" placeholder="SIR Ticket (optional)" value="${escapeHtml(result.sirTicket || '')}" onchange="updateDetectionResult(${reportIdArg}, ${idx}, 'sirTicket', this.value)">
+                                <input type="text" class="form-control border-start-0" placeholder="SIR Ticket (optional)" value="${escapeHtml(result.sirTicket || '')}" data-report-action="update-detection" data-report-id="${safeReportId}" data-report-index="${idx}" data-report-field="sirTicket">
                             </div>
                         </div>
                         <div class="col-12 mt-2">
                             <label class="text-xs text-on-surface-tertiary font-semibold mb-1 d-block"><i class="bi bi-card-text mr-1"></i>Hunt Notes & Key Findings</label>
-                            <textarea class="form-control form-control-sm" rows="3" placeholder="Describe the outcome, detections triggered, log sources verified, or key observations..." onchange="updateDetectionResult(${reportIdArg}, ${idx}, 'notes', this.value)">${escapeHtml(result.notes || '')}</textarea>
+                            <textarea class="form-control form-control-sm" rows="3" placeholder="Describe the outcome, detections triggered, log sources verified, or key observations..." data-report-action="update-detection" data-report-id="${safeReportId}" data-report-index="${idx}" data-report-field="notes">${escapeHtml(result.notes || '')}</textarea>
                         </div>
                     </div>
                 </div>
@@ -2118,7 +2117,7 @@ export function buildDetectionResults(report) {
     });
     
     html += `
-        <button class="btn btn-sm btn-outline-primary w-100 py-2 border-dashed mt-2" onclick="addDetectionResult(${reportIdArg})">
+        <button class="btn btn-sm btn-outline-primary w-100 py-2 border-dashed mt-2" data-report-action="add-detection" data-report-id="${safeReportId}">
             <i class="bi bi-plus-lg mr-1"></i>Add Detection Result Card
         </button>
     </div>`;
@@ -2128,7 +2127,7 @@ export function buildDetectionResults(report) {
 
 export function buildReferences(report) {
     const references = report.references || [];
-    const reportIdArg = getInlineCallArg(report.id);
+    const safeReportId = escapeHtml(report.id || '');
     
     // Build dynamic sigma references
     const sigmaRefs = [];
@@ -2181,8 +2180,8 @@ export function buildReferences(report) {
         references.forEach((ref, idx) => {
             html += `
                 <div class="reference-item mb-2 d-flex align-iteml-center gap-2">
-                    <input type="text" class="form-control form-control-sm" placeholder="Reference URL or description" value="${escapeHtml(ref)}" onchange="updateReference(${reportIdArg}, ${idx}, this.value)">
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeReference(${reportIdArg}, ${idx})">
+                    <input type="text" class="form-control form-control-sm" placeholder="Reference URL or description" value="${escapeHtml(ref)}" data-report-action="update-reference" data-report-id="${safeReportId}" data-report-index="${idx}">
+                    <button class="btn btn-sm btn-outline-danger" data-report-action="remove-reference" data-report-id="${safeReportId}" data-report-index="${idx}">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
@@ -2191,7 +2190,7 @@ export function buildReferences(report) {
     }
     
     html += `
-        <button class="btn btn-sm btn-outline-primary mt-2" onclick="addReference(${reportIdArg})">
+        <button class="btn btn-sm btn-outline-primary mt-2" data-report-action="add-reference" data-report-id="${safeReportId}">
             <i class="bi bi-plus mr-1"></i>Add Custom Reference
         </button>
     </div>`;
@@ -2201,24 +2200,24 @@ export function buildReferences(report) {
 
 export function buildAppendix(report) {
     const appendix = mergeAppendixDefaults(generateDynamicAppendix(report), report.appendix);
-    const reportIdArg = getInlineCallArg(report.id);
+    const safeReportId = escapeHtml(report.id || '');
     
     return `
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Methodology</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField(${reportIdArg}, 'methodology', this.value)" placeholder="Describe the methodology used for this assessment...">${escapeHtml(appendix.methodology)}</textarea>
+            <textarea class="form-control" rows="3" data-report-action="update-appendix" data-report-id="${safeReportId}" data-report-field="methodology" placeholder="Describe the methodology used for this assessment...">${escapeHtml(appendix.methodology)}</textarea>
         </div>
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Scope</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField(${reportIdArg}, 'scope', this.value)" placeholder="Define the scope of this assessment...">${escapeHtml(appendix.scope)}</textarea>
+            <textarea class="form-control" rows="3" data-report-action="update-appendix" data-report-id="${safeReportId}" data-report-field="scope" placeholder="Define the scope of this assessment...">${escapeHtml(appendix.scope)}</textarea>
         </div>
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Limitations</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField(${reportIdArg}, 'limitations', this.value)" placeholder="Document any limitations or constraints...">${escapeHtml(appendix.limitations)}</textarea>
+            <textarea class="form-control" rows="3" data-report-action="update-appendix" data-report-id="${safeReportId}" data-report-field="limitations" placeholder="Document any limitations or constraints...">${escapeHtml(appendix.limitations)}</textarea>
         </div>
         <div class="mb-3">
             <label class="form-label text-on-surface-tertiary text-sm">Additional Notes</label>
-            <textarea class="form-control" rows="3" onchange="updateAppendixField(${reportIdArg}, 'additionalNotes', this.value)" placeholder="Any additional notes or context...">${escapeHtml(appendix.additionalNotes)}</textarea>
+            <textarea class="form-control" rows="3" data-report-action="update-appendix" data-report-id="${safeReportId}" data-report-field="additionalNotes" placeholder="Any additional notes or context...">${escapeHtml(appendix.additionalNotes)}</textarea>
         </div>
     `;
 }
@@ -2710,14 +2709,14 @@ function buildSentinelCandidatesExport(report, isDark = false) {
 
 export function buildTeamAssignmentsSection(report) {
     const assignedTeams = report.teamAssignments || [];
-    const reportIdArg = getInlineCallArg(report.id);
+    const safeReportId = escapeHtml(report.id || '');
     
     let html = `
         <div class="team-assignments-wrapper">
             <div class="team-assignments-header">
                 <div class="team-select-wrapper">
                     <label class="team-select-label">Assign Teams:</label>
-                    <select class="team-select" id="team-assignment-select" onchange="addTeamAssignment(${reportIdArg}, this.value); this.value='';">
+                    <select class="team-select" id="team-assignment-select" data-report-action="add-team" data-report-id="${safeReportId}">
                         <option value="">Select a team to assign...</option>
                         ${TEAM_OPTIONS.map(t => `<option value="${t.id}">${t.label}</option>`).join('')}
                     </select>
@@ -2774,7 +2773,7 @@ export function buildTeamAssignmentsSection(report) {
                             <i class="bi ${team.icon}" style="color: ${team.color};"></i>
                             <span>${team.label}</span>
                         </div>
-                        <button class="team-remove-btn" onclick="removeTeamAssignment(${reportIdArg}, ${getInlineCallArg(teamId)})" title="Remove team">
+                        <button class="team-remove-btn" data-report-action="remove-team" data-report-id="${safeReportId}" data-team-id="${escapeHtml(teamId)}" title="Remove team">
                             <i class="bi bi-x-lg"></i>
                         </button>
                     </div>
@@ -5207,5 +5206,123 @@ function getMarkdownFenceLanguage(language) {
 function escapeMarkdownTableCell(value) {
     return String(value || '').replace(/\|/g, '\\|').replace(/\r?\n/g, '<br>');
 }
+
+function handleReportAction(action, el, event) {
+    const reportId = el.dataset.reportId;
+    const index = Number(el.dataset.reportIndex);
+    switch (action) {
+        case 'open-threat-hunt':
+            openThreatHuntReportModal();
+            break;
+        case 'month-changelog':
+            renderMonthChangelog(el.value);
+            break;
+        case 'view-report':
+            viewReport(reportId);
+            break;
+        case 'delete-report':
+            event?.stopPropagation();
+            confirmDeleteReport(reportId);
+            break;
+        case 'change-month':
+            changeReportMonth(reportId, el.value);
+            break;
+        case 'change-theme':
+            changeReportTheme(reportId, el.value);
+            break;
+        case 'update-field':
+            updateReportField(reportId, el.dataset.reportField, el.value);
+            break;
+        case 'save-validate':
+            saveAndValidateReport(reportId);
+            break;
+        case 'export-pdf':
+            exportReportPDF(reportId);
+            break;
+        case 'export-markdown':
+            exportReportMarkdown(reportId);
+            break;
+        case 'export-email':
+            exportReportEmail(reportId);
+            break;
+        case 'copy-html':
+            copyReportHTML(reportId);
+            break;
+        case 'export-eml':
+            exportReportEML(reportId);
+            break;
+        case 'export-svg':
+            exportReportSVG(reportId);
+            break;
+        case 'print':
+            printReport();
+            break;
+        case 'update-methodology':
+            updateMethodologyField(reportId, el.dataset.reportSection, el.dataset.reportOption, el.checked);
+            break;
+        case 'update-detection':
+            updateDetectionResult(reportId, index, el.dataset.reportField, el.value);
+            break;
+        case 'remove-detection':
+            removeDetectionResult(reportId, index);
+            break;
+        case 'add-detection':
+            addDetectionResult(reportId);
+            break;
+        case 'update-reference':
+            updateReference(reportId, index, el.value);
+            break;
+        case 'remove-reference':
+            removeReference(reportId, index);
+            break;
+        case 'add-reference':
+            addReference(reportId);
+            break;
+        case 'update-appendix':
+            updateAppendixField(reportId, el.dataset.reportField, el.value);
+            break;
+        case 'add-team':
+            addTeamAssignment(reportId, el.value);
+            el.value = '';
+            break;
+        case 'remove-team':
+            removeTeamAssignment(reportId, el.dataset.teamId);
+            break;
+        case 'set-view-mode':
+            window.setReportsViewMode?.(el.dataset.reportMode || 'cards');
+            break;
+        case 'delete-all-reports':
+            window.confirmDeleteAllReports?.();
+            break;
+        case 'create-report':
+            window.createNewReport?.();
+            break;
+        case 'generate-report-wizard':
+            window.generateReportFromWizard?.();
+            break;
+    }
+}
+
+document.addEventListener('click', (event) => {
+    const el = event.target.closest('[data-report-action]');
+    if (!el) return;
+    const action = el.dataset.reportAction;
+    if (['update-field', 'month-changelog', 'change-month', 'change-theme', 'update-methodology', 'update-detection', 'update-reference', 'update-appendix', 'add-team'].includes(action)) return;
+    handleReportAction(action, el, event);
+});
+
+document.addEventListener('change', (event) => {
+    const el = event.target.closest('[data-report-action]');
+    if (!el) return;
+    handleReportAction(el.dataset.reportAction, el, event);
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const el = event.target.closest('[data-report-action="view-report"]');
+    if (!el) return;
+    event.preventDefault();
+    handleReportAction('view-report', el, event);
+});
 
 window.exportReportMarkdown = exportReportMarkdown;

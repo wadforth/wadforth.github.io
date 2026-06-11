@@ -459,10 +459,10 @@
                         <button class="btn btn-sm btn-outline-primary" id="btn-load-live-sigma" style="margin-right: 8px;">
                             <i class="bi bi-github mr-1"></i> Connect Live (3,000+ Rules)
                         </button>
-                        <button class="btn btn-sm btn-outline-info" id="btn-hydrate-all-sigma" style="margin-right: 8px;" onclick="manualHydrateAll()">
+                        <button class="btn btn-sm btn-outline-info" id="btn-hydrate-all-sigma" style="margin-right: 8px;" data-sigma-action="hydrate-all">
                             <i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate & Index All
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary" id="btn-toggle-candidates" style="margin-right: 8px;" onclick="toggleCandidatesView()">
+                        <button class="btn btn-sm btn-outline-secondary" id="btn-toggle-candidates" style="margin-right: 8px;" data-sigma-action="toggle-candidates">
                             <i class="bi bi-bookmark-star"></i> Candidates <span id="candidates-count-badge" class="badge-candidates">0</span>
                         </button>
                         <span id="sigma-autosync-countdown" class="sigma-autosync-countdown hidden" style="font-size: 0.72rem; color: var(--on-surface-tertiary); display: inline-flex; align-items: center; gap: 0.3rem;">
@@ -535,10 +535,10 @@
                             <p class="candidates-subtitle">Rules you've marked for future deployment. Click the bookmark icon on any rule card to add or remove it from your candidate list.</p>
                         </div>
                         <div class="candidates-actions">
-                            <button class="btn btn-sm btn-outline-primary" onclick="exportCandidatesList()">
+                            <button class="btn btn-sm btn-outline-primary" data-sigma-action="export-candidates">
                                 <i class="bi bi-download"></i> Export List
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="clearAllCandidates()">
+                            <button class="btn btn-sm btn-outline-danger" data-sigma-action="clear-candidates">
                                 <i class="bi bi-trash"></i> Clear All
                             </button>
                         </div>

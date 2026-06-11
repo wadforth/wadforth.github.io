@@ -1111,7 +1111,7 @@ function populateDynamicFilters(rules) {
             const checked = selectedSigmaProduct.includes(p) ? 'checked' : '';
             html += `
                 <label class="sigma-multi-select-option" role="option" aria-selected="${checked ? 'true' : 'false'}">
-                    <input type="checkbox" value="${escapeHtml(p)}" ${checked} onchange="toggleSigmaMultiFilter('product', this.value, this.checked)">
+                    <input type="checkbox" value="${escapeHtml(p)}" ${checked} data-sigma-action="toggle-filter" data-filter-type="product">
                     ${escapeHtml(p)}
                 </label>
             `;
@@ -1128,7 +1128,7 @@ function populateDynamicFilters(rules) {
             const checked = selectedSigmaLogsource.includes(s) ? 'checked' : '';
             html += `
                 <label class="sigma-multi-select-option" role="option" aria-selected="${checked ? 'true' : 'false'}">
-                    <input type="checkbox" value="${escapeHtml(s)}" ${checked} onchange="toggleSigmaMultiFilter('logsource', this.value, this.checked)">
+                    <input type="checkbox" value="${escapeHtml(s)}" ${checked} data-sigma-action="toggle-filter" data-filter-type="logsource">
                     ${escapeHtml(s)}
                 </label>
             `;
@@ -1431,7 +1431,7 @@ export function renderSigmaList() {
     if (currentVisibleCount < groupedData.length) {
         html += `
             <div class="text-center mt-4 mb-6">
-                <button onclick="loadMoreSigmaRules()" class="btn btn-outline-primary btn-sm px-4 rounded-pill" style="border-color: rgba(168,85,247,0.4); color: #a855f7;">
+                <button data-sigma-action="load-more" class="btn btn-outline-primary btn-sm px-4 rounded-pill" style="border-color: rgba(168,85,247,0.4); color: #a855f7;">
                     <i class="bi bi-arrow-down-circle me-1"></i> Load More Rules... (${groupedData.length - currentVisibleCount} remaining)
                 </button>
             </div>
@@ -1503,7 +1503,7 @@ export function renderSigmaCard(rule, idx) {
                 <div class="sigma-card-header-right">
                     ${coverage === 'active' ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active</span>' : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Gap</span>'}
                     ${level ? `<span class="sigma-card-level level-${safeClassToken(level)}">${escapeHtml(level)}</span>` : ''}
-                    <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" onclick="event.stopPropagation(); toggleRuleCandidateById(this.closest('.sigma-card')?.dataset.ruleId)" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}" aria-label="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
+                    <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" data-sigma-action="toggle-candidate" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}" aria-label="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
                         <i class="bi ${isCandidate ? 'bi-bookmark-fill' : 'bi-bookmark'}"></i>
                     </button>
                 </div>
@@ -2066,12 +2066,11 @@ export function renderCandidatesList() {
     let html = '<div class="candidates-grid">';
     sigmaCandidates.forEach(c => {
         const severityClass = c.severity ? `severity-${safeClassToken(c.severity)}` : '';
-        const candidateIdArg = getInlineCallArg(c.id);
         html += `
             <div class="candidate-card" data-candidate-id="${escapeHtml(c.id)}">
                 <div class="candidate-card-header">
                     <span class="candidate-severity ${severityClass}">${escapeHtml(c.severity || 'N/A')}</span>
-                    <button class="candidate-remove-btn" onclick="removeCandidate(${candidateIdArg})" data-tooltip="Remove from candidates" aria-label="Remove candidate">
+                    <button class="candidate-remove-btn" data-sigma-action="remove-candidate" data-candidate-id="${escapeHtml(c.id)}" data-tooltip="Remove from candidates" aria-label="Remove candidate">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
@@ -2081,10 +2080,10 @@ export function renderCandidatesList() {
                     <span class="candidate-date">Added: ${formatCandidateDate(c.addedAt)}</span>
                 </div>
                 <div class="candidate-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="deployCandidate(${candidateIdArg})">
+                    <button class="btn btn-sm btn-outline-primary" data-sigma-action="deploy-candidate" data-candidate-id="${escapeHtml(c.id)}">
                         <i class="bi bi-play-fill"></i> Deploy
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="viewCandidateDetails(${candidateIdArg})">
+                    <button class="btn btn-sm btn-outline-secondary" data-sigma-action="view-candidate" data-candidate-id="${escapeHtml(c.id)}">
                         <i class="bi bi-eye"></i> View
                     </button>
                 </div>
@@ -2204,10 +2203,54 @@ export function formatCandidateDate(isoStr) {
 // Initialize candidates on module load
 loadCandidates();
 
-// ES Module exports for dynamic import() code splitting
-// Expose sigmaRules globally for onclick handlers in rendered HTML
-window.sigmaRules = sigmaRules;
-window.manualHydrateAll = manualHydrateAll;
+function handleSigmaAction(action, el, event) {
+    switch (action) {
+        case 'hydrate-all':
+            manualHydrateAll();
+            break;
+        case 'toggle-candidates':
+            toggleCandidatesView();
+            break;
+        case 'export-candidates':
+            exportCandidatesList();
+            break;
+        case 'clear-candidates':
+            clearAllCandidates();
+            break;
+        case 'toggle-filter':
+            window.toggleSigmaMultiFilter(el.dataset.filterType, el.value, el.checked);
+            break;
+        case 'load-more':
+            loadMoreSigmaRules();
+            break;
+        case 'toggle-candidate':
+            event?.stopPropagation();
+            toggleRuleCandidateById(el.closest('.sigma-card')?.dataset.ruleId);
+            break;
+        case 'remove-candidate':
+            removeCandidate(el.dataset.candidateId);
+            break;
+        case 'deploy-candidate':
+            deployCandidate(el.dataset.candidateId);
+            break;
+        case 'view-candidate':
+            viewCandidateDetails(el.dataset.candidateId);
+            break;
+    }
+}
+
+document.addEventListener('click', (event) => {
+    const el = event.target.closest('[data-sigma-action]');
+    if (!el) return;
+    if (el.dataset.sigmaAction === 'toggle-filter') return;
+    handleSigmaAction(el.dataset.sigmaAction, el, event);
+});
+
+document.addEventListener('change', (event) => {
+    const el = event.target.closest('[data-sigma-action="toggle-filter"]');
+    if (!el) return;
+    handleSigmaAction('toggle-filter', el, event);
+});
 
 // Legacy Window Bindings
 window.sigmaRules = sigmaRules;

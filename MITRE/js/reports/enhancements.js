@@ -28,7 +28,7 @@ export function getChangeCount(report) {
 export function renderReportPreviewCard(report) {
     const coverageData = calculateReportCoverage(report);
     const trendData = calculateCoverageTrend(report);
-    const reportIdArg = getInlineCallArg(report.id);
+    const safeReportId = escapeHtml(report.id || '');
     const safeType = safeClassToken(report.type || 'initial');
     
     return `
@@ -38,10 +38,10 @@ export function renderReportPreviewCard(report) {
                     <span class="report-type-badge ${safeType}">${escapeHtml(report.type || 'Initial')}</span>
                 </div>
                 <div class="report-preview-actions">
-                    <button class="btn btn-ghost btn-sm" onclick="viewReport(${reportIdArg})" data-tooltip="View Report" aria-label="View report">
+                    <button class="btn btn-ghost btn-sm" data-report-action="view-report" data-report-id="${safeReportId}" data-tooltip="View Report" aria-label="View report">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-ghost btn-sm" onclick="exportReportPDF(${reportIdArg})" data-tooltip="Export" aria-label="Export report">
+                    <button class="btn btn-ghost btn-sm" data-report-action="export-pdf" data-report-id="${safeReportId}" data-tooltip="Export" aria-label="Export report">
                         <i class="bi bi-download"></i>
                     </button>
                 </div>
@@ -173,7 +173,7 @@ export function renderReportsTimeline(reports) {
     sorted.forEach((report, index) => {
         const isFirst = index === 0;
         const isLast = index === sorted.length - 1;
-        const reportIdArg = getInlineCallArg(report.id);
+        const safeReportId = escapeHtml(report.id || '');
         const safeType = safeClassToken(report.type || 'initial');
         
         html += `
@@ -181,7 +181,7 @@ export function renderReportsTimeline(reports) {
                 <div class="timeline-marker ${isFirst ? 'timeline-marker-first' : ''}"></div>
                 <div class="timeline-content">
                     <div class="timeline-date">${formatTimestamp(report.generatedAt)}</div>
-                    <div class="timeline-card report-preview-card card-hover-lift" onclick="viewReport(${reportIdArg})">
+                    <div class="timeline-card report-preview-card card-hover-lift" data-report-action="view-report" data-report-id="${safeReportId}" role="button" tabindex="0">
                         <div class="timeline-card-header">
                             <span class="report-type-badge ${safeType}">${escapeHtml(report.type || 'Initial')}</span>
                             <h6 class="timeline-title">${escapeHtml(report.title || 'Untitled Report')}</h6>
@@ -452,21 +452,21 @@ export function renderReportsListEnhanced(reports) {
                 <div class="reports-actions">
                     ${reports && reports.length > 0 ? `
                     <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'cards' ? 'active' : ''}" onclick="setReportsViewMode('cards')" data-tooltip="Card View">
+                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'cards' ? 'active' : ''}" data-report-action="set-view-mode" data-report-mode="cards" data-tooltip="Card View">
                             <i class="bi bi-grid"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'list' ? 'active' : ''}" onclick="setReportsViewMode('list')" data-tooltip="List View">
+                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'list' ? 'active' : ''}" data-report-action="set-view-mode" data-report-mode="list" data-tooltip="List View">
                             <i class="bi bi-list-ul"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'timeline' ? 'active' : ''}" onclick="setReportsViewMode('timeline')" data-tooltip="Timeline View">
+                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'timeline' ? 'active' : ''}" data-report-action="set-view-mode" data-report-mode="timeline" data-tooltip="Timeline View">
                             <i class="bi bi-calendar3"></i>
                         </button>
                     </div>
-                    <button class="btn btn-outline-danger" onclick="confirmDeleteAllReports()">
+                    <button class="btn btn-outline-danger" data-report-action="delete-all-reports">
                         <i class="bi bi-trash-fill"></i> Delete All
                     </button>
                     ` : ''}
-                    <button class="btn btn-primary" onclick="createNewReport()">
+                    <button class="btn btn-primary" data-report-action="create-report">
                         <i class="bi bi-plus-lg"></i> New Report
                     </button>
                 </div>
@@ -501,7 +501,7 @@ export function renderReportsListEnhanced(reports) {
                 <i class="bi bi-file-earmark-text"></i>
                 <h5>No reports yet</h5>
                 <p>Create your first report to get started</p>
-                <button class="btn btn-primary" onclick="createNewReport()">
+                <button class="btn btn-primary" data-report-action="create-report">
                     <i class="bi bi-plus-lg"></i> Create Report
                 </button>
             </div>
@@ -541,10 +541,10 @@ export function renderReportStats(reports) {
 }
 
 export function renderReportListItem(report) {
-    const reportIdArg = getInlineCallArg(report.id);
+    const safeReportId = escapeHtml(report.id || '');
     const safeType = safeClassToken(report.type || 'initial');
     return `
-        <div class="report-card" onclick="viewReport(${reportIdArg})">
+        <div class="report-card" data-report-action="view-report" data-report-id="${safeReportId}" role="button" tabindex="0">
             <span class="report-type-badge ${safeType}">${escapeHtml(report.type || 'Initial')}</span>
             <div class="report-info">
                 <h6 class="report-title">${escapeHtml(report.title || 'Untitled Report')}</h6>
@@ -555,7 +555,7 @@ export function renderReportListItem(report) {
                 ${report.layerName ? `<span class="report-layer text-sm text-primary" style="margin-right: 8px;"><i class="bi bi-layers"></i> ${escapeHtml(report.layerName)}</span>` : ''}
                 ${getChangeCount(report) > 0 ? `<span class="report-changes">${getChangeCount(report)} changes</span>` : ''}
             </div>
-            <button class="report-delete" onclick="event.stopPropagation(); confirmDeleteReport(${reportIdArg})" data-tooltip="Delete" aria-label="Delete report">
+            <button class="report-delete" data-report-action="delete-report" data-report-id="${safeReportId}" data-tooltip="Delete" aria-label="Delete report">
                 <i class="bi bi-trash"></i>
             </button>
         </div>
@@ -636,7 +636,7 @@ export function openReportPreviewWizardModal() {
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="generateReportFromWizard()">
+                        <button type="button" class="btn btn-primary" data-report-action="generate-report-wizard">
                             <i class="bi bi-file-earmark-plus mr-1"></i>Generate Full Report
                         </button>
                     </div>
