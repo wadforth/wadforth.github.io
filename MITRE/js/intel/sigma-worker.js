@@ -112,7 +112,7 @@ export function handleParseYAML(rule) {
 }
 
 export function handleFilterAndSort({ requestId, filters, coverageMap, sort }) {
-    const { searchQuery, logsource, tactic, level, coverage, product, date } = filters;
+    const { searchQuery, logsource, tactic, level, coverage, product, date, change } = filters;
     const recentCutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
     
     let filtered = sigmaRulesCache.filter(rule => {
@@ -154,8 +154,10 @@ export function handleFilterAndSort({ requestId, filters, coverageMap, sort }) {
         if (date === 'new') {
             matchDate = (rule.detectedType === 'new' || rule.detectedType === 'modified') && (rule.detectedAt || 0) >= recentCutoff;
         }
-        
-        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate;
+
+        const matchChange = !change || change === 'all' || rule.releaseAction === change;
+
+        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate && matchChange;
     });
     
     // Apply sorting
@@ -199,10 +201,11 @@ export function parseSigmaDate(dateStr) {
 }
 
 export function getEffectiveDate(rule) {
+    const releaseDate = rule.releasePublishedAt ? Date.parse(rule.releasePublishedAt) : 0;
+    if (releaseDate > 0) return releaseDate;
     const modified = rule.ruleModified ? parseSigmaDate(rule.ruleModified) : 0;
     const created = rule.ruleDate ? parseSigmaDate(rule.ruleDate) : 0;
     const latest = Math.max(modified, created);
     if (latest > 0) return latest;
     return 0;
 }
-

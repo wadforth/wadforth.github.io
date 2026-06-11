@@ -638,6 +638,24 @@
     border: 1px solid rgba(56, 189, 248, 0.2);
 }
 
+.sigma-card-status-badge.badge-update {
+    background: rgba(56, 189, 248, 0.1);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+.sigma-card-status-badge.badge-fix {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+.sigma-card-status-badge.badge-remove {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
 .sigma-card-status-badge i {
     font-size: 0.6rem;
 }
@@ -831,6 +849,88 @@
     font-size: 0.85rem;
     color: var(--on-surface-secondary);
     line-height: 1.65;
+}
+
+.sigma-release-note-card,
+.sigma-linked-query-card {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: rgba(15, 23, 42, 0.25);
+}
+
+.sigma-release-note-header,
+.sigma-linked-query-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.45rem;
+    color: var(--on-surface);
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sigma-release-note-body {
+    color: var(--on-surface-secondary);
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+.sigma-release-note-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.55rem;
+    color: var(--primary);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.sigma-linked-query-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.sigma-linked-query-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    align-items: center;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.035);
+    font-size: 0.78rem;
+}
+
+.sigma-linked-query-tech,
+.sigma-linked-query-lang {
+    color: var(--primary);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.sigma-linked-query-name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--on-surface);
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sigma-linked-query-empty {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--on-surface-tertiary);
+    font-size: 0.8rem;
 }
 
 /* Monospace YAML Code Previewer */
@@ -1063,6 +1163,55 @@
     padding: 0.15rem 0.5rem;
     border-radius: var(--radius-pill);
     font-weight: 500;
+}
+
+.sigma-date-action-summary {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-left: 0.35rem;
+}
+
+.sigma-date-action-count {
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--on-surface-tertiary);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    text-transform: uppercase;
+}
+
+.sigma-date-action-count.badge-new {
+    color: #a78bfa;
+    border-color: rgba(168, 85, 247, 0.22);
+}
+
+.sigma-date-action-count.badge-update {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.22);
+}
+
+.sigma-date-action-count.badge-fix {
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.22);
+}
+
+[data-theme="light"] .sigma-release-note-card,
+[data-theme="light"] .sigma-linked-query-card {
+    background: rgba(248, 250, 252, 0.92);
+    border-color: rgba(15, 23, 42, 0.1);
+}
+
+[data-theme="light"] .sigma-linked-query-item {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .sigma-date-action-count {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.1);
 }
 
 .sigma-date-group-cards {

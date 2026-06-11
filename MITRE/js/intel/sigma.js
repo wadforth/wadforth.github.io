@@ -25,7 +25,9 @@ export let selectedSigmaCoverage = "all";
 export let selectedSigmaProduct = [];
 export let selectedSigmaSort = "default";
 export let selectedSigmaDate = "all";
+export let selectedSigmaChange = "all";
 export let isLiveSigmaConnected = false;
+export let sigmaReleaseActionIndex = null;
 
 export const SIGMA_PAGINATION_CHUNK = 20;
 export let currentVisibleCount = 20;
@@ -138,6 +140,7 @@ export async function initSigmaModule() {
         // 1. Try to restore from IndexedDB cache first
         const cachedRules = await idbGetAll('rules');
         const lastSync = await idbGetMeta('lastSyncTimestamp');
+        const cachedReleaseIndex = await idbGetMeta('sigmaReleaseActionIndex');
 
         // Purge any old offline baseline rules from cache
         const cleanRules = (cachedRules || []).filter(r => !r.isOfflineBaseline);
@@ -149,6 +152,8 @@ export async function initSigmaModule() {
         if (cleanRules && cleanRules.length > 100) {
             // We have a substantial cache — restore it instantly
             sigmaRules = cleanRules;
+            sigmaReleaseActionIndex = cachedReleaseIndex || null;
+            applySigmaReleaseActions(sigmaRules);
             window.sigmaRules = sigmaRules;
             isLiveSigmaConnected = true;
             console.log(`Restored ${sigmaRules.length} Sigma rules from IndexedDB cache.`);
@@ -213,6 +218,113 @@ export function updateWorkerRule(rule) {
             payload: { rule }
         });
     }
+}
+
+export function normalizeSigmaTitle(value) {
+    return String(value || '')
+        .toLowerCase()
+        .replace(/[`*_~]/g, '')
+        .replace(/\s+/g, ' ')
+        .replace(/[\u2013\u2014]/g, '-')
+        .trim();
+}
+
+export function getSigmaReleaseActionConfig(action) {
+    const map = {
+        new: { label: 'New', icon: 'bi-stars', className: 'badge-new' },
+        update: { label: 'Updated', icon: 'bi-arrow-repeat', className: 'badge-update' },
+        fix: { label: 'Fixed', icon: 'bi-wrench-adjustable', className: 'badge-fix' },
+        remove: { label: 'Removed', icon: 'bi-archive', className: 'badge-remove' }
+    };
+    return map[action] || null;
+}
+
+export function parseSigmaReleaseActions(releases) {
+    const byTitle = {};
+    const removed = [];
+    const actionFromHeading = (line) => {
+        const lower = line.toLowerCase();
+        if (/new rules?/.test(lower)) return 'new';
+        if (/updated rules?/.test(lower)) return 'update';
+        if (/fixed rules?/.test(lower)) return 'fix';
+        if (/removed|deprecated/.test(lower)) return 'remove';
+        return null;
+    };
+
+    for (const release of releases || []) {
+        let currentAction = null;
+        const body = String(release.body || '');
+        for (const rawLine of body.split('\n')) {
+            const line = rawLine.trim();
+            if (!line) continue;
+
+            const headingAction = actionFromHeading(line.replace(/^#+\s*/, ''));
+            if (headingAction) {
+                currentAction = headingAction;
+                continue;
+            }
+
+            const bullet = line.match(/^[-*+]\s+(?:(new|update|updated|fix|fixed|remove|removed|deprecated)\s*:\s*)?(.*)$/i);
+            if (!bullet) continue;
+
+            const explicitActionRaw = bullet[1]?.toLowerCase();
+            const explicitActionMap = { updated: 'update', fixed: 'fix', removed: 'remove', deprecated: 'remove' };
+            const explicitAction = explicitActionMap[explicitActionRaw] || explicitActionRaw;
+            const action = explicitAction || currentAction;
+            if (!['new', 'update', 'fix', 'remove'].includes(action)) continue;
+
+            const text = bullet[2].trim();
+            if (!text) continue;
+            const parts = text.split(/\s+-\s+/);
+            const title = parts.shift()?.trim();
+            if (!title) continue;
+
+            const entry = {
+                action,
+                title,
+                note: parts.join(' - ').trim(),
+                releaseName: release.name || release.tag_name || '',
+                releasePublishedAt: release.published_at || release.created_at || '',
+                releaseUrl: release.html_url || ''
+            };
+
+            if (action === 'remove') removed.push(entry);
+            const key = normalizeSigmaTitle(title);
+            if (key && !byTitle[key]) byTitle[key] = entry;
+        }
+    }
+
+    return { byTitle, removed, fetchedAt: Date.now() };
+}
+
+export async function fetchSigmaReleaseActionIndex() {
+    const resp = await fetch('https://api.github.com/repos/SigmaHQ/sigma/releases?per_page=12', {
+        headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!resp.ok) throw new Error(`SigmaHQ releases API returned HTTP ${resp.status}`);
+    return parseSigmaReleaseActions(await resp.json());
+}
+
+export function applySigmaReleaseActionToRule(rule, index = sigmaReleaseActionIndex) {
+    if (!rule || !index?.byTitle) return;
+    const match = index.byTitle[normalizeSigmaTitle(rule.title)];
+    if (!match) return;
+    rule.releaseAction = match.action;
+    rule.releaseNote = match.note || '';
+    rule.releaseName = match.releaseName || '';
+    rule.releasePublishedAt = match.releasePublishedAt || '';
+    rule.releaseUrl = match.releaseUrl || '';
+}
+
+export function applySigmaReleaseActions(rules, index = sigmaReleaseActionIndex) {
+    if (!index?.byTitle) return 0;
+    let applied = 0;
+    for (const rule of rules || []) {
+        const before = rule.releaseAction;
+        applySigmaReleaseActionToRule(rule, index);
+        if (rule.releaseAction && rule.releaseAction !== before) applied++;
+    }
+    return applied;
 }
 
 
@@ -338,6 +450,17 @@ export async function executeSyncFromGitHub(isBackground) {
         });
         allRulePaths = [...pathSet.values()];
 
+        let releaseActionIndex = sigmaReleaseActionIndex;
+        try {
+            showSigmaSyncProgress(true, 56, 'Fetching SigmaHQ release notes...');
+            releaseActionIndex = await fetchSigmaReleaseActionIndex();
+            sigmaReleaseActionIndex = releaseActionIndex;
+        } catch (err) {
+            console.warn('Unable to fetch SigmaHQ release notes:', err);
+            releaseActionIndex = await idbGetMeta('sigmaReleaseActionIndex') || releaseActionIndex;
+            sigmaReleaseActionIndex = releaseActionIndex;
+        }
+
         // Purge any old offline baseline rules from memory
         sigmaRules = sigmaRules.filter(r => !r.isOfflineBaseline);
         window.sigmaRules = sigmaRules;
@@ -393,6 +516,7 @@ export async function executeSyncFromGitHub(isBackground) {
                         detectedAt: now,
                         detectedType: 'new'
                     };
+                    applySigmaReleaseActionToRule(newRule, releaseActionIndex);
                     sigmaRules.push(newRule);
                     existingMap.set(item.path, newRule);
                     newCount++;
@@ -406,6 +530,7 @@ export async function executeSyncFromGitHub(isBackground) {
                         existing.isUpdated = true;
                         existing.detectedAt = now;
                         existing.detectedType = 'modified';
+                        applySigmaReleaseActionToRule(existing, releaseActionIndex);
                         updatedCount++;
                     } else if (!existing.sha) {
                         existing.sha = item.sha;
@@ -431,12 +556,14 @@ export async function executeSyncFromGitHub(isBackground) {
         const sortedDirs = [...sigmaDirs].sort();
         console.log(`SigmaHQ directories indexed: ${sortedDirs.join(', ')}`);
         await idbSetMeta('sigmaDirectories', sortedDirs);
+        applySigmaReleaseActions(sigmaRules, releaseActionIndex);
 
         // Save all rules to IndexedDB
         await idbReplaceAll('rules', sigmaRules);
         await idbSetMeta('lastSyncTimestamp', now);
         await idbSetMeta('previousSyncTimestamp', previousSyncTimestamp);
         await idbSetMeta('totalRulesCount', sigmaRules.length);
+        if (releaseActionIndex) await idbSetMeta('sigmaReleaseActionIndex', releaseActionIndex);
 
         showSigmaSyncProgress(true, 100, `Synced! ${newCount > 0 ? newCount + ' new rules' : 'Up to date'}${updatedCount > 0 ? ', ' + updatedCount + ' modified' : ''}${removedCount > 0 ? ', ' + removedCount + ' removed' : ''}`);
 
@@ -637,6 +764,8 @@ export async function fetchVirtualRuleContent(rule) {
                 workerPendingParses.set(rule.id, (parsedRule) => {
                     // Apply parsed results back to original rule object
                     Object.assign(rule, parsedRule);
+                    applySigmaReleaseActionToRule(rule);
+                    updateWorkerRule(rule);
                     idbPut('rules', rule).then(() => resolve());
                 });
                 
@@ -650,6 +779,8 @@ export async function fetchVirtualRuleContent(rule) {
                     if (workerPendingParses.has(rule.id)) {
                         workerPendingParses.delete(rule.id);
                         parseYAMLInMainThread(rule);
+                        applySigmaReleaseActionToRule(rule);
+                        updateWorkerRule(rule);
                         idbPut('rules', rule).then(() => resolve());
                     }
                 }, 10000);
@@ -657,6 +788,8 @@ export async function fetchVirtualRuleContent(rule) {
         } else {
             // Fallback to main thread parsing
             parseYAMLInMainThread(rule);
+            applySigmaReleaseActionToRule(rule);
+            updateWorkerRule(rule);
             await idbPut('rules', rule);
         }
 
@@ -707,6 +840,8 @@ export async function autoHydrateAllVirtualRules() {
                     await new Promise((resolve) => {
                         workerPendingParses.set(rule.id, (parsedRule) => {
                             Object.assign(rule, parsedRule);
+                            applySigmaReleaseActionToRule(rule);
+                            updateWorkerRule(rule);
                             idbPut('rules', rule).then(() => resolve());
                         });
                         sigmaWorker.postMessage({
@@ -717,12 +852,16 @@ export async function autoHydrateAllVirtualRules() {
                             if (workerPendingParses.has(rule.id)) {
                                 workerPendingParses.delete(rule.id);
                                 parseYAMLInMainThread(rule);
+                                applySigmaReleaseActionToRule(rule);
+                                updateWorkerRule(rule);
                                 idbPut('rules', rule).then(() => resolve());
                             }
                         }, 10000);
                     });
                 } else {
                     parseYAMLInMainThread(rule);
+                    applySigmaReleaseActionToRule(rule);
+                    updateWorkerRule(rule);
                     await idbPut('rules', rule);
                 }
 
@@ -795,6 +934,8 @@ export async function manualHydrateAll() {
                     await new Promise((resolve) => {
                         workerPendingParses.set(rule.id, (parsedRule) => {
                             Object.assign(rule, parsedRule);
+                            applySigmaReleaseActionToRule(rule);
+                            updateWorkerRule(rule);
                             idbPut('rules', rule).then(() => resolve());
                         });
                         sigmaWorker.postMessage({
@@ -805,12 +946,16 @@ export async function manualHydrateAll() {
                             if (workerPendingParses.has(rule.id)) {
                                 workerPendingParses.delete(rule.id);
                                 parseYAMLInMainThread(rule);
+                                applySigmaReleaseActionToRule(rule);
+                                updateWorkerRule(rule);
                                 idbPut('rules', rule).then(() => resolve());
                             }
                         }, 10000);
                     });
                 } else {
                     parseYAMLInMainThread(rule);
+                    applySigmaReleaseActionToRule(rule);
+                    updateWorkerRule(rule);
                     await idbPut('rules', rule);
                 }
 
@@ -854,19 +999,26 @@ export async function manualHydrateAll() {
 // ---- Section 8: Coverage Engine ----
 
 export function getSigmaCoverageStatus(rule) {
-    if (!state || !state.currentLayer || !state.currentLayer.techniques) return 'gap';
+    return getSigmaLinkedQueries(rule).length > 0 ? 'active' : 'gap';
+}
+
+export function getSigmaLinkedQueries(rule) {
+    if (!rule || !state?.currentLayer?.techniques) return [];
+    const linked = [];
+    const ruleTitleKey = normalizeSigmaTitle(rule.title);
+
     for (const tech of state.currentLayer.techniques) {
-        if (!tech.queries) continue;
-        for (const q of tech.queries) {
+        for (const q of tech.queries || []) {
             if (q.archived) continue;
-            if (q.sigmaRuleId) {
-                const ids = q.sigmaRuleId.split('|').filter(Boolean);
-                if (ids.includes(rule.id)) return 'active';
+            const ids = String(q.sigmaRuleId || '').split('|').filter(Boolean);
+            const titles = String(q.sigmaRuleTitle || '').split('|').filter(Boolean).map(normalizeSigmaTitle);
+            if (ids.includes(rule.id) || (ruleTitleKey && titles.includes(ruleTitleKey))) {
+                linked.push({ techniqueId: tech.id, query: q });
             }
-            if (q.sigmaRuleTitle && q.sigmaRuleTitle === rule.title) return 'active';
         }
     }
-    return 'gap';
+
+    return linked;
 }
 
 export function buildSigmaCoverageMap() {
@@ -877,14 +1029,14 @@ export function buildSigmaCoverageMap() {
             for (const q of tech.queries || []) {
                 if (q.archived) continue;
                 if (q.sigmaRuleId) q.sigmaRuleId.split('|').filter(Boolean).forEach(id => activeRuleIds.add(id));
-                if (q.sigmaRuleTitle) q.sigmaRuleTitle.split('|').filter(Boolean).forEach(title => activeRuleTitles.add(title));
+                if (q.sigmaRuleTitle) q.sigmaRuleTitle.split('|').filter(Boolean).forEach(title => activeRuleTitles.add(normalizeSigmaTitle(title)));
             }
         }
     }
 
     const coverageMap = {};
     for (const rule of sigmaRules) {
-        coverageMap[rule.id] = activeRuleIds.has(rule.id) || activeRuleTitles.has(rule.title) ? 'active' : 'gap';
+        coverageMap[rule.id] = activeRuleIds.has(rule.id) || activeRuleTitles.has(normalizeSigmaTitle(rule.title)) ? 'active' : 'gap';
     }
     return coverageMap;
 }
@@ -945,7 +1097,8 @@ export async function refreshSigmaFilteredCache() {
                         level: selectedSigmaLevel,
                         coverage: selectedSigmaCoverage,
                         product: selectedSigmaProduct,
-                        date: selectedSigmaDate
+                        date: selectedSigmaDate,
+                        change: selectedSigmaChange
                     },
                     coverageMap,
                     sort: selectedSigmaSort
@@ -1009,7 +1162,9 @@ export function refreshSigmaFilteredCacheSync(coverageMap) {
             matchDate = (rule.detectedType === 'new' || rule.detectedType === 'modified') && (rule.detectedAt || 0) >= recentCutoff;
         }
 
-        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate;
+        const matchChange = selectedSigmaChange === 'all' || rule.releaseAction === selectedSigmaChange;
+
+        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate && matchChange;
     });
 
     // Apply sorting
@@ -1017,6 +1172,8 @@ export function refreshSigmaFilteredCacheSync(coverageMap) {
 }
 
 export function getEffectiveDate(rule) {
+    const releaseDate = rule.releasePublishedAt ? Date.parse(rule.releasePublishedAt) : 0;
+    if (releaseDate > 0) return releaseDate;
     // Use the latest of modified or date
     const modified = rule.ruleModified ? parseSigmaDate(rule.ruleModified) : 0;
     const created = rule.ruleDate ? parseSigmaDate(rule.ruleDate) : 0;
@@ -1240,6 +1397,9 @@ export function renderSigmaStats() {
     const hydratedCount = sigmaRules.filter(r => r.isVirtual === false && r.yaml && r.yaml.length > 50).length;
     const filteredCount = sigmaFilteredCache.length;
     const newCount = sigmaRules.filter(r => r.detectedType === 'new' || r.detectedType === 'modified').length;
+    const releaseCounts = getSigmaReleaseActionCounts(sigmaRules);
+    releaseCounts.remove = sigmaReleaseActionIndex?.removed?.length || releaseCounts.remove;
+    const releaseTotal = releaseCounts.new + releaseCounts.update + releaseCounts.fix + releaseCounts.remove;
 
     container.innerHTML = `
         <div class="sigma-stat-card">
@@ -1253,14 +1413,14 @@ export function renderSigmaStats() {
             <div class="sigma-stat-icon"><i class="bi bi-shield-check"></i></div>
             <div class="sigma-stat-content">
                 <span class="sigma-stat-value">${coverage.active}</span>
-                <span class="sigma-stat-label">Active Coverage</span>
+                <span class="sigma-stat-label">Linked Hunts</span>
             </div>
         </div>
         <div class="sigma-stat-card sigma-stat-gap">
             <div class="sigma-stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
             <div class="sigma-stat-content">
                 <span class="sigma-stat-value">${coverage.gap.toLocaleString()}</span>
-                <span class="sigma-stat-label">Defensive Gaps</span>
+                <span class="sigma-stat-label">Unlinked Rules</span>
             </div>
         </div>
         <div class="sigma-stat-card">
@@ -1285,7 +1445,23 @@ export function renderSigmaStats() {
                 <span class="sigma-stat-label">New Since Sync</span>
             </div>
         </div>` : ''}
+        ${releaseTotal > 0 ? `
+        <div class="sigma-stat-card sigma-stat-release">
+            <div class="sigma-stat-icon"><i class="bi bi-journal-code"></i></div>
+            <div class="sigma-stat-content">
+                <span class="sigma-stat-value">${releaseTotal.toLocaleString()}</span>
+                <span class="sigma-stat-label">Release Notes · ${releaseCounts.new} new / ${releaseCounts.update} upd / ${releaseCounts.fix} fix / ${releaseCounts.remove} rem</span>
+            </div>
+        </div>` : ''}
     `;
+}
+
+export function getSigmaReleaseActionCounts(rules) {
+    const counts = { new: 0, update: 0, fix: 0, remove: 0 };
+    for (const rule of rules || []) {
+        if (counts[rule.releaseAction] !== undefined) counts[rule.releaseAction]++;
+    }
+    return counts;
 }
 
 // ---- Section 13: Rendering - Virtual Scrolled Rule List ----
@@ -1336,7 +1512,7 @@ export function buildVirtualGroupedData(filtered) {
 
     for (const mKey of sortedMonths) {
         const items = monthGroups[mKey];
-        groups.push({ type: 'header', label: formatMonthLabel(mKey), count: items.length, icon: 'bi-calendar-month' });
+        groups.push({ type: 'header', label: formatMonthLabel(mKey), count: items.length, icon: 'bi-calendar-month', actionCounts: getSigmaReleaseActionCounts(items.map(item => item.rule)) });
         for (const { rule, idx } of items) {
             groups.push({ type: 'card', rule, idx });
         }
@@ -1372,7 +1548,7 @@ export function buildGroupedData(filtered) {
 
     for (const mKey of sortedMonths) {
         const items = monthGroups[mKey];
-        groups.push({ type: 'header', label: formatMonthLabel(mKey), count: items.length, icon: 'bi-calendar-month' });
+        groups.push({ type: 'header', label: formatMonthLabel(mKey), count: items.length, icon: 'bi-calendar-month', actionCounts: getSigmaReleaseActionCounts(items.map(item => item.rule)) });
         for (const { rule, idx } of items) {
             groups.push({ type: 'card', rule, idx });
         }
@@ -1415,11 +1591,18 @@ export function renderSigmaList() {
     for (let i = 0; i < itemsToShow; i++) {
         const item = groupedData[i];
         if (item.type === 'header') {
+            const actions = item.actionCounts || {};
+            const actionSummary = ['new', 'update', 'fix'].map(action => {
+                const count = actions[action] || 0;
+                const config = getSigmaReleaseActionConfig(action);
+                return count && config ? `<span class="sigma-date-action-count ${config.className}">${config.label}: ${count}</span>` : '';
+            }).join('');
             html += `<div class="sigma-date-group">
                 <div class="sigma-date-group-header">
                     <i class="bi ${item.icon}"></i>
                     <span>${item.label}</span>
                     <span class="sigma-date-group-count">${item.count}</span>
+                    ${actionSummary ? `<span class="sigma-date-action-summary">${actionSummary}</span>` : ''}
                 </div>
             </div>`;
         } else {
@@ -1463,10 +1646,12 @@ export function renderSigmaCard(rule, idx) {
     const level = rule.level || (rule.isVirtual ? '' : extractLevelFromYaml(rule.yaml));
     const isActive = selectedSigmaIdx === idx;
     const coverage = getSigmaCoverageStatus(rule);
+    const linkedQueries = getSigmaLinkedQueries(rule);
     const dateStr = formatRuleDate(rule);
     const folder = getRuleFolderName(rule);
     const fileName = getRuleFileName(rule);
     const isCandidate = isRuleCandidate(rule.id);
+    const releaseConfig = getSigmaReleaseActionConfig(rule.releaseAction);
 
     // Determine badge state (expire after 30 days)
     let statusBadge = '';
@@ -1498,10 +1683,11 @@ export function renderSigmaCard(rule, idx) {
                     ${rule.technique_id ? `<span class="sigma-card-tech">${escapeHtml(rule.technique_id)}</span>` : ''}
                     ${rule.isVirtual ? `<span class="sigma-card-virtual-badge" title="Live GitHub Rule – click to hydrate"><i class="bi bi-cloud-arrow-down-fill"></i></span>` : ''}
                     ${statusBadge}
+                    ${releaseConfig ? `<span class="sigma-card-status-badge ${releaseConfig.className}" title="${escapeHtml(rule.releaseNote || rule.releaseName || 'Listed in SigmaHQ release notes')}"><i class="bi ${releaseConfig.icon}"></i> ${releaseConfig.label}</span>` : ''}
                     ${isNonStandard ? `<span class="badge-non-standard" title="Custom product/category. KQL translation may be inaccurate."><i class="bi bi-exclamation-triangle"></i> Non-Standard</span>` : ''}
                 </div>
                 <div class="sigma-card-header-right">
-                    ${coverage === 'active' ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active</span>' : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Gap</span>'}
+                    ${coverage === 'active' ? `<span class="sigma-badge-coverage active-coverage" title="Linked to ${linkedQueries.length} non-archived threat hunting quer${linkedQueries.length === 1 ? 'y' : 'ies'}"><i class="bi bi-link-45deg"></i> Linked ${linkedQueries.length}</span>` : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-link-45deg"></i> Unlinked</span>'}
                     ${level ? `<span class="sigma-card-level level-${safeClassToken(level)}">${escapeHtml(level)}</span>` : ''}
                     <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" data-sigma-action="toggle-candidate" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}" aria-label="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
                         <i class="bi ${isCandidate ? 'bi-bookmark-fill' : 'bi-bookmark'}"></i>
@@ -1585,16 +1771,19 @@ export function renderSigmaDetails() {
 
     const level = rule.level || extractLevelFromYaml(rule.yaml);
     const coverage = getSigmaCoverageStatus(rule);
+    const linkedQueries = getSigmaLinkedQueries(rule);
     const dateStr = formatRuleDate(rule);
     const statusLabel = rule.ruleStatus ? rule.ruleStatus.charAt(0).toUpperCase() + rule.ruleStatus.slice(1) : '';
+    const releaseConfig = getSigmaReleaseActionConfig(rule.releaseAction);
 
     panel.innerHTML = `
         <div class="sigma-details-header">
             <div class="sigma-details-meta">
                 ${level ? `<span class="sigma-card-level level-${safeClassToken(level)}">${escapeHtml(level)}</span>` : ''}
                 ${coverage === 'active'
-                    ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active Coverage</span>'
-                    : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Defensive Gap</span>'}
+                    ? `<span class="sigma-badge-coverage active-coverage"><i class="bi bi-link-45deg"></i> Linked to ${linkedQueries.length} Hunt Quer${linkedQueries.length === 1 ? 'y' : 'ies'}</span>`
+                    : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-link-45deg"></i> No Linked Hunts</span>'}
+                ${releaseConfig ? `<span class="sigma-card-status-badge ${releaseConfig.className}" title="${escapeHtml(rule.releaseNote || rule.releaseName || 'Listed in SigmaHQ release notes')}"><i class="bi ${releaseConfig.icon}"></i> ${releaseConfig.label}</span>` : ''}
                 ${statusLabel ? `<span class="sigma-details-status-badge status-${safeClassToken(rule.ruleStatus)}">${escapeHtml(statusLabel)}</span>` : ''}
                 ${rule.isOfflineBaseline ? '<span class="sigma-details-status-badge" style="background: rgba(99,102,241,0.1); color: #818cf8; border-color: rgba(99,102,241,0.2);">Offline Baseline</span>' : ''}
                 <span>UUID: ${rule.id.includes('/') ? 'GitHub Index' : escapeHtml(rule.id)}</span>
@@ -1605,10 +1794,27 @@ export function renderSigmaDetails() {
                 ${rule.tactic && rule.tactic !== 'Unknown' ? `<span class="sigma-details-tag"><i class="bi bi-tag-fill mr-1 text-primary"></i> ${escapeHtml(rule.tactic)}</span>` : ''}
                 <span class="sigma-details-tag"><i class="bi bi-hdd-network mr-1 text-primary"></i> ${escapeHtml(rule.logsource?.product || 'unknown')}/${escapeHtml(rule.logsource?.category || 'unknown')}</span>
                 ${dateStr ? `<span class="sigma-details-tag"><i class="bi bi-calendar3 mr-1 text-primary"></i> ${escapeHtml(dateStr)}</span>` : ''}
+                ${rule.releaseName ? `<span class="sigma-details-tag"><i class="bi bi-journal-code mr-1 text-primary"></i> ${escapeHtml(rule.releaseName)}</span>` : ''}
             </div>
         </div>
 
         <div class="sigma-details-body">
+            ${releaseConfig ? `<div class="sigma-release-note-card ${releaseConfig.className}">
+                <div class="sigma-release-note-header"><i class="bi ${releaseConfig.icon}"></i> SigmaHQ Release ${releaseConfig.label}</div>
+                <div class="sigma-release-note-body">${escapeHtml(rule.releaseNote || 'This rule was listed in recent SigmaHQ release notes.')}</div>
+                ${rule.releaseUrl ? `<a href="${escapeHtml(rule.releaseUrl)}" target="_blank" rel="noopener" class="sigma-release-note-link">View release notes <i class="bi bi-box-arrow-up-right"></i></a>` : ''}
+            </div>` : ''}
+            ${linkedQueries.length > 0 ? `<div class="sigma-linked-query-card">
+                <div class="sigma-linked-query-header"><i class="bi bi-link-45deg"></i> Linked Threat Hunt Queries</div>
+                <div class="sigma-linked-query-list">
+                    ${linkedQueries.map(({ techniqueId, query }) => `<div class="sigma-linked-query-item">
+                        <span class="sigma-linked-query-tech">${escapeHtml(techniqueId)}</span>
+                        <span class="sigma-linked-query-name">${escapeHtml(query.name || 'Untitled query')}</span>
+                        <span class="sigma-linked-query-lang">${escapeHtml(query.language || 'query')}</span>
+                    </div>`).join('')}
+                </div>
+            </div>` : `<div class="sigma-linked-query-card sigma-linked-query-empty"><i class="bi bi-link-45deg"></i> No non-archived threat hunting query is linked to this Sigma rule yet.</div>`}
+
             <h6 class="text-on-surface font-semibold text-sm mb-2">Description</h6>
             <p class="text-sm text-on-surface-secondary mb-4" style="line-height: 1.6;">${escapeHtml(rule.description)}</p>
 
@@ -1725,6 +1931,7 @@ export function bindSigmaEvents() {
         'sigma-level-filter': null,
         'sigma-coverage-filter': null,
         'sigma-product-filter': null,
+        'sigma-change-filter': null,
         'sigma-sort-select': null,
         'sigma-date-filter': null,
         'btn-load-live-sigma': null
@@ -1749,6 +1956,7 @@ export function bindSigmaEvents() {
         ['sigma-level-filter', v => selectedSigmaLevel = v],
         ['sigma-coverage-filter', v => selectedSigmaCoverage = v],
         ['sigma-product-filter', v => selectedSigmaProduct = v],
+        ['sigma-change-filter', v => selectedSigmaChange = v],
         ['sigma-sort-select', v => selectedSigmaSort = v],
         ['sigma-date-filter', v => selectedSigmaDate = v]
     ];
@@ -2263,7 +2471,9 @@ window.selectedSigmaCoverage = selectedSigmaCoverage;
 window.selectedSigmaProduct = selectedSigmaProduct;
 window.selectedSigmaSort = selectedSigmaSort;
 window.selectedSigmaDate = selectedSigmaDate;
+window.selectedSigmaChange = selectedSigmaChange;
 window.isLiveSigmaConnected = isLiveSigmaConnected;
+window.sigmaReleaseActionIndex = sigmaReleaseActionIndex;
 window.SIGMA_PAGINATION_CHUNK = SIGMA_PAGINATION_CHUNK;
 window.currentVisibleCount = currentVisibleCount;
 window.sigmaFilteredCache = sigmaFilteredCache;
@@ -2275,6 +2485,12 @@ window.initSigmaWorker = initSigmaWorker;
 window.initSigmaModule = initSigmaModule;
 window.syncRulesToWorker = syncRulesToWorker;
 window.updateWorkerRule = updateWorkerRule;
+window.normalizeSigmaTitle = normalizeSigmaTitle;
+window.getSigmaReleaseActionConfig = getSigmaReleaseActionConfig;
+window.parseSigmaReleaseActions = parseSigmaReleaseActions;
+window.fetchSigmaReleaseActionIndex = fetchSigmaReleaseActionIndex;
+window.applySigmaReleaseActionToRule = applySigmaReleaseActionToRule;
+window.applySigmaReleaseActions = applySigmaReleaseActions;
 window.autoSyncFromGitHub = autoSyncFromGitHub;
 window.backgroundResync = backgroundResync;
 window.executeSyncFromGitHub = executeSyncFromGitHub;
@@ -2290,6 +2506,7 @@ window.fetchVirtualRuleContent = fetchVirtualRuleContent;
 window.autoHydrateAllVirtualRules = autoHydrateAllVirtualRules;
 window.manualHydrateAll = manualHydrateAll;
 window.getSigmaCoverageStatus = getSigmaCoverageStatus;
+window.getSigmaLinkedQueries = getSigmaLinkedQueries;
 window.getSigmaCoverageStats = getSigmaCoverageStats;
 window.getUniqueProducts = getUniqueProducts;
 window.populateDynamicFilters = populateDynamicFilters;
@@ -2300,6 +2517,7 @@ window.getSeverityRank = getSeverityRank;
 window.applySigmaSort = applySigmaSort;
 window.renderSigmaView = renderSigmaView;
 window.renderSigmaStats = renderSigmaStats;
+window.getSigmaReleaseActionCounts = getSigmaReleaseActionCounts;
 
 window.getRuleFolderName = getRuleFolderName;
 window.getRuleFileName = getRuleFileName;
