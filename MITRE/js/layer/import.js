@@ -13,10 +13,17 @@ export class LayerImportEngine {
         document.getElementById('file-import')?.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
+            if (file.size > 10 * 1024 * 1024) {
+                if (window.showToast) window.showToast('Layer file is too large. Please import a JSON file under 10 MB.', 'error');
+                e.target.value = '';
+                return;
+            }
             const reader = new FileReader();
             reader.onload = async (ev) => {
                 try {
                     const layerData = JSON.parse(ev.target.result);
+                    LayerImportEngine.validateLayerData(layerData);
+                    LayerImportEngine.sanitizeLayerData(layerData);
                     if (!layerData.id) {
                         layerData.id = `layer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                     }
@@ -71,7 +78,7 @@ export class LayerImportEngine {
                                     }
                                 }
                                 
-                                const changes = window.MigrationEngine.analyzeMigration(layerData, latestVerTag, tempState.techniques, tempState.relationships);
+                                const changes = window.MigrationEngine.analyzeMigration(layerData, latestVerTag, tempState.techniques, tempState.relationships, tempState.revokedTechniques);
                                 if (window.showLoading) window.showLoading(false);
                                 
                                 window.MigrationEngine.showMigrationWizard(layerData, latestVerTag, changes, async (migratedLayer) => {
@@ -151,7 +158,7 @@ export class LayerImportEngine {
                     }
                 }
                 
-                const changes = window.MigrationEngine.analyzeMigration(state.currentLayer, newVersion, tempState.techniques, tempState.relationships);
+                const changes = window.MigrationEngine.analyzeMigration(state.currentLayer, newVersion, tempState.techniques, tempState.relationships, tempState.revokedTechniques);
                 if (window.showLoading) window.showLoading(false);
                 
                 window.MigrationEngine.showMigrationWizard(state.currentLayer, newVersion, changes, async (migratedLayer) => {
@@ -168,7 +175,67 @@ export class LayerImportEngine {
                 document.getElementById('version-select').value = currentVer;
                 if (window.showToast) window.showToast('Failed to load version: ' + err.message, 'error');
             }
-        });
+            });
+    }
+
+    static validateLayerData(layerData) {
+        if (!layerData || typeof layerData !== 'object' || Array.isArray(layerData)) {
+            throw new Error('Layer JSON must be an object.');
+        }
+
+        const allowedDomains = new Set(['enterprise-attack', 'mobile-attack', 'ics-attack']);
+        if (layerData.domain && !allowedDomains.has(layerData.domain)) {
+            throw new Error('Layer domain must be enterprise-attack, mobile-attack, or ics-attack.');
+        }
+
+        if (layerData.techniques && !Array.isArray(layerData.techniques)) {
+            throw new Error('Layer techniques must be an array.');
+        }
+
+        if (layerData.techniques) {
+            for (const technique of layerData.techniques) {
+                if (!technique || typeof technique !== 'object' || !technique.techniqueID) {
+                    throw new Error('Each imported technique must include a techniqueID.');
+                }
+            }
+        }
+
+        if (layerData.legend && !Array.isArray(layerData.legend)) {
+            throw new Error('Layer legend must be an array.');
+        }
+    }
+
+    static sanitizeLayerData(layerData) {
+        const isSafeColor = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || ''));
+        const cleanText = (value, max = 120) => String(value || '').slice(0, max);
+
+        if (typeof layerData.name === 'string') layerData.name = cleanText(layerData.name, 160);
+        if (typeof layerData.companyName === 'string') layerData.companyName = cleanText(layerData.companyName, 160);
+        if (typeof layerData.author === 'string') layerData.author = cleanText(layerData.author, 160);
+
+        if (Array.isArray(layerData.legend)) {
+            layerData.legend = layerData.legend.map(item => ({
+                ...item,
+                label: cleanText(item?.label, 80),
+                color: isSafeColor(item?.color) ? item.color : '#3b82f6'
+            }));
+        }
+
+        if (Array.isArray(layerData.autoColorRules)) {
+            layerData.autoColorRules = layerData.autoColorRules.map(rule => ({
+                ...rule,
+                label: cleanText(rule?.label, 80),
+                color: isSafeColor(rule?.color) ? rule.color : '#3b82f6'
+            }));
+        }
+
+        if (Array.isArray(layerData.techniques)) {
+            layerData.techniques.forEach(technique => {
+                technique.techniqueID = cleanText(technique.techniqueID, 32);
+                if (technique.color && !isSafeColor(technique.color)) delete technique.color;
+                if (typeof technique.comment === 'string') technique.comment = cleanText(technique.comment, 5000);
+            });
+        }
     }
 }
 

@@ -840,6 +840,7 @@ export function getSigmaCoverageStatus(rule) {
     for (const tech of state.currentLayer.techniques) {
         if (!tech.queries) continue;
         for (const q of tech.queries) {
+            if (q.archived) continue;
             if (q.sigmaRuleId) {
                 const ids = q.sigmaRuleId.split('|').filter(Boolean);
                 if (ids.includes(rule.id)) return 'active';
@@ -1484,7 +1485,7 @@ export function renderSigmaCard(rule, idx) {
                 <div class="sigma-card-header-right">
                     ${coverage === 'active' ? '<span class="sigma-badge-coverage active-coverage"><i class="bi bi-shield-fill-check"></i> Active</span>' : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-shield-fill-exclamation"></i> Gap</span>'}
                     ${level ? `<span class="sigma-card-level level-${escapeHtml(level)}">${escapeHtml(level)}</span>` : ''}
-                    <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" onclick="event.stopPropagation(); toggleRuleCandidate(sigmaRules[${idx}])" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
+                    <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" onclick="event.stopPropagation(); toggleRuleCandidateById(this.closest('.sigma-card')?.dataset.ruleId)" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}" aria-label="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
                         <i class="bi ${isCandidate ? 'bi-bookmark-fill' : 'bi-bookmark'}"></i>
                     </button>
                 </div>
@@ -1997,12 +1998,20 @@ export function toggleRuleCandidate(rule) {
     if (card) {
         const btn = card.querySelector('.sigma-bookmark-btn');
         if (btn) {
-            btn.classList.toggle('active', isRuleCandidate(rule.id));
-            btn.innerHTML = isRuleCandidate(rule.id)
+            const active = isRuleCandidate(rule.id);
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-label', active ? 'Remove from candidates' : 'Add to candidates');
+            btn.innerHTML = active
                 ? '<i class="bi bi-bookmark-fill"></i>'
                 : '<i class="bi bi-bookmark"></i>';
         }
     }
+}
+
+export function toggleRuleCandidateById(ruleId) {
+    if (!ruleId) return;
+    const rule = sigmaRules.find(r => r.id === ruleId) || sigmaFilteredCache.find(r => r.id === ruleId);
+    toggleRuleCandidate(rule);
 }
 
 export function toggleCandidatesView() {
@@ -2077,6 +2086,7 @@ export function removeCandidate(ruleId) {
         const btn = card.querySelector('.sigma-bookmark-btn');
         if (btn) {
             btn.classList.remove('active');
+            btn.setAttribute('aria-label', 'Add to candidates');
             btn.innerHTML = '<i class="bi bi-bookmark"></i>';
         }
     }
@@ -2092,6 +2102,7 @@ export function clearAllCandidates() {
             // Update all visible card bookmarks
             document.querySelectorAll('.sigma-bookmark-btn').forEach(btn => {
                 btn.classList.remove('active');
+                btn.setAttribute('aria-label', 'Add to candidates');
                 btn.innerHTML = '<i class="bi bi-bookmark"></i>';
             });
         }
@@ -2250,6 +2261,7 @@ window.loadCandidates = loadCandidates;
 window.saveCandidates = saveCandidates;
 window.isRuleCandidate = isRuleCandidate;
 window.toggleRuleCandidate = toggleRuleCandidate;
+window.toggleRuleCandidateById = toggleRuleCandidateById;
 window.toggleCandidatesView = toggleCandidatesView;
 window.renderCandidatesList = renderCandidatesList;
 window.removeCandidate = removeCandidate;

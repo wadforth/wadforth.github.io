@@ -189,7 +189,7 @@ export async function init() {
     // Restore current layer if exists
     const savedLayer = window.loadCurrentLayer ? await window.loadCurrentLayer() : null;
     if (savedLayer) {
-        state.currentDomain = 'enterprise-attack';
+        state.currentDomain = savedLayer.domain || localStorage.getItem('attack-explorer-current-domain') || 'enterprise-attack';
         state.currentVersion = localStorage.getItem('attack-explorer-current-version') || state.currentVersion;
         const savedExpanded = JSON.parse(localStorage.getItem('attack-explorer-expanded') || '[]');
         if (state.expandedTechniques) state.expandedTechniques = new Set(savedExpanded);

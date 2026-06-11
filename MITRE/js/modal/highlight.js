@@ -45,12 +45,37 @@ export function parseDescription(text) {
     }
     
     return paragraphs.map(p => {
-        let html = p
-            .replace(/__C(\d+)__/g, (_, i) => `<span class="citation">(Citation: ${citations[i]})</span>`)
-            .replace(/__L(\d+)__/g, (_, i) => `<a href="${links[i].url}" target="_blank" rel="noopener">${links[i].label}</a>`)
+        let html = escapeDescriptionHtml(p)
+            .replace(/__C(\d+)__/g, (_, i) => `<span class="citation">(Citation: ${escapeDescriptionHtml(citations[i])})</span>`)
+            .replace(/__L(\d+)__/g, (_, i) => {
+                const link = links[i] || {};
+                const url = safeDescriptionUrl(link.url);
+                const label = escapeDescriptionHtml(link.label);
+                return url ? `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>` : label;
+            })
             .replace(/^\* /gm, '&bull; ');
         return `<p class="desc-paragraph">${html}</p>`;
     }).join('');
+}
+
+function escapeDescriptionHtml(value) {
+    if (window.escapeHtml) return window.escapeHtml(value);
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function safeDescriptionUrl(value) {
+    try {
+        const url = new URL(String(value || ''), window.location.origin);
+        if (!['http:', 'https:', 'mailto:'].includes(url.protocol)) return '';
+        return escapeDescriptionHtml(url.href);
+    } catch {
+        return '';
+    }
 }
 
 export function highlightQuerySyntax(query, language) {

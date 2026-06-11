@@ -25,6 +25,8 @@ export const _internalState = {
     currentModalTechniqueId: null,
     autoColorByQueries: true,
     matrixSearchQuery: '',
+    matrixFocusTechniques: new Set(),
+    matrixFocusPending: false,
     companyName: '',
     companyLogo: null,
     author: '',

@@ -454,18 +454,13 @@ export function showSoftwareModal(softwareId) {
                         const techObjects = techIds.map(id => state.techniques.find(t => t.id === id)).filter(Boolean);
                         const extIds = techObjects.map(t => t.external_references?.[0]?.external_id).filter(Boolean);
                         
-                        if (state.currentLayer) {
-                            extIds.forEach(tid => {
-                                let ann = state.currentLayer.techniques.find(a => a.techniqueID === tid);
-                                if (!ann) {
-                                    ann = { techniqueID: tid, enabled: true, queries: [] };
-                                    state.currentLayer.techniques.push(ann);
-                                }
-                                ann.enabled = true;
-                            });
-                            autoSaveLayer();
-                            renderMatrix();
-                        }
+                        state.matrixFocusTechniques = new Set(extIds);
+                        state.matrixFocusPending = true;
+                        extIds.forEach(tid => {
+                            if (tid.includes('.')) state.expandedTechniques.add(tid.split('.')[0]);
+                        });
+                        renderMatrix();
+                        showToast(`${extIds.length} software technique${extIds.length === 1 ? '' : 's'} highlighted in the Matrix`, 'info');
                     }
                 }, 300);
             });

@@ -107,7 +107,6 @@ export function renderMatrix() {
     for (const tactic of tacticOrder) {
         const short = tactic.x_mitre_shortname;
         const count = techniqueMap[short]?.length || 0;
-        if (count > 0) hasAnyVisible = true;
         const spectrumColor = getSpectrumColor(tacticIndex);
         html += `<th style="border-top: 3px solid ${spectrumColor};"><div class="font-bold">${tactic.name}</div><div class="tactic-short">${short}</div><div class="tactic-count">${count} techniques</div></th>`;
         tacticIndex++;
@@ -117,17 +116,29 @@ export function renderMatrix() {
     for (const tactic of tacticOrder) {
         const short = tactic.x_mitre_shortname;
         const techniques = techniqueMap[short] || [];
-        const parentTechs = techniques.filter(t => !isSub(t)).sort((a, b) => {
+        const parentTechs = [];
+        const subTechsByParent = new Map();
+        for (const technique of techniques) {
+            if (isSub(technique)) {
+                const parent = parentId(technique);
+                if (!subTechsByParent.has(parent)) subTechsByParent.set(parent, []);
+                subTechsByParent.get(parent).push(technique);
+            } else {
+                parentTechs.push(technique);
+            }
+        }
+
+        parentTechs.sort((a, b) => {
             const idA = a.external_references?.[0]?.external_id || '';
             const idB = b.external_references?.[0]?.external_id || '';
             return idA.localeCompare(idB, undefined, { numeric: true });
         });
-        const subTechs = techniques.filter(t => isSub(t));
+        if (parentTechs.length > 0) hasAnyVisible = true;
 
         html += '<td><div>';
         for (const tech of parentTechs) {
             const id = tech.external_references?.[0]?.external_id || '';
-            const subs = subTechs.filter(s => parentId(s) === id).sort((a, b) => {
+            const subs = (subTechsByParent.get(id) || []).sort((a, b) => {
                 const idA = a.external_references?.[0]?.external_id || '';
                 const idB = b.external_references?.[0]?.external_id || '';
                 return idA.localeCompare(idB, undefined, { numeric: true });
@@ -139,7 +150,15 @@ export function renderMatrix() {
     html += '</tr></tbody></table>';
 
     container.innerHTML = window.DOMSanitizer ? window.DOMSanitizer.sanitize(html) : html;
-    noResults.classList.toggle('hidden', hasAnyVisible || filtered.length > 0);
+    noResults.classList.toggle('hidden', hasAnyVisible);
+
+    if (state.matrixFocusPending && state.matrixFocusTechniques?.size) {
+        requestAnimationFrame(() => {
+            const firstFocused = container.querySelector('.matrix-focused-technique');
+            firstFocused?.scrollIntoView({ block: 'center', inline: 'center' });
+        });
+        state.matrixFocusPending = false;
+    }
 
     container.querySelectorAll('.technique-cell[data-id]').forEach(el => {
         el.addEventListener('click', (e) => {
@@ -257,6 +276,7 @@ export function buildTechniqueCell(tech, subs = []) {
     const ann = getTechniqueAnnotation(id);
     const effectiveColor = state.autoColorByQueries ? autoColor : ann?.color;
     const annotatedClass = effectiveColor ? 'annotated' : '';
+    const focusedClass = state.matrixFocusTechniques?.has(id) ? 'matrix-focused-technique' : '';
     const bgColor = effectiveColor ? effectiveColor : '';
     const textColor = effectiveColor ? getContrastColor(effectiveColor.replace(/80$/, '')) : '';
     const colorStyle = effectiveColor ? `style="background: ${bgColor}; color: ${textColor};"` : '';
@@ -278,7 +298,7 @@ export function buildTechniqueCell(tech, subs = []) {
     const isNew = state.changelogDiff?.added?.techniques?.has(id);
     const newBadge = isNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm mr-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: top;">NEW</span>' : '';
 
-    let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass}" data-id="${id}" ${colorStyle}>
+    let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass} ${focusedClass}" data-id="${id}" ${colorStyle}>
         <div class="tech-id" ${textColor ? `style="color: ${textColor};"` : ''}>${displayId}</div>
         <div class="tech-name" ${textColor ? `style="color: ${textColor};"` : ''}>${displayName}</div>
         <div class="matrix-badges">
@@ -298,6 +318,7 @@ export function buildTechniqueCell(tech, subs = []) {
             const subAnn = getTechniqueAnnotation(subId);
             const subEffectiveColor = state.autoColorByQueries ? subAutoColor : subAnn?.color;
             const subAnnotated = subEffectiveColor ? 'annotated' : '';
+            const subFocusedClass = state.matrixFocusTechniques?.has(subId) ? 'matrix-focused-technique' : '';
             const subBgColor = subEffectiveColor ? subEffectiveColor : '';
             const subTextColor = subEffectiveColor ? getContrastColor(subEffectiveColor.replace(/80$/, '')) : '';
             const subColor = subEffectiveColor ? `style="background: ${subBgColor}; color: ${subTextColor};"` : '';
@@ -307,7 +328,7 @@ export function buildTechniqueCell(tech, subs = []) {
             const isSubNew = state.changelogDiff?.added?.techniques?.has(subId);
             const subNewBadge = isSubNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm ml-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: middle;">NEW</span>' : '';
 
-            return `<div class="technique-cell sub-technique ${subAnnotated}" data-id="${subId}" ${subColor}>
+            return `<div class="technique-cell sub-technique ${subAnnotated} ${subFocusedClass}" data-id="${subId}" ${subColor}>
                 <span class="sub-connector"></span>
                 <span class="tech-id" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayId}</span> <span class="tech-name" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayName}</span>${subNewBadge}
             </div>`;

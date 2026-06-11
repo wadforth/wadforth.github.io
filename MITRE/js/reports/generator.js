@@ -50,6 +50,7 @@ export function generateReport(reportType = 'initial') {
         coverageByTactic: coverageByTactic,
         coverageByLanguage: coverageByLanguage,
         fullStats: fullStats,
+        attckVersion: state.currentLayer.versions?.attack || state.currentLayer.attackVersion || state.currentVersion || 'N/A',
         author: state.author || '',
         companyName: snapshot.companyName,
         companyLogo: snapshot.companyLogo,
@@ -84,9 +85,7 @@ export function generateReport(reportType = 'initial') {
     if (!report.gapAnalysis) {
         report.gapAnalysis = generateDynamicGapAnalysis(report);
     }
-    if (!report.attckVersion) {
-        report.attckVersion = '19.1';
-    }
+    if (!report.attckVersion) report.attckVersion = state.currentVersion || 'N/A';
     
     saveReport(report).then(() => {
         showToast('Report generated successfully', 'success');

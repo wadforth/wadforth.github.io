@@ -6,7 +6,7 @@
 
 export const MigrationEngine = {
     // Finds all deprecated or revoked techniques in a layer and maps them to successors
-    analyzeMigration(layerData, targetVersion, targetTechniques, targetRelationships) {
+    analyzeMigration(layerData, targetVersion, targetTechniques, targetRelationships, targetRevokedTechniques = []) {
         const changes = {
             upgraded: [],      // Techniques mapped to newer IDs
             deprecated: [],    // Techniques deprecated with no direct mapping
@@ -18,6 +18,12 @@ export const MigrationEngine = {
         targetTechniques.forEach(t => {
             const extId = t.external_references?.[0]?.external_id;
             if (extId) targetMap.set(extId, t);
+        });
+
+        const revokedMap = new Map();
+        targetRevokedTechniques.forEach(t => {
+            const extId = t.external_references?.[0]?.external_id;
+            if (extId) revokedMap.set(extId, t);
         });
 
         // Loop over techniques currently defined in the layer
@@ -35,7 +41,7 @@ export const MigrationEngine = {
                 });
             } else {
                 // Not found or deprecated/revoked. Check if it's revoked in target version's revokedTechniques cache
-                const revokedTech = state.revokedTechniques.find(t => t.external_references?.[0]?.external_id === techId);
+                const revokedTech = revokedMap.get(techId) || state.revokedTechniques.find(t => t.external_references?.[0]?.external_id === techId);
                 
                 // Let's trace revoked-by relationships
                 let successorId = null;

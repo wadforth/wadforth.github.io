@@ -262,16 +262,24 @@ export function showReportComparison(reportId1, reportId2) {
 }
 
 export function calculateReportDiff(report1, report2) {
-    const techniques1 = new Set(report1.techniques || []);
-    const techniques2 = new Set(report2.techniques || []);
+    const normalizeTechniques = (report) => (report?.snapshot?.techniques || report?.techniques || [])
+        .map(t => typeof t === 'string' ? { id: t, techniqueID: t, queries: [] } : t)
+        .filter(t => t?.techniqueID || t?.id);
+    const getId = (technique) => technique.techniqueID || technique.id;
+    const techniques1List = normalizeTechniques(report1);
+    const techniques2List = normalizeTechniques(report2);
+    const techniques1ById = new Map(techniques1List.map(t => [getId(t), t]));
+    const techniques2ById = new Map(techniques2List.map(t => [getId(t), t]));
+    const techniques1 = new Set(techniques1ById.keys());
+    const techniques2 = new Set(techniques2ById.keys());
     
     const added = [...techniques2].filter(t => !techniques1.has(t));
     const removed = [...techniques1].filter(t => !techniques2.has(t));
     const common = [...techniques1].filter(t => techniques2.has(t));
     
     const changed = common.map(techId => {
-        const t1 = report1.techniques?.find(t => t.id === techId);
-        const t2 = report2.techniques?.find(t => t.id === techId);
+        const t1 = techniques1ById.get(techId);
+        const t2 = techniques2ById.get(techId);
         const queryDiff = (t2?.queries?.length || 0) - (t1?.queries?.length || 0);
         return {
             techniqueId: techId,
