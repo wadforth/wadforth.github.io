@@ -37,13 +37,15 @@ export function showWorkspace() {
 
 export function initTheme() {
     const saved = localStorage.getItem('attack-explorer-theme');
-    if (saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        const themeBtn = document.getElementById('theme-toggle');
-        const landingThemeBtn = document.getElementById('landing-theme-toggle');
-        if (themeBtn) themeBtn.innerHTML = '<i class="bi bi-sun-fill"></i>';
-        if (landingThemeBtn) landingThemeBtn.innerHTML = '<i class="bi bi-sun-fill"></i>';
-    }
+    const theme = saved === 'dark' ? 'dark' : 'light';
+    const icon = theme === 'dark' ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-fill"></i>';
+
+    document.documentElement.setAttribute('data-theme', theme);
+
+    const themeBtn = document.getElementById('theme-toggle');
+    const landingThemeBtn = document.getElementById('landing-theme-toggle');
+    if (themeBtn) themeBtn.innerHTML = icon;
+    if (landingThemeBtn) landingThemeBtn.innerHTML = icon;
 }
 
 const toggleTheme = () => {

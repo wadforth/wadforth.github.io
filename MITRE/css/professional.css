@@ -2286,3 +2286,282 @@ table:not(.matrix-table) td {
     border-color: rgba(15, 23, 42, 0.08) !important;
     color: #0f172a !important;
 }
+
+/* Light-mode repair cap: this must remain after the dark design cap above. */
+[data-theme="light"],
+[data-theme="light"] body {
+    color: #0f172a !important;
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%) !important;
+}
+
+[data-theme="light"] body::before {
+    opacity: 0.16 !important;
+    background:
+        linear-gradient(90deg, rgba(15, 23, 42, 0.055) 1px, transparent 1px),
+        linear-gradient(rgba(15, 23, 42, 0.045) 1px, transparent 1px),
+        radial-gradient(circle at 18% 22%, rgba(2, 132, 199, 0.22) 0 1px, transparent 1.5px) !important;
+    background-size: 72px 72px, 72px 72px, 460px 360px !important;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 78%) !important;
+}
+
+[data-theme="light"] body::after {
+    opacity: 0.12 !important;
+    background: radial-gradient(circle at 78% 24%, rgba(2, 132, 199, 0.16), transparent 28rem) !important;
+}
+
+[data-theme="light"] .landing-ambient-bg,
+[data-theme="light"] .workspace-ambient-bg,
+[data-theme="light"] .workspace-content {
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%) !important;
+}
+
+[data-theme="light"] .landing-ambient-bg::before,
+[data-theme="light"] .workspace-ambient-bg::before {
+    opacity: 0.2 !important;
+    background:
+        linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+        linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+        radial-gradient(circle at 18% 22%, rgba(2, 132, 199, 0.2) 0 1px, transparent 1.5px) !important;
+    background-size: 72px 72px, 72px 72px, 460px 360px !important;
+}
+
+[data-theme="light"] .navbar,
+[data-theme="light"] .landing-top-bar,
+[data-theme="light"] .layer-toolbar,
+[data-theme="light"] .top-nav:not(.hidden) {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(15, 23, 42, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .brand-text,
+[data-theme="light"] .layer-name-display,
+[data-theme="light"] .view-title,
+[data-theme="light"] .command-box h2,
+[data-theme="light"] .command-box h2.text-gradient,
+[data-theme="light"] .landing-insight-panel h3,
+[data-theme="light"] .report-title,
+[data-theme="light"] .query-card-title,
+[data-theme="light"] .sigma-card-title,
+[data-theme="light"] .tech-modal-title,
+[data-theme="light"] .group-card-title,
+[data-theme="light"] .software-card-title,
+[data-theme="light"] .mitigation-card-title,
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] h5,
+[data-theme="light"] h6 {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+[data-theme="light"] .view-subtitle,
+[data-theme="light"] .command-box p,
+[data-theme="light"] .landing-insight-panel p,
+[data-theme="light"] .query-card-desc,
+[data-theme="light"] .sigma-card-desc,
+[data-theme="light"] .report-summary,
+[data-theme="light"] .text-on-surface-secondary,
+[data-theme="light"] .text-muted,
+[data-theme="light"] .group-card-description,
+[data-theme="light"] .software-card-description,
+[data-theme="light"] .mitigation-card-description,
+[data-theme="light"] p {
+    color: #334155 !important;
+}
+
+[data-theme="light"] .command-box h2.text-gradient::after,
+[data-theme="light"] .insight-kicker,
+[data-theme="light"] .version-badge,
+[data-theme="light"] .badge,
+[data-theme="light"] .tag,
+[data-theme="light"] .chip {
+    background: rgba(2, 132, 199, 0.08) !important;
+    border-color: rgba(2, 132, 199, 0.18) !important;
+    color: #0369a1 !important;
+}
+
+[data-theme="light"] .view-header,
+[data-theme="light"] .matrix-wrapper,
+[data-theme="light"] .recent-layers-panel,
+[data-theme="light"] .landing-insight-panel,
+[data-theme="light"] .command-box,
+[data-theme="light"] .query-card,
+[data-theme="light"] .entity-card,
+[data-theme="light"] .software-card,
+[data-theme="light"] .software-card-glass,
+[data-theme="light"] .group-card,
+[data-theme="light"] .group-card-glass,
+[data-theme="light"] .mitigation-card,
+[data-theme="light"] .sigma-card,
+[data-theme="light"] .sigma-details-panel,
+[data-theme="light"] .sigma-list-wrapper,
+[data-theme="light"] .report-card,
+[data-theme="light"] .reports-container,
+[data-theme="light"] .reports-stats .stat-card,
+[data-theme="light"] .analytics-card,
+[data-theme="light"] .panel,
+[data-theme="light"] .card,
+[data-theme="light"] .stat-card,
+[data-theme="light"] .metric-card,
+[data-theme="light"] .modal-content,
+[data-theme="light"] .dropdown-content,
+[data-theme="light"] .queries-toolbar,
+[data-theme="light"] .sigma-top-bar,
+[data-theme="light"] .sigma-filters-row,
+[data-theme="light"] .reports-toolbar,
+[data-theme="light"] .filters-panel,
+[data-theme="light"] .filter-bar,
+[data-theme="light"] .toolbar,
+[data-theme="light"] .controls-bar,
+[data-theme="light"] .query-editor,
+[data-theme="light"] .detail-panel,
+[data-theme="light"] .query-card-collapsible,
+[data-theme="light"] .report-tier,
+[data-theme="light"] .report-section,
+[data-theme="light"] .posture-dashboard,
+[data-theme="light"] .team-assignment-card,
+[data-theme="light"] .detection-result-card,
+[data-theme="light"] .candidate-card,
+[data-theme="light"] .empty-state,
+[data-theme="light"] #matrix-no-results {
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-color: rgba(15, 23, 42, 0.1) !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 14px 34px rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .command-box,
+[data-theme="light"] .landing-insight-panel,
+[data-theme="light"] .view-header {
+    background:
+        radial-gradient(circle at 84% 12%, rgba(2, 132, 199, 0.12), transparent 18rem),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96)) !important;
+}
+
+[data-theme="light"] .insight-step {
+    background: rgba(248, 250, 252, 0.86) !important;
+    border-color: rgba(15, 23, 42, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .insight-step span,
+[data-theme="light"] .brand-icon,
+[data-theme="light"] .landing-brand i,
+[data-theme="light"] .command-box-icon,
+[data-theme="light"] .brand-icon-lg {
+    background: #0f172a !important;
+    border-color: rgba(15, 23, 42, 0.14) !important;
+    color: #7dd3fc !important;
+}
+
+[data-theme="light"] .landing-search-bar,
+[data-theme="light"] .input-group,
+[data-theme="light"] .form-control,
+[data-theme="light"] .form-select,
+[data-theme="light"] .custom-glass-select,
+[data-theme="light"] .search-input,
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="search"],
+[data-theme="light"] input[type="email"],
+[data-theme="light"] textarea,
+[data-theme="light"] select,
+[data-theme="light"] .input-group-text {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+[data-theme="light"] .top-nav-pills .nav-link,
+[data-theme="light"] .btn-ghost,
+[data-theme="light"] .btn-outline-info,
+[data-theme="light"] .btn-outline-primary,
+[data-theme="light"] .btn-outline-secondary,
+[data-theme="light"] .pill-btn.secondary,
+[data-theme="light"] .dropdown-trigger {
+    background: rgba(255, 255, 255, 0.72) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #334155 !important;
+}
+
+[data-theme="light"] .top-nav-pills .nav-link:hover,
+[data-theme="light"] .btn-ghost:hover,
+[data-theme="light"] .btn-outline-info:hover,
+[data-theme="light"] .btn-outline-primary:hover,
+[data-theme="light"] .btn-outline-secondary:hover,
+[data-theme="light"] .pill-btn.secondary:hover,
+[data-theme="light"] .dropdown-trigger:hover {
+    background: #ffffff !important;
+    border-color: rgba(2, 132, 199, 0.24) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .top-nav-pills .nav-link.active,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .pill-btn.primary {
+    background: linear-gradient(180deg, #5b6cff, #4f46e5) !important;
+    border-color: rgba(79, 70, 229, 0.28) !important;
+    color: #ffffff !important;
+}
+
+[data-theme="light"] .btn:disabled,
+[data-theme="light"] .btn.disabled,
+[data-theme="light"] .pill-btn:disabled,
+[data-theme="light"] .pill-btn.disabled,
+[data-theme="light"] button:disabled {
+    background: #e2e8f0 !important;
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
+[data-theme="light"] .matrix-table th {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .matrix-table td {
+    background: #f8fafc !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+[data-theme="light"] .technique-cell:not(.annotated) {
+    background: #ffffff !important;
+    border-color: rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .modal-backdrop.show {
+    opacity: 0.42 !important;
+}
+
+[data-theme="light"] .tech-modal-header,
+[data-theme="light"] .modal-header,
+[data-theme="light"] .report-tier-header {
+    background: rgba(248, 250, 252, 0.92) !important;
+    border-color: rgba(15, 23, 42, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .report-preview,
+[data-theme="light"] .report-document,
+[data-theme="light"] .monthly-report-preview {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .report-preview .posture-dashboard,
+[data-theme="light"] .monthly-report-preview .posture-dashboard,
+[data-theme="light"] .report-preview .report-tier,
+[data-theme="light"] .monthly-report-preview .report-tier {
+    background: #1f2937 !important;
+    color: #e5edf8 !important;
+}
