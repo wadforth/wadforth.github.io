@@ -5,6 +5,11 @@ export let mitigationsSortDir = 'asc';
 export let mitigationsViewMode = 'grid';
 export let mitigationsStatusFilter = 'all';
 
+function getAlphaSectionLabel(name) {
+    const first = String(name || '').trim().charAt(0).toUpperCase();
+    return /^[A-Z]$/.test(first) ? first : '#';
+}
+
 export function getMitigationTechniques(mitigationId) {
     const mit = state.mitigationsByStixId?.get(mitigationId) || state.mitigations.find(m => m.id === mitigationId);
     if (!mit) return [];
@@ -46,8 +51,17 @@ export function sortMitigations(mitigations) {
             case 'techniques':
                 return (getMitigationTechniques(b.id).length - getMitigationTechniques(a.id).length) * dir;
             case 'status':
-                const statusOrder = { implemented: 0, planned: 1, none: 2 };
-                return ((statusOrder[getMitigationStatus(b.id)] || 2) - (statusOrder[getMitigationStatus(a.id)] || 2)) * dir;
+                const coverageFor = (mitigation) => {
+                    const techs = getMitigationTechniques(mitigation.id);
+                    if (techs.length === 0) return -1;
+                    const covered = techs.filter(t => {
+                        const tid = t.external_references?.[0]?.external_id || '';
+                        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+                        return ann?.queries && ann.queries.length > 0;
+                    }).length;
+                    return covered / techs.length;
+                };
+                return (coverageFor(b) - coverageFor(a)) * dir;
             default:
                 return 0;
         }
@@ -84,10 +98,14 @@ export function renderMitigationsView() {
     
     mitigations = sortMitigations(mitigations);
     
-    const implemented = mitigations.filter(m => getMitigationStatus(m.id) === 'implemented').length;
-    const planned = mitigations.filter(m => getMitigationStatus(m.id) === 'planned').length;
-    const notStarted = mitigations.filter(m => getMitigationStatus(m.id) === 'none').length;
     const totalTechniques = mitigations.reduce((sum, m) => sum + getMitigationTechniques(m.id).length, 0);
+    const mappedMitigations = mitigations.filter(m => getMitigationTechniques(m.id).length > 0).length;
+    const coveredTechniqueLinks = mitigations.reduce((sum, m) => sum + getMitigationTechniques(m.id).filter(t => {
+        const tid = t.external_references?.[0]?.external_id || '';
+        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+        return ann?.queries && ann.queries.length > 0;
+    }).length, 0);
+    const uncoveredTechniqueLinks = Math.max(0, totalTechniques - coveredTechniqueLinks);
     
     const statsHtml = `
         <div class="mitigations-stats-bar">
@@ -96,16 +114,16 @@ export function renderMitigationsView() {
                 <span class="mitigations-stat-label">Mitigations</span>
             </div>
             <div class="mitigations-stat">
-                <span class="mitigations-stat-value" style="color: #198754;">${implemented}</span>
-                <span class="mitigations-stat-label">Implemented</span>
+                <span class="mitigations-stat-value" style="color: #198754;">${mappedMitigations}</span>
+                <span class="mitigations-stat-label">Mapped</span>
             </div>
             <div class="mitigations-stat">
-                <span class="mitigations-stat-value" style="color: #ffc107;">${planned}</span>
-                <span class="mitigations-stat-label">Planned</span>
+                <span class="mitigations-stat-value" style="color: #10b981;">${coveredTechniqueLinks}</span>
+                <span class="mitigations-stat-label">Covered Links</span>
             </div>
             <div class="mitigations-stat">
-                <span class="mitigations-stat-value" style="color: var(--on-surface-tertiary);">${notStarted}</span>
-                <span class="mitigations-stat-label">Not Started</span>
+                <span class="mitigations-stat-value" style="color: #f59e0b;">${uncoveredTechniqueLinks}</span>
+                <span class="mitigations-stat-label">Detection Gaps</span>
             </div>
             <div class="mitigations-stat">
                 <span class="mitigations-stat-value">${totalTechniques}</span>
@@ -123,18 +141,13 @@ export function renderMitigationsView() {
                         <option value="name" ${mitigationsSortBy === 'name' ? 'selected' : ''}>Name</option>
                         <option value="id" ${mitigationsSortBy === 'id' ? 'selected' : ''}>ID</option>
                         <option value="techniques" ${mitigationsSortBy === 'techniques' ? 'selected' : ''}>Techniques</option>
-                        <option value="status" ${mitigationsSortBy === 'status' ? 'selected' : ''}>Status</option>
+                        <option value="status" ${mitigationsSortBy === 'status' ? 'selected' : ''}>Detection Coverage</option>
                     </select>
                     <button class="btn btn-sm btn-ghost mitigations-sort-dir" id="mitigations-sort-dir" title="Toggle sort direction">
                         <i class="bi bi-sort-${mitigationsSortDir === 'asc' ? 'up' : 'down'}"></i>
                     </button>
                 </div>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn ${mitigationsStatusFilter === 'all' ? 'btn-primary' : 'btn-outline-secondary'}" data-mit-filter="all">All</button>
-                    <button class="btn ${mitigationsStatusFilter === 'implemented' ? 'btn-success' : 'btn-outline-secondary'}" data-mit-filter="implemented"><i class="bi bi-check-circle"></i> Done</button>
-                    <button class="btn ${mitigationsStatusFilter === 'planned' ? 'btn-warning' : 'btn-outline-secondary'}" data-mit-filter="planned"><i class="bi bi-clock"></i> Planned</button>
-                    <button class="btn ${mitigationsStatusFilter === 'none' ? 'btn-outline-secondary' : 'btn-outline-secondary'}" data-mit-filter="none"><i class="bi bi-circle"></i> None</button>
-                </div>
+                <div class="mitigation-guidance-note"><i class="bi bi-info-circle"></i> MITRE mitigations are shown as defensive guidance linked to your detection coverage, not as ownership/status tasks.</div>
             </div>
             <div class="mitigations-toolbar-right">
                 <div class="btn-group btn-group-sm">
@@ -165,7 +178,12 @@ export function renderMitigationsView() {
     
     container.className = mitigationsViewMode === 'grid' ? 'mitigations-grid' : 'mitigations-list-view';
     
-    const cardsHtml = mitigations.map(m => {
+    const cardsHtml = mitigations.map((m, index) => {
+        const sectionLabel = getAlphaSectionLabel(m.name);
+        const previousLabel = index > 0 ? getAlphaSectionLabel(mitigations[index - 1].name) : '';
+        const sectionHeader = mitigationsSortBy === 'name' && sectionLabel !== previousLabel
+            ? `<div class="az-section-header"><span>${sectionLabel}</span></div>`
+            : '';
         const mitId = m.external_references?.[0]?.external_id || '';
         const techs = getMitigationTechniques(m.id);
         const status = getMitigationStatus(m.id);
@@ -221,12 +239,10 @@ export function renderMitigationsView() {
                 </div>
             ` : `<div style="width: 48px; text-align: center; font-size: 0.62rem; color: var(--on-surface-tertiary); font-style: italic;">N/A</div>`;
 
-            return `
+            return sectionHeader + `
                 <div class="mitigation-card mitigation-card-list mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" role="button" tabindex="0" aria-label="View mitigation details for ${escapeHtml(m.name)}" style="cursor: pointer;">
                     <div class="mitigation-list-row" style="display: grid !important; grid-template-columns: 28px minmax(200px, 2fr) minmax(130px, 1.2fr) 60px minmax(150px, 1.5fr) 20px !important; align-items: center; gap: 1rem !important; width: 100%;">
-                        <button class="btn btn-sm mit-status-toggle ${status}" data-mit="${m.id}" title="Toggle status" style="flex-shrink: 0;">
-                            <i class="bi ${status === 'implemented' ? 'bi-check-circle-fill' : status === 'planned' ? 'bi-clock-fill' : 'bi-circle'}"></i>
-                        </button>
+                        <div class="mitigation-guidance-icon" title="Defensive guidance"><i class="bi bi-shield-check"></i></div>
                         <div class="mitigation-list-info" style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
                             <span class="mitigation-list-name" style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.name)}${newBadge}</span>
                             <span class="mitigation-list-id" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px; flex-shrink: 0;">${mitId}</span>
@@ -247,17 +263,14 @@ export function renderMitigationsView() {
             `;
         }
         
-        return `
+        return sectionHeader + `
             <div class="mitigation-card mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" role="button" tabindex="0" aria-label="View mitigation details for ${escapeHtml(m.name)}" style="cursor: pointer; display: flex; flex-direction: column; height: 100%;">
                 <div class="mitigation-card-header">
                     <div class="mitigation-card-header-left">
                         <span class="mitigation-id-badge" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${mitId}</span>
                         <h6 class="mitigation-card-title" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}${newBadge}</h6>
                     </div>
-                    <button class="btn btn-sm mit-status-toggle ${status}" data-mit="${m.id}" title="Click to cycle: None → Planned → Implemented">
-                        <i class="bi ${status === 'implemented' ? 'bi-check-circle-fill' : status === 'planned' ? 'bi-clock-fill' : 'bi-circle'}"></i>
-                        <span class="mit-status-label">${status === 'implemented' ? 'Done' : status === 'planned' ? 'Planned' : 'None'}</span>
-                    </button>
+                    <span class="mitigation-guidance-badge"><i class="bi bi-compass"></i> Guidance</span>
                 </div>
                 <p class="mitigation-card-desc">${escapeHtml(truncatedDesc)}</p>
                 <div class="mitigation-card-techs" style="margin-top: 0.75rem;">

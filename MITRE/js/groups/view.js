@@ -4,6 +4,11 @@ export let groupsSortBy = 'name';
 export let groupsSortDir = 'asc';
 export let groupsViewMode = 'grid';
 
+function getAlphaSectionLabel(name) {
+    const first = String(name || '').trim().charAt(0).toUpperCase();
+    return /^[A-Z]$/.test(first) ? first : '#';
+}
+
 
 
 export function getGroupTechniqueCount(groupId) {
@@ -145,7 +150,12 @@ export function renderGroupsView() {
     
     container.className = groupsViewMode === 'grid' ? 'groups-grid' : 'groups-list-view';
     
-    const cardsHtml = groups.map(g => {
+    const cardsHtml = groups.map((g, index) => {
+        const sectionLabel = getAlphaSectionLabel(g.name);
+        const previousLabel = index > 0 ? getAlphaSectionLabel(groups[index - 1].name) : '';
+        const sectionHeader = groupsSortBy === 'name' && sectionLabel !== previousLabel
+            ? `<div class="az-section-header"><span>${sectionLabel}</span></div>`
+            : '';
         const groupId = g.external_references?.[0]?.external_id || '';
         const techCount = getGroupTechniqueCount(g.id);
         const desc = g.description || '';
@@ -185,7 +195,7 @@ export function renderGroupsView() {
         </div>`;
         
         if (groupsViewMode === 'list') {
-            return `
+            return sectionHeader + `
                 <div class="group-card group-card-list group-card-glass ${themeClass}" data-group-id="${g.id}" role="button" tabindex="0" aria-label="View group details for ${escapeHtml(g.name)}" style="cursor: pointer;">
                     <div class="group-list-row">
                         <div class="group-avatar-container" style="width: 26px; height: 26px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
@@ -209,7 +219,7 @@ export function renderGroupsView() {
             `;
         }
         
-        return `
+        return sectionHeader + `
             <div class="group-card group-card-glass ${themeClass}" data-group-id="${g.id}" role="button" tabindex="0" aria-label="View group details for ${escapeHtml(g.name)}" style="cursor: pointer;">
                 <div class="group-card-avatar-row" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem;">
                     <div class="group-avatar-container" style="width: 42px; height: 42px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">

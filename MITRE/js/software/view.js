@@ -6,6 +6,11 @@ export let softwareViewMode = 'grid';
 export let softwareFilterType = 'all';
 export let softwareRenderToken = 0;
 
+function getAlphaSectionLabel(name) {
+    const first = String(name || '').trim().charAt(0).toUpperCase();
+    return /^[A-Z]$/.test(first) ? first : '#';
+}
+
 
 
 export function getSoftwareTechniqueCount(softwareId) {
@@ -231,7 +236,12 @@ export function renderSoftwareView() {
 
         container.className = softwareViewMode === 'grid' ? 'software-grid' : 'software-list-view';
 
-        const cardsHtml = sorted.map(s => {
+        const cardsHtml = sorted.map((s, index) => {
+            const sectionLabel = getAlphaSectionLabel(s.name);
+            const previousLabel = index > 0 ? getAlphaSectionLabel(sorted[index - 1].name) : '';
+            const sectionHeader = softwareSortBy === 'name' && sectionLabel !== previousLabel
+                ? `<div class="az-section-header"><span>${sectionLabel}</span></div>`
+                : '';
             const swId = s.external_references?.[0]?.external_id || '';
             const swType = s.type === 'malware' ? 'Malware' : 'Tool';
             const techCount = indexedTechCounts.get(swId) || 0;
@@ -295,7 +305,7 @@ export function renderSoftwareView() {
                     ${sparklineFiller}
                 </div>`;
 
-                return `
+                return sectionHeader + `
                     <div class="software-card software-card-list software-card-glass ${themeClass}" data-sw-id="${swId}" role="button" tabindex="0" aria-label="View software details for ${escapeHtml(s.name)}" style="cursor: pointer;">
                         <div class="software-list-row">
                             <div class="software-avatar-container" style="width: 26px; height: 26px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
@@ -319,7 +329,7 @@ export function renderSoftwareView() {
                 `;
             }
             
-            return `
+            return sectionHeader + `
                 <div class="software-card software-card-glass ${themeClass}" data-sw-id="${swId}" role="button" tabindex="0" aria-label="View software details for ${escapeHtml(s.name)}" style="cursor: pointer;">
                     <div class="software-card-avatar-row" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem;">
                         <div class="software-avatar-container" style="width: 42px; height: 42px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">

@@ -23,12 +23,24 @@ export function showToast(message, type = 'info', duration = 3000) {
     
     const el = document.getElementById(id);
     setTimeout(() => {
-        if (el) {
-            el.classList.remove('toast-enter');
-            el.classList.add('toast-exit');
-            el.addEventListener('animationend', () => el.remove(), { once: true });
-        }
+        dismissToastElement(el);
     }, duration);
+}
+
+window.addEventListener('unhandledrejection', (event) => {
+    const message = String(event.reason?.message || event.reason || '');
+    if (message.includes('Promised response from onMessage listener went out of scope')) {
+        event.preventDefault();
+    }
+});
+
+function dismissToastElement(el) {
+    if (!el) return;
+
+    el.classList.remove('toast-enter');
+    el.classList.add('toast-exit');
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+    setTimeout(() => el.remove(), 450);
 }
 
 export function showPrompt(title, defaultValue = '') {
@@ -142,11 +154,7 @@ export function showToastWithOptions(message, options = {}) {
     const el = document.getElementById(id);
     el?.querySelector('[data-toast-action]')?.addEventListener('click', action);
     setTimeout(() => {
-        if (el) {
-            el.classList.remove('toast-enter');
-            el.classList.add('toast-exit');
-            el.addEventListener('animationend', () => el.remove(), { once: true });
-        }
+        dismissToastElement(el);
     }, duration);
     
     return id;
@@ -154,18 +162,12 @@ export function showToastWithOptions(message, options = {}) {
 
 export function dismissToast(toastId) {
     const el = document.getElementById(toastId);
-    if (el) {
-        el.classList.remove('toast-enter');
-        el.classList.add('toast-exit');
-        el.addEventListener('animationend', () => el.remove(), { once: true });
-    }
+    dismissToastElement(el);
 }
 
 export function dismissAllToasts() {
     document.querySelectorAll('#app-toast .toast').forEach(toast => {
-        toast.classList.remove('toast-enter');
-        toast.classList.add('toast-exit');
-        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+        dismissToastElement(toast);
     });
 }
 

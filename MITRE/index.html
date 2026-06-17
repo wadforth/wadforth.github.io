@@ -23,7 +23,7 @@
     <link href="css/skeletons.css" rel="stylesheet">
     <link href="css/landing.css" rel="stylesheet">
     <link href="css/sigma.css" rel="stylesheet">
-    <link href="css/professional.css" rel="stylesheet">
+    <link href="css/professional.css?v=7" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar fixed-top">
@@ -209,10 +209,6 @@
                     <button class="btn btn-sm btn-ghost" id="btn-legend-editor" title="Edit Legend">
                         <i class="bi bi-palette mr-1"></i>Legend
                     </button>
-                    <button class="btn btn-sm btn-ghost" id="btn-coverage-simulator" title="What-If Coverage Simulator">
-                        <i class="bi bi-calculator mr-1"></i>Simulator
-                    </button>
-                    <div class="vr mx-1" style="width: 1px; height: 16px; background: var(--border); display: inline-block; vertical-align: middle;"></div>
                     <button class="btn btn-sm btn-ghost" id="btn-export-layer" title="Export Layer">
                         <i class="bi bi-download mr-1"></i>Export
                     </button>
@@ -400,7 +396,7 @@
                 <div id="sigma-stats-dashboard" class="sigma-stats-dashboard"></div>
 
                 <!-- HYDRATION STATUS INDICATOR -->
-                <div id="sigma-hydrate-status" class="sigma-hydrate-status">
+                <div id="sigma-hydrate-status" class="sigma-hydrate-status hidden">
                     <i class="bi bi-database"></i> Initializing...
                 </div>
 
@@ -456,66 +452,74 @@
                     </div>
                     
                     <div class="sigma-top-bar-right">
-                        <button class="btn btn-sm btn-outline-primary" id="btn-load-live-sigma" style="margin-right: 8px;">
-                            <i class="bi bi-github mr-1"></i> Connect Live (3,000+ Rules)
-                        </button>
-                        <button class="btn btn-sm btn-outline-info" id="btn-hydrate-all-sigma" style="margin-right: 8px;" data-sigma-action="hydrate-all">
-                            <i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate & Index All
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary" id="btn-toggle-candidates" style="margin-right: 8px;" data-sigma-action="toggle-candidates">
-                            <i class="bi bi-bookmark-star"></i> Candidates <span id="candidates-count-badge" class="badge-candidates">0</span>
-                        </button>
-                        <span id="sigma-autosync-countdown" class="sigma-autosync-countdown hidden" style="font-size: 0.72rem; color: var(--on-surface-tertiary); display: inline-flex; align-items: center; gap: 0.3rem;">
-                            <i class="bi bi-clock"></i> Next auto-sync: --
-                        </span>
                         <span id="sigma-rules-count" class="badge bg-secondary font-monospace" style="font-size: 0.75rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border);">Rules: 0</span>
+                        <details class="sigma-actions-menu">
+                            <summary><i class="bi bi-three-dots"></i> Operations</summary>
+                            <div class="sigma-actions-panel">
+                                <button class="btn btn-sm btn-outline-primary" id="btn-load-live-sigma">
+                                    <i class="bi bi-github mr-1"></i> Connect Live
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" id="btn-hydrate-all-sigma" data-sigma-action="hydrate-all">
+                                    <i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate & Index
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="btn-toggle-candidates" data-sigma-action="toggle-candidates">
+                                    <i class="bi bi-bookmark-star"></i> Candidates <span id="candidates-count-badge" class="badge-candidates">0</span>
+                                </button>
+                                <span id="sigma-autosync-countdown" class="sigma-autosync-countdown hidden">
+                                    <i class="bi bi-clock"></i> Next auto-sync: --
+                                </span>
+                            </div>
+                        </details>
                     </div>
                 </div>
 
                 <!-- ADDITIONAL FILTERS ROW -->
-                <div class="sigma-filters-row">
-                    <label>Refine:</label>
-                    <select id="sigma-level-filter" class="sigma-select-filter" style="width: 130px;">
-                        <option value="all">All Severity</option>
-                        <option value="informational">Informational</option>
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
-                    </select>
-                    <select id="sigma-coverage-filter" class="sigma-select-filter" style="width: 145px;">
-                        <option value="all">All Query Links</option>
-                        <option value="active">Linked Queries</option>
-                        <option value="gap">Unlinked Rules</option>
-                    </select>
-                    <select id="sigma-change-filter" class="sigma-select-filter" style="width: 135px;">
-                        <option value="all">All Changes</option>
-                        <option value="new">New</option>
-                        <option value="update">Updated</option>
-                        <option value="fix">Fixed</option>
-                    </select>
-                    <div class="sigma-multi-select" id="sigma-multi-product">
-                        <div class="sigma-multi-select-header" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
-                            <span class="sigma-multi-select-label">Products: All</span>
-                            <i class="bi bi-chevron-down"></i>
+                <details class="sigma-advanced-filters">
+                    <summary><i class="bi bi-sliders"></i> Advanced filters <span>severity, link state, release changes, products, date, sort</span></summary>
+                    <div class="sigma-filters-row">
+                        <label>Refine:</label>
+                        <select id="sigma-level-filter" class="sigma-select-filter" style="width: 130px;">
+                            <option value="all">All Severity</option>
+                            <option value="informational">Informational</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                        <select id="sigma-coverage-filter" class="sigma-select-filter" style="width: 145px;">
+                            <option value="all">All Query Links</option>
+                            <option value="active">Linked Queries</option>
+                            <option value="gap">Unlinked Rules</option>
+                        </select>
+                        <select id="sigma-change-filter" class="sigma-select-filter" style="width: 135px;">
+                            <option value="all">All Changes</option>
+                            <option value="new">New</option>
+                            <option value="update">Updated</option>
+                            <option value="fix">Fixed</option>
+                        </select>
+                        <div class="sigma-multi-select" id="sigma-multi-product">
+                            <div class="sigma-multi-select-header" role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false">
+                                <span class="sigma-multi-select-label">Products: All</span>
+                                <i class="bi bi-chevron-down"></i>
+                            </div>
+                            <div class="sigma-multi-select-dropdown" id="sigma-product-options" role="listbox" aria-label="Sigma products">
+                                <!-- Checkboxes injected dynamically -->
+                            </div>
                         </div>
-                        <div class="sigma-multi-select-dropdown" id="sigma-product-options" role="listbox" aria-label="Sigma products">
-                            <!-- Checkboxes injected dynamically -->
-                        </div>
+                        <select id="sigma-date-filter" class="sigma-select-filter" style="width: 140px;">
+                            <option value="all">All Dates</option>
+                            <option value="new">New Since Sync</option>
+                        </select>
+                        <select id="sigma-sort-select" class="sigma-select-filter" style="width: 155px;">
+                            <option value="default">Sort: Default</option>
+                            <option value="az">Sort: A -> Z</option>
+                            <option value="za">Sort: Z -> A</option>
+                            <option value="severity-desc">Sort: Critical First</option>
+                            <option value="severity-asc">Sort: Low First</option>
+                            <option value="date-desc">Sort: Newest First</option>
+                        </select>
                     </div>
-                    <select id="sigma-date-filter" class="sigma-select-filter" style="width: 140px;">
-                        <option value="all">All Dates</option>
-                        <option value="new">New Since Sync</option>
-                    </select>
-                    <select id="sigma-sort-select" class="sigma-select-filter" style="width: 155px;">
-                        <option value="default">Sort: Default</option>
-                        <option value="az">Sort: A -> Z</option>
-                        <option value="za">Sort: Z -> A</option>
-                        <option value="severity-desc">Sort: Critical First</option>
-                        <option value="severity-asc">Sort: Low First</option>
-                        <option value="date-desc">Sort: Newest First</option>
-                    </select>
-                </div>
+                </details>
 
                 <!-- MAIN WORKSPACE -->
                 <div class="sigma-layout-container">
@@ -942,13 +946,13 @@
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
             <div class="modal-content export-options-modal">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-camera mr-2"></i>Export Matrix Options</h5>
+                    <h5 class="modal-title"><i class="bi bi-filetype-svg mr-2"></i>Export Matrix SVG</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <!-- Left Column: Options + Color/Tint Picker -->
-                        <div class="col-md-7 border-end" style="border-color: var(--border) !important;">
+                        <!-- Left Column: SVG options -->
+                        <div class="col-lg-8 border-end" style="border-color: var(--border) !important;">
                             <div class="export-option-group">
                                 <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Include Tactics</label>
                                 <div class="flex gap-2 mb-2">
@@ -1000,20 +1004,19 @@
                             </div>
 
                             <div class="export-option-group mt-3">
-                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Output Format</label>
-                                <div class="btn-group w-100" role="group">
-                                    <input type="radio" class="btn-check" name="export-format" id="format-png" value="png" checked>
-                                    <label class="btn btn-outline-primary btn-sm" for="format-png">PNG</label>
-                                    <input type="radio" class="btn-check" name="export-format" id="format-svg" value="svg">
-                                    <label class="btn btn-outline-primary btn-sm" for="format-svg">SVG</label>
-                                    <input type="radio" class="btn-check" name="export-format" id="format-pdf" value="pdf">
-                                    <label class="btn btn-outline-primary btn-sm" for="format-pdf">PDF</label>
+                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Output</label>
+                                <div class="matrix-export-format-note">
+                                    <i class="bi bi-vector-pen"></i>
+                                    <div>
+                                        <strong>SVG only</strong>
+                                        <span>Scales cleanly for the full ATT&CK matrix and can be edited in design tools.</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Right Column: Live Vector Preview -->
-                        <div class="col-md-5 d-flex flex-column justify-content-between p-3" style="background: var(--surface-variant); border-radius: 0 0 8px 0;">
+                        <div class="col-lg-4 d-flex flex-column justify-content-between p-3" style="background: var(--surface-variant); border-radius: 0 0 8px 0;">
                             <div>
                                 <h6 class="text-xs font-bold uppercase tracking-wider mb-2 text-on-surface-secondary flex align-items-center gap-2">
                                     <i class="bi bi-eye-fill text-primary"></i> Cover Page Preview
@@ -1062,109 +1065,6 @@
         </div>
     </div>
 
-    <div class="modal fade" id="coverage-simulator-modal" tabindex="-1">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable">
-            <div class="modal-content technique-modal">
-                <div class="tech-modal-header">
-                    <button type="button" class="btn-close tech-modal-close" data-bs-dismiss="modal"></button>
-                    <div class="tech-modal-header-content">
-                        <div class="tech-modal-badges">
-                            <span class="tech-badge-id"><i class="bi bi-cpu"></i> What-If</span>
-                            <span class="tech-badge-type">Coverage Simulator</span>
-                        </div>
-                        <h3 class="tech-modal-title">Real-Time Coverage "What-If" Simulator</h3>
-                        <p class="text-on-surface-secondary text-sm mt-1" style="margin-bottom: 0;">Check or uncheck parent and sub-techniques to simulate shifts in coverage scores and maturity grades in real-time before applying changes to your matrix.</p>
-                    </div>
-                </div>
-                <div class="tech-modal-body">
-                    <div class="row">
-                        <!-- Left Column: Search + Scrollable Techniques Toggles -->
-                        <div class="col-md-7 border-end" style="border-color: var(--border) !important; display: flex; flex-direction: column; height: 500px;">
-                            <div class="p-2">
-                                <div class="input-group input-group-sm mb-2">
-                                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
-                                    <input type="text" id="sim-tech-search" class="form-control border-start-0" placeholder="Filter techniques by name or ID...">
-                                </div>
-                                <div class="d-flex gap-2 mb-2">
-                                    <button class="btn btn-xs btn-outline-primary" id="sim-btn-select-all">Select All</button>
-                                    <button class="btn btn-xs btn-outline-secondary" id="sim-btn-deselect-all">Clear Checked</button>
-                                    <button class="btn btn-xs btn-outline-info ms-auto" id="sim-btn-only-covered">Only Covered</button>
-                                    <button class="btn btn-xs btn-outline-secondary" id="sim-btn-all-types">All Types</button>
-                                </div>
-                            </div>
-                            <div id="sim-techniques-scroll" style="flex-grow: 1; overflow-y: auto; padding-right: 8px;">
-                                <!-- Dynamically populated list of techniques by tactic -->
-                            </div>
-                        </div>
-
-                        <!-- Right Column: Live SVG Dial & Maturity Dashboard -->
-                        <div class="col-md-5 d-flex flex-column justify-content-between p-3" style="background: var(--surface-variant); border-radius: 0 0 12px 0; height: 500px;">
-                            <div class="text-center mb-3">
-                                <h6 class="text-xs font-bold uppercase tracking-wider mb-2 style-label" style="color: var(--on-surface-secondary);">Dynamic Maturity Grade</h6>
-                                <div style="position: relative; display: inline-block; width: 140px; height: 140px;">
-                                    <!-- Circular SVG Dial Progress Gauge -->
-                                    <svg width="140" height="140" viewBox="0 0 140 140" style="transform: rotate(-90deg);">
-                                        <circle cx="70" cy="70" r="58" fill="none" stroke="var(--border)" stroke-width="10"></circle>
-                                        <circle id="sim-dial-progress" cx="70" cy="70" r="58" fill="none" stroke="var(--primary)" stroke-width="10" stroke-dasharray="364.4" stroke-dashoffset="364.4" style="transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.4s ease;"></circle>
-                                    </svg>
-                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
-                                        <span id="sim-dial-grade" style="font-size: 32px; font-weight: 800; color: var(--on-surface); line-height: 1;">D</span>
-                                        <span id="sim-dial-percentage" style="font-size: 14px; font-weight: 700; color: var(--on-surface-secondary); margin-top: 2px;">0%</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; box-shadow: var(--shadow-sm);">
-                                <h6 class="text-xs font-bold uppercase tracking-wider mb-2 text-on-surface-secondary flex align-items-center gap-1">
-                                    <i class="bi bi-bar-chart-fill text-primary"></i> Simulated Metrics
-                                </h6>
-                                <div class="d-flex justify-content-between mb-1 text-xs">
-                                    <span style="color: var(--on-surface-secondary);">Parent Techniques Covered:</span>
-                                    <span id="sim-stat-parents" style="font-weight: 700; color: var(--on-surface);">0 / 0</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-1 text-xs">
-                                    <span style="color: var(--on-surface-secondary);">Sub-techniques Covered:</span>
-                                    <span id="sim-stat-subs" style="font-weight: 700; color: var(--on-surface);">0 / 0</span>
-                                </div>
-                                <div class="d-flex justify-content-between text-xs">
-                                    <span style="color: var(--on-surface-secondary);">Total Annotated Checklist:</span>
-                                    <span id="sim-stat-total" style="font-weight: 700; color: var(--on-surface);">0 / 0</span>
-                                </div>
-                            </div>
-
-                            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 11px; color: var(--on-surface-secondary);">
-                                <div style="font-weight: bold; margin-bottom: 4px; color: var(--on-surface);">Info: Maturity Grading Scale:</div>
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span>Grade A (&gt;=70% Coverage):</span>
-                                    <span style="color: var(--accent-green); font-weight: bold;">Robust Posture</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span>Grade B (50% - 70%):</span>
-                                    <span style="color: var(--accent-tan); font-weight: bold;">Moderate Posture</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span>Grade C (30% - 50%):</span>
-                                    <span style="color: #f59e0b; font-weight: bold;">Basic Posture</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Grade D/F (<30%):</span>
-                                    <span style="color: var(--accent-red); font-weight: bold;">Defensive Gaps</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex gap-2 mt-auto pt-3 align-items-center" style="border-top: 1px solid var(--border);">
-                                <button class="btn btn-sm btn-outline-secondary w-50" id="sim-btn-reset">Revert / Reset</button>
-                                <button class="btn btn-sm btn-primary w-50" id="sim-btn-commit">
-                                    <i class="bi bi-check-circle mr-1"></i>Apply Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="modal fade" id="migration-modal" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
@@ -1196,7 +1096,7 @@
 
     <!-- Changelog Modal -->
     <div class="modal fade" id="changelog-modal" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable changelog-modal-dialog">
             <div class="modal-content">
                 <div class="modal-header border-bottom-0 pb-0">
                     <div>
@@ -1205,7 +1105,7 @@
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body changelog-modal-body">
                     <div id="changelog-loading" class="text-center py-5">
                         <div class="spinner-border text-primary" role="status"></div>
                         <p class="mt-2 text-on-surface-secondary text-sm">Analyzing dataset changes...</p>
@@ -1231,8 +1131,8 @@
     <script type="module" src="js/utils/performance.js"></script>
     <script type="module" src="js/utils/version.js"></script>
     <script type="module" src="js/utils/db.js"></script>
-    <script type="module" src="js/intel/sigma-parser.js?v=2"></script>
-    <script type="module" src="js/intel/changelog.js?v=2"></script>
+    <script type="module" src="js/intel/sigma-parser.js?v=4"></script>
+    <script type="module" src="js/intel/changelog.js?v=3"></script>
     <script type="module" src="ui.js?v=2"></script>
     <script>
         function closeSigmaMultiSelects(except) {
@@ -1300,10 +1200,9 @@
     <script type="module" src="js/reports/generator.js"></script>
     <script type="module" src="js/reports/view.js"></script>
     <script type="module" src="js/reports/enhancements.js"></script>
-    <script type="module" src="js/reports/simulator.js"></script>
     <script type="module" src="js/landing/enhancements.js"></script>
     <script type="module" src="js/routing/router.js"></script>
     <script type="module" src="js/layer/import.js"></script>
-    <script type="module" src="app.js"></script>
+    <script type="module" src="app.js?v=5"></script>
 </body>
 </html>

@@ -11,6 +11,97 @@ function getSafeQueryLanguage(language) {
     };
 }
 
+function getSafeExternalUrl(value) {
+    const raw = String(value || '').trim();
+    if (!/^https?:\/\//i.test(raw)) return '';
+
+    try {
+        const url = new URL(raw);
+        return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : '';
+    } catch {
+        return '';
+    }
+}
+
+function renderSigmaLinks(query) {
+    const ids = String(query?.sigmaRuleId || '').split('|').filter(Boolean);
+    const titles = String(query?.sigmaRuleTitle || '').split('|').filter(Boolean);
+    const urls = String(query?.sigmaRuleUrl || '').split('|');
+    const count = Math.max(ids.length, titles.length, urls.length);
+
+    if (count === 0) return '';
+
+    const links = Array.from({ length: count }, (_, i) => {
+        const id = ids[i] || ids[0] || '';
+        const title = titles[i] || titles[0] || id || 'SigmaHQ Rule';
+        const url = getSafeExternalUrl(urls[i] || '');
+        const label = id ? `${id} - ${title}` : title;
+        const content = `<i class="bi bi-shield-check"></i><span>${escapeHtml(label)}</span>`;
+
+        if (url) {
+            return `<a class="query-sigma-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${content}<i class="bi bi-box-arrow-up-right"></i></a>`;
+        }
+        return `<span class="query-sigma-link">${content}</span>`;
+    }).join('');
+
+    return `
+        <div class="query-linked-sigma">
+            <div class="query-linked-sigma-label">Linked Sigma</div>
+            <div class="query-linked-sigma-items">${links}</div>
+        </div>
+    `;
+}
+
+function getDescriptionExcerpt(text) {
+    const clean = String(text || '').replace(/\s+/g, ' ').trim();
+    if (clean.length <= 520) return clean;
+    const sentenceEnd = clean.slice(0, 520).search(/[.!?]\s+[^.!?]*$/);
+    const end = sentenceEnd > 180 ? sentenceEnd + 1 : 520;
+    return clean.slice(0, end).trim() + '...';
+}
+
+function renderOptimizedDescription(tech, counts) {
+    const description = tech.description || 'No description available.';
+    const isLong = description.replace(/\s+/g, ' ').trim().length > 700;
+    const excerpt = getDescriptionExcerpt(description);
+    const dataTiles = [
+        { label: 'Procedures', value: counts.procedures, icon: 'bi-terminal' },
+        { label: 'Queries', value: counts.queries, icon: 'bi-code-slash' },
+        { label: 'Sigma Links', value: counts.sigmaLinks, icon: 'bi-shield-check' },
+        { label: 'Mitigations', value: counts.mitigations, icon: 'bi-shield' },
+        { label: 'Groups', value: counts.groups, icon: 'bi-people' },
+        { label: 'Software', value: counts.software, icon: 'bi-cpu' },
+        { label: 'Data Sources', value: counts.dataSources, icon: 'bi-database-check' }
+    ];
+
+    return `
+        <div class="tech-desc-layout">
+            <div class="tech-desc-main">
+                <div class="tech-desc-label">MITRE Description</div>
+                ${isLong ? `
+                    <div class="tech-desc-content tech-desc-summary">${parseDescription(excerpt)}</div>
+                    <details class="tech-desc-details">
+                        <summary>Read full MITRE description</summary>
+                        <div class="tech-desc-content tech-desc-full">${parseDescription(description)}</div>
+                    </details>
+                ` : `<div class="tech-desc-content">${parseDescription(description)}</div>`}
+            </div>
+            <div class="tech-linked-overview" aria-label="Linked technique data summary">
+                <div class="tech-desc-label">Linked Data</div>
+                <div class="tech-linked-grid">
+                    ${dataTiles.map(tile => `
+                        <div class="tech-linked-tile">
+                            <i class="bi ${tile.icon}"></i>
+                            <span class="tech-linked-value">${tile.value}</span>
+                            <span class="tech-linked-label">${tile.label}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 export function showTechniqueModal(techniqueId, skipHistory = false) {
     const tech = state.techniques.find(t => t.external_references?.[0]?.external_id === techniqueId);
     if (!tech) return;
@@ -25,7 +116,15 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
     document.getElementById('technique-modal-title').textContent = tech.name || 'Unknown Technique';
     document.getElementById('technique-modal-id').textContent = techniqueId;
     document.getElementById('technique-modal-type').textContent = tech.x_mitre_is_subtechnique ? 'Sub-technique' : 'Technique';
-    document.getElementById('technique-modal-description').innerHTML = parseDescription(tech.description || '');
+    document.getElementById('technique-modal-description').innerHTML = renderOptimizedDescription(tech, {
+        procedures: 0,
+        queries: 0,
+        sigmaLinks: 0,
+        mitigations: 0,
+        groups: 0,
+        software: 0,
+        dataSources: 0
+    });
 
     const revokedBadge = document.getElementById('technique-modal-revoked');
     if (tech.revoked || tech.x_mitre_deprecated) {
@@ -134,6 +233,7 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
                 </div>
                 ${q.archived && q.archiveReason ? `<div class="query-archive-reason"><i class="bi bi-info-circle"></i> ${escapeHtml(q.archiveReason)}</div>` : ''}
                 <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
+                ${renderSigmaLinks(q)}
                 ${q.description ? `<p class="query-card-desc">${escapeHtml(q.description)}</p>` : ''}
                 ${q.source ? `<div class="query-card-source"><i class="bi bi-link-45deg"></i>Source: ${escapeHtml(q.source)}</div>` : ''}
                 <div class="query-card-item-footer">
@@ -301,6 +401,24 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
     });
 
     renderTechniqueDetails(tech);
+
+    const sigmaLinkCount = queries.reduce((count, q) => {
+        return count + Math.max(
+            String(q?.sigmaRuleId || '').split('|').filter(Boolean).length,
+            String(q?.sigmaRuleTitle || '').split('|').filter(Boolean).length,
+            String(q?.sigmaRuleUrl || '').split('|').filter(Boolean).length
+        );
+    }, 0);
+    const detectsCount = state.relationships.filter(r => r.relationship_type === 'detects' && r.target_ref === tech.id).length;
+    document.getElementById('technique-modal-description').innerHTML = renderOptimizedDescription(tech, {
+        procedures: procs.length,
+        queries: queries.length,
+        sigmaLinks: sigmaLinkCount,
+        mitigations: mitigs.length,
+        groups: relatedGroups.length,
+        software: relatedSoftware.length,
+        dataSources: detectsCount || (tech.x_mitre_data_sources?.length || 0)
+    });
 
     const modal = new bootstrap.Modal(document.getElementById('technique-modal'));
     

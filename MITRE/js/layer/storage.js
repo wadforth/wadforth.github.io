@@ -13,6 +13,35 @@ export const DELTA_FLUSH_THRESHOLD = 5; // Consolidate after this many deltas
 const CURRENT_LAYER_KEY = 'attack-explorer-current-layer';
 const RECENT_LAYERS_KEY = 'attack-explorer-recent';
 const MAX_RECENT_LAYERS = 6;
+const LAYER_EXPORT_SCHEMA_VERSION = 2;
+
+function buildLayerExportPayload(layer) {
+    const payload = JSON.parse(JSON.stringify(layer));
+    payload.domain = payload.domain || state.currentDomain;
+    payload.versions = {
+        ...(payload.versions || {}),
+        attack: payload.versions?.attack || payload.attackVersion || state.currentVersion
+    };
+    payload.attackVersion = payload.attackVersion || payload.versions.attack;
+    payload.companyName = state.companyName || payload.companyName || '';
+    payload.companyLogo = state.companyLogo || payload.companyLogo || null;
+    payload.author = state.author || payload.author || '';
+    payload.autoColorRules = state.autoColorRules || payload.autoColorRules;
+    payload.autoColorByQueries = state.autoColorByQueries || false;
+    payload.exportMetadata = {
+        schemaVersion: LAYER_EXPORT_SCHEMA_VERSION,
+        exportedAt: new Date().toISOString(),
+        includes: ['technique annotations', 'query data', 'Sigma rule IDs', 'Sigma rule titles', 'Sigma rule URLs', 'linked metadata'],
+        sigmaLinkedQueries: countSigmaLinkedQueries(payload)
+    };
+    return payload;
+}
+
+function countSigmaLinkedQueries(layer) {
+    return (layer.techniques || []).reduce((count, technique) => {
+        return count + (technique.queries || []).filter(query => query?.sigmaRuleId || query?.sigmaRuleTitle || query?.sigmaRuleUrl).length;
+    }, 0);
+}
 
 function isQuotaExceededError(err) {
     return err && (
@@ -572,7 +601,8 @@ document.getElementById('btn-save-layer').addEventListener('click', async () => 
 document.getElementById('btn-export-layer').addEventListener('click', () => {
     if (!state.currentLayer) return;
     saveCurrentLayerNow();
-    const blob = new Blob([JSON.stringify(state.currentLayer, null, 2)], { type: 'application/json' });
+    const exportPayload = buildLayerExportPayload(state.currentLayer);
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

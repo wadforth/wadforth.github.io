@@ -40,6 +40,25 @@ function safeClassToken(value) {
     return String(value || '').toLowerCase().replace(/[^a-z0-9_-]/g, '-').slice(0, 40);
 }
 
+function getSigmaRuleDescription(rule) {
+    const rawDescription = String(rule?.description || '').trim();
+    const isPlaceholder = !rawDescription || rawDescription === '|' || rawDescription === '>' || rawDescription === '|-' || rawDescription === '>-';
+    if (!isPlaceholder && rawDescription !== 'Live rule from SigmaHQ. Click to fetch detection contents.') {
+        return rawDescription;
+    }
+
+    if (rule?.yaml && typeof extractYamlStringField === 'function') {
+        const parsedDescription = extractYamlStringField(rule.yaml, 'description');
+        if (parsedDescription && !['|', '>', '|-', '>-'].includes(parsedDescription.trim())) {
+            rule.description = parsedDescription;
+            idbPut('rules', rule).catch(() => {});
+            return parsedDescription;
+        }
+    }
+
+    return '';
+}
+
 function safeLocalStorageSet(key, value) {
     try {
         localStorage.setItem(key, value);
@@ -60,11 +79,12 @@ export let workerPendingFilter = null;
 export let workerFilterRequestId = 0;
 export let sigmaModuleInitialized = false;
 export let sigmaModuleInitPromise = null;
+let sigmaActionsMenuBound = false;
 
 export function initSigmaWorker() {
     if (sigmaWorker) return;
     try {
-        const workerUrl = new URL('sigma-worker.js', import.meta.url);
+        const workerUrl = new URL('sigma-worker.js?v=4', import.meta.url);
         sigmaWorker = new Worker(workerUrl, { type: 'module' });
         sigmaWorker.onmessage = function(e) {
             const { type, rule, ruleId, error, ids, requestId, total, count } = e.data;
@@ -728,9 +748,9 @@ export function updateHydrationStatus() {
     const hydratedCount = sigmaRules.filter(r => r.isVirtual === false && r.yaml && r.yaml.length > 50).length;
     const total = sigmaRules.length;
 
-    if (hydratedCount === total) {
-        el.innerHTML = `<i class="bi bi-check-circle-fill"></i> All ${hydratedCount.toLocaleString()} rules fully hydrated`;
-        el.className = 'sigma-hydrate-status sigma-hydrate-complete';
+    if (!total || hydratedCount === total) {
+        el.className = 'sigma-hydrate-status sigma-hydrate-complete hidden';
+        el.innerHTML = '';
     } else {
         el.innerHTML = `<i class="bi bi-database"></i> ${hydratedCount.toLocaleString()} / ${total.toLocaleString()} hydrated (click rules to load details)`;
         el.className = 'sigma-hydrate-status sigma-hydrate-partial';
@@ -1401,58 +1421,17 @@ export function renderSigmaStats() {
     releaseCounts.remove = sigmaReleaseActionIndex?.removed?.length || releaseCounts.remove;
     const releaseTotal = releaseCounts.new + releaseCounts.update + releaseCounts.fix + releaseCounts.remove;
 
+    const linkedPct = sigmaRules.length ? Math.round((coverage.active / sigmaRules.length) * 100) : 0;
+
     container.innerHTML = `
-        <div class="sigma-stat-card">
-            <div class="sigma-stat-icon"><i class="bi bi-database"></i></div>
-            <div class="sigma-stat-content">
-                <span class="sigma-stat-value">${sigmaRules.length.toLocaleString()}</span>
-                <span class="sigma-stat-label">Total Rules</span>
-            </div>
+        <div class="sigma-summary-strip">
+            <span class="sigma-summary-chip"><strong>${filteredCount.toLocaleString()}</strong> visible</span>
+            <span class="sigma-summary-chip"><strong>${sigmaRules.length.toLocaleString()}</strong> total</span>
+            <span class="sigma-summary-chip sigma-summary-linked"><strong>${coverage.active}</strong> linked hunts <em>${linkedPct}%</em></span>
+            <span class="sigma-summary-chip"><strong>${hydratedCount.toLocaleString()}</strong> hydrated</span>
+            ${newCount > 0 ? `<span class="sigma-summary-chip sigma-summary-release"><strong>${newCount}</strong> new or modified</span>` : ''}
+            ${releaseTotal > 0 ? `<span class="sigma-summary-chip sigma-summary-release"><strong>${releaseTotal.toLocaleString()}</strong> release changes</span>` : ''}
         </div>
-        <div class="sigma-stat-card sigma-stat-active">
-            <div class="sigma-stat-icon"><i class="bi bi-shield-check"></i></div>
-            <div class="sigma-stat-content">
-                <span class="sigma-stat-value">${coverage.active}</span>
-                <span class="sigma-stat-label">Linked Hunts</span>
-            </div>
-        </div>
-        <div class="sigma-stat-card sigma-stat-gap">
-            <div class="sigma-stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
-            <div class="sigma-stat-content">
-                <span class="sigma-stat-value">${coverage.gap.toLocaleString()}</span>
-                <span class="sigma-stat-label">Unlinked Rules</span>
-            </div>
-        </div>
-        <div class="sigma-stat-card">
-            <div class="sigma-stat-icon"><i class="bi bi-funnel"></i></div>
-            <div class="sigma-stat-content">
-                <span class="sigma-stat-value">${filteredCount.toLocaleString()}</span>
-                <span class="sigma-stat-label">Filtered View</span>
-            </div>
-        </div>
-        <div class="sigma-stat-card">
-            <div class="sigma-stat-icon"><i class="bi bi-lightning-charge"></i></div>
-            <div class="sigma-stat-content">
-                <span class="sigma-stat-value">${hydratedCount.toLocaleString()}</span>
-                <span class="sigma-stat-label">Hydrated / Cached</span>
-            </div>
-        </div>
-        ${newCount > 0 ? `
-        <div class="sigma-stat-card sigma-stat-new">
-            <div class="sigma-stat-icon"><i class="bi bi-stars"></i></div>
-            <div class="sigma-stat-content">
-                <span class="sigma-stat-value">${newCount}</span>
-                <span class="sigma-stat-label">New Since Sync</span>
-            </div>
-        </div>` : ''}
-        ${releaseTotal > 0 ? `
-        <div class="sigma-stat-card sigma-stat-release">
-            <div class="sigma-stat-icon"><i class="bi bi-journal-code"></i></div>
-            <div class="sigma-stat-content">
-                <span class="sigma-stat-value">${releaseTotal.toLocaleString()}</span>
-                <span class="sigma-stat-label">Release Notes · ${releaseCounts.new} new / ${releaseCounts.update} upd / ${releaseCounts.fix} fix / ${releaseCounts.remove} rem</span>
-            </div>
-        </div>` : ''}
     `;
 }
 
@@ -1627,7 +1606,8 @@ export function renderSigmaList() {
 
     // Bind card click handlers
     grid.querySelectorAll('.sigma-card').forEach(card => {
-        card.addEventListener('click', () => {
+        card.addEventListener('click', (event) => {
+            if (event.target.closest('[data-sigma-action]')) return;
             const idx = parseInt(card.dataset.idx, 10);
             selectedSigmaIdx = idx;
             grid.querySelectorAll('.sigma-card').forEach(c => c.classList.remove('active'));
@@ -1649,7 +1629,6 @@ export function renderSigmaCard(rule, idx) {
     const linkedQueries = getSigmaLinkedQueries(rule);
     const dateStr = formatRuleDate(rule);
     const folder = getRuleFolderName(rule);
-    const fileName = getRuleFileName(rule);
     const isCandidate = isRuleCandidate(rule.id);
     const releaseConfig = getSigmaReleaseActionConfig(rule.releaseAction);
 
@@ -1676,39 +1655,38 @@ export function renderSigmaCard(rule, idx) {
         }
     }
 
+    const logsource = `${rule.logsource?.product || 'unknown'}/${rule.logsource?.category || 'unknown'}`;
+    const releaseLabel = releaseConfig ? `<span class="sigma-row-signal ${releaseConfig.className}" title="${escapeHtml(rule.releaseNote || rule.releaseName || 'Listed in SigmaHQ release notes')}"><i class="bi ${releaseConfig.icon}"></i>${releaseConfig.label}</span>` : '';
+    const description = getSigmaRuleDescription(rule);
+
     return `
-        <div class="sigma-card ${isActive ? 'active' : ''}" data-idx="${idx}" data-rule-id="${escapeHtml(rule.id)}">
-            <div class="sigma-card-header">
-                <div class="sigma-card-header-left">
-                    ${rule.technique_id ? `<span class="sigma-card-tech">${escapeHtml(rule.technique_id)}</span>` : ''}
-                    ${rule.isVirtual ? `<span class="sigma-card-virtual-badge" title="Live GitHub Rule – click to hydrate"><i class="bi bi-cloud-arrow-down-fill"></i></span>` : ''}
-                    ${statusBadge}
-                    ${releaseConfig ? `<span class="sigma-card-status-badge ${releaseConfig.className}" title="${escapeHtml(rule.releaseNote || rule.releaseName || 'Listed in SigmaHQ release notes')}"><i class="bi ${releaseConfig.icon}"></i> ${releaseConfig.label}</span>` : ''}
-                    ${isNonStandard ? `<span class="badge-non-standard" title="Custom product/category. KQL translation may be inaccurate."><i class="bi bi-exclamation-triangle"></i> Non-Standard</span>` : ''}
+        <div class="sigma-card sigma-rule-row ${isActive ? 'active' : ''}" data-idx="${idx}" data-rule-id="${escapeHtml(rule.id)}">
+            <div class="sigma-rule-main">
+                <div class="sigma-rule-title-block">
+                    <div class="sigma-rule-title-line">
+                        ${rule.technique_id ? `<span class="sigma-card-tech">${escapeHtml(rule.technique_id)}</span>` : ''}
+                        <h5 class="sigma-card-title">${escapeHtml(rule.title)}</h5>
+                    </div>
+                    <div class="sigma-rule-meta-line">
+                        <span>${escapeHtml(logsource)}</span>
+                        ${rule.tactic && rule.tactic !== 'Unknown' ? `<span>${escapeHtml(rule.tactic)}</span>` : ''}
+                        ${folder ? `<span>${escapeHtml(folder)}</span>` : ''}
+                        ${dateStr ? `<span>${escapeHtml(dateStr)}</span>` : ''}
+                    </div>
                 </div>
-                <div class="sigma-card-header-right">
-                    ${coverage === 'active' ? `<span class="sigma-badge-coverage active-coverage" title="Linked to ${linkedQueries.length} non-archived threat hunting quer${linkedQueries.length === 1 ? 'y' : 'ies'}"><i class="bi bi-link-45deg"></i> Linked ${linkedQueries.length}</span>` : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-link-45deg"></i> Unlinked</span>'}
+                <div class="sigma-rule-signals">
+                    ${coverage === 'active' ? `<span class="sigma-badge-coverage active-coverage" title="Linked to ${linkedQueries.length} non-archived threat hunting quer${linkedQueries.length === 1 ? 'y' : 'ies'}"><i class="bi bi-link-45deg"></i>${linkedQueries.length}</span>` : '<span class="sigma-badge-coverage defensive-gap" title="No linked non-archived threat hunting query"><i class="bi bi-link-45deg"></i></span>'}
                     ${level ? `<span class="sigma-card-level level-${safeClassToken(level)}">${escapeHtml(level)}</span>` : ''}
+                    ${rule.isVirtual ? `<span class="sigma-card-virtual-badge" title="Live GitHub Rule - click to hydrate"><i class="bi bi-cloud-arrow-down-fill"></i></span>` : ''}
+                    ${statusBadge}
+                    ${releaseLabel}
+                    ${isNonStandard ? `<span class="badge-non-standard" title="Custom product/category. KQL translation may be inaccurate."><i class="bi bi-exclamation-triangle"></i></span>` : ''}
                     <button class="sigma-bookmark-btn ${isCandidate ? 'active' : ''}" data-sigma-action="toggle-candidate" data-tooltip="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}" aria-label="${isCandidate ? 'Remove from candidates' : 'Add to candidates'}">
                         <i class="bi ${isCandidate ? 'bi-bookmark-fill' : 'bi-bookmark'}"></i>
                     </button>
                 </div>
             </div>
-            <h5 class="sigma-card-title">${escapeHtml(rule.title)}</h5>
-            <p class="sigma-card-desc">${escapeHtml(rule.description)}</p>
-            <div class="sigma-card-footer">
-                <div class="sigma-card-footer-top">
-                    <div class="sigma-card-logsource">
-                        <i class="bi bi-terminal"></i>
-                        <span>${escapeHtml(rule.logsource?.product || 'unknown')}/${escapeHtml(rule.logsource?.category || 'unknown')}</span>
-                    </div>
-                    ${dateStr ? `<span class="sigma-card-date" title="Rule date">${escapeHtml(dateStr)}</span>` : ''}
-                </div>
-                <div class="sigma-card-footer-bottom">
-                    ${folder ? `<span class="sigma-card-folder" title="SigmaHQ/${escapeHtml(folder)}"><i class="bi bi-folder2"></i> ${escapeHtml(folder)}</span>` : ''}
-                    ${fileName ? `<span class="sigma-card-file" title="${escapeHtml(fileName)}"><i class="bi bi-file-earmark-code"></i> ${escapeHtml(fileName)}</span>` : ''}
-                </div>
-            </div>
+            ${description ? `<p class="sigma-card-desc">${escapeHtml(description)}</p>` : ''}
         </div>`;
 }
 
@@ -1775,18 +1753,20 @@ export function renderSigmaDetails() {
     const dateStr = formatRuleDate(rule);
     const statusLabel = rule.ruleStatus ? rule.ruleStatus.charAt(0).toUpperCase() + rule.ruleStatus.slice(1) : '';
     const releaseConfig = getSigmaReleaseActionConfig(rule.releaseAction);
+    const description = getSigmaRuleDescription(rule);
+    const yamlText = String(rule.yaml || '').trim();
+    const hasYaml = yamlText.length > 50 && !yamlText.startsWith('error: Failed to load YAML');
+    const canHydrateRule = Boolean(rule.path && (!rule.yaml || !description));
 
     panel.innerHTML = `
         <div class="sigma-details-header">
             <div class="sigma-details-meta">
                 ${level ? `<span class="sigma-card-level level-${safeClassToken(level)}">${escapeHtml(level)}</span>` : ''}
                 ${coverage === 'active'
-                    ? `<span class="sigma-badge-coverage active-coverage"><i class="bi bi-link-45deg"></i> Linked to ${linkedQueries.length} Hunt Quer${linkedQueries.length === 1 ? 'y' : 'ies'}</span>`
-                    : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-link-45deg"></i> No Linked Hunts</span>'}
-                ${releaseConfig ? `<span class="sigma-card-status-badge ${releaseConfig.className}" title="${escapeHtml(rule.releaseNote || rule.releaseName || 'Listed in SigmaHQ release notes')}"><i class="bi ${releaseConfig.icon}"></i> ${releaseConfig.label}</span>` : ''}
+                    ? `<span class="sigma-badge-coverage active-coverage"><i class="bi bi-link-45deg"></i> ${linkedQueries.length} linked</span>`
+                    : '<span class="sigma-badge-coverage defensive-gap"><i class="bi bi-link-45deg"></i> unlinked</span>'}
                 ${statusLabel ? `<span class="sigma-details-status-badge status-${safeClassToken(rule.ruleStatus)}">${escapeHtml(statusLabel)}</span>` : ''}
                 ${rule.isOfflineBaseline ? '<span class="sigma-details-status-badge" style="background: rgba(99,102,241,0.1); color: #818cf8; border-color: rgba(99,102,241,0.2);">Offline Baseline</span>' : ''}
-                <span>UUID: ${rule.id.includes('/') ? 'GitHub Index' : escapeHtml(rule.id)}</span>
             </div>
             <h3 class="sigma-details-title">${escapeHtml(rule.title)}</h3>
             <div class="sigma-details-tags">
@@ -1794,7 +1774,6 @@ export function renderSigmaDetails() {
                 ${rule.tactic && rule.tactic !== 'Unknown' ? `<span class="sigma-details-tag"><i class="bi bi-tag-fill mr-1 text-primary"></i> ${escapeHtml(rule.tactic)}</span>` : ''}
                 <span class="sigma-details-tag"><i class="bi bi-hdd-network mr-1 text-primary"></i> ${escapeHtml(rule.logsource?.product || 'unknown')}/${escapeHtml(rule.logsource?.category || 'unknown')}</span>
                 ${dateStr ? `<span class="sigma-details-tag"><i class="bi bi-calendar3 mr-1 text-primary"></i> ${escapeHtml(dateStr)}</span>` : ''}
-                ${rule.releaseName ? `<span class="sigma-details-tag"><i class="bi bi-journal-code mr-1 text-primary"></i> ${escapeHtml(rule.releaseName)}</span>` : ''}
             </div>
         </div>
 
@@ -1815,34 +1794,42 @@ export function renderSigmaDetails() {
                 </div>
             </div>` : `<div class="sigma-linked-query-card sigma-linked-query-empty"><i class="bi bi-link-45deg"></i> No non-archived threat hunting query is linked to this Sigma rule yet.</div>`}
 
-            <h6 class="text-on-surface font-semibold text-sm mb-2">Description</h6>
-            <p class="text-sm text-on-surface-secondary mb-4" style="line-height: 1.6;">${escapeHtml(rule.description)}</p>
-
-            <div class="sigma-yaml-section" id="sigma-code-section">
-                <div class="sigma-yaml-header-row">
-                    <span class="sigma-yaml-title"><i class="bi bi-code-square mr-1"></i> Definition & Translation</span>
-                    <button class="btn btn-sm btn-outline-primary" id="btn-translate-kql" style="font-size: 0.75rem; padding: 2px 10px; border-color: rgba(168,85,247,0.5); color: #a855f7;"><i class="bi bi-magic mr-1"></i> Translate to KQL</button>
-                </div>
-                
-                <div class="sigma-split-pane" id="sigma-split-pane">
-                    <!-- YAML Panel -->
-                    <div class="sigma-code-panel" id="sigma-yaml-panel">
-                        <div class="sigma-yaml-container" style="height: 100%;">
-                            <button class="sigma-copy-btn" id="btn-copy-sigma-yaml"><i class="bi bi-clipboard mr-1"></i> Copy YAML</button>
-                            <pre class="sigma-yaml-code" style="height: 100%;"><code>${escapeHtml(rule.yaml)}</code></pre>
-                        </div>
-                    </div>
-                    
-                    <!-- KQL Panel (Hidden by default) -->
-                    <div class="sigma-code-panel hidden" id="sigma-kql-panel">
-                        <div class="sigma-yaml-container" style="border-color: #3b82f6; height: 100%;">
-                            <div style="position: absolute; top: -10px; left: 15px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; z-index: 2;">KQL (Best Effort)</div>
-                            <button class="sigma-copy-btn" id="btn-copy-kql"><i class="bi bi-clipboard mr-1"></i> Copy KQL</button>
-                            <pre class="sigma-yaml-code" id="sigma-kql-output" style="background: #0f172a; height: 100%;"><code></code></pre>
-                        </div>
-                    </div>
-                </div>
+            <div class="sigma-description-block">
+                <h6 class="text-on-surface font-semibold text-sm mb-2">Description</h6>
+                ${description
+                    ? `<p class="text-sm text-on-surface-secondary mb-0" style="line-height: 1.6;">${escapeHtml(description)}</p>`
+                    : `<div class="sigma-description-empty"><i class="bi bi-info-circle"></i> Description is not available in the cached metadata.${canHydrateRule ? ' Hydrate this rule to fetch the full Sigma YAML.' : ''}</div>`
+                }
             </div>
+
+            <details class="sigma-yaml-section sigma-definition-panel" id="sigma-code-section" open>
+                <summary>
+                    <span class="sigma-yaml-title"><i class="bi bi-code-square mr-1"></i> Sigma rule definition</span>
+                    <span>YAML${hasYaml ? ' loaded' : ' not hydrated'}</span>
+                </summary>
+                <div class="sigma-yaml-header-row">
+                    <span class="sigma-definition-note">Source rule content from SigmaHQ.</span>
+                    ${hasYaml ? `<button class="btn btn-sm btn-outline-primary" id="btn-translate-kql" style="font-size: 0.75rem; padding: 2px 10px; border-color: rgba(168,85,247,0.5); color: #a855f7;"><i class="bi bi-magic mr-1"></i> Translate to KQL</button>` : ''}
+                </div>
+                ${hasYaml ? `
+                    <div class="sigma-split-pane" id="sigma-split-pane">
+                        <div class="sigma-code-panel" id="sigma-yaml-panel">
+                            <div class="sigma-yaml-container" style="height: 100%;">
+                                <button class="sigma-copy-btn" id="btn-copy-sigma-yaml"><i class="bi bi-clipboard mr-1"></i> Copy YAML</button>
+                                <pre class="sigma-yaml-code" style="height: 100%;"><code>${escapeHtml(yamlText)}</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="sigma-code-panel hidden" id="sigma-kql-panel">
+                            <div class="sigma-yaml-container" style="border-color: #3b82f6; height: 100%;">
+                                <div style="position: absolute; top: -10px; left: 15px; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; z-index: 2;">KQL (Best Effort)</div>
+                                <button class="sigma-copy-btn" id="btn-copy-kql"><i class="bi bi-clipboard mr-1"></i> Copy KQL</button>
+                                <pre class="sigma-yaml-code" id="sigma-kql-output" style="background: #0f172a; height: 100%;"><code></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                ` : `<div class="sigma-definition-empty"><i class="bi bi-cloud-arrow-down"></i> Full Sigma YAML is not hydrated yet. Use Hydrate Rule to fetch the source definition.</div>`}
+            </details>
 
             <div class="sigma-pivot-row">
                 ${rule.isOfflineBaseline
@@ -1853,6 +1840,7 @@ export function renderSigmaDetails() {
                     ? `<button class="btn btn-outline-info sigma-pivot-btn" id="btn-view-sigma-diff"><i class="bi bi-diff mr-1"></i> View Changes</button>`
                     : ''
                 }
+                ${canHydrateRule ? `<button class="btn btn-outline-info sigma-pivot-btn" id="btn-hydrate-sigma-rule"><i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate Rule</button>` : ''}
                 <button class="btn btn-primary sigma-pivot-btn" id="btn-pivot-create-query"><i class="bi bi-plus-lg mr-1"></i> Deploy Associated Query</button>
             </div>
         </div>`;
@@ -1909,6 +1897,15 @@ export function renderSigmaDetails() {
         // Open GitHub commit comparison for this file
         const commitsUrl = `https://github.com/SigmaHQ/sigma/commits/master/${rule.path}`;
         window.open(commitsUrl, '_blank');
+    });
+
+    document.getElementById('btn-hydrate-sigma-rule')?.addEventListener('click', async () => {
+        rule.isVirtual = true;
+        await fetchVirtualRuleContent(rule);
+        await refreshSigmaFilteredCache();
+        renderSigmaList();
+        renderSigmaDetails();
+        renderSigmaStats();
     });
 
     document.getElementById('btn-pivot-create-query')?.addEventListener('click', () => {
@@ -1974,7 +1971,20 @@ export function bindSigmaEvents() {
     // Force sync button
     ids['btn-load-live-sigma']?.addEventListener('click', () => {
         executeSyncFromGitHub(false);
+        document.querySelector('.sigma-actions-menu')?.removeAttribute('open');
     });
+
+    if (!sigmaActionsMenuBound) {
+        sigmaActionsMenuBound = true;
+        document.addEventListener('click', (event) => {
+            const menu = document.querySelector('.sigma-actions-menu[open]');
+            if (menu && !event.target.closest('.sigma-actions-menu')) menu.removeAttribute('open');
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') document.querySelector('.sigma-actions-menu[open]')?.removeAttribute('open');
+        });
+    }
 }
 
 export async function resetSigmaView() {
@@ -2445,6 +2455,8 @@ function handleSigmaAction(action, el, event) {
             viewCandidateDetails(el.dataset.candidateId);
             break;
     }
+
+    if (el.closest('.sigma-actions-menu')) el.closest('.sigma-actions-menu').removeAttribute('open');
 }
 
 document.addEventListener('click', (event) => {

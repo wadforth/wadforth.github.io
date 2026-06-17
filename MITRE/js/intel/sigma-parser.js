@@ -28,6 +28,31 @@ export function extractLevelFromYaml(yamlText) {
     return m ? m[1].toLowerCase() : '';
 }
 
+export function extractYamlStringField(yamlText, fieldName) {
+    if (!yamlText || !fieldName) return '';
+    const escapedField = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const inlineMatch = yamlText.match(new RegExp(`^${escapedField}:\\s*(.+)$`, 'm'));
+    if (!inlineMatch) return '';
+
+    const rawValue = inlineMatch[1].trim();
+    if (rawValue !== '|' && rawValue !== '>' && rawValue !== '|-' && rawValue !== '>-') {
+        return rawValue.replace(/^['"]|['"]$/g, '').trim();
+    }
+
+    const lines = yamlText.slice(inlineMatch.index + inlineMatch[0].length).split(/\r?\n/);
+    const block = [];
+    for (const line of lines) {
+        if (!line.trim()) {
+            if (block.length) block.push('');
+            continue;
+        }
+        if (!/^\s+/.test(line)) break;
+        block.push(line.replace(/^\s{2,}/, ''));
+    }
+
+    return block.join(rawValue.startsWith('>') ? ' ' : '\n').replace(/\s+\n/g, '\n').trim();
+}
+
 export function parseSigmaDate(dateStr) {
     if (!dateStr) return 0;
     const d = new Date(dateStr.replace(/\//g, '-'));
@@ -52,8 +77,8 @@ export function parseYAMLInMainThread(rule) {
     const titleMatch = rawContent.match(/^title:\s*(.+)$/m);
     if (titleMatch) rule.title = titleMatch[1].trim().replace(/^['"]|['"]$/g, '');
 
-    const descMatch = rawContent.match(/^description:\s*(.+)$/m);
-    if (descMatch) rule.description = descMatch[1].trim().replace(/^['"]|['"]$/g, '');
+    const description = extractYamlStringField(rawContent, 'description');
+    if (description) rule.description = description;
 
     const tagsMatches = rawContent.match(/attack\.t\d{4}(?:\.\d{3})?/gi);
     rule.technique_id = tagsMatches ? tagsMatches[0].replace(/attack\./i, '').toUpperCase() : 'N/A';
@@ -95,6 +120,7 @@ export function parseYAMLInMainThread(rule) {
 window.cleanTitleFromPath = cleanTitleFromPath;
 window.parseLogsourceFromPath = parseLogsourceFromPath;
 window.extractLevelFromYaml = extractLevelFromYaml;
+window.extractYamlStringField = extractYamlStringField;
 window.parseSigmaDate = parseSigmaDate;
 window.parseRuleDateField = parseRuleDateField;
 window.parseRuleModifiedField = parseRuleModifiedField;

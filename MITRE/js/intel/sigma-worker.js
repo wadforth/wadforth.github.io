@@ -3,6 +3,31 @@
 
 export let sigmaRulesCache = [];
 
+function extractYamlStringField(yamlText, fieldName) {
+    if (!yamlText || !fieldName) return '';
+    const escapedField = fieldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const inlineMatch = yamlText.match(new RegExp(`^${escapedField}:\\s*(.+)$`, 'm'));
+    if (!inlineMatch) return '';
+
+    const rawValue = inlineMatch[1].trim();
+    if (rawValue !== '|' && rawValue !== '>' && rawValue !== '|-' && rawValue !== '>-') {
+        return rawValue.replace(/^['"]|['"]$/g, '').trim();
+    }
+
+    const lines = yamlText.slice(inlineMatch.index + inlineMatch[0].length).split(/\r?\n/);
+    const block = [];
+    for (const line of lines) {
+        if (!line.trim()) {
+            if (block.length) block.push('');
+            continue;
+        }
+        if (!/^\s+/.test(line)) break;
+        block.push(line.replace(/^\s{2,}/, ''));
+    }
+
+    return block.join(rawValue.startsWith('>') ? ' ' : '\n').replace(/\s+\n/g, '\n').trim();
+}
+
 self.onmessage = function(e) {
     const { type, payload } = e.data;
     
@@ -56,8 +81,8 @@ export function handleParseYAML(rule) {
         if (titleMatch) rule.title = titleMatch[1].trim().replace(/^['"]|['"]$/g, '');
         
         // Parse description
-        const descMatch = rawContent.match(/^description:\s*(.+)$/m);
-        if (descMatch) rule.description = descMatch[1].trim().replace(/^['"]|['"]$/g, '');
+        const description = extractYamlStringField(rawContent, 'description');
+        if (description) rule.description = description;
         
         // Parse technique_id from attack tags
         const tagsMatches = rawContent.match(/attack\.t\d{4}(?:\.\d{3})?/gi);

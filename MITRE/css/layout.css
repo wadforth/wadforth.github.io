@@ -640,7 +640,7 @@
         margin-right: 0 !important;
     }
     
-    #btn-legend-editor, #btn-export-layer, #btn-save-layer, #btn-coverage-simulator {
+    #btn-legend-editor, #btn-export-layer, #btn-save-layer {
         width: 36px;
         display: flex;
         align-items: center;

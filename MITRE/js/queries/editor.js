@@ -149,15 +149,16 @@ export async function openQueryEditor(queryData = null, techniqueId = null) {
     if (sigmaRuleIds.length > 0) {
         const sigmaTitles = queryData?.sigmaRuleTitle ? queryData.sigmaRuleTitle.split('|').filter(Boolean) : [];
         const sigmaUrls = queryData?.sigmaRuleUrl ? queryData.sigmaRuleUrl.split('|').filter(Boolean) : [];
+
+        document.getElementById('query-sigma-rule-id').value = queryData.sigmaRuleId || '';
+        document.getElementById('query-sigma-rule-title').value = queryData.sigmaRuleTitle || '';
+        document.getElementById('query-sigma-rule-url').value = queryData.sigmaRuleUrl || '';
         
         // Restore badges using sigma module
         if (window.sigmaModule && typeof window.sigmaModule.renderAttachedSigmaBadges === 'function') {
             window.sigmaModule.renderAttachedSigmaBadges(sigmaTitles, sigmaUrls);
         } else {
             // Fallback: set hidden fields and show both search and badges
-            document.getElementById('query-sigma-rule-id').value = queryData.sigmaRuleId;
-            document.getElementById('query-sigma-rule-title').value = queryData.sigmaRuleTitle || '';
-            document.getElementById('query-sigma-rule-url').value = queryData.sigmaRuleUrl || '';
             const badgeContainer = document.getElementById('query-sigma-attached-badge-container');
             const searchWrapper = document.getElementById('query-sigma-search')?.closest('.sigma-attach-wrapper');
             if (badgeContainer) badgeContainer.classList.remove('hidden');

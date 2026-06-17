@@ -103,18 +103,7 @@ export function showGroupModal(groupId) {
         }
         
         let liveFeedHtml = '';
-        if (matchedArticles.length === 0) {
-            liveFeedHtml = `
-                <div class="group-live-feed-container">
-                    <div class="group-live-feed-header" style="color: var(--on-surface-secondary);">
-                        <i class="bi bi-shield-radar text-primary animate-pulse" style="animation: pulse 2s infinite;"></i> Live Intelligence Trackings
-                    </div>
-                    <div class="text-xs text-on-surface-tertiary" style="background: rgba(255,255,255,0.01); border: 1px dashed rgba(255,255,255,0.05); border-radius: 6px; padding: 15px; text-align: center; font-size: 0.72rem;">
-                        No active in-the-wild campaigns or news mentions currently recorded in Aggregated Feeds for this actor.
-                    </div>
-                </div>
-            `;
-        } else {
+        if (matchedArticles.length > 0) {
             liveFeedHtml = `
                 <div class="group-live-feed-container">
                     <div class="group-live-feed-header" style="color: ${theme.accentHex};">
