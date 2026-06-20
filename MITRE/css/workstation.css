@@ -221,14 +221,17 @@ body::before {
     background: var(--ws-bg) !important;
     min-height: 100vh !important;
     overflow-y: auto !important;
-    padding-top: 4.75rem !important;
+    justify-content: flex-start !important;
+    box-sizing: border-box !important;
+    padding-top: 6.75rem !important;
 }
 
 .landing-container {
     align-items: stretch !important;
     gap: clamp(1rem, 3vw, 2rem) !important;
     min-height: auto !important;
-    padding-top: 1.25rem !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
     padding-bottom: 4rem !important;
 }
 
@@ -503,6 +506,21 @@ textarea:focus {
 .query-card-expanded .query-card-footer,
 .query-card-expanded .query-card-dates {
     min-width: 0;
+}
+
+.query-card-expanded .query-card-techs {
+    margin: 0.85rem 0 0 !important;
+    padding: 0.65rem 0.7rem 0.75rem !important;
+    border: 1px solid var(--ws-border) !important;
+    border-radius: var(--ws-radius-sm) !important;
+    background: var(--ws-bg-soft) !important;
+}
+
+.query-card-expanded .query-card-techs .tech-id,
+.query-card-expanded .query-card-techs span,
+.query-card-expanded .query-tech-chip,
+.query-card-expanded .query-tech-more {
+    margin: 0.08rem !important;
 }
 
 .group-card:hover,
@@ -859,17 +877,32 @@ button.entity-chip-clickable {
     padding: 0.85rem 0.95rem !important;
 }
 
-.report-viewer,
-#report-export-area {
-    border: 1px solid var(--ws-border) !important;
+#report-view-modal .report-viewer,
+#report-view-modal #report-export-area {
+    border: 1px solid var(--report-border) !important;
     border-radius: var(--ws-radius-lg) !important;
-    background: #ffffff !important;
-    color: #111827 !important;
+    background: var(--report-bg) !important;
+    color: var(--report-text) !important;
     box-shadow: var(--ws-shadow-soft) !important;
 }
 
-.report-viewer-header {
-    background: #0f172a !important;
+#report-view-modal .report-viewer-header {
+    background: var(--report-bg-secondary) !important;
+}
+
+#report-view-modal .report-month-selector,
+#report-view-modal .report-export-settings-card,
+#report-view-modal .report-export-options,
+#report-view-modal .report-tier,
+#report-view-modal .report-section,
+#report-view-modal .posture-dashboard,
+#report-view-modal .metric-card,
+#report-view-modal .report-section textarea,
+#report-view-modal .report-section input,
+#report-view-modal .report-author-input {
+    border-color: var(--report-border) !important;
+    background: var(--report-bg-secondary) !important;
+    color: var(--report-text) !important;
 }
 
 .report-actions,
