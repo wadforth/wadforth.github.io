@@ -42,6 +42,13 @@ const assetRefs = [...html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"
   .map(match => match[1])
   .filter(localRef);
 
+const professionalIndex = assetRefs.findIndex(ref => cleanRef(ref) === 'css/professional.css');
+const workstationIndex = assetRefs.findIndex(ref => cleanRef(ref) === 'css/workstation.css');
+if (workstationIndex === -1) fail('Missing css/workstation.css design-system layer');
+if (professionalIndex !== -1 && workstationIndex !== -1 && workstationIndex < professionalIndex) {
+  fail('css/workstation.css must load after css/professional.css');
+}
+
 const missingAssets = assetRefs
   .map(ref => [ref, path.join(mitreDir, cleanRef(ref))])
   .filter(([, file]) => !existsSync(file));
@@ -56,6 +63,12 @@ if (duplicateIds.length) fail(`Duplicate IDs: ${duplicateIds.join(', ')}`);
 
 const inlineStyleCount = (html.match(/style="/g) || []).length;
 if (inlineStyleCount > 0) fail(`Inline style attributes remain in MITRE/index.html: ${inlineStyleCount}`);
+
+const inlineScriptCount = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[\s\S]*?<\/script>/gi)].length;
+if (inlineScriptCount > 0) fail(`Inline script blocks remain in MITRE/index.html: ${inlineScriptCount}`);
+
+const inlineHandlerCount = (html.match(/\son(?:click|change|input|keyup|keydown|submit)=/gi) || []).length;
+if (inlineHandlerCount > 0) fail(`Inline event handlers remain in MITRE/index.html: ${inlineHandlerCount}`);
 
 const moduleScripts = [...html.matchAll(/<script[^>]+type="module"[^>]*>/g)]
   .map(match => match[0].match(/src="([^"]+)"/)?.[1])
@@ -111,6 +124,14 @@ for (const file of removedFeatureFiles) {
   }
 }
 if (removedHits.length) fail(`Removed feature remnants found:\n${removedHits.join('\n')}`);
+
+const workstationSource = readFileSync(path.join(mitreDir, 'css/workstation.css'), 'utf8');
+assertSourceIncludes(workstationSource, [
+  /#technique-modal #tab-queries\.show\.active[\s\S]*display:\s*flex\s*!important/,
+  /\.query-month-badge/,
+  /prefers-reduced-motion/,
+  /:focus-visible/
+], 'Workstation design layer');
 
 const reportFiles = [
   'js/reports/storage.js',

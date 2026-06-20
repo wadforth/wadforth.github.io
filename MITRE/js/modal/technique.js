@@ -378,12 +378,12 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
     const relatedGroups = state.groups.filter(g => groupIds.includes(g.id));
     document.getElementById('tab-groups').innerHTML = relatedGroups.length
         ? `<div class="tech-entity-grid">${relatedGroups.map(g =>
-            `<div class="entity-chip entity-chip-clickable" data-group-id="${g.id}" title="Click to view group details">
+            `<button type="button" class="entity-chip entity-chip-clickable" data-group-id="${g.id}" title="View group details">
                 <i class="bi bi-people-fill"></i>
                 <span class="entity-name">${g.name}</span>
                 <span class="entity-id">${g.external_references?.[0]?.external_id}</span>
                 <i class="bi bi-arrow-right-short"></i>
-            </div>`
+            </button>`
         ).join('')}</div>`
         : '<div class="empty-state"><i class="bi bi-people"></i><p>No associated groups.</p></div>';
     document.getElementById('count-groups').textContent = relatedGroups.length;
@@ -401,13 +401,13 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
             const typeLabel = s.type === 'malware' ? 'Malware' : 'Tool';
             const typeIcon = s.type === 'malware' ? 'bi-bug' : 'bi-wrench';
             const softId = s.external_references?.[0]?.external_id || '';
-            return `<div class="entity-chip entity-chip-clickable" data-soft-id="${softId}" title="Click to view software details">
+            return `<button type="button" class="entity-chip entity-chip-clickable" data-soft-id="${softId}" title="View software details">
                 <i class="bi ${typeIcon}"></i>
                 <span class="entity-name">${s.name}</span>
                 <span class="entity-id">${softId}</span>
                 <span class="entity-type-badge">${typeLabel}</span>
                 <i class="bi bi-arrow-right-short"></i>
-            </div>`;
+            </button>`;
         }).join('')}</div>`
         : '<div class="empty-state"><i class="bi bi-cpu"></i><p>No associated software.</p></div>';
     document.getElementById('count-software').textContent = relatedSoftware.length;
@@ -563,11 +563,11 @@ export function renderTechniqueDetails(tech) {
             details.push({
                 icon: 'bi-diagram-3',
                 title: 'Parent Technique',
-                items: `<div class="entity-chip entity-chip-clickable" data-tech-id="${parentId}" style="cursor: pointer;">
+                items: `<button type="button" class="entity-chip entity-chip-clickable" data-tech-id="${parentId}">
                     <span class="entity-name">${parentTech.name}</span>
                     <span class="entity-id">${parentId}</span>
                     <i class="bi bi-arrow-right-short"></i>
-                </div>`
+                </button>`
             });
         }
     } else {
@@ -581,11 +581,11 @@ export function renderTechniqueDetails(tech) {
                 title: `Sub-techniques (${subTechs.length})`,
                 items: subTechs.map(st => {
                     const subId = st.external_references?.[0]?.external_id || '';
-                    return `<div class="entity-chip entity-chip-clickable" data-tech-id="${subId}" style="cursor: pointer;">
+                    return `<button type="button" class="entity-chip entity-chip-clickable" data-tech-id="${subId}">
                         <span class="entity-name">${st.name}</span>
                         <span class="entity-id">${subId}</span>
                         <i class="bi bi-arrow-right-short"></i>
-                    </div>`;
+                    </button>`;
                 }).join('')
             });
         }
