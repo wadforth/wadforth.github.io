@@ -23,7 +23,7 @@
     <link href="css/skeletons.css" rel="stylesheet">
     <link href="css/landing.css" rel="stylesheet">
     <link href="css/sigma.css" rel="stylesheet">
-    <link href="css/professional.css?v=7" rel="stylesheet">
+    <link href="css/professional.css?v=9" rel="stylesheet">
 </head>
 <body>
     <nav class="navbar fixed-top">
@@ -58,7 +58,7 @@
                     <span class="spinner-border spinner-border-sm mr-1"></span>
                     <span class="text-sm">Checking...</span>
                 </div>
-                <select id="version-select" class="form-select form-select-sm" style="width: auto;">
+                <select id="version-select" class="form-select form-select-sm">
                     <option value="">Loading...</option>
                 </select>
                 <button id="theme-toggle" class="btn btn-sm btn-ghost" title="Toggle dark mode">
@@ -102,18 +102,18 @@
                     </div>
                 </div>
                 
-                <div class="command-box-controls stagger-3" style="justify-content: center;">
-                    <div class="control-group" style="max-width: 220px;">
-                        <label style="text-align: center; width: 100%;">ATT&CK Domain</label>
-                        <select id="domain-select" class="form-select custom-glass-select" style="text-align: center;">
+                <div class="command-box-controls stagger-3 landing-control-row">
+                    <div class="control-group landing-domain-control">
+                        <label class="landing-control-label">ATT&CK Domain</label>
+                        <select id="domain-select" class="form-select custom-glass-select landing-centered-select">
                             <option value="enterprise-attack">Enterprise</option>
                             <option value="mobile-attack">Mobile</option>
                             <option value="ics-attack">ICS</option>
                         </select>
                     </div>
-                    <div class="control-group" style="max-width: 300px;">
-                        <label style="text-align: center; width: 100%;">ATT&CK Version</label>
-                        <select id="landing-version-select" class="form-select custom-glass-select" style="text-align: center;">
+                    <div class="control-group landing-version-control">
+                        <label class="landing-control-label">ATT&CK Version</label>
+                        <select id="landing-version-select" class="form-select custom-glass-select landing-centered-select">
                             <option value="">Loading...</option>
                         </select>
                     </div>
@@ -188,7 +188,7 @@
                     <span class="layer-name-display" id="layer-name-display">Untitled Layer</span>
                     <span class="badge bg-secondary" id="layer-domain-badge">Enterprise</span>
                     <span class="badge bg-secondary" id="layer-version-badge">v19.1</span>
-                    <button class="btn btn-sm btn-outline-info hidden" id="btn-changelog" title="View Version Changelog" style="padding: 0.1rem 0.4rem; font-size: 0.7rem;">
+                    <button class="btn btn-sm btn-outline-info hidden changelog-toolbar-btn" id="btn-changelog" title="View Version Changelog">
                         <i class="bi bi-journal-text mr-1"></i>Changelog
                     </button>
                 </div>
@@ -205,7 +205,7 @@
                     <button class="btn btn-sm btn-ghost" id="btn-performance-mode" title="Toggle performance mode" aria-pressed="false">
                         <i class="bi bi-speedometer2"></i>
                     </button>
-                    <div class="vr mx-1" style="width: 1px; height: 16px; background: var(--border); display: inline-block; vertical-align: middle;"></div>
+                    <div class="vr mx-1 layer-toolbar-divider"></div>
                     <button class="btn btn-sm btn-ghost" id="btn-legend-editor" title="Edit Legend">
                         <i class="bi bi-palette mr-1"></i>Legend
                     </button>
@@ -225,11 +225,11 @@
         <div class="workspace-content">
             <div id="loading-overlay" class="loading-overlay hidden">
                 <div class="loading-card">
-                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;"></div>
+                    <div class="spinner-border text-primary mb-3 loading-spinner-lg"></div>
                     <h5 class="mb-1">Loading ATT&CK Data</h5>
                     <p class="text-on-surface-secondary text-sm mb-0" id="loading-text">Fetching STIX bundle...</p>
-                    <div class="progress mt-3" style="height: 4px; width: 200px;">
-                        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+                    <div class="progress mt-3 loading-progress-bar">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated loading-progress-fill"></div>
                     </div>
                 </div>
             </div>
@@ -244,7 +244,7 @@
                         <div class="matrix-search">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary text-xs"></i></span>
-                                <input type="text" id="matrix-search-input" class="form-control border-start-0 text-xs" placeholder="Filter techniques..." style="width: 170px;">
+                                <input type="text" id="matrix-search-input" class="form-control border-start-0 text-xs matrix-search-input" placeholder="Filter techniques...">
                                 <button class="btn btn-outline-secondary hidden" id="matrix-search-clear" type="button"><i class="bi bi-x-lg"></i></button>
                             </div>
                         </div>
@@ -270,7 +270,7 @@
                 <div id="matrix-legend-bar" class="matrix-legend-bar hidden"></div>
                 <div id="matrix-container" class="matrix-wrapper"></div>
                 <div id="matrix-no-results" class="hidden text-center py-5">
-                    <i class="bi bi-search" style="font-size: 3rem; opacity: 0.3;"></i>
+                    <i class="bi bi-search empty-search-icon"></i>
                     <h5 class="mt-3 text-on-surface-secondary">No matching techniques</h5>
                     <p class="text-on-surface-tertiary text-sm">Try a different search term</p>
                 </div>
@@ -290,7 +290,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
                         <input type="text" id="query-search-input" class="form-control border-start-0" placeholder="Search queries...">
-                        <select id="query-language-filter" class="form-select" style="width: 140px; border-left: none;">
+                        <select id="query-language-filter" class="form-select query-language-filter">
                             <option value="all">All Languages</option>
                             <option value="splunk">Splunk</option>
                             <option value="kql">KQL</option>
@@ -345,7 +345,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
                         <input type="text" id="software-search-input" class="form-control border-start-0" placeholder="Search software by name or ID...">
-                        <select id="software-type-filter" class="form-select" style="width: 130px; border-left: none;">
+                        <select id="software-type-filter" class="form-select software-type-filter">
                             <option value="all">All Types</option>
                             <option value="tool">Tools</option>
                             <option value="malware">Malware</option>
@@ -405,7 +405,7 @@
                     <div class="sigma-sync-progress-wrapper">
                         <div class="sigma-sync-details">
                             <span class="sigma-sync-status">
-                                <i class="bi bi-arrow-repeat rotate-spin" style="font-size: 0.75rem;"></i>
+                                <i class="bi bi-arrow-repeat rotate-spin sigma-sync-icon"></i>
                                 <span class="sigma-sync-status-text">Initializing...</span>
                             </span>
                             <span class="sigma-sync-pct">0%</span>
@@ -452,7 +452,7 @@
                     </div>
                     
                     <div class="sigma-top-bar-right">
-                        <span id="sigma-rules-count" class="badge bg-secondary font-monospace" style="font-size: 0.75rem; padding: 0.4rem 0.6rem; border: 1px solid var(--border);">Rules: 0</span>
+                        <span id="sigma-rules-count" class="badge bg-secondary font-monospace">Rules: 0</span>
                         <details class="sigma-actions-menu">
                             <summary><i class="bi bi-three-dots"></i> Operations</summary>
                             <div class="sigma-actions-panel">
@@ -478,7 +478,7 @@
                     <summary><i class="bi bi-sliders"></i> Advanced filters <span>severity, link state, release changes, products, date, sort</span></summary>
                     <div class="sigma-filters-row">
                         <label>Refine:</label>
-                        <select id="sigma-level-filter" class="sigma-select-filter" style="width: 130px;">
+                        <select id="sigma-level-filter" class="sigma-select-filter">
                             <option value="all">All Severity</option>
                             <option value="informational">Informational</option>
                             <option value="low">Low</option>
@@ -486,12 +486,12 @@
                             <option value="high">High</option>
                             <option value="critical">Critical</option>
                         </select>
-                        <select id="sigma-coverage-filter" class="sigma-select-filter" style="width: 145px;">
+                        <select id="sigma-coverage-filter" class="sigma-select-filter">
                             <option value="all">All Query Links</option>
                             <option value="active">Linked Queries</option>
                             <option value="gap">Unlinked Rules</option>
                         </select>
-                        <select id="sigma-change-filter" class="sigma-select-filter" style="width: 135px;">
+                        <select id="sigma-change-filter" class="sigma-select-filter">
                             <option value="all">All Changes</option>
                             <option value="new">New</option>
                             <option value="update">Updated</option>
@@ -506,11 +506,11 @@
                                 <!-- Checkboxes injected dynamically -->
                             </div>
                         </div>
-                        <select id="sigma-date-filter" class="sigma-select-filter" style="width: 140px;">
+                        <select id="sigma-date-filter" class="sigma-select-filter">
                             <option value="all">All Dates</option>
                             <option value="new">New Since Sync</option>
                         </select>
-                        <select id="sigma-sort-select" class="sigma-select-filter" style="width: 155px;">
+                        <select id="sigma-sort-select" class="sigma-select-filter">
                             <option value="default">Sort: Default</option>
                             <option value="az">Sort: A -> Z</option>
                             <option value="za">Sort: Z -> A</option>
@@ -709,7 +709,7 @@
                                     <i class="bi bi-terminal"></i>
                                     <span>Query Definition</span>
                                 </div>
-                                <textarea id="query-text" class="form-control query-editor-code" rows="8" placeholder="Enter your detection query here..." style="font-family: var(--font-mono); font-size: 0.82rem;"></textarea>
+                                <textarea id="query-text" class="form-control query-editor-code" rows="8" placeholder="Enter your detection query here..."></textarea>
                             </div>
                             
                             <div class="query-editor-section">
@@ -779,29 +779,29 @@
 
     <div class="modal fade" id="archive-query-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 1rem;">
-                <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 1.25rem 1.5rem;">
-                    <h5 class="modal-title" style="color: var(--accent-orange); display: flex; align-items: center; gap: 0.5rem;">
+            <div class="modal-content archive-query-modal-content">
+                <div class="modal-header archive-query-modal-header">
+                    <h5 class="modal-title archive-query-modal-title">
                         <i class="bi bi-archive"></i> Archive Query
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <p style="color: var(--on-surface-secondary); margin-bottom: 1rem; font-size: 0.85rem;">
+                <div class="modal-body archive-query-modal-body">
+                    <p class="archive-query-modal-copy">
                         Archiving this query will mark it as inactive. It will still appear in historical reports but won't count toward active coverage.
                     </p>
                     <div class="mb-3">
-                        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--on-surface-secondary);">Query Name</label>
-                        <div id="archive-query-name" style="font-weight: 600; color: var(--on-surface);"></div>
+                        <label class="form-label archive-query-modal-label">Query Name</label>
+                        <div id="archive-query-name" class="archive-query-modal-name"></div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" style="font-size: 0.8rem; font-weight: 600; color: var(--on-surface-secondary);">Archive Reason <span style="color: var(--accent-red);">*</span></label>
-                        <textarea id="archive-reason" class="form-control" rows="3" placeholder="Why is this query being archived? (e.g., replaced by new detection, no longer relevant, high false positives)" style="font-size: 0.85rem; background: var(--surface-subtle); border: 1px solid var(--border); color: var(--on-surface);"></textarea>
+                        <label class="form-label archive-query-modal-label">Archive Reason <span class="required-marker">*</span></label>
+                        <textarea id="archive-reason" class="form-control archive-query-reason" rows="3" placeholder="Why is this query being archived? (e.g., replaced by new detection, no longer relevant, high false positives)"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid var(--border); padding: 1rem 1.5rem;">
+                <div class="modal-footer archive-query-modal-footer">
                     <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn" id="btn-confirm-archive" style="background: var(--accent-orange); color: white; border: none; font-weight: 600;">
+                    <button type="button" class="btn archive-query-confirm" id="btn-confirm-archive">
                         <i class="bi bi-archive mr-1"></i> Archive Query
                     </button>
                 </div>
@@ -839,33 +839,33 @@
                     <div class="tech-modal-scroll">
                         <div class="tech-modal-desc" id="technique-modal-description"></div>
                         <div class="tech-tabs-container">
-                            <div class="tech-tabs" role="tablist">
-                                <button class="tech-tab active" data-toggle="tab" data-target="#tab-procedures">
+                            <div class="tech-tabs" role="tablist" aria-label="Technique detail sections">
+                                <button type="button" class="tech-tab active" role="tab" aria-selected="true" aria-controls="tab-procedures" data-toggle="tab" data-target="#tab-procedures">
                                     <i class="bi bi-terminal"></i>
                                     <span>Procedures</span>
                                     <span class="tech-tab-badge" id="count-procedures">0</span>
                                 </button>
-                                <button class="tech-tab" data-toggle="tab" data-target="#tab-queries">
+                                <button type="button" class="tech-tab" role="tab" aria-selected="false" aria-controls="tab-queries" data-toggle="tab" data-target="#tab-queries">
                                     <i class="bi bi-code-slash"></i>
                                     <span>Queries</span>
                                     <span class="tech-tab-badge" id="count-queries">0</span>
                                 </button>
-                                <button class="tech-tab" data-toggle="tab" data-target="#tab-mitigations">
+                                <button type="button" class="tech-tab" role="tab" aria-selected="false" aria-controls="tab-mitigations" data-toggle="tab" data-target="#tab-mitigations">
                                     <i class="bi bi-shield-check"></i>
                                     <span>Mitigations</span>
                                     <span class="tech-tab-badge" id="count-mitigations">0</span>
                                 </button>
-                                <button class="tech-tab" data-toggle="tab" data-target="#tab-groups">
+                                <button type="button" class="tech-tab" role="tab" aria-selected="false" aria-controls="tab-groups" data-toggle="tab" data-target="#tab-groups">
                                     <i class="bi bi-people"></i>
                                     <span>Groups</span>
                                     <span class="tech-tab-badge" id="count-groups">0</span>
                                 </button>
-                                <button class="tech-tab" data-toggle="tab" data-target="#tab-software">
+                                <button type="button" class="tech-tab" role="tab" aria-selected="false" aria-controls="tab-software" data-toggle="tab" data-target="#tab-software">
                                     <i class="bi bi-cpu"></i>
                                     <span>Software</span>
                                     <span class="tech-tab-badge" id="count-software">0</span>
                                 </button>
-                                <button class="tech-tab" data-toggle="tab" data-target="#tab-details">
+                                <button type="button" class="tech-tab" role="tab" aria-selected="false" aria-controls="tab-details" data-toggle="tab" data-target="#tab-details">
                                     <i class="bi bi-info-circle"></i>
                                     <span>Details</span>
                                 </button>
@@ -873,12 +873,12 @@
                         </div>
                         <div class="tech-tab-content">
                             <div class="tab-content">
-                                <div class="tab-pane fade show active" id="tab-procedures"></div>
-                                <div class="tab-pane fade" id="tab-queries"></div>
-                                <div class="tab-pane fade" id="tab-mitigations"></div>
-                                <div class="tab-pane fade" id="tab-groups"></div>
-                                <div class="tab-pane fade" id="tab-software"></div>
-                                <div class="tab-pane fade" id="tab-details"></div>
+                                <div class="tab-pane fade show active" id="tab-procedures" role="tabpanel"></div>
+                                <div class="tab-pane fade" id="tab-queries" role="tabpanel"></div>
+                                <div class="tab-pane fade" id="tab-mitigations" role="tabpanel"></div>
+                                <div class="tab-pane fade" id="tab-groups" role="tabpanel"></div>
+                                <div class="tab-pane fade" id="tab-software" role="tabpanel"></div>
+                                <div class="tab-pane fade" id="tab-details" role="tabpanel"></div>
                             </div>
                         </div>
                     </div>
@@ -887,8 +887,8 @@
         </div>
     </div>
 
-    <div id="update-toast" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100; margin-top: 120px;"></div>
-    <div id="app-toast" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+    <div id="update-toast" class="toast-container position-fixed top-0 end-0 p-3"></div>
+    <div id="app-toast" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
     <input type="file" id="file-import" accept=".json" class="d-none">
     <input type="file" id="file-logo" accept="image/*" class="d-none">
 
@@ -952,59 +952,59 @@
                 <div class="modal-body">
                     <div class="row">
                         <!-- Left Column: SVG options -->
-                        <div class="col-lg-8 border-end" style="border-color: var(--border) !important;">
+                        <div class="col-lg-8 border-end export-options-main">
                             <div class="export-option-group">
-                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Include Tactics</label>
+                                <label class="text-sm font-semibold mb-2 export-option-heading">Include Tactics</label>
                                 <div class="flex gap-2 mb-2">
-                                    <button class="btn btn-xs btn-outline-primary" id="btn-select-all-tactics" style="font-size: 10px; padding: 2px 8px;">Select All</button>
-                                    <button class="btn btn-xs btn-outline-secondary" id="btn-deselect-all-tactics" style="font-size: 10px; padding: 2px 8px;">Deselect All</button>
+                                    <button class="btn btn-xs btn-outline-primary export-tactic-toggle" id="btn-select-all-tactics">Select All</button>
+                                    <button class="btn btn-xs btn-outline-secondary export-tactic-toggle" id="btn-deselect-all-tactics">Deselect All</button>
                                 </div>
-                                <div class="tactic-checkbox-grid" id="tactic-checkbox-grid" style="max-height: 140px; overflow-y: auto; padding-right: 4px; border: 1px solid var(--border); border-radius: 6px; padding: 8px; background: var(--surface);"></div>
+                                <div class="tactic-checkbox-grid" id="tactic-checkbox-grid"></div>
                             </div>
                             
                             <div class="export-option-group mt-3">
-                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Display Options</label>
+                                <label class="text-sm font-semibold mb-2 export-option-heading">Display Options</label>
                                 <div class="form-check form-switch mb-1">
                                     <input class="form-check-input" type="checkbox" id="export-expand-subs" checked>
-                                    <label class="form-check-label text-xs" for="export-expand-subs" style="color: var(--on-surface-secondary);">Expand all sub-techniques</label>
+                                    <label class="form-check-label text-xs export-option-label" for="export-expand-subs">Expand all sub-techniques</label>
                                 </div>
                                 <div class="form-check form-switch mb-1">
                                     <input class="form-check-input" type="checkbox" id="export-only-annotated">
-                                    <label class="form-check-label text-xs" for="export-only-annotated" style="color: var(--on-surface-secondary);">Only show annotated techniques</label>
+                                    <label class="form-check-label text-xs export-option-label" for="export-only-annotated">Only show annotated techniques</label>
                                 </div>
                                 <div class="form-check form-switch mb-1">
                                     <input class="form-check-input" type="checkbox" id="export-include-legend" checked>
-                                    <label class="form-check-label text-xs" for="export-include-legend" style="color: var(--on-surface-secondary);">Include legend</label>
+                                    <label class="form-check-label text-xs export-option-label" for="export-include-legend">Include legend</label>
                                 </div>
                                 <div class="form-check form-switch mb-1">
                                     <input class="form-check-input" type="checkbox" id="export-include-header" checked>
-                                    <label class="form-check-label text-xs" for="export-include-header" style="color: var(--on-surface-secondary);">Include header (logo, company, version)</label>
+                                    <label class="form-check-label text-xs export-option-label" for="export-include-header">Include header (logo, company, version)</label>
                                 </div>
                                 <div class="form-check form-switch mb-1">
                                     <input class="form-check-input" type="checkbox" id="export-include-footer" checked>
-                                    <label class="form-check-label text-xs" for="export-include-footer" style="color: var(--on-surface-secondary);">Include footer</label>
+                                    <label class="form-check-label text-xs export-option-label" for="export-include-footer">Include footer</label>
                                 </div>
                             </div>
 
                             <div class="export-option-group mt-3">
-                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Export Styling & Theme Accent</label>
+                                <label class="text-sm font-semibold mb-2 export-option-heading">Export Styling & Theme Accent</label>
                                 <div class="mb-2">
-                                    <label class="form-label text-xs mb-1" style="color: var(--on-surface-secondary);">Accent Color Picker</label>
+                                    <label class="form-label text-xs mb-1 export-option-label">Accent Color Picker</label>
                                     <div class="d-flex align-items-center gap-2">
-                                        <input type="color" class="form-control form-control-color border-0 p-0" id="export-banner-hue" value="#7c3aed" title="Choose Accent Color" style="width: 32px; height: 32px; border-radius: 6px; cursor: pointer; background: transparent;">
+                                        <input type="color" class="form-control form-control-color border-0 p-0 export-color-picker" id="export-banner-hue" value="#7c3aed" title="Choose Accent Color">
                                         <div class="flex-grow-1">
-                                            <input type="text" class="form-control form-control-sm text-xs font-monospace" id="export-banner-hue-text" value="#7c3aed" readonly style="background: var(--surface-variant); color: var(--on-surface); border-color: var(--border);">
+                                            <input type="text" class="form-control form-control-sm text-xs font-monospace export-color-text" id="export-banner-hue-text" value="#7c3aed" readonly>
                                         </div>
                                     </div>
                                     <div class="form-check form-switch mt-2">
                                         <input class="form-check-input" type="checkbox" id="export-use-nebula-tint" checked>
-                                        <label class="form-check-label text-xs" for="export-use-nebula-tint" style="color: var(--on-surface-secondary);">Apply Cyber-Nebula gradient tinting</label>
+                                        <label class="form-check-label text-xs export-option-label" for="export-use-nebula-tint">Apply Cyber-Nebula gradient tinting</label>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="export-option-group mt-3">
-                                <label class="text-sm font-semibold mb-2" style="color: var(--on-surface);">Output</label>
+                                <label class="text-sm font-semibold mb-2 export-option-heading">Output</label>
                                 <div class="matrix-export-format-note">
                                     <i class="bi bi-vector-pen"></i>
                                     <div>
@@ -1016,40 +1016,40 @@
                         </div>
 
                         <!-- Right Column: Live Vector Preview -->
-                        <div class="col-lg-4 d-flex flex-column justify-content-between p-3" style="background: var(--surface-variant); border-radius: 0 0 8px 0;">
+                        <div class="col-lg-4 d-flex flex-column justify-content-between p-3 export-preview-column">
                             <div>
                                 <h6 class="text-xs font-bold uppercase tracking-wider mb-2 text-on-surface-secondary flex align-items-center gap-2">
                                     <i class="bi bi-eye-fill text-primary"></i> Cover Page Preview
                                 </h6>
-                                <div id="export-live-preview-container" style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-md); aspect-ratio: 1 / 1.414; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; position: relative;">
-                                    <div id="export-preview-header" style="height: 40px; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); border-radius: 6px; padding: 6px 10px; color: white; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s ease;">
-                                        <div style="display: flex; align-items: center; gap: 4px;">
-                                            <i class="bi bi-shield-check" style="font-size: 12px;"></i>
-                                            <span style="font-size: 8px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">ATT&CK Matrix</span>
+                                <div id="export-live-preview-container">
+                                    <div id="export-preview-header">
+                                        <div class="export-preview-header-brand">
+                                            <i class="bi bi-shield-check export-preview-icon"></i>
+                                            <span class="export-preview-kicker">ATT&CK Matrix</span>
                                         </div>
-                                        <span id="preview-logo-placeholder" style="font-size: 6px; font-weight: bold; background: rgba(255,255,255,0.15); padding: 2px 4px; border-radius: 3px;">LOGO</span>
+                                        <span id="preview-logo-placeholder">LOGO</span>
                                     </div>
-                                    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 10px 0;">
-                                        <div id="preview-title" style="font-size: 11px; font-weight: 800; color: var(--on-surface); line-height: 1.2; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">Untitled Layer</div>
-                                        <div id="preview-subtitle" style="font-size: 7px; color: var(--on-surface-secondary);">Enterprise ATT&CK Matrix</div>
+                                    <div class="export-preview-title-block">
+                                        <div id="preview-title">Untitled Layer</div>
+                                        <div id="preview-subtitle">Enterprise ATT&CK Matrix</div>
                                     </div>
-                                    <div id="preview-stats-panel" style="background: var(--surface-variant); border-radius: 6px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px;">
-                                        <div style="text-align: center; border-right: 1px solid var(--border);">
-                                            <div id="preview-stats-coverage" style="font-size: 9px; font-weight: bold; color: var(--accent-green);">0%</div>
-                                            <div style="font-size: 5.5px; color: var(--on-surface-tertiary); text-transform: uppercase;">Coverage</div>
+                                    <div id="preview-stats-panel">
+                                        <div class="export-preview-stat export-preview-stat-bordered">
+                                            <div id="preview-stats-coverage">0%</div>
+                                            <div class="export-preview-stat-label">Coverage</div>
                                         </div>
-                                        <div style="text-align: center;">
-                                            <div id="preview-stats-queries" style="font-size: 9px; font-weight: bold; color: var(--primary);">0</div>
-                                            <div style="font-size: 5.5px; color: var(--on-surface-tertiary); text-transform: uppercase;">Queries</div>
+                                        <div class="export-preview-stat">
+                                            <div id="preview-stats-queries">0</div>
+                                            <div class="export-preview-stat-label">Queries</div>
                                         </div>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 4px; font-size: 5.5px; color: var(--on-surface-tertiary);">
-                                        <span id="preview-author" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 55%;">Author: Kieran Wadforth</span>
+                                    <div class="export-preview-footer">
+                                        <span id="preview-author">Author: Kieran Wadforth</span>
                                         <span id="preview-date">May 2026</span>
                                     </div>
                                 </div>
                             </div>
-                            <div class="export-preview-info mt-2" id="export-preview-info" style="font-size: 11px; color: var(--on-surface-secondary);">
+                            <div class="export-preview-info mt-2" id="export-preview-info">
                                 <strong>Selected:</strong> <span id="export-tactic-count">0</span> tactics, <span id="export-tech-count">0</span> techniques
                             </div>
                         </div>
@@ -1074,13 +1074,13 @@
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info d-flex align-items-center mb-3">
-                        <i class="bi bi-info-circle-fill mr-2" style="font-size: 1.2rem;"></i>
+                        <i class="bi bi-info-circle-fill mr-2 migration-info-icon"></i>
                         <span class="text-xs ml-2" id="migration-subtitle">Migrating layer to target version...</span>
                     </div>
                     <p class="text-sm mb-3">
                         This layer was created with a different version of the MITRE ATT&CK dataset. The Migration Wizard will compare both datasets, automatically map revoked or replaced techniques to their successors, and merge comments, scores, and draft queries.
                     </p>
-                    <div id="migration-details-list" class="migration-details-container border rounded p-3 mb-3" style="max-height: 300px; overflow-y: auto; background: var(--surface-variant); border-color: var(--border) !important;">
+                    <div id="migration-details-list" class="migration-details-container border rounded p-3 mb-3">
                         <!-- Populate dynamic diff output here -->
                     </div>
                 </div>
@@ -1134,48 +1134,7 @@
     <script type="module" src="js/intel/sigma-parser.js?v=4"></script>
     <script type="module" src="js/intel/changelog.js?v=3"></script>
     <script type="module" src="ui.js?v=2"></script>
-    <script>
-        function closeSigmaMultiSelects(except) {
-            document.querySelectorAll('.sigma-multi-select.open').forEach(function(el) {
-                if (el !== except) {
-                    el.classList.remove('open');
-                    el.querySelector('.sigma-multi-select-header')?.setAttribute('aria-expanded', 'false');
-                }
-            });
-        }
-
-        document.addEventListener('click', function(event) {
-            const header = event.target.closest('.sigma-multi-select-header');
-            if (header) {
-                const parent = header.closest('.sigma-multi-select');
-                const isOpen = parent.classList.contains('open');
-                closeSigmaMultiSelects(parent);
-                parent.classList.toggle('open', !isOpen);
-                header.setAttribute('aria-expanded', String(!isOpen));
-                event.stopPropagation();
-                return;
-            }
-
-            if (event.target.closest('.sigma-multi-select-dropdown')) {
-                event.stopPropagation();
-                return;
-            }
-
-            closeSigmaMultiSelects();
-        });
-
-        document.addEventListener('keydown', function(event) {
-            const header = event.target.closest('.sigma-multi-select-header');
-            if (!header) return;
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                header.click();
-            } else if (event.key === 'Escape') {
-                closeSigmaMultiSelects();
-                header.focus();
-            }
-        });
-    </script>
+    <script type="module" src="js/intel/sigma-controls.js"></script>
     <script type="module" src="data.js?v=2"></script>
     <script type="module" src="js/data/stix-utils.js?v=2"></script>
     <script type="module" src="js/matrix/annotations.js?v=2"></script>
@@ -1184,7 +1143,7 @@
     <script type="module" src="js/matrix/export.js?v=2"></script>
     <script type="module" src="search.js"></script>
     <script type="module" src="js/modal/highlight.js"></script>
-    <script type="module" src="js/modal/technique.js"></script>
+    <script type="module" src="js/modal/technique.js?v=2"></script>
     <script type="module" src="js/groups/view.js"></script>
     <script type="module" src="js/groups/detail.js"></script>
     <script type="module" src="js/software/view.js"></script>
@@ -1203,6 +1162,6 @@
     <script type="module" src="js/landing/enhancements.js"></script>
     <script type="module" src="js/routing/router.js"></script>
     <script type="module" src="js/layer/import.js"></script>
-    <script type="module" src="app.js?v=5"></script>
+    <script type="module" src="app.js?v=7"></script>
 </body>
 </html>

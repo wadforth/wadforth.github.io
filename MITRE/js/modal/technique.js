@@ -23,6 +23,18 @@ function getSafeExternalUrl(value) {
     }
 }
 
+function getQueryLoggedMonth(query, annotation) {
+    const month = query?.monthAdded || annotation?.monthAdded || query?.created?.slice(0, 7) || '';
+    if (!/^\d{4}-\d{2}$/.test(month)) return { value: '', label: 'Unlogged month' };
+
+    const [year, monthNumber] = month.split('-').map(Number);
+    const date = new Date(year, monthNumber - 1, 1);
+    return {
+        value: month,
+        label: date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    };
+}
+
 function renderSigmaLinks(query) {
     const ids = String(query?.sigmaRuleId || '').split('|').filter(Boolean);
     const titles = String(query?.sigmaRuleTitle || '').split('|').filter(Boolean);
@@ -102,6 +114,29 @@ function renderOptimizedDescription(tech, counts) {
     `;
 }
 
+function activateTechniqueTab(targetSelector) {
+    const modal = document.getElementById('technique-modal');
+    if (!modal || !targetSelector) return;
+
+    const targetPane = modal.querySelector(targetSelector);
+    if (!targetPane) return;
+
+    modal.querySelectorAll('.tech-tab').forEach(tab => {
+        const isActive = (tab.dataset.target || tab.dataset.bsTarget) === targetSelector;
+        tab.classList.toggle('active', isActive);
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    modal.querySelectorAll('.tech-tab-content .tab-pane').forEach(pane => {
+        pane.classList.toggle('show', pane === targetPane);
+        pane.classList.toggle('active', pane === targetPane);
+    });
+}
+
+function resetTechniqueTabs() {
+    activateTechniqueTab('#tab-procedures');
+}
+
 export function showTechniqueModal(techniqueId, skipHistory = false) {
     const tech = state.techniques.find(t => t.external_references?.[0]?.external_id === techniqueId);
     if (!tech) return;
@@ -112,6 +147,7 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
     currentTechId = techniqueId;
 
     updateBreadcrumb();
+    resetTechniqueTabs();
 
     document.getElementById('technique-modal-title').textContent = tech.name || 'Unknown Technique';
     document.getElementById('technique-modal-id').textContent = techniqueId;
@@ -156,28 +192,8 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
         }).join('')
         : '<span class="text-on-surface-tertiary text-sm">No platforms specified</span>';
 
-    const ann = getTechniqueAnnotation(techniqueId);
-    const monthAdded = ann?.monthAdded || new Date().toISOString().slice(0, 7);
     const monthsEl = document.getElementById('technique-modal-months');
-    if (monthsEl) {
-        const currentMonth = new Date().toISOString().slice(0, 7);
-        const monthOptions = [];
-        for (let i = 0; i < 12; i++) {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            const val = d.toISOString().slice(0, 7);
-            const label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            monthOptions.push(`<option value="${val}" ${val === monthAdded ? 'selected' : ''}>${label}</option>`);
-        }
-        monthsEl.innerHTML = `
-            <div class="month-selector">
-                <label class="text-on-surface-tertiary text-sm mb-1">Logged Month</label>
-                <select class="form-select form-select-sm" data-technique-month-id="${escapeHtml(techniqueId)}">
-                    ${monthOptions.join('')}
-                </select>
-            </div>
-        `;
-    }
+    if (monthsEl) monthsEl.innerHTML = '';
 
     const procs = state.relationships.filter(r => r.relationship_type === 'uses' && r.target_ref === tech.id);
     document.getElementById('tab-procedures').innerHTML = procs.length
@@ -217,6 +233,7 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
         ? queries.map(q => {
             const modifiedStr = formatTimestamp(q.lastModified || q.created);
             const language = getSafeQueryLanguage(q.language);
+            const loggedMonth = getQueryLoggedMonth(q, queryAnn);
             return `
             <div class="tech-card query-card-item ${q.archived ? 'query-card-archived' : ''}">
                 <div class="tech-card-header">
@@ -227,6 +244,7 @@ export function showTechniqueModal(techniqueId, skipHistory = false) {
                         <span class="tech-card-name">${escapeHtml(q.name)}${q.archived ? '<span class="query-archived-badge" title="Archived"><i class="bi bi-archive"></i> Archived</span>' : ''}</span>
                     </div>
                     <div class="query-header-badges">
+                        <span class="query-month-badge" title="Logged month"><i class="bi bi-calendar3"></i>${escapeHtml(loggedMonth.label)}</span>
                         ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
                         <span class="query-lang-badge ${language.className}">${language.label}</span>
                     </div>
@@ -739,6 +757,7 @@ export function refreshTechniqueModalQueries() {
         ? queries.map(q => {
             const modifiedStr = formatTimestamp(q.lastModified || q.created);
             const language = getSafeQueryLanguage(q.language);
+            const loggedMonth = getQueryLoggedMonth(q, ann);
             return `
             <div class="tech-card query-card-item ${q.archived ? 'query-card-archived' : ''}">
                 <div class="tech-card-header">
@@ -749,6 +768,7 @@ export function refreshTechniqueModalQueries() {
                         <span class="tech-card-name">${escapeHtml(q.name)}${q.archived ? '<span class="query-archived-badge" title="Archived"><i class="bi bi-archive"></i> Archived</span>' : ''}</span>
                     </div>
                     <div class="query-header-badges">
+                        <span class="query-month-badge" title="Logged month"><i class="bi bi-calendar3"></i>${escapeHtml(loggedMonth.label)}</span>
                         ${q.sentinelCandidate ? '<span class="sentinel-candidate-badge" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
                         <span class="query-lang-badge ${language.className}">${language.label}</span>
                     </div>
@@ -852,19 +872,19 @@ export function refreshTechniqueModalQueries() {
     });
 }
 
-export function updateTechniqueMonth(techniqueId, month) {
-    const ann = getTechniqueAnnotation(techniqueId);
-    if (ann) {
-        ann.monthAdded = month;
-        autoSaveLayer();
-        showToast('Month updated', 'success');
-    }
-}
+document.addEventListener('click', (event) => {
+    const tab = event.target.closest('#technique-modal .tech-tab');
+    if (!tab) return;
+    event.preventDefault();
+    activateTechniqueTab(tab.dataset.target || tab.dataset.bsTarget);
+});
 
-document.addEventListener('change', (event) => {
-    const select = event.target.closest('[data-technique-month-id]');
-    if (!select) return;
-    updateTechniqueMonth(select.dataset.techniqueMonthId, select.value);
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const tab = event.target.closest('#technique-modal .tech-tab');
+    if (!tab) return;
+    event.preventDefault();
+    activateTechniqueTab(tab.dataset.target || tab.dataset.bsTarget);
 });
 
 // Legacy Window Bindings
@@ -876,4 +896,4 @@ window.renderCoverageBar = renderCoverageBar;
 window.updateBreadcrumb = updateBreadcrumb;
 window.renderTechniqueDetails = renderTechniqueDetails;
 window.refreshTechniqueModalQueries = refreshTechniqueModalQueries;
-window.updateTechniqueMonth = updateTechniqueMonth;
+window.activateTechniqueTab = activateTechniqueTab;

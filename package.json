@@ -4,7 +4,8 @@
   "description": "",
   "main": "script.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "validate:mitre": "node scripts/validate-mitre.mjs",
+    "test": "npm run validate:mitre"
   },
   "repository": {
     "type": "git",

@@ -15,6 +15,8 @@
 import { compileSigmaToKQL } from './sigma-compiler.js';
 import { KqlSchemaMap } from './schema-kql.js';
 import { escapeHtml } from '../utils/format.js';
+import { cleanTitleFromPath, extractLevelFromYaml, extractYamlStringField, parseLogsourceFromPath, parseSigmaDate, parseYAMLInMainThread } from './sigma-parser.js?v=4';
+import { idbGetAll, idbGetMeta, idbPut, idbReplaceAll, idbSetMeta, openSigmaDB } from '../utils/db.js';
 export let sigmaRules = [];
 export let selectedSigmaIdx = null;
 export let sigmaSearchQuery = "";
@@ -80,6 +82,35 @@ export let workerFilterRequestId = 0;
 export let sigmaModuleInitialized = false;
 export let sigmaModuleInitPromise = null;
 let sigmaActionsMenuBound = false;
+let sigmaFreshnessPromise = null;
+
+function getSigmaCacheTtl() {
+    return window.SIGMA_CACHE_TTL || 24 * 60 * 60 * 1000;
+}
+
+function parseStoredArray(key) {
+    try {
+        const raw = localStorage.getItem(key);
+        return raw === null ? null : JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+function isSigmaHydrationError(rule) {
+    const yaml = String(rule?.yaml || '');
+    return Boolean(rule?.hydrateError || yaml.startsWith('error:'));
+}
+
+function getHydratableSigmaRules({ retryFailed = false } = {}) {
+    const retryCutoff = Date.now() - getSigmaCacheTtl();
+    return sigmaRules.filter(rule => {
+        if (!rule?.path) return false;
+        if (rule.isVirtual || !rule.yaml) return true;
+        if (!retryFailed || !isSigmaHydrationError(rule)) return false;
+        return !rule.lastHydrateAttemptAt || rule.lastHydrateAttemptAt <= retryCutoff;
+    });
+}
 
 export function initSigmaWorker() {
     if (sigmaWorker) return;
@@ -187,11 +218,8 @@ export async function initSigmaModule() {
             renderSigmaDetails();
             updateHydrationStatus();
 
-            // Check if cache is stale (>24h) — if so, refresh in background
-            if (lastSync && (Date.now() - lastSync) > SIGMA_CACHE_TTL) {
-                console.log("Cache is stale (>24h), refreshing in background...");
-                setTimeout(() => backgroundResync(), 2000);
-            }
+            // Check freshness on Sigma entry. This syncs, hydrates, and indexes stale caches.
+            setTimeout(() => ensureSigmaFreshness({ background: true, hydrate: true }), 2000);
             startAutoSyncCountdown();
 
             return;
@@ -204,8 +232,8 @@ export async function initSigmaModule() {
         renderSigmaList();
         renderSigmaDetails();
 
-        // Auto-connect to GitHub to fetch all rules
-        setTimeout(() => autoSyncFromGitHub(), 500);
+        // Auto-connect to GitHub to fetch, hydrate, and index all rules on first use.
+        setTimeout(() => ensureSigmaFreshness({ force: true, background: true, hydrate: true }), 500);
         startAutoSyncCountdown();
 
     } catch (err) {
@@ -364,6 +392,37 @@ export async function autoSyncFromGitHub() {
 
 export async function backgroundResync() {
     await executeSyncFromGitHub(true);
+}
+
+export async function ensureSigmaFreshness({ force = false, background = true, hydrate = true } = {}) {
+    if (sigmaFreshnessPromise) return sigmaFreshnessPromise;
+
+    sigmaFreshnessPromise = (async () => {
+        const ttl = getSigmaCacheTtl();
+        const now = Date.now();
+        const lastSync = await idbGetMeta('lastSyncTimestamp');
+        const lastHydrate = await idbGetMeta('lastHydrateTimestamp');
+        const needsSync = force || !lastSync || (now - lastSync) > ttl;
+        const retryableHydration = getHydratableSigmaRules({ retryFailed: true }).length;
+        const needsHydrate = hydrate && (force || !lastHydrate || (now - lastHydrate) > ttl || retryableHydration > 0);
+
+        if (!needsSync && !needsHydrate) return { synced: false, hydrated: false };
+
+        let syncResult = null;
+        if (needsSync) {
+            syncResult = await executeSyncFromGitHub(background);
+        }
+
+        if (needsHydrate || syncResult?.newCount || syncResult?.updatedCount) {
+            await autoHydrateAllVirtualRules({ retryFailed: true, background });
+        }
+
+        return { synced: Boolean(needsSync), hydrated: Boolean(needsHydrate), syncResult };
+    })().finally(() => {
+        sigmaFreshnessPromise = null;
+    });
+
+    return sigmaFreshnessPromise;
 }
 
 export async function executeSyncFromGitHub(isBackground) {
@@ -612,6 +671,8 @@ export async function executeSyncFromGitHub(isBackground) {
         // Start auto-sync countdown
         startAutoSyncCountdown();
 
+        return { newCount, updatedCount, removedCount, total: sigmaRules.length };
+
     } catch (err) {
         console.error("Failed to sync SigmaHQ:", err);
         showSigmaSyncProgress(false);
@@ -624,6 +685,7 @@ export async function executeSyncFromGitHub(isBackground) {
             updateSyncButton('error');
             if (!isBackground) showToast("Failed to connect to GitHub. Please try again.", "error");
         }
+        return null;
     }
 }
 
@@ -674,36 +736,27 @@ export function formatCountdown(ms) {
 export function startAutoSyncCountdown() {
     stopAutoSyncCountdown();
 
-    const nextFirst = getNextMonthFirst();
-    const now = new Date();
-    const diff = nextFirst - now;
-
-    if (diff <= 0) {
-        // It's the 1st — trigger auto-sync
-        console.log('Auto-sync: 1st of month detected, triggering background sync...');
-        backgroundResync();
-        return;
-    }
-
     const countdownEl = document.getElementById('sigma-autosync-countdown');
-    if (countdownEl) {
-        countdownEl.innerHTML = `<i class="bi bi-clock"></i> Next auto-sync: ${formatCountdown(diff)}`;
-        countdownEl.classList.remove('hidden');
-    }
+    if (!countdownEl) return;
 
-    sigmaAutoSyncTimer = setInterval(() => {
-        const remaining = getNextMonthFirst() - new Date();
+    const renderCountdown = async () => {
+        const lastSync = await idbGetMeta('lastSyncTimestamp');
+        const baseline = lastSync || Date.now();
+        const nextRefresh = baseline + getSigmaCacheTtl();
+        const remaining = nextRefresh - Date.now();
+
         if (remaining <= 0) {
-            stopAutoSyncCountdown();
-            console.log('Auto-sync: 1st of month detected, triggering background sync...');
-            backgroundResync();
-            if (countdownEl) countdownEl.classList.add('hidden');
+            countdownEl.innerHTML = `<i class="bi bi-arrow-repeat"></i> Auto-refresh due`;
+            ensureSigmaFreshness({ background: true, hydrate: true });
             return;
         }
-        if (countdownEl) {
-            countdownEl.innerHTML = `<i class="bi bi-clock"></i> Next auto-sync: ${formatCountdown(remaining)}`;
-        }
-    }, 60000); // Update every minute
+
+        countdownEl.innerHTML = `<i class="bi bi-clock"></i> Next refresh: ${formatCountdown(remaining)}`;
+        countdownEl.classList.remove('hidden');
+    };
+
+    renderCountdown();
+    sigmaAutoSyncTimer = setInterval(renderCountdown, 60000);
 }
 
 export function stopAutoSyncCountdown() {
@@ -819,16 +872,21 @@ export async function fetchVirtualRuleContent(rule) {
         rule.description = "Connection error. The API may be rate-limited.";
         rule.technique_id = "N/A";
         rule.tactic = "Unknown";
-        rule.isVirtual = false;
-        rule.hydratedAt = Date.now();
+        rule.isVirtual = true;
+        rule.hydrateError = err.message || 'Hydration failed';
+        rule.lastHydrateAttemptAt = Date.now();
+        await idbPut('rules', rule);
     }
 }
 
 
 
-export async function autoHydrateAllVirtualRules() {
-    const virtualRules = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === ''));
-    if (virtualRules.length === 0) return;
+export async function autoHydrateAllVirtualRules({ retryFailed = false, background = true } = {}) {
+    const virtualRules = getHydratableSigmaRules({ retryFailed });
+    if (virtualRules.length === 0) {
+        await idbSetMeta('lastHydrateTimestamp', Date.now());
+        return;
+    }
 
     console.log(`Auto-hydrating ${virtualRules.length} virtual Sigma rules in background...`);
 
@@ -855,6 +913,8 @@ export async function autoHydrateAllVirtualRules() {
                 if (!rawContent || rawContent.trim().length === 0) throw new Error('Empty content');
 
                 rule.yaml = rawContent;
+                rule.hydrateError = '';
+                rule.lastHydrateAttemptAt = Date.now();
 
                 if (sigmaWorker) {
                     await new Promise((resolve) => {
@@ -889,8 +949,9 @@ export async function autoHydrateAllVirtualRules() {
             } catch (err) {
                 console.warn(`Auto-hydrate failed for ${rule.path}:`, err.message);
                 rule.yaml = `error: Auto-hydrate failed.\nurl: ${rule.url}`;
-                rule.isVirtual = false;
-                rule.hydratedAt = Date.now();
+                rule.isVirtual = true;
+                rule.hydrateError = err.message || 'Auto-hydrate failed';
+                rule.lastHydrateAttemptAt = Date.now();
                 await idbPut('rules', rule);
                 failedCount++;
             }
@@ -903,16 +964,18 @@ export async function autoHydrateAllVirtualRules() {
         }
     }
 
+    await idbSetMeta('lastHydrateTimestamp', Date.now());
     console.log(`Auto-hydrate complete: ${hydratedCount} hydrated, ${failedCount} failed.`);
-    refreshSigmaFilteredCache();
+    await refreshSigmaFilteredCache();
     renderSigmaStats();
     renderSigmaList();
     updateHydrationStatus();
+    if (!background && hydratedCount > 0) showToast(`Hydrated ${hydratedCount} Sigma rule${hydratedCount === 1 ? '' : 's'}.`, 'success');
 }
 
 export async function manualHydrateAll() {
     const btn = document.getElementById('btn-hydrate-all-sigma');
-    const virtualRules = sigmaRules.filter(r => r.isVirtual && (!r.hydratedAt || r.yaml === ''));
+    const virtualRules = getHydratableSigmaRules({ retryFailed: true });
 
     if (virtualRules.length === 0) {
         showToast('All rules are already hydrated and indexed.', 'success');
@@ -949,6 +1012,8 @@ export async function manualHydrateAll() {
                 if (!rawContent || rawContent.trim().length === 0) throw new Error('Empty content');
 
                 rule.yaml = rawContent;
+                rule.hydrateError = '';
+                rule.lastHydrateAttemptAt = Date.now();
 
                 if (sigmaWorker) {
                     await new Promise((resolve) => {
@@ -983,8 +1048,9 @@ export async function manualHydrateAll() {
             } catch (err) {
                 console.warn(`Hydrate failed for ${rule.path}:`, err.message);
                 rule.yaml = `error: Hydrate failed.\nurl: ${rule.url}`;
-                rule.isVirtual = false;
-                rule.hydratedAt = Date.now();
+                rule.isVirtual = true;
+                rule.hydrateError = err.message || 'Hydration failed';
+                rule.lastHydrateAttemptAt = Date.now();
                 await idbPut('rules', rule);
                 failedCount++;
             }
@@ -1002,7 +1068,8 @@ export async function manualHydrateAll() {
     }
 
     showSigmaSyncProgress(true, 100, `Hydrated! ${hydratedCount} rules indexed${failedCount > 0 ? ', ' + failedCount + ' failed' : ''}`);
-    refreshSigmaFilteredCache();
+    await idbSetMeta('lastHydrateTimestamp', Date.now());
+    await refreshSigmaFilteredCache();
     renderSigmaStats();
     renderSigmaList();
     updateHydrationStatus();
@@ -1246,6 +1313,7 @@ export async function renderSigmaView() {
     renderSigmaList();
     renderSigmaDetails();
     updateHydrationStatus();
+    ensureSigmaFreshness({ background: true, hydrate: true });
 }
 
 function populateDynamicFilters(rules) {
@@ -1264,21 +1332,29 @@ function populateDynamicFilters(rules) {
     const prodArray = Array.from(products).sort();
     const servArray = Array.from(services).sort();
     
-    // Load from local storage or auto-select all
-    const storedProd = localStorage.getItem('sigma_filter_products');
-    const storedServ = localStorage.getItem('sigma_filter_services');
-    
-    if (storedProd !== null) {
-        selectedSigmaProduct = JSON.parse(storedProd);
+    // Load from local storage. If the user previously had all values selected,
+    // include newly discovered values so fresh Sigma rules are visible after sync.
+    const storedProd = parseStoredArray('sigma_filter_products');
+    const storedServ = parseStoredArray('sigma_filter_services');
+    const previousProdOptions = parseStoredArray('sigma_filter_products_available') || [];
+    const previousServOptions = parseStoredArray('sigma_filter_services_available') || [];
+
+    if (Array.isArray(storedProd)) {
+        const hadAllProducts = previousProdOptions.length > 0 && storedProd.length >= previousProdOptions.length && previousProdOptions.every(p => storedProd.includes(p));
+        selectedSigmaProduct = hadAllProducts ? [...prodArray] : storedProd.filter(p => prodArray.includes(p));
     } else if (selectedSigmaProduct.length === 0 && prodArray.length > 0) {
         selectedSigmaProduct.push(...prodArray);
     }
     
-    if (storedServ !== null) {
-        selectedSigmaLogsource = JSON.parse(storedServ);
+    if (Array.isArray(storedServ)) {
+        const hadAllServices = previousServOptions.length > 0 && storedServ.length >= previousServOptions.length && previousServOptions.every(s => storedServ.includes(s));
+        selectedSigmaLogsource = hadAllServices ? [...servArray] : storedServ.filter(s => servArray.includes(s));
     } else if (selectedSigmaLogsource.length === 0 && servArray.length > 0) {
         selectedSigmaLogsource.push(...servArray);
     }
+
+    safeLocalStorageSet('sigma_filter_products_available', JSON.stringify(prodArray));
+    safeLocalStorageSet('sigma_filter_services_available', JSON.stringify(servArray));
     
     // Render Products Dropdown
     const prodContainer = document.getElementById('sigma-product-options');
@@ -1970,7 +2046,7 @@ export function bindSigmaEvents() {
 
     // Force sync button
     ids['btn-load-live-sigma']?.addEventListener('click', () => {
-        executeSyncFromGitHub(false);
+        ensureSigmaFreshness({ force: true, background: false, hydrate: true });
         document.querySelector('.sigma-actions-menu')?.removeAttribute('open');
     });
 
@@ -2505,6 +2581,7 @@ window.applySigmaReleaseActionToRule = applySigmaReleaseActionToRule;
 window.applySigmaReleaseActions = applySigmaReleaseActions;
 window.autoSyncFromGitHub = autoSyncFromGitHub;
 window.backgroundResync = backgroundResync;
+window.ensureSigmaFreshness = ensureSigmaFreshness;
 window.executeSyncFromGitHub = executeSyncFromGitHub;
 window.updateSyncButton = updateSyncButton;
 window.sigmaAutoSyncTimer = sigmaAutoSyncTimer;
