@@ -61,7 +61,9 @@ export async function loadSTIX(domain, version, layerData = null) {
         parseSTIX(bundle);
         
         if (window.generateChangelog) {
-            window.generateChangelog().catch(err => console.warn('Changelog error:', err));
+            state.changelogDiffPromise = window.generateChangelog()
+                .catch(err => console.warn('Changelog error:', err))
+                .finally(() => { state.changelogDiffPromise = null; });
         }
 
         if (layerData) {
@@ -91,7 +93,7 @@ export async function loadSTIX(domain, version, layerData = null) {
         }
 
         localStorage.setItem('attack-explorer-last-version', version);
-        saveCurrentLayerNow();
+        await saveCurrentLayerNow();
         saveRecentLayer(state.currentLayer);
     } catch (err) {
         console.error('Failed to load STIX data:', err);

@@ -109,8 +109,9 @@ export function getTechniquesFromSigmaRules(sigmaRuleIds) {
     return [...techIds];
 }
 
-export async function openQueryEditor(queryData = null, techniqueId = null) {
-    document.getElementById('query-modal-title').textContent = queryData ? 'Edit Query' : 'Add Query';
+export async function openQueryEditor(queryData = null, techniqueId = null, options = {}) {
+    const isEditing = !!queryData?.id;
+    document.getElementById('query-modal-title').textContent = isEditing ? 'Edit Query' : 'Add Query';
     document.getElementById('query-edit-id').value = queryData?.id || '';
     document.getElementById('query-name').value = queryData?.name || '';
     document.getElementById('query-language').value = queryData?.language || 'kql';
@@ -127,6 +128,7 @@ export async function openQueryEditor(queryData = null, techniqueId = null) {
     const hiddenInput = document.getElementById('query-technique-id');
     
     state.currentModalTechniqueId = techniqueId || null;
+    state.returnToTechniqueModalOnQuerySave = options.returnToTechniqueModal !== false && !!techniqueId;
     selectGroup.classList.remove('hidden');
     hiddenInput.value = '';
     
@@ -288,11 +290,12 @@ export function saveQuery() {
     setTimeout(() => {
         document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
         
-        if (state.currentModalTechniqueId) {
+        if (state.currentModalTechniqueId && state.returnToTechniqueModalOnQuerySave) {
             const techModal = new bootstrap.Modal(document.getElementById('technique-modal'));
             techModal.show();
             refreshTechniqueModalQueries();
         }
+        state.returnToTechniqueModalOnQuerySave = false;
     }, 400);
     
     saveCurrentLayerNow();
@@ -343,6 +346,32 @@ document.getElementById('btn-save-query').addEventListener('click', saveQuery);
 
 export let archiveTargetQueryId = null;
 export let archiveTargetTechniqueId = null;
+export let archiveReturnTechniqueId = null;
+
+function cleanupModalBackdrops() {
+    const openModals = document.querySelectorAll('.modal.show').length;
+    if (openModals === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    }
+}
+
+function showArchiveModalElement() {
+    const archiveEl = document.getElementById('archive-query-modal');
+    cleanupModalBackdrops();
+    const modal = bootstrap.Modal.getInstance(archiveEl) || new bootstrap.Modal(archiveEl, { backdrop: true, focus: true });
+    archiveEl.addEventListener('hidden.bs.modal', () => {
+        cleanupModalBackdrops();
+        const returnId = archiveReturnTechniqueId;
+        archiveReturnTechniqueId = null;
+        if (returnId && typeof window.showTechniqueModal === 'function') {
+            setTimeout(() => window.showTechniqueModal(returnId, true), 100);
+        }
+    }, { once: true });
+    modal.show();
+}
 
 window.openArchiveModal = function(queryId, techniqueId) {
     archiveTargetQueryId = queryId;
@@ -363,9 +392,21 @@ window.openArchiveModal = function(queryId, techniqueId) {
     
     document.getElementById('archive-query-name').textContent = queryName || 'Unknown Query';
     document.getElementById('archive-reason').value = '';
-    
-    const modal = new bootstrap.Modal(document.getElementById('archive-query-modal'));
-    modal.show();
+
+    const techniqueEl = document.getElementById('technique-modal');
+    if (techniqueEl?.classList.contains('show')) {
+        archiveReturnTechniqueId = techniqueId;
+        const techModal = bootstrap.Modal.getInstance(techniqueEl) || new bootstrap.Modal(techniqueEl);
+        techniqueEl.addEventListener('hidden.bs.modal', () => {
+            cleanupModalBackdrops();
+            showArchiveModalElement();
+        }, { once: true });
+        techModal.hide();
+        return;
+    }
+
+    archiveReturnTechniqueId = null;
+    showArchiveModalElement();
 };
 
 window.confirmArchiveQuery = function() {
@@ -401,7 +442,9 @@ window.confirmArchiveQuery = function() {
     
     renderMatrix();
     renderQueriesView();
-    refreshTechniqueModalQueries();
+    if (document.getElementById('technique-modal')?.classList.contains('show')) {
+        refreshTechniqueModalQueries();
+    }
     
     showToast('Query archived', 'success');
     

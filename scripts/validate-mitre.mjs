@@ -155,23 +155,54 @@ if (!missingReportFiles.length) {
 
   assertSourceIncludes(reportView, [
     /export function renderReportsList\b/,
-    /export function viewReport\b/,
+    /export async function viewReport\b/,
     /export function validateReport\b/,
     /export function saveAndValidateReport\b/,
-    /export async function exportReportPDF\b/,
-    /export function exportReportEmail\b/,
-    /export function copyReportHTML\b/,
-    /export async function exportReportEML\b/,
+    /export async function exportReportHTMLPDF\b/,
+    /export async function exportReportHTML\b/,
     /export async function exportReportSVG\b/,
-    /export async function exportReportMarkdown\b/,
-    /export function buildReportMarkdown\b/,
     /export function buildEmailHTML\b/,
-    /window\.exportReportMarkdown = exportReportMarkdown/
+    /buildAttackVersionAppendix\b/,
+    /includeAttackVersionAppendix/,
+    /getEditableTeamRecommendation\b/,
+    /updateTeamRecommendation\b/,
+    /buildReportBasisNote\b/,
+    /buildTopNextActionsSection\b/,
+    /buildTeamAssignmentsExport\b/,
+    /buildDetectionResultsExport\b/,
+    /isStandaloneHtml/,
+    /window\.exportReportHTMLPDF = exportReportHTMLPDF/,
+    /window\.exportReportHTML = exportReportHTML/,
+    /window\.exportReportSVG = exportReportSVG/
   ], 'Report view');
+
+  const removedReportExportPatterns = [
+    /exportReportPDF\b/,
+    /exportReportEmail\b/,
+    /copyReportHTML\b/,
+    /exportReportEML\b/,
+    /exportReportMarkdown\b/,
+    /buildReportMarkdown\b/,
+    /buildMarkdownAttackVersionAppendix\b/,
+    /eml-sender-name/,
+    /eml-sender-email/,
+    /eml-recipient-email/,
+    /data-report-action="(?:export-pdf|export-markdown|export-email|copy-html|export-eml|print)"/,
+    /case '(?:export-pdf|export-markdown|export-email|copy-html|export-eml|print)'/
+  ];
+  const removedReportExportHits = [];
+  for (const [file, source] of reportSources.entries()) {
+    for (const pattern of removedReportExportPatterns) {
+      if (pattern.test(source)) removedReportExportHits.push(`${path.relative(root, file)} => ${pattern}`);
+    }
+  }
+  if (removedReportExportHits.length) fail(`Removed report export remnants found:\n${removedReportExportHits.join('\n')}`);
 
   assertSourceIncludes(reportGenerator, [
     /export function generateReport\b/,
     /export function getLayerSnapshot\b/,
+    /includeAttackVersionAppendix/,
+    /teamRecommendations/,
     /window\.generateReport = generateReport/
   ], 'Report generator');
 
@@ -199,13 +230,9 @@ if (!missingReportFiles.length) {
     'view-report',
     'delete-report',
     'save-validate',
-    'export-pdf',
-    'export-markdown',
-    'export-email',
-    'copy-html',
-    'export-eml',
-    'export-svg',
-    'print'
+    'export-html',
+    'export-html-pdf',
+    'export-svg'
   ];
   const missingRequiredActions = requiredReportActions.filter(action => !reportActions.includes(action) || !handledActions.has(action));
   if (missingRequiredActions.length) fail(`Critical report actions missing: ${missingRequiredActions.join(', ')}`);
@@ -216,6 +243,17 @@ if (!missingReportFiles.length) {
   }
   if (inlineReportHandlers.length) fail(`Inline report event handlers found:\n${inlineReportHandlers.join('\n')}`);
 }
+
+const queryEditorSource = readFileSync(path.join(mitreDir, 'js/queries/editor.js'), 'utf8');
+assertSourceIncludes(queryEditorSource, [
+  /returnToTechniqueModalOnQuerySave/,
+  /options\.returnToTechniqueModal !== false/
+], 'Query editor modal return guard');
+
+const sigmaSource = readFileSync(path.join(mitreDir, 'js/intel/sigma.js'), 'utf8');
+assertSourceIncludes(sigmaSource, [
+  /returnToTechniqueModal:\s*false/
+], 'Sigma deploy query flow');
 
 const parserSource = readFileSync(path.join(mitreDir, 'js/intel/sigma-parser.js'), 'utf8')
   .replaceAll('export function ', 'function ');

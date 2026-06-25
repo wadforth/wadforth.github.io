@@ -1987,7 +1987,7 @@ export function renderSigmaDetails() {
     document.getElementById('btn-pivot-create-query')?.addEventListener('click', () => {
         openQueryEditor({
             id: '', name: `[Sigma] ${rule.title}`, language: 'sigma'
-        }, rule.technique_id);
+        }, rule.technique_id, { returnToTechniqueModal: false });
         setTimeout(() => attachSigmaRuleToModal(rule.id, rule.title, rule.url), 150);
     });
 }

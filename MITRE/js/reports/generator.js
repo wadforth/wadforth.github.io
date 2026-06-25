@@ -13,6 +13,26 @@ export function getTechniqueIdFromStix(stixId) {
     return tech?.external_references?.[0]?.external_id || null;
 }
 
+function normalizeAttackVersion(value) {
+    return String(value || '')
+        .trim()
+        .replace(/^v/i, '')
+        .replace(/[^0-9a-z.\-]/gi, '')
+        .toLowerCase();
+}
+
+function shouldIncludeAttackVersionAppendix(version) {
+    if (window.shouldIncludeAttackVersionAppendix) {
+        return window.shouldIncludeAttackVersionAppendix(version);
+    }
+    const normalizedVersion = normalizeAttackVersion(version);
+    if (!normalizedVersion) return false;
+    return !(state._cachedReports || []).some(report =>
+        report?.includeAttackVersionAppendix === true
+        && normalizeAttackVersion(report?.attckVersion || report?.attackVersion) === normalizedVersion
+    );
+}
+
 export function generateReport(reportType = 'initial') {
     if (!state.currentLayer) {
         showToast('No active layer', 'error');
@@ -31,6 +51,7 @@ export function generateReport(reportType = 'initial') {
     const coverageByTactic = getCoverageByTactic();
     const coverageByLanguage = getCoverageByLanguage();
     const fullStats = getFullCoverageStats();
+    const attackVersion = state.currentLayer.versions?.attack || state.currentLayer.attackVersion || state.currentVersion || 'N/A';
     
     const report = {
         id: `report_${Date.now()}`,
@@ -50,7 +71,8 @@ export function generateReport(reportType = 'initial') {
         coverageByTactic: coverageByTactic,
         coverageByLanguage: coverageByLanguage,
         fullStats: fullStats,
-        attckVersion: state.currentLayer.versions?.attack || state.currentLayer.attackVersion || state.currentVersion || 'N/A',
+        attckVersion: attackVersion,
+        includeAttackVersionAppendix: shouldIncludeAttackVersionAppendix(attackVersion),
         author: state.author || '',
         companyName: snapshot.companyName,
         companyLogo: snapshot.companyLogo,
@@ -62,6 +84,7 @@ export function generateReport(reportType = 'initial') {
         prioritization: '',
         recommendations: '',
         teamAssignments: [],
+        teamRecommendations: {},
         references: [],
         methodology: {},
         scope: {},

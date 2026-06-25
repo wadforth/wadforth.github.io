@@ -154,9 +154,12 @@ export async function generateChangelog() {
             const categoryKey = getCategoryKey(obj);
             if (!categoryKey) return;
             const extId = getExternalId(obj);
+            const wasAlreadyRetired = obj.revoked || obj.x_mitre_deprecated || obj.deprecated;
+            if (wasAlreadyRetired) return;
             if (currentById.has(extId)) return;
             const retiredCurrent = currentRetiredById.get(extId);
-            const retired = retiredCurrent || obj;
+            if (!retiredCurrent) return;
+            const retired = retiredCurrent;
             if (!retired.revoked && !retired.x_mitre_deprecated && !retired.deprecated) return;
 
             state.changelogDiff.retired[categoryKey].add(extId);

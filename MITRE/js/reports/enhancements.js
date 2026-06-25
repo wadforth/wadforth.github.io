@@ -15,6 +15,11 @@ function safeClassToken(value) {
     return String(value || '').toLowerCase().replace(/[^a-z0-9_-]/g, '-').slice(0, 40);
 }
 
+function getReportAttackVersionLabel(report) {
+    const version = String(report?.attckVersion || report?.attackVersion || 'unknown').trim().replace(/^v/i, '');
+    return version || 'unknown';
+}
+
 export function getChangeCount(report) {
     if (!report) return 0;
     if (typeof report.changes === 'number') return report.changes;
@@ -30,6 +35,7 @@ export function renderReportPreviewCard(report) {
     const trendData = calculateCoverageTrend(report);
     const safeReportId = escapeHtml(report.id || '');
     const safeType = safeClassToken(report.type || 'initial');
+    const reportVersion = getReportAttackVersionLabel(report);
     
     return `
         <div class="report-preview-card card-hover-lift" data-report-id="${escapeHtml(report.id || '')}">
@@ -41,7 +47,7 @@ export function renderReportPreviewCard(report) {
                     <button class="btn btn-ghost btn-sm" data-report-action="view-report" data-report-id="${safeReportId}" data-tooltip="View Report" aria-label="View report">
                         <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-ghost btn-sm" data-report-action="export-pdf" data-report-id="${safeReportId}" data-tooltip="Export" aria-label="Export report">
+                    <button class="btn btn-ghost btn-sm" data-report-action="export-html" data-report-id="${safeReportId}" data-tooltip="Export HTML" aria-label="Export report HTML">
                         <i class="bi bi-download"></i>
                     </button>
                 </div>
@@ -49,6 +55,7 @@ export function renderReportPreviewCard(report) {
             <div class="report-preview-title">${escapeHtml(report.title || 'Untitled Report')}</div>
             <div class="report-preview-meta">
                 <span class="report-preview-date"><i class="bi bi-calendar3"></i> ${formatTimestamp(report.generatedAt)}</span>
+                <span class="report-preview-version"><i class="bi bi-diagram-3"></i> ATT&amp;CK v${escapeHtml(reportVersion)}</span>
                 ${report.layerName ? `<span class="report-preview-layer text-sm text-primary" style="margin-left: 8px;"><i class="bi bi-layers"></i> ${escapeHtml(report.layerName)}</span>` : ''}
                 ${getChangeCount(report) > 0 ? `<span class="report-preview-changes"><i class="bi bi-arrow-left-right"></i> ${getChangeCount(report)} changes</span>` : ''}
             </div>
@@ -543,6 +550,7 @@ export function renderReportStats(reports) {
 export function renderReportListItem(report) {
     const safeReportId = escapeHtml(report.id || '');
     const safeType = safeClassToken(report.type || 'initial');
+    const reportVersion = getReportAttackVersionLabel(report);
     return `
         <div class="report-card" data-report-action="view-report" data-report-id="${safeReportId}" role="button" tabindex="0">
             <span class="report-type-badge ${safeType}">${escapeHtml(report.type || 'Initial')}</span>
@@ -552,6 +560,7 @@ export function renderReportListItem(report) {
             </div>
             <div class="report-meta">
                 <span class="report-date">${formatTimestamp(report.generatedAt)}</span>
+                <span class="report-version"><i class="bi bi-diagram-3"></i> ATT&amp;CK v${escapeHtml(reportVersion)}</span>
                 ${report.layerName ? `<span class="report-layer text-sm text-primary" style="margin-right: 8px;"><i class="bi bi-layers"></i> ${escapeHtml(report.layerName)}</span>` : ''}
                 ${getChangeCount(report) > 0 ? `<span class="report-changes">${getChangeCount(report)} changes</span>` : ''}
             </div>

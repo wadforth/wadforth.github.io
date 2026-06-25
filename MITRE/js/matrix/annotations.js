@@ -79,10 +79,31 @@ export function buildAutoLegendSections() {
     return sections;
 }
 
+function getMatchingAutoColorRule(rules, value) {
+    for (const rule of rules) {
+        let match = false;
+        switch (rule.operator) {
+            case '>=': match = value >= rule.value; break;
+            case '>': match = value > rule.value; break;
+            case '<=': match = value <= rule.value; break;
+            case '<': match = value < rule.value; break;
+            case '=': match = value === rule.value; break;
+        }
+        if (match) return rule;
+    }
+    return null;
+}
+
 export function getAutoColorForTechnique(techniqueId, allSubs = []) {
     if (!state.autoColorByQueries) return null;
     
     const ann = getTechniqueAnnotation(techniqueId);
+    const directQueryCount = ann?.queries?.filter(q => !q.archived).length || 0;
+    if (directQueryCount > 0) {
+        const rule = getMatchingAutoColorRule(state.autoColorRules.filter(r => r.type === 'query-count'), directQueryCount);
+        return rule ? rule.color + '80' : null;
+    }
+
     const hasSubs = allSubs.length > 0;
     
     if (hasSubs) {
@@ -96,36 +117,9 @@ export function getAutoColorForTechnique(techniqueId, allSubs = []) {
         
         if (pct === 0) return null;
         
-        const rules = state.autoColorRules.filter(r => r.type === 'sub-coverage');
-        for (const rule of rules) {
-            let match = false;
-            switch (rule.operator) {
-                case '>=': match = pct >= rule.value; break;
-                case '>': match = pct > rule.value; break;
-                case '<=': match = pct <= rule.value; break;
-                case '<': match = pct < rule.value; break;
-                case '=': match = pct === rule.value; break;
-            }
-            if (match) return rule.color + '80';
-        }
-        return null;
+        const rule = getMatchingAutoColorRule(state.autoColorRules.filter(r => r.type === 'sub-coverage'), pct);
+        return rule ? rule.color + '80' : null;
     } else {
-        const queryCount = ann?.queries?.filter(q => !q.archived).length || 0;
-        
-        if (queryCount === 0) return null;
-        
-        const rules = state.autoColorRules.filter(r => r.type === 'query-count');
-        for (const rule of rules) {
-            let match = false;
-            switch (rule.operator) {
-                case '>=': match = queryCount >= rule.value; break;
-                case '>': match = queryCount > rule.value; break;
-                case '<=': match = queryCount <= rule.value; break;
-                case '<': match = queryCount < rule.value; break;
-                case '=': match = queryCount === rule.value; break;
-            }
-            if (match) return rule.color + '80';
-        }
         return null;
     }
 }

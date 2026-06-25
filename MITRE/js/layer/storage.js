@@ -93,16 +93,69 @@ function compactLayerRef(layer) {
 }
 
 function compactRecentLayer(layer, preserveLegacyData = false) {
+    const legacyData = layer.data || (layer.techniques ? layer : null);
     const compact = {
-        id: layer.id || `${layer.name || 'layer'}${layer.domain || ''}`,
-        layerId: layer.layerId || layer.id,
-        name: layer.name || 'Untitled Layer',
-        domain: layer.domain || 'enterprise-attack',
-        attackVersion: layer.attackVersion || layer.versions?.attack,
+        id: layer.id || legacyData?.id || `${layer.name || legacyData?.name || 'layer'}${layer.domain || legacyData?.domain || ''}`,
+        layerId: layer.layerId || layer.id || legacyData?.id,
+        name: layer.name || legacyData?.name || 'Untitled Layer',
+        domain: layer.domain || legacyData?.domain || 'enterprise-attack',
+        attackVersion: layer.attackVersion || layer.versions?.attack || legacyData?.versions?.attack || legacyData?.attackVersion,
         timestamp: layer.timestamp || Date.now()
     };
-    if (preserveLegacyData && layer.data) compact.data = layer.data;
+    if (preserveLegacyData && legacyData) compact.data = legacyData;
     return compact;
+}
+
+function normalizeRecentVersion(value) {
+    return String(value || '').trim().replace(/^v/i, '').toLowerCase();
+}
+
+function getRecentLayerIdCandidates(layer) {
+    return [...new Set([
+        layer?.layerId,
+        layer?.id,
+        layer?.data?.id
+    ].filter(Boolean))];
+}
+
+function layerMatchesRecentEntry(layerData, recentLayer) {
+    if (!layerData?.techniques) return false;
+    const candidates = getRecentLayerIdCandidates(recentLayer);
+    if (layerData.id && candidates.includes(layerData.id)) return true;
+    const sameName = !recentLayer.name || !layerData.name || layerData.name === recentLayer.name;
+    const sameDomain = !recentLayer.domain || !layerData.domain || layerData.domain === recentLayer.domain;
+    const layerVersion = layerData.versions?.attack || layerData.attackVersion;
+    const sameVersion = !recentLayer.attackVersion || !layerVersion || normalizeRecentVersion(layerVersion) === normalizeRecentVersion(recentLayer.attackVersion);
+    return sameName && sameDomain && sameVersion;
+}
+
+async function readLayerSnapshotDirect(layerId) {
+    if (!layerId) return null;
+    const snapshot = await getSnapshot(layerId);
+    if (!snapshot?.data) return null;
+    let layer = snapshot.data;
+    const deltas = await getDeltas(layerId);
+    for (const delta of deltas) {
+        layer = applyDelta(layer, delta.ops);
+    }
+    return layer;
+}
+
+async function resolveRecentLayerData(recentLayer) {
+    const embedded = recentLayer?.data || (recentLayer?.techniques ? recentLayer : null);
+    if (layerMatchesRecentEntry(embedded, recentLayer)) return embedded;
+
+    for (const layerId of getRecentLayerIdCandidates(recentLayer)) {
+        const layerData = await readLayerSnapshotDirect(layerId);
+        if (layerMatchesRecentEntry(layerData, recentLayer)) return layerData;
+    }
+
+    try {
+        const currentLayer = JSON.parse(localStorage.getItem(CURRENT_LAYER_KEY) || 'null');
+        if (layerMatchesRecentEntry(currentLayer, recentLayer)) return currentLayer;
+    } catch {}
+
+    return null;
 }
 
 function persistCurrentLayerReference(layer) {
@@ -379,7 +432,7 @@ export function saveCurrentLayerNow() {
         autoSaveTimer = null;
     }
     pendingSave = false;
-    saveCurrentLayer();
+    return saveCurrentLayer();
 }
 
 // Load layer from IndexedDB with delta replay
@@ -557,11 +610,11 @@ export function renderRecentLayers() {
                 const versionSelect = document.getElementById('version-select');
                 if (versionSelect) versionSelect.value = state.currentVersion;
                 showWorkspace();
-                const layerData = layer.data || await loadLayerFromIndexedDB(layer.layerId || layer.id);
+                const layerData = await resolveRecentLayerData(layer);
                 if (layerData) {
-                    loadSTIX(state.currentDomain, state.currentVersion, layerData);
+                    await loadSTIX(state.currentDomain, state.currentVersion, layerData);
                 } else {
-                    showToast('Saved layer data could not be loaded', 'error');
+                    showToast('Saved layer data could not be loaded. Re-import the JSON once to repair this recent-layer shortcut.', 'error');
                 }
             }
         };

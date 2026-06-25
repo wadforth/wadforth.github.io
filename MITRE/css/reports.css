@@ -192,6 +192,19 @@
     align-items: center;
     gap: 0.75rem;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.report-card .report-version,
+.report-preview-version {
+    align-items: center;
+    color: var(--report-text-muted);
+    display: inline-flex;
+    font-size: 0.68rem;
+    font-weight: 600;
+    gap: 0.25rem;
+    white-space: nowrap;
 }
 
 .report-card .report-changes {
@@ -1492,6 +1505,7 @@
 .report-preview-meta {
     display: flex;
     gap: 0.75rem;
+    flex-wrap: wrap;
     font-size: 0.72rem;
     color: var(--report-text-muted);
     margin-bottom: 0.75rem;
@@ -2619,7 +2633,39 @@
     margin-bottom: 0.5rem;
 }
 
-.team-assignment-focus strong {
+.team-assignment-focus strong,
+.team-assignment-priority strong,
+.team-assignment-actions strong {
+    color: var(--report-text);
+}
+
+.team-assignment-focus label,
+.team-assignment-priority label,
+.team-assignment-actions label {
+    color: var(--report-text);
+    display: block;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+}
+
+.team-assignment-focus input,
+.team-assignment-priority input,
+.team-assignment-actions textarea {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-sm);
+    color: var(--report-text);
+    font-size: 0.78rem;
+}
+
+.team-assignment-focus input:focus,
+.team-assignment-priority input:focus,
+.team-assignment-actions textarea:focus {
+    background: rgba(255, 255, 255, 0.055);
+    border-color: var(--report-accent);
+    box-shadow: none;
     color: var(--report-text);
 }
 
@@ -2632,19 +2678,16 @@
     margin-bottom: 0.5rem;
 }
 
-.team-assignment-priority strong {
-    color: var(--report-text);
-}
-
 .team-assignment-actions {
     font-size: 0.75rem;
     color: var(--report-text-muted);
 }
 
-.team-assignment-actions strong {
-    color: var(--report-text);
-    display: block;
-    margin-bottom: 0.25rem;
+.team-rec-hint {
+    color: var(--report-text-muted);
+    font-size: 0.66rem;
+    line-height: 1.35;
+    margin-top: 0.35rem;
 }
 
 .team-assignment-actions ul {
@@ -3056,6 +3099,167 @@
     background: rgba(52, 211, 153, 0.1);
     color: #34d399;
     border-color: rgba(52, 211, 153, 0.2);
+}
+
+.report-basis-note {
+    align-items: flex-start;
+    background: var(--report-bg-secondary);
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-md);
+    color: var(--report-text-muted);
+    display: flex;
+    gap: 0.5rem;
+    line-height: 1.45;
+    margin: 1rem 1.5rem;
+    padding: 0.8rem 1rem;
+}
+
+.report-basis-note strong {
+    color: var(--report-text);
+    flex: 0 0 auto;
+}
+
+.top-actions-section {
+    margin: 1rem 0;
+}
+
+.top-actions-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.top-action-card {
+    align-items: flex-start;
+    background: var(--report-bg-secondary);
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-md);
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: auto 1fr;
+    padding: 0.85rem 1rem;
+}
+
+.top-action-index {
+    align-items: center;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.24);
+    border-radius: var(--radius-sm);
+    color: #38bdf8;
+    display: inline-flex;
+    font-weight: 800;
+    height: 1.65rem;
+    justify-content: center;
+    width: 1.65rem;
+}
+
+.top-action-priority {
+    color: var(--report-text-muted);
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.top-action-card strong {
+    color: var(--report-text);
+    display: block;
+    margin-top: 0.15rem;
+}
+
+.top-action-card p {
+    color: var(--report-text-muted);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    margin: 0.25rem 0 0;
+}
+
+@media (max-width: 720px) {
+    .report-basis-note {
+        flex-direction: column;
+        margin: 1rem;
+    }
+}
+
+.report-version-appendix {
+    background: var(--report-bg-secondary);
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.report-version-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.report-version-summary-grid > div {
+    background: var(--report-bg-tertiary);
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 0.75rem;
+}
+
+.report-version-summary-grid span {
+    display: block;
+    color: var(--report-text-muted);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.report-version-summary-grid strong {
+    display: block;
+    color: var(--report-text-strong);
+    font-size: 0.95rem;
+    margin-top: 0.25rem;
+}
+
+.report-version-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.report-version-counts span {
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-sm);
+    color: var(--report-text-muted);
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+}
+
+.report-version-impact-list {
+    border: 1px solid var(--report-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.report-version-impact-row {
+    align-items: center;
+    border-bottom: 1px solid var(--report-border);
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.65rem 0.75rem;
+}
+
+.report-version-impact-row:last-child {
+    border-bottom: 0;
+}
+
+@media (max-width: 720px) {
+    .report-version-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .report-version-impact-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
 }
 
 
