@@ -2,11 +2,21 @@ export const BANNER_THEMES = {
     blue: { bg: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)', accent: '#3b82f6', label: 'Blue' },
     orange: { bg: 'linear-gradient(135deg, #1a0f00 0%, #4a2800 100%)', accent: '#f97316', label: 'Orange' },
     green: { bg: 'linear-gradient(135deg, #052e16 0%, #0f4a2e 100%)', accent: '#22c55e', label: 'Green' },
-    purple: { bg: 'linear-gradient(135deg, #1a0a2e 0%, #3b1d6e 100%)', accent: '#a855f7', label: 'Purple' },
+    purple: { bg: 'linear-gradient(135deg, #101820 0%, #17232c 100%)', accent: '#7ba8d8', label: 'Graphite' },
     red: { bg: 'linear-gradient(135deg, #2a0a0a 0%, #5f1e1e 100%)', accent: '#ef4444', label: 'Red' },
     teal: { bg: 'linear-gradient(135deg, #042f2e 0%, #0e4a47 100%)', accent: '#14b8a6', label: 'Teal' },
     slate: { bg: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', accent: '#94a3b8', label: 'Slate' },
 };
+
+function hexToRgbString(hex) {
+    const value = String(hex || '#3b82f6').replace('#', '');
+    const bigint = parseInt(value, 16);
+    if (Number.isNaN(bigint)) return '59, 130, 246';
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `${r}, ${g}, ${b}`;
+}
 
 function getSafeReportLanguage(language) {
     const raw = String(language || 'Unknown').slice(0, 32);
@@ -58,10 +68,7 @@ export function getTechniquesByMonth() {
         
         let hasSubs = false;
         if (!isSub && state.techniques) {
-            hasSubs = state.techniques.some(t => {
-                const ref = t.external_references?.[0]?.external_id;
-                return ref && ref.startsWith(techId + '.');
-            });
+            hasSubs = state.techniques.some(t => String(t.external_references?.[0]?.external_id || '').startsWith(techId + '.'));
         }
         
         // Strict filtering:
@@ -177,7 +184,6 @@ export function getColorName(color, techType, ruleType = null) {
         '#eab308': 'Yellow',
         '#22c55e': 'Green',
         '#3b82f6': 'Blue',
-        '#8b5cf6': 'Purple',
     };
     
     const baseColor = color.replace('80', '');
@@ -710,6 +716,87 @@ export function getTechniqueIdFromStix(stixId) {
     return tech?.external_references?.[0]?.external_id || null;
 }
 
+function isRawAttackObjectId(value) {
+    return /\b(?:malware|tool|intrusion-set|relationship|attack-pattern|campaign|course-of-action)--[0-9a-f-]{8,}\b/i.test(String(value || ''));
+}
+
+function resolveAttackObjectName(value) {
+    const id = String(value || '').trim();
+    if (!id) return '';
+    if (!isRawAttackObjectId(id)) return id;
+    const collections = [state.groups, state.software, state.techniques, state.mitigations, state.dataSources].filter(Array.isArray);
+    for (const collection of collections) {
+        const found = collection.find(item => item?.id === id);
+        if (found?.name) return found.name;
+    }
+    return 'Unresolved ATT&CK object. Review ATT&CK relationship import.';
+}
+
+function formatReportDate(value, options = {}) {
+    if (!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    const formatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (!options.includeRelative) return formatted;
+    const ageDays = Math.floor((Date.now() - date.getTime()) / 86400000);
+    if (ageDays < 0 || ageDays > 90) return formatted;
+    const age = ageDays === 0 ? 'today' : `${ageDays} day${ageDays === 1 ? '' : 's'} ago`;
+    return `${formatted} (${age})`;
+}
+
+function getCoverageWording(coveragePct) {
+    if (coveragePct < 30) {
+        return {
+            posture: 'critical mapped coverage gap',
+            descriptor: 'limited mapped coverage',
+            interpretation: 'coverage remains immature and significant gaps remain',
+            action: 'confirm telemetry, alerting and response readiness before treating mapped queries as operational detection readiness'
+        };
+    }
+    if (coveragePct < 50) {
+        return {
+            posture: 'developing mapped coverage',
+            descriptor: 'initial mapped visibility',
+            interpretation: 'mapped visibility exists but remains incomplete',
+            action: 'prioritize validation, telemetry health and higher-risk technique gaps'
+        };
+    }
+    if (coveragePct < 70) {
+        return {
+            posture: 'partial mapped coverage',
+            descriptor: 'partial mapped visibility',
+            interpretation: 'useful mapped coverage exists but should not be treated as validated detection readiness',
+            action: 'validate production deployment, alert quality and response ownership'
+        };
+    }
+    return {
+        posture: 'broad mapped coverage',
+        descriptor: 'broad mapped visibility',
+        interpretation: 'mapped visibility is broad, but validation and response readiness must still be confirmed',
+        action: 'continue tuning, validation and ATT&CK drift review'
+    };
+}
+
+function sanitizeMaturityCopy(text, coveragePct) {
+    if (!text) return '';
+    if (coveragePct >= 50) return text;
+    return String(text)
+        .replace(/robust visibility/gi, 'limited mapped coverage')
+        .replace(/strong coverage/gi, 'mapped coverage that still requires validation')
+        .replace(/comprehensive detection/gi, 'mapped query coverage')
+        .replace(/broad detection readiness/gi, 'limited mapped visibility')
+        .replace(/mature coverage/gi, 'immature mapped coverage')
+        .replace(/well covered/gi, 'partially mapped')
+        .replace(/effective protection/gi, 'mapped visibility requiring validation')
+        .replace(/minimi[sz]es blind spots/gi, 'identifies remaining blind spots')
+        .replace(/prevents attacker behaviour/gi, 'maps to attacker behaviour for validation')
+        .replace(/guarantees visibility/gi, 'does not guarantee visibility');
+}
+
+function getReportGuardrailText() {
+    return 'Mapped coverage indicates that at least one query or detection is associated with a technique. It does not by itself confirm telemetry health, alert quality, false positive tuning, production deployment, analyst response readiness or control effectiveness.';
+}
+
 export function getTechniqueDescription(techId) {
     if (!state.techniques) return '';
     const tech = state.techniques.find(t => {
@@ -936,15 +1023,15 @@ function getTopNextActions(report) {
         actions.push({
             priority: 'Medium',
             title: `Raise ${formatTactic(target.tactic)} above 80% coverage`,
-            detail: `${target.withQueries}/${target.total} mapped techniques currently have active queries (${target.coverage}% coverage). Add targeted queries to move this tactic into strong coverage.`
+            detail: `${target.withQueries}/${target.total} mapped techniques currently have active queries (${target.coverage}% coverage). Add targeted queries and validate telemetry/alert quality before treating this as detection readiness.`
         });
     }
 
     if (sentinelCandidates.length > 0) {
         actions.push({
             priority: 'Engineering',
-            title: `Review ${sentinelCandidates.length} Microsoft Sentinel candidate${sentinelCandidates.length === 1 ? '' : 's'}`,
-            detail: 'Promote validated candidates into production analytics or document why they should remain as backlog items.'
+            title: `Review ${sentinelCandidates.length} candidate${sentinelCandidates.length === 1 ? '' : 's'} to convert to Sentinel analytics`,
+            detail: 'Promote validated candidates into production Microsoft Sentinel analytics or document why they should remain as backlog items.'
         });
     }
 
@@ -969,8 +1056,8 @@ function getTopNextActions(report) {
     if (actions.length < 3) {
         actions.push({
             priority: 'Validation',
-            title: 'Validate active detections against telemetry reality',
-            detail: 'Confirm active queries still return expected data, archived query state is accurate, and reporting coverage matches available telemetry.'
+            title: 'Validate active queries against telemetry reality',
+            detail: 'Confirm active hunt queries still return expected data, archived query state is accurate, and reporting coverage matches available telemetry.'
         });
     }
 
@@ -1002,6 +1089,60 @@ function buildTopNextActionsSection(report) {
                     </div>
                 `).join('')}
             </div>
+        </div>
+    `;
+}
+
+function getSecurityPostureGuidance(coveragePct) {
+    return [
+        { range: 'A / A+', label: '70-100%', detail: 'Broad mapped visibility. Continue validation, tuning and ATT&CK drift review.', active: coveragePct >= 70 },
+        { range: 'B', label: '50-69%', detail: 'Useful coverage with visible gaps. Prioritize tactics below 50% and Sentinel-ready candidates.', active: coveragePct >= 50 && coveragePct < 70 },
+        { range: 'C', label: '30-49%', detail: 'Baseline mapping exists, but many attacker behaviours remain unobserved.', active: coveragePct >= 30 && coveragePct < 50 },
+        { range: 'D / F', label: '0-29%', detail: 'Critical visibility gap. Focus on core telemetry and high-frequency ATT&CK tactics first.', active: coveragePct < 30 }
+    ];
+}
+
+function buildSecurityPostureGuidanceSection(coveragePct) {
+    const guidance = getSecurityPostureGuidance(coveragePct);
+    return `
+        <div class="posture-guidance-inline">
+            <div class="posture-guidance-title"><i class="bi bi-compass"></i> Security Posture Grading Guidance</div>
+            <p>Grades are mapped-visibility indicators. Read them alongside telemetry health, detection quality and response maturity.</p>
+            <div class="posture-guidance-grid">
+                ${guidance.map(item => `
+                    <div class="posture-guidance-band ${item.active ? 'active' : ''}">
+                        <strong>${escapeHtml(item.range)}</strong>
+                        <span>${escapeHtml(item.label)}</span>
+                        <p>${escapeHtml(item.detail)}</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function buildSecurityPostureGuidanceExport(coveragePct, isDark = false) {
+    const guidance = getSecurityPostureGuidance(coveragePct);
+    const border = isDark ? '#27303a' : '#dfe7ee';
+    const panel = isDark ? '#111820' : '#f8fafc';
+    const text = isDark ? '#cbd5e1' : '#475569';
+    const muted = isDark ? '#94a3b8' : '#64748b';
+    const heading = isDark ? '#ffffff' : '#0f172a';
+    return `
+        <div id="posture-guidance" style="page-break-inside: avoid; margin-top: 12px; padding: 12px; border: 1px solid ${border}; border-radius: 12px; background-color: ${isDark ? 'rgba(255,255,255,0.02)' : '#ffffff'};"><a name="posture-guidance"></a>
+            <div style="font-size: 10px; font-weight: 800; color: ${isDark ? '#9ccfd8' : '#0369a1'}; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px;">${reportIcon('shield', isDark ? '#9ccfd8' : '#0369a1', 12)}Security Posture Grading Guidance</div>
+            <p style="font-size: 11.5px; color: ${text}; margin-bottom: 10px;">Grades summarize mapped ATT&amp;CK visibility only. Use them as a directional signal, not as proof that detections are validated, tuned, monitored or response-ready.</p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin: 0;">
+                <tr>
+                    ${guidance.map(item => `
+                        <td style="width:25%; vertical-align: top; padding: 10px; border: 1px solid ${item.active ? (isDark ? '#9ccfd8' : '#0369a1') : border}; background-color: ${item.active ? (isDark ? 'rgba(156,207,216,0.08)' : '#eef7f8') : panel};">
+                            <div style="font-size: 16px; font-weight: 800; color: ${item.active ? (isDark ? '#9ccfd8' : '#0369a1') : heading};">${escapeHtml(item.range)}</div>
+                            <div style="font-size: 10px; font-weight: 800; color: ${muted}; text-transform: uppercase; letter-spacing: 0.06em; margin: 2px 0 8px;">${escapeHtml(item.label)}</div>
+                            <div style="font-size: 11px; line-height: 1.45; color: ${text};">${escapeHtml(item.detail)}</div>
+                        </td>
+                    `).join('')}
+                </tr>
+            </table>
         </div>
     `;
 }
@@ -1208,11 +1349,13 @@ function buildAttackVersionAppendix(report) {
 function buildAttackVersionAppendixExport(report, isDark = false) {
     if (!reportShowsAttackVersionAppendix(report) && !state.changelogDiff) return '';
     const data = getAttackVersionAppendixData(report);
-    const border = isDark ? '#25263b' : '#e2e8f0';
-    const panel = isDark ? '#121324' : '#f8fafc';
-    const text = isDark ? '#cbd5e1' : '#475569';
-    const muted = isDark ? '#94a3b8' : '#64748b';
-    const heading = isDark ? '#ffffff' : '#0f172a';
+    const visuals = getExportVisuals(isDark);
+    const border = visuals.border;
+    const panel = visuals.panel;
+    const panelAlt = visuals.panelAlt;
+    const text = visuals.text;
+    const muted = visuals.muted;
+    const heading = visuals.heading;
     const accent = data.versionChanged ? '#f59e0b' : '#10b981';
     const buildImpactRow = item => `
         <tr>
@@ -1233,8 +1376,8 @@ function buildAttackVersionAppendixExport(report, isDark = false) {
 
     return `
         <div class="section" id="attack-version-impact" style="page-break-inside: avoid;"><a name="attack-version-impact"></a>
-            <h3>ATT&amp;CK Version Impact Appendix</h3>
-            <div style="background-color: ${panel}; border: 1px solid ${border}; padding: 14px 16px; margin-bottom: 12px;">
+            ${buildExportSectionTitle('ATT&CK Version Impact Appendix', 'Loaded dataset context for framework drift, moved techniques, modified content and retired entries.', isDark, visuals.accent)}
+            <div style="background-color: ${panel}; border: 1px solid ${border}; border-radius: 16px; padding: 14px 16px; margin-bottom: 12px;">
                 <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin: 0;">
                     <tr>
                         <td style="border: none; padding: 0 10px 0 0; color: ${muted}; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;">Report ATT&amp;CK<br><strong style="font-size: 16px; color: ${heading}; text-transform: none; letter-spacing: 0;">v${escapeHtml(data.reportVersion)}</strong></td>
@@ -1245,13 +1388,13 @@ function buildAttackVersionAppendixExport(report, isDark = false) {
             </div>
             <p style="font-size: 12.5px; color: ${text}; margin-bottom: 10px;">Reports retain the ATT&amp;CK version captured at generation time. Re-exported copies include the loaded dataset context so reviewers can see whether framework changes may affect conclusions.</p>
             ${data.diff ? `
-                <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 10px;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: separate; border-spacing: 8px 0; margin: 0 -8px 10px; border: 0;">
                     <tr>
-                        <td style="background-color: ${panel}; border: 1px solid ${border}; text-align: center;"><strong>${data.addedTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">New techniques</span></td>
-                        <td style="background-color: ${panel}; border: 1px solid ${border}; text-align: center;"><strong>${data.addedTactics.length}</strong><br><span style="font-size: 10px; color: ${muted};">New tactics</span></td>
-                        <td style="background-color: ${panel}; border: 1px solid ${border}; text-align: center;"><strong>${data.movedTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">Moved</span></td>
-                        <td style="background-color: ${panel}; border: 1px solid ${border}; text-align: center;"><strong>${data.modifiedTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">Modified</span></td>
-                        <td style="background-color: ${panel}; border: 1px solid ${border}; text-align: center;"><strong>${data.retiredTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">Retired</span></td>
+                        <td style="background-color: ${panelAlt}; border: 1px solid ${border}; border-radius: 14px; text-align: center;"><strong>${data.addedTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">New techniques</span></td>
+                        <td style="background-color: ${panelAlt}; border: 1px solid ${border}; border-radius: 14px; text-align: center;"><strong>${data.addedTactics.length}</strong><br><span style="font-size: 10px; color: ${muted};">New tactics</span></td>
+                        <td style="background-color: ${panelAlt}; border: 1px solid ${border}; border-radius: 14px; text-align: center;"><strong>${data.movedTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">Moved</span></td>
+                        <td style="background-color: ${panelAlt}; border: 1px solid ${border}; border-radius: 14px; text-align: center;"><strong>${data.modifiedTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">Modified</span></td>
+                        <td style="background-color: ${panelAlt}; border: 1px solid ${border}; border-radius: 14px; text-align: center;"><strong>${data.retiredTechniques.length}</strong><br><span style="font-size: 10px; color: ${muted};">Retired</span></td>
                     </tr>
                 </table>
                 <p style="font-size: 11px; color: ${muted}; margin-bottom: 8px;">Available changelog comparison: v${escapeHtml(data.diffCurrent)} vs v${escapeHtml(data.diffPrevious)}${data.diffMatchesReportBaseline ? '.' : '; this is the loaded changelog baseline and may not span every version between the report and loaded dataset.'}</p>
@@ -1306,6 +1449,8 @@ export async function viewReport(reportId) {
     const currentMonth = getReportMonth(report);
     const reportMonthLabel = getReportMonthLabel(report);
     const currentTheme = report.bannerTheme || 'blue';
+    const theme = BANNER_THEMES[currentTheme] || BANNER_THEMES.blue;
+    const themeRgb = hexToRgbString(theme.accent);
     const safeReportId = escapeHtml(report.id || '');
     const themeOptionsHtml = Object.entries(BANNER_THEMES).map(([key, t]) =>
         `<option value="${key}" ${key === currentTheme ? 'selected' : ''}>${t.label}</option>`
@@ -1332,25 +1477,6 @@ export async function viewReport(reportId) {
     const frameworkCoverage = coverageStats.pct;
     const threatsDisrupted = getThreatsDisruptedCount(currentMonth);
     const techniquesWithGaps = coverageStats.total - coverageStats.covered;
-
-    const sigmaRulesDeployed = (() => {
-        const sigmaIds = new Set();
-        const repMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || currentMonth;
-        if (repMonth && typeof getTechniquesByMonth === 'function') {
-            const byMonth = getTechniquesByMonth();
-            const techniques = byMonth[repMonth] || [];
-            techniques.forEach(ann => {
-                if (ann.queries) {
-                    ann.queries.forEach(q => {
-                        if (q.sigmaRuleId) {
-                            q.sigmaRuleId.split('|').filter(Boolean).forEach(id => sigmaIds.add(id));
-                        }
-                    });
-                }
-            });
-        }
-        return sigmaIds.size;
-    })();
 
     const availableMonthsSorted = getAvailableMonths().sort((a, b) => b.localeCompare(a));
     const currentIdx = availableMonthsSorted.indexOf(currentMonth);
@@ -1400,7 +1526,7 @@ export async function viewReport(reportId) {
                     <div class="posture-card-detail">Parent: ${coverageStats.parents.covered}/${coverageStats.parents.total} • Sub: ${coverageStats.subs.covered}/${coverageStats.subs.total}</div>
                 </div>
                 <div class="posture-card posture-card-detections">
-                    <div class="posture-card-label">Active Detections</div>
+                    <div class="posture-card-label">Active Detection Queries</div>
                     <div class="posture-card-value">${totalQueries}</div>
                     <div class="posture-card-detail">threat hunt queries deployed</div>
                     <div class="posture-card-change" style="color: ${stats.queries > 0 ? '#34d399' : '#94a3b8'};">${stats.queries > 0 ? '↑ +' + stats.queries + ' deployed this period' : 'No new queries this period'}</div>
@@ -1418,210 +1544,103 @@ export async function viewReport(reportId) {
             </div>
             <div class="posture-grade-card">
                 <div class="posture-grade-info">
-                    <div class="posture-grade-label">Security Posture Grade</div>
+                    <div class="posture-grade-label">Coverage Maturity Grade</div>
                     <div class="posture-grade-value" style="color: ${gradeColor};">${maturityGrade}</div>
-                    <div class="posture-grade-detail">standard framework grade</div>
+                    <div class="posture-grade-detail">mapped visibility grade</div>
                 </div>
                 <div class="posture-grade-circle" style="color: ${gradeColor};">
                     <span>${maturityGrade.split(' ')[0]}</span>
                 </div>
             </div>
+            ${buildSecurityPostureGuidanceSection(frameworkCoverage)}
             <div class="posture-note">
-                Note: <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: ≥70%, B: 50%-70%, C: 30%-50%, D/F: <30%).
+                Note: <strong>Maturity Grading:</strong> Grade is calculated from mapped framework technique coverage and does not prove prevention, alert quality, or response readiness.
                 For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${escapeHtml(report.author || state.author || 'the Security Operations Team')}</strong>.
             </div>
         </div>
     `;
 
     body.innerHTML = `
-        <div class="report-viewer" id="report-export-area">
-            ${monthSelectorHtml}
-            <div class="report-viewer-header">
-                ${logoHtml}
-                <h2>${escapeHtml(report.companyName) || 'MITRE ATT&CK Coverage Report'}</h2>
-                <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
-                <div class="report-date">${escapeHtml(reportMonthLabel)}</div>
-                ${report.layerName ? `<div class="report-date"><i class="bi bi-layers mr-1"></i>Layer: ${escapeHtml(report.layerName)}</div>` : ''}
-                <div class="report-date" style="display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="bi bi-person mr-1"></i>Prepared by: 
-                    <input type="text" class="report-author-input border-0 bg-transparent text-white fw-semibold px-1 py-0" style="outline: none; border-bottom: 1px dashed rgba(255, 255, 255, 0.3) !important; color: rgba(255, 255, 255, 0.85) !important; font-size: inherit; width: 180px;" value="${escapeHtml(report.author || state.author || '')}" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="author" placeholder="Enter author name...">
+        <div class="report-editor-workbench" id="report-export-area">
+            <header class="report-editor-hero" style="--report-theme-accent: ${escapeHtml(theme.accent)}; --report-theme-rgb: ${escapeHtml(themeRgb)};">
+                <div>
+                    <span class="report-editor-kicker">Editable report setup</span>
+                    <h2>${escapeHtml(report.title || 'MITRE ATT&CK Coverage Report')}</h2>
+                    <p>Only editable report inputs are shown here. Dynamic posture, threat mapping, coverage tables, and export-only narrative sections still render in HTML/PDF export.</p>
                 </div>
-            </div>
-
-            ${buildReportBasisNote(report)}
-
-            ${statsBarHtml}
-
-            ${buildTopNextActionsSection(report)}
-
-            <div class="report-tier" id="tier-1">
-                <div class="report-tier-header">
-                    <i class="bi bi-shield-check"></i>
-                    <span>Tier 1: Executive Security Posture</span>
+                <div class="report-editor-status">
+                    <strong>${escapeHtml(reportMonthLabel)}</strong>
+                    <span>${report.type === 'initial' ? 'Initial assessment' : 'Monthly update'}</span>
                 </div>
-                <div class="report-tier-content">
-                    <div class="report-section">
-                        <h4><i class="bi bi-journal-text"></i> Executive Summary</h4>
-                        <textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="executiveSummary" placeholder="Provide a high-level overview of the threat hunting activities, key findings, and overall coverage status...">${escapeHtml(report.executiveSummary || generateDynamicExecutiveSummary(report))}</textarea>
-                    </div>
-                    <div class="report-section">
-                        <h4><i class="bi bi-bar-chart-line"></i> Key Metrics at a Glance</h4>
-                        <div class="key-metrics-grid">
-                            <div class="key-metric-card">
-                                <div class="key-metric-value" style="color: #22c55e;">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
-                                <div class="key-metric-label">Overall Coverage</div>
-                                <div class="key-metric-detail">Framework technique coverage</div>
-                            </div>
-                            <div class="key-metric-card">
-                                <div class="key-metric-value" style="color: #38bdf8;">${totalQueries}</div>
-                                <div class="key-metric-label">Active Queries</div>
-                                <div class="key-metric-detail">Detection rules deployed</div>
-                            </div>
-                            <div class="key-metric-card">
-                                <div class="key-metric-value" style="color: #fbbf24;">${threatsDisrupted}</div>
-                                <div class="key-metric-label">${getReportMetricLabel()}</div>
-                                <div class="key-metric-detail">${getReportMetricDetail()}</div>
-                            </div>
-                            <div class="key-metric-card">
-                                <div class="key-metric-value" style="color: #ef4444;">${techniquesWithGaps}</div>
-                                <div class="key-metric-label">Critical Gaps</div>
-                                <div class="key-metric-detail">Techniques needing coverage</div>
-                            </div>
+            </header>
+
+            <section class="report-editor-card report-editor-controls">
+                <div class="report-editor-card-head"><strong>Report identity & theme</strong><span>editable</span></div>
+                <div class="report-editor-control-grid">
+                    ${monthSelectorHtml}
+                    <label><span>Company name</span><input class="form-control" value="${escapeHtml(report.companyName || state.companyName || '')}" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="companyName" placeholder="Organisation name"></label>
+                    <label><span>Prepared by</span><input class="form-control" value="${escapeHtml(report.author || state.author || '')}" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="author" placeholder="Report author"></label>
+                    <label><span>Query repository</span><input type="url" class="form-control" value="${escapeHtml(report.queryRepositoryUrl || '')}" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="queryRepositoryUrl" placeholder="https://github.com/org/query-repository"></label>
+                    <div class="report-export-options">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="export-dark-mode-toggle" checked>
+                            <label class="form-check-label" for="export-dark-mode-toggle">Export in graphite dark mode</label>
                         </div>
                     </div>
-                    <div class="report-section leadership-section">
-                        <h4><i class="bi bi-people"></i> Leadership Overview</h4>
-                        <div class="leadership-content">
-                            <p>${markdownToHtml(report.leadershipOverview || generateLeadershipOverview(report))}</p>
-                        </div>
-                    </div>
-                    <div class="report-section">
-                        <h4><i class="bi bi-bullseye"></i> Monthly Focus Areas</h4>
-                        <textarea rows="4" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="monthlyFocus" placeholder="Describe the key focus areas and objectives for this reporting period...">${escapeHtml(report.monthlyFocus || generateDynamicMonthlyFocus(report))}</textarea>
-                    </div>
                 </div>
+            </section>
+
+            <div class="report-editor-grid">
+                <section class="report-editor-card report-editor-span-2">
+                    <div class="report-editor-card-head"><strong>Executive narrative</strong><span>export text</span></div>
+                    <div class="report-editor-field-stack">
+                        <label><span>Executive summary</span><textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="executiveSummary" placeholder="High-level report summary...">${escapeHtml(report.executiveSummary || generateDynamicExecutiveSummary(report))}</textarea></label>
+                        <label><span>Leadership overview</span><textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="leadershipOverview" placeholder="Leadership-level context...">${escapeHtml(report.leadershipOverview || generateLeadershipOverview(report))}</textarea></label>
+                        <label><span>Monthly focus</span><textarea rows="4" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="monthlyFocus" placeholder="Reporting-period priorities...">${escapeHtml(report.monthlyFocus || generateDynamicMonthlyFocus(report))}</textarea></label>
+                    </div>
+                </section>
+
+                <section class="report-editor-card">
+                    <div class="report-editor-card-head"><strong>Recommendations & gaps</strong><span>export text</span></div>
+                    <div class="report-editor-field-stack">
+                        <label><span>Strategic recommendations</span><textarea rows="6" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="recommendations" placeholder="Prioritized recommendations...">${escapeHtml(report.recommendations || generateDynamicRecommendations(report))}</textarea></label>
+                        <label><span>Gap analysis</span><textarea rows="6" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="gapAnalysis" placeholder="Coverage gaps and prioritization...">${escapeHtml(report.gapAnalysis || generateDynamicGapAnalysis(report))}</textarea></label>
+                    </div>
+                </section>
+
+                <section class="report-editor-card report-editor-span-2">
+                    <div class="report-editor-card-head"><strong>Team assignments</strong><span>owners</span></div>
+                    <div id="team-assignments-container" data-report-id="${safeReportId}">
+                        ${buildTeamAssignmentsSection(report)}
+                    </div>
+                </section>
+
+                <section class="report-editor-card">
+                    <div class="report-editor-card-head"><strong>Triggered detection results</strong><span>evidence</span></div>
+                    ${detectionResultsHtml}
+                </section>
+
+                <section class="report-editor-card report-editor-span-2">
+                    <div class="report-editor-card-head"><strong>Methodology & scope</strong><span>controls</span></div>
+                    ${methodologyHtml}
+                </section>
+
+                <section class="report-editor-card">
+                    <div class="report-editor-card-head"><strong>References</strong><span>sources</span></div>
+                    ${referencesHtml}
+                </section>
+
+                <section class="report-editor-card report-editor-span-2">
+                    <div class="report-editor-card-head"><strong>Appendix notes</strong><span>export appendix</span></div>
+                    ${appendixHtml}
+                </section>
             </div>
 
-            <div class="report-tier" id="tier-2">
-                <div class="report-tier-header">
-                    <i class="bi bi-shield-slash"></i>
-                    <span>Tier 2: Threat Landscape & Strategic Gaps</span>
-                </div>
-                <div class="report-tier-content">
-                    <div class="report-section">
-                        <h4><i class="bi bi-lightbulb"></i> Strategic Recommendations</h4>
-                        <p class="text-on-surface-secondary mb-3">Prioritized action items based on coverage gaps, threat relevance, and resource allocation. These recommendations are designed to maximize defensive impact with available resources.</p>
-                        <textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="recommendations" placeholder="Outline strategic recommendations for improving detection coverage, prioritizing high-impact techniques, and allocating resources effectively...">${escapeHtml(report.recommendations || generateDynamicRecommendations(report))}</textarea>
-                    </div>
-                    <div class="report-section">
-                        <h4><i class="bi bi-people-fill"></i> Team Assignments & Focus Areas</h4>
-                        <p class="text-on-surface-secondary mb-3">Assign specific teams to focus areas based on their expertise and the current threat landscape. Dynamic recommendations are generated based on selected teams and their relevance to active gaps.</p>
-                        <div id="team-assignments-container" data-report-id="${safeReportId}">
-                            ${buildTeamAssignmentsSection(report)}
-                        </div>
-                    </div>
-                    <div class="report-section">
-                        <h4><i class="bi bi-shield-slash"></i> Adversary Group Defensive Gap Mapper</h4>
-                        <p class="text-on-surface-secondary mb-3">This section ranks the top threat actor groups by their relevance to your environment, based on the number of ATT&amp;CK techniques they employ that overlap with your coverage map. Groups are selected by cross-referencing known adversary TTPs against your deployed detection queries, highlighting where your defensive posture is strongest and where critical blind spots exist. Each scorecard shows the percentage of that group's known techniques you can currently detect, along with the specific gaps that remain uncovered.</p>
-                        ${threatsHtml}
-                    </div>
-                    ${techniquesAtRiskHtml}
-                    <div class="report-section">
-                        <h4><i class="bi bi-graph-up"></i> Gap Analysis & Prioritization</h4>
-                        <textarea rows="5" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="gapAnalysis" placeholder="Identify coverage gaps, prioritize techniques based on threat relevance, and outline next steps for improving detection capabilities...">${escapeHtml(report.gapAnalysis || generateDynamicGapAnalysis(report))}</textarea>
-                    </div>
-                    <div class="report-section">
-                        <h4><i class="bi bi-grid-3x2"></i> Risk Heat Map</h4>
-                        <p class="text-on-surface-secondary mb-3">Visual representation of risk exposure across threat groups, plotting likelihood of attack against potential impact. Red zones indicate high-priority areas requiring immediate attention.</p>
-                        ${buildRiskHeatMap(report)}
-                    </div>
-                </div>
-            </div>
-
-            <div class="report-tier" id="tier-3">
-                <div class="report-tier-header">
-                    <i class="bi bi-clipboard-check"></i>
-                    <span>Tier 3: Operational Hunt Progress</span>
-                </div>
-                <div class="report-tier-content">
-                    ${monthlyChangelogHtml}
-                    <div class="report-section">
-                        <h4><i class="bi bi-check2-circle"></i> Detection Results</h4>
-                        ${detectionResultsHtml}
-                    </div>
-                    ${tacticsGraphHtml}
-                </div>
-            </div>
-
-            <div class="report-tier" id="tier-4">
-                <div class="report-tier-header">
-                    <i class="bi bi-file-text"></i>
-                    <span>Tier 4: Telemetry Proof & Appendix</span>
-                </div>
-                <div class="report-tier-content">
-                    <div class="report-section">
-                        <h4><i class="bi bi-git"></i> Query Repository</h4>
-                        <p class="text-on-surface-secondary mb-2">Link to the canonical repository for full query text, review history, and deployment context.</p>
-                        <input type="url" class="form-control" value="${escapeHtml(report.queryRepositoryUrl || '')}" data-report-action="update-field" data-report-id="${safeReportId}" data-report-field="queryRepositoryUrl" placeholder="https://github.com/org/query-repository">
-                    </div>
-                    ${newQueriesHtml}
-                    <div class="report-section">
-                        <h4><i class="bi bi-clipboard-check"></i> Methodology & Scope</h4>
-                        ${methodologyHtml}
-                    </div>
-                    ${report.type === 'initial' ? `
-                    <div class="report-section">
-                        <h4><i class="bi bi-grid-3x3"></i> Coverage Breakdown</h4>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-on-surface-secondary mb-3">By Tactic</h6>
-                                ${tacticTableHtml}
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-on-surface-secondary mb-3">By Query Language</h6>
-                                ${langTableHtml}
-                            </div>
-                        </div>
-                    </div>
-                    ` : `
-                    <div class="report-section">
-                        <h4><i class="bi bi-grid-3x3"></i> Coverage Changes</h4>
-                        ${buildCoverageChanges(report)}
-                    </div>
-                    `}
-                    <div class="report-section">
-                        <h4><i class="bi bi-link-45deg"></i> References</h4>
-                        ${referencesHtml}
-                    </div>
-                    <div class="report-section">
-                        <h4><i class="bi bi-paperclip"></i> Appendix</h4>
-                        ${appendixHtml}
-                    </div>
-                </div>
-            </div>
-
-            <div class="report-export-options mb-3" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: var(--report-bg-secondary); border-radius: var(--radius-pill); border: 1px solid var(--report-border);">
-                <div class="form-check form-switch" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <input class="form-check-input" type="checkbox" id="export-dark-mode-toggle" style="cursor: pointer; margin: 0;">
-                    <label class="form-check-label text-sm font-semibold" for="export-dark-mode-toggle" style="cursor: pointer; color: var(--report-text); font-size: 0.8rem; user-select: none;">
-                        <i class="bi bi-moon-stars text-primary mr-1"></i>Export in Space-Nebula Dark Mode
-                    </label>
-                </div>
-            </div>
-
-            <div class="report-actions">
-                <button class="btn btn-success" data-report-action="save-validate" data-report-id="${safeReportId}">
-                    <i class="bi bi-check-circle mr-2"></i>Save & Validate
-                </button>
-                <button class="btn btn-outline-primary" data-report-action="export-html" data-report-id="${safeReportId}">
-                    <i class="bi bi-file-earmark-html mr-2"></i>Export HTML
-                </button>
-                <button class="btn btn-primary" data-report-action="export-html-pdf" data-report-id="${safeReportId}">
-                    <i class="bi bi-file-earmark-pdf mr-2"></i>HTML to PDF
-                </button>
-                <button class="btn btn-outline-secondary" data-report-action="export-svg" data-report-id="${safeReportId}">
-                    <i class="bi bi-filetype-svg mr-2"></i>Export SVG
-                </button>
+            <div class="report-actions report-editor-actions">
+                <button class="btn btn-success" data-report-action="save-validate" data-report-id="${safeReportId}"><i class="bi bi-check-circle mr-2"></i>Save & Validate</button>
+                <button class="btn btn-outline-primary" data-report-action="export-html" data-report-id="${safeReportId}"><i class="bi bi-file-earmark-html mr-2"></i>Export HTML</button>
+                <button class="btn btn-primary" data-report-action="export-html-pdf" data-report-id="${safeReportId}"><i class="bi bi-file-earmark-pdf mr-2"></i>HTML to PDF</button>
+                <button class="btn btn-outline-secondary" data-report-action="export-svg" data-report-id="${safeReportId}"><i class="bi bi-filetype-svg mr-2"></i>Export SVG</button>
             </div>
         </div>
     `;
@@ -1630,30 +1649,10 @@ export async function viewReport(reportId) {
     modalEl.show();
 }
 
-window.filterTimeline = function(filterType, btn) {
-    const container = btn.closest('.monthly-activity-section');
-    const buttons = container.querySelectorAll('.timeline-filter-btn');
-    buttons.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    const rows = container.querySelectorAll('.timeline-item, .timeline-header');
-    rows.forEach(row => {
-        if (filterType === 'all') {
-            row.style.display = '';
-        } else if (filterType === 'status' && (row.classList.contains('event-status') || row.classList.contains('timeline-header'))) {
-            row.style.display = '';
-        } else if (filterType === 'new' && (row.classList.contains('event-new') || row.classList.contains('timeline-header'))) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
-};
-
-export function generateUnifiedChangelog(report, isEmail = false, theme = null, isDarkParam = null) {
+export function generateUnifiedChangelog(report, isEmail = false, theme = null, isDarkParam = null, options = {}) {
     if (typeof window.buildUnifiedActivityFeed === 'function') {
         const isDark = isDarkParam !== null ? isDarkParam : (document.documentElement.getAttribute('data-theme') === 'dark');
-        return window.buildUnifiedActivityFeed(report, isDark, isEmail);
+        return window.buildUnifiedActivityFeed(report, isDark, isEmail, options);
     }
     return '<p>Loading activity feed...</p>';
 }
@@ -1916,8 +1915,10 @@ export function getTotalActiveQueriesUpToMonth(targetMonth) {
 export function generateLeadershipOverview(report) {
     const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
     const periodLabel = report.reportMonth || (month ? getMonthLabel(month) : 'this period');
+    const coveragePct = getOverallCoverageStatsUpToMonth(month).pct || 0;
+    const wording = getCoverageWording(coveragePct);
     
-    return `The data presented in this report highlights our strategic alignment with the MITRE ATT&CK framework for ${periodLabel}. While our operational coverage provides robust visibility into known adversary behaviors, it is critical to recognize that coverage percentages reflect techniques where at least one telemetry source is actively queried. Individual techniques may encompass multiple distinct attack vectors, some of which may remain unmonitored. Strategic focus should be directed towards addressing identified zero-coverage gaps in high-risk areas, maturing our detection engineering lifecycle, and ensuring that our telemetry sources continuously adapt to emerging adversary tradecraft.`;
+    return `The data presented in this report highlights mapped alignment with the MITRE ATT&CK framework for ${periodLabel}. Current posture reflects ${wording.descriptor}; ${wording.interpretation}. Coverage percentages mean at least one query or detection is associated with a technique, not that telemetry, production alerting, analyst handling or control effectiveness has been validated. Strategic focus should be directed toward zero-coverage gaps, validation quality, telemetry health and response ownership.`;
 }
 
 export function getQueryAssociations(q, layerTechs) {
@@ -1986,8 +1987,8 @@ export function buildNewQueriesSection(report) {
         byLanguage[q.language].push(q);
     });
     
-    let html = '<div class="report-section new-queries-section"><h4><i class="bi bi-search"></i> New Threat Hunt Queries</h4>';
-    html += `<p class="text-on-surface-secondary mb-3">${allQueries.length} queries deployed for ${getMonthLabel(month)} across ${Object.keys(byLanguage).length} language${Object.keys(byLanguage).length > 1 ? 's' : ''}:</p>`;
+    let html = '<div class="report-section new-queries-section activity-feed-like"><h4><i class="bi bi-search"></i> New Threat Hunt Queries</h4>';
+    html += `<p class="text-on-surface-secondary mb-3">${allQueries.length} queries deployed for ${getMonthLabel(month)} across ${Object.keys(byLanguage).length} language${Object.keys(byLanguage).length > 1 ? 's' : ''}.</p>`;
     
     // Language summary bar
     html += '<div class="query-lang-summary mb-3">';
@@ -1998,7 +1999,7 @@ export function buildNewQueriesSection(report) {
     });
     html += '</div>';
     
-    html += '<div class="new-queries-grid">';
+    html += '<div class="activity-feed-compact"><section class="activity-feed-group status"><header><span></span><strong>New Threat Hunt Queries</strong><em>' + allQueries.length + ' queries</em></header><div class="activity-feed-rows">';
     
     allQueries.forEach(q => {
         const queryName = q.name || 'Unnamed Query';
@@ -2010,26 +2011,27 @@ export function buildNewQueriesSection(report) {
         const langColors = { 'KQL': '#0078d4', 'Splunk': '#01adef', 'Sigma': '#4caf50', 'Elastic': '#f04e23', 'Carbon Black': '#ff6b35' };
         const langColor = langColors[language.raw] || '#64748b';
         
+        const mappedIds = [...parents, ...subs].map(t => t.id).join(', ');
         html += `
-            <div class="new-query-card">
-                <div class="new-query-header">
-                    <div class="new-query-header-badges">
-                        <span class="new-query-lang" style="background: ${langColor}20; color: ${langColor}; border-color: ${langColor}40;">${language.label}</span>
-                        ${q.sentinelCandidate ? '<span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.15rem 0.45rem;font-size:0.65rem;font-weight:600;background:rgba(59,130,246,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);border-radius:0.35rem;text-transform:uppercase;letter-spacing:0.02em;" title="Candidate for Sentinel analytic"><i class="bi bi-robot"></i> Sentinel Candidate</span>' : ''}
+            <div class="activity-feed-row hunt">
+                <code>${escapeHtml(language.raw || 'Query')}</code>
+                <div class="activity-feed-main">
+                    <div class="activity-feed-titleline">
+                        <strong>${escapeHtml(queryName)}</strong>
+                        <small>${escapeHtml(formatReportDate(q.created, { includeRelative: true }))}</small>
                     </div>
-                    <span class="new-query-date">${formatTimestamp(q.created)}</span>
-                </div>
-                <h6 class="new-query-title">${escapeHtml(queryName)}</h6>
-                ${q.description ? `<p class="new-query-desc">${escapeHtml(truncateDescription(q.description, 120))}</p>` : ''}
-                <div class="new-query-techs">
-                    ${parents.length > 0 ? `<div class="new-query-tech-row"><span class="new-query-tech-label">Techniques:</span>${parents.map(p => `<span class="new-query-tech-badge" title="${escapeHtml(p.name)}">${p.id}</span>`).join('')}</div>` : ''}
-                    ${subs.length > 0 ? `<div class="new-query-tech-row"><span class="new-query-tech-label">Sub-techniques:</span>${subs.map(s => `<span class="new-query-tech-badge sub" title="${escapeHtml(s.name)}">${s.id}</span>`).join('')}</div>` : ''}
+                    ${q.description ? `<div class="activity-feed-query">${escapeHtml(truncateDescription(q.description, 140))}</div>` : ''}
+                    <div class="activity-feed-meta">
+                        ${mappedIds ? `<span>${escapeHtml(mappedIds)}</span>` : ''}
+                        <span style="border-color:${langColor}40;color:${langColor};">${language.label}</span>
+                        ${q.sentinelCandidate ? '<span><i class="bi bi-robot"></i> Candidate to convert to Sentinel analytic</span>' : ''}
+                    </div>
                 </div>
             </div>
         `;
     });
     
-    html += '</div></div>';
+    html += '</div></section></div></div>';
     return html;
 }
 
@@ -2432,7 +2434,7 @@ export function buildDetectionResults(report) {
     let html = '<div id="detection-results-container" class="detection-results-grid">';
     
     if (results.length === 0) {
-        html += '<p class="text-on-surface-secondary mb-3">No tangible results for this update.</p>';
+        html += '<p class="text-on-surface-secondary mb-3">No triggered detection results were imported for this reporting period. This does not prove active queries produced no alerts unless result ingestion is enabled and complete.</p>';
     }
     
     results.forEach((result, idx) => {
@@ -2467,7 +2469,7 @@ export function buildDetectionResults(report) {
     
     html += `
         <button class="btn btn-sm btn-outline-primary w-100 py-2 border-dashed mt-2" data-report-action="add-detection" data-report-id="${safeReportId}">
-            <i class="bi bi-plus-lg mr-1"></i>Add Detection Result Card
+            <i class="bi bi-plus-lg mr-1"></i>Add Triggered Result
         </button>
     </div>`;
     
@@ -2477,7 +2479,7 @@ export function buildDetectionResults(report) {
 export function buildReferences(report) {
     const references = report.references || [];
     const safeReportId = escapeHtml(report.id || '');
-    
+
     // Build dynamic sigma references
     const sigmaRefs = [];
     const seenUrls = new Set();
@@ -2505,9 +2507,10 @@ export function buildReferences(report) {
             }
         });
     }
-    
+    const sourceRefs = getQuerySourceReferencesForReport(report, seenUrls);
+
     let html = '<div id="references-container">';
-    
+
     // Show sigma references first
     if (sigmaRefs.length > 0) {
         html += `<div class="sigma-references-section mb-3">
@@ -2522,13 +2525,27 @@ export function buildReferences(report) {
             </ul>
         </div>`;
     }
-    
+
+    if (sourceRefs.length > 0) {
+        html += `<div class="query-source-references-section mb-3">
+            <h6 class="text-on-surface-secondary mb-2"><i class="bi bi-link-45deg mr-1"></i>Query Source References (${sourceRefs.length})</h6>
+            <ul class="sigma-ref-list">
+                ${sourceRefs.map(sr => `
+                    <li class="sigma-ref-item">
+                        <span class="sigma-ref-title">${escapeHtml(sr.title)}</span>
+                        <a href="${safeLinkHref(sr.url)}" target="_blank" rel="noopener noreferrer" class="sigma-ref-link"><i class="bi bi-link-45deg"></i> ${escapeHtml(sr.url)}</a>
+                    </li>
+                `).join('')}
+            </ul>
+        </div>`;
+    }
+
     // User-added references
-    if (references.length > 0 || sigmaRefs.length === 0) {
+    if (references.length > 0 || (sigmaRefs.length === 0 && sourceRefs.length === 0)) {
         html += `<h6 class="text-on-surface-secondary mb-2"><i class="bi bi-link-45deg mr-1"></i>Custom References</h6>`;
         references.forEach((ref, idx) => {
             html += `
-                <div class="reference-item mb-2 d-flex align-iteml-center gap-2">
+                <div class="reference-item mb-2 d-flex align-items-center gap-2">
                     <input type="text" class="form-control form-control-sm" placeholder="Reference URL or description" value="${escapeHtml(ref)}" data-report-action="update-reference" data-report-id="${safeReportId}" data-report-index="${idx}">
                     <button class="btn btn-sm btn-outline-danger" data-report-action="remove-reference" data-report-id="${safeReportId}" data-report-index="${idx}">
                         <i class="bi bi-trash"></i>
@@ -2591,7 +2608,7 @@ export function generateDynamicAppendix(report) {
         methodology: `This report evaluates ${layerName} coverage against MITRE ATT&CK using the selected report month (${monthLabel}), active threat hunt queries, technique annotations, tactic coverage, and current ATT&CK relationship data loaded in the explorer. Metrics count active, non-archived detections up to the report month and distinguish parent techniques from sub-techniques where possible.`,
         scope: `Assessment period: ${monthLabel}. Current coverage is ${coverageStats.pct.toFixed(1)}% across ${coverageStats.covered}/${coverageStats.total} mapped techniques (${coverageStats.parents.covered}/${coverageStats.parents.total} parent techniques and ${coverageStats.subs.covered}/${coverageStats.subs.total} sub-techniques). This period includes ${techniques.length} technique entries, ${newQueries} newly recorded queries, and ${totalQueries} active unique detection queries up to the report month. Assigned teams: ${teamText}.`,
         limitations: `Coverage percentages reflect techniques represented in the loaded ATT&CK dataset and the active layer/query annotations available at export time. Archived queries are excluded from active coverage counts. Threat group and software mappings are based on public ATT&CK relationships and should be interpreted as defensive coverage overlap, not proof that an adversary has been disrupted. Telemetry availability, data quality, and environment-specific logging gaps can affect validation confidence.`,
-        additionalNotes: `Report generated on ${report.generatedDate || new Date().toLocaleDateString()} for ATT&CK v${report.attckVersion || state.currentVersion || 'unknown'}. Re-export the report after changing the report month, layer, team assignments, archived query state, or ATT&CK dataset to refresh dynamic metrics.`
+        additionalNotes: `Report generated on ${report.generatedDate || new Date().toLocaleDateString()} for ATT&CK v${formatAttackVersion(report.attckVersion || state.currentVersion || 'unknown')}. Re-export the report after changing the report month, layer, team assignments, archived query state, or ATT&CK dataset to refresh dynamic metrics.`
     };
 }
 
@@ -2678,6 +2695,84 @@ function safeLinkHref(value) {
     return '#';
 }
 
+function splitReportSourceValues(value) {
+    return String(value || '')
+        .split(/[\n,]+/)
+        .map(v => v.trim())
+        .filter(Boolean);
+}
+
+function isReportUrl(value) {
+    return /^https?:\/\//i.test(String(value || '').trim());
+}
+
+function getQuerySigmaUrls(query) {
+    return new Set(String(query?.sigmaRuleUrl || '').split('|').map(url => url.trim()).filter(Boolean));
+}
+
+function normalizeReportSourceToken(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\/sigmahq\.io\/.*\/(rules\/)?/i, '')
+        .replace(/^https?:\/\/github\.com\/sigmahq\/sigma\/blob\/master\/rules\//i, '')
+        .replace(/\.(ya?ml)$/i, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+}
+
+function getQuerySigmaSourceTokens(query) {
+    return new Set([
+        ...String(query?.sigmaRuleUrl || '').split('|'),
+        ...String(query?.sigmaRuleTitle || '').split('|'),
+        ...String(query?.sigmaRuleId || '').split('|')
+    ].map(normalizeReportSourceToken).filter(Boolean));
+}
+
+function isDuplicateSigmaSource(query, source) {
+    const raw = String(source || '').trim();
+    if (!raw) return false;
+    if (getQuerySigmaUrls(query).has(raw)) return true;
+    const normalizedSource = normalizeReportSourceToken(raw);
+    return normalizedSource && getQuerySigmaSourceTokens(query).has(normalizedSource);
+}
+
+function renderQuerySourceLinksExport(query, isDark = false) {
+    const sources = splitReportSourceValues(query?.source).filter(source => !isDuplicateSigmaSource(query, source));
+    if (!sources.length) return '';
+    const muted = isDark ? '#94a3b8' : '#64748b';
+    const linkColor = isDark ? '#7dd3fc' : '#0284c7';
+    const chipBg = isDark ? '#101820' : '#f8fafc';
+    const chipBorder = isDark ? '#27303a' : '#e2e8f0';
+    return `
+        <div style="margin-top: 6px; font-size: 10px; line-height: 1.6; color: ${muted};">
+            <strong style="text-transform: uppercase; letter-spacing: 0.05em; font-size: 8px; margin-right: 6px; color: ${muted};">Sources:</strong>
+            ${sources.map(source => isReportUrl(source)
+                ? `<a href="${safeLinkHref(source)}" target="_blank" rel="noopener noreferrer" style="color: ${linkColor}; text-decoration: underline; margin-right: 8px; word-break: break-all;">${escapeHtml(source)}</a>`
+                : `<span style="background-color: ${chipBg}; color: ${muted}; border: 1px solid ${chipBorder}; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-right: 6px; vertical-align: middle; display: inline-block;">${escapeHtml(source)}</span>`
+            ).join('')}
+        </div>
+    `;
+}
+
+function getQuerySourceReferencesForReport(report, excludedUrls = new Set()) {
+    const sourceRefs = [];
+    const seen = new Set();
+    const repMonth = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
+    if (!repMonth || typeof getTechniquesByMonth !== 'function') return sourceRefs;
+    const byMonth = getTechniquesByMonth();
+    (byMonth[repMonth] || []).forEach(ann => {
+        (ann.queries || []).forEach(q => {
+            splitReportSourceValues(q.source).forEach(source => {
+                if (!isReportUrl(source) || seen.has(source) || isDuplicateSigmaSource(q, source) || excludedUrls.has(source)) return;
+                seen.add(source);
+                sourceRefs.push({ title: q.name || 'Query source', url: source });
+            });
+        });
+    });
+    return sourceRefs;
+}
+
 function reportIcon(name, color = '#3b82f6', size = 14) {
     const paths = {
         robot: '<path d="M7 2h2v2h3a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2Zm-3 4v5h8V6H4Zm1.5 2.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2Zm5 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2ZM5 14h6v1H5v-1Z"/>',
@@ -2758,12 +2853,12 @@ export function generateDynamicMonthlyFocus(report) {
     let focus = `Engineering efforts this month prioritized contextual threat modeling and targeted visibility gaps. `;
     
     if (topGroups.length > 0) {
-        focus += `Specifically, our recent deployments directly counter known behaviors associated with advanced persistent threats such as ${topGroups.join(' and ')}. `;
+        focus += `Specifically, recent query mappings align to known behaviors associated with advanced persistent threats such as ${topGroups.join(' and ')} and require validation before they are treated as production-ready detections. `;
     } else {
         focus += `Specifically, our recent deployments target novel evasion techniques and emerging adversary playbooks. `;
     }
     
-    focus += `By aligning our detection engineering cycle against verified threat intelligence, we ensure that our defenses evolve dynamically in response to the changing landscape.`;
+    focus += `By aligning detection engineering against verified threat intelligence, the SOC can prioritize validation, telemetry checks and response readiness against the changing landscape.`;
     
     return focus;
 }
@@ -2807,14 +2902,16 @@ export function generateDynamicGapAnalysis(report) {
     }
     
     analysis += '**Prioritization Recommendations:**\n';
+    const recommendations = [];
     if (lowCoverage.length > 0) {
-        analysis += `1. **Immediate Priority:** Address critical gaps in ${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')}.\n`;
+        recommendations.push(`**Immediate Priority:** Address critical mapped gaps in ${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')}.`);
     }
     if (mediumCoverage.length > 0) {
-        analysis += `2. **Short-term Goal:** Improve coverage in ${mediumCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')} to reach 80%+.\n`;
+        recommendations.push(`**Short-term Goal:** Improve mapped query coverage in ${mediumCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')} and validate telemetry/alert quality.`);
     }
-    analysis += '3. **Maintenance:** Continue monitoring and updating existing detections for high-coverage tactics.\n';
-    analysis += '4. **Threat Intelligence:** Align new detections with current threat actor TTPs targeting low-coverage areas.';
+    recommendations.push('**Maintenance:** Continue reviewing existing query mappings, scheduled analytics and validation evidence for higher-coverage tactics.');
+    recommendations.push('**Threat Intelligence:** Align new queries with current threat actor TTPs targeting low-coverage areas.');
+    analysis += recommendations.map((item, index) => `${index + 1}. ${item}`).join('\n');
     
     return analysis;
 }
@@ -2824,34 +2921,21 @@ export function generateDynamicRecommendations(report) {
     const tactics = getCoverageByTacticUpToMonth(month);
     const lowCoverage = tactics.filter(t => t.coverage < 50).sort((a, b) => a.coverage - b.coverage);
     const mediumCoverage = tactics.filter(t => t.coverage >= 50 && t.coverage < 80);
-    
-    let recs = '**Strategic Recommendations:**\n\n';
-    
+    const items = [];
+
     if (lowCoverage.length > 0) {
-        recs += '**1. Close Critical Gaps:**\n';
-        recs += `   Focus immediate resources on ${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')} tactics.\n`;
-        recs += `   These represent the highest risk blind spots in our detection coverage.\n\n`;
+        items.push(`**Close Critical Gaps:** Focus immediate resources on ${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')} tactics. These represent high-risk mapped visibility gaps, not confirmed absence of attacker activity.`);
     }
-    
+
     if (mediumCoverage.length > 0) {
-        recs += '**2. Strengthen Moderate Coverage:**\n';
-        recs += `   Develop additional detection queries for ${mediumCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')}.\n`;
-        recs += `   Target 80%+ coverage across all tactics within the next quarter.\n\n`;
+        items.push(`**Strengthen Moderate Coverage:** Develop additional active hunt queries for ${mediumCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(' and ')} and validate telemetry health, alert quality and false positive handling.`);
     }
-    
-    recs += '**3. Threat-Aligned Detection:**\n';
-    recs += '   Prioritize detections based on active threat actor TTPs targeting our industry.\n';
-    recs += '   Focus on techniques used by APT groups with known interest in our sector.\n\n';
-    
-    recs += '**4. Detection Quality:**\n';
-    recs += '   Review existing queries for false positive rates and tuning opportunities.\n';
-    recs += '   Implement automated testing for detection validation.\n\n';
-    
-    recs += '**5. Team Coordination:**\n';
-    recs += '   Assign specific tactics to dedicated teams for ownership and accountability.\n';
-    recs += '   Establish regular review cadence for coverage progress.';
-    
-    return recs;
+
+    items.push('**Threat-Aligned Detection:** Prioritize active hunt queries and Sentinel analytic candidates based on threat actor TTPs relevant to the organisation and validate before production promotion.');
+    items.push('**Detection Quality:** Review and tune existing queries to reduce false positives, confirm data availability and document response ownership.');
+    items.push('**Team Coordination:** Assign specific tactics to accountable teams and establish a regular review cadence for mapped coverage, validation evidence and delivery progress.');
+
+    return `**Strategic Recommendations:**\n\n${items.map((item, index) => `${index + 1}. ${item}`).join('\n')}`;
 }
 
 export const TEAM_OPTIONS = [
@@ -2859,10 +2943,10 @@ export const TEAM_OPTIONS = [
     { id: 'engineering', label: 'Detection Engineering', icon: 'bi-gear', color: '#22c55e' },
     { id: 'soc', label: 'Security Operations Center (SOC)', icon: 'bi-shield-check', color: '#fbbf24' },
     { id: 'ir', label: 'Incident Response (IR)', icon: 'bi-exclamation-triangle', color: '#ef4444' },
-    { id: 'vuln', label: 'Vulnerability Management', icon: 'bi-bug', color: '#a855f7' },
+    { id: 'vuln', label: 'Vulnerability Management', icon: 'bi-bug', color: '#9ccfd8' },
     { id: 'network', label: 'Network Security', icon: 'bi-hdd-network', color: '#06b6d4' },
     { id: 'endpoint', label: 'Endpoint Security', icon: 'bi-laptop', color: '#f97316' },
-    { id: 'cloud', label: 'Cloud Security', icon: 'bi-cloud', color: '#8b5cf6' }
+    { id: 'cloud', label: 'Cloud Security', icon: 'bi-cloud', color: '#7ba8d8' }
 ];
 
 export function getTeamRecommendations(teamId, report) {
@@ -3053,7 +3137,7 @@ function buildSentinelCandidatesExport(report, isDark = false) {
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-top: 10px; background-color: ${isDark ? '#0c1424' : '#eff6ff'}; border: 1px solid ${isDark ? '#1e3a8a' : '#bfdbfe'};">
             <tr>
                 <td style="padding: 10px 12px; border: none;">
-                    <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;">${reportIcon('robot', '#3b82f6', 14)}Microsoft Sentinel Candidate Queue (${candidates.length})</div>
+                    <div style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;">${reportIcon('robot', '#3b82f6', 14)}Candidates to Convert to Microsoft Sentinel Analytics (${candidates.length})</div>
                     ${candidates.map(c => `
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; border-top: 1px solid ${isDark ? '#1e3a8a' : '#bfdbfe'};">
                             <tr>
@@ -3074,71 +3158,275 @@ function buildSentinelCandidatesExport(report, isDark = false) {
 }
 
 function buildReportBasisNoteExport(report, isDark = false) {
+    const border = isDark ? '#27303a' : '#d8e0e7';
+    const panel = isDark ? '#101820' : '#f8fafc';
+    const text = isDark ? '#cbd5e1' : '#475569';
+    const heading = isDark ? '#ffffff' : '#0f172a';
     return `
-        <div class="section" id="report-basis" style="page-break-inside: avoid; background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; padding: 14px 16px; margin-bottom: 18px;">
-            <h3 style="margin-bottom: 8px;">Report Basis</h3>
-            <p style="font-size: 12.5px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.55; margin: 0;">${escapeHtml(getReportBasisText(report))}</p>
+        <div class="section report-basis-export" id="report-basis" style="page-break-inside: avoid; background-color: ${panel}; border: 1px solid ${border}; border-radius: 16px; padding: 14px 16px; margin-bottom: 18px;">
+            <div style="display: table; width: 100%; table-layout: fixed;">
+                <div style="display: table-cell; width: 140px; vertical-align: top; padding-right: 14px; color: ${isDark ? '#9ccfd8' : '#0369a1'}; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em;">Report Basis</div>
+                <div style="display: table-cell; vertical-align: top; color: ${text}; font-size: 12.5px; line-height: 1.55;">
+                    <strong style="display:block;color:${heading};font-size:13px;margin-bottom:3px;">Export-time data boundary</strong>
+                    ${escapeHtml(getReportBasisText(report))}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function buildExportPostureDashboard(metrics, isDark = false) {
+    const border = isDark ? '#27303a' : '#d8e0e7';
+    const panel = isDark ? '#101820' : '#f8fafc';
+    const card = isDark ? '#0c0f12' : '#ffffff';
+    const text = isDark ? '#cbd5e1' : '#475569';
+    const muted = isDark ? '#94a3b8' : '#64748b';
+    const heading = isDark ? '#ffffff' : '#0f172a';
+    const accent = isDark ? '#9ccfd8' : '#0369a1';
+    const coverageValue = metrics.frameworkCoverage % 1 === 0 ? metrics.frameworkCoverage : metrics.frameworkCoverage.toFixed(1);
+    const rows = [
+        { label: 'Framework coverage', value: `${coverageValue}%`, detail: `Parent: ${metrics.coverageStats.parents.covered}/${metrics.coverageStats.parents.total} | Sub: ${metrics.coverageStats.subs.covered}/${metrics.coverageStats.subs.total}`, note: metrics.deltaHtml },
+        { label: 'Active detection queries', value: metrics.totalQueries, detail: 'active hunt queries recorded', note: metrics.queryDelta > 0 ? `+${metrics.queryDelta} deployed this period` : 'No new queries this period' },
+        { label: 'Tactical gaps filled', value: metrics.techniquesCovered, detail: 'techniques covered this period', note: '' },
+        { label: getReportMetricLabel(), value: metrics.threatsDisrupted, detail: getReportMetricDetail(), note: '' }
+    ];
+
+    return `
+        <div id="posture-dashboard" style="page-break-inside: avoid; background-color: ${panel}; border-bottom: 1px solid ${border}; padding: 20px 24px;"><a name="posture-dashboard"></a>
+            <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;margin:0;border:0;">
+                <tr>
+                    <td style="border:0;padding:0 0 12px;vertical-align:top;">
+                        <div style="font-size:10px;font-weight:800;color:${accent};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;">Posture Snapshot</div>
+                        <div style="font-size:13px;color:${text};line-height:1.5;">Compact export summary for mapped ATT&amp;CK visibility, active hunt queries, period progress, and defensive overlap.</div>
+                    </td>
+                    <td style="border:0;padding:0 0 12px;text-align:right;vertical-align:top;width:210px;">
+                        <div style="display:inline-block;text-align:left;background-color:${card};border:1px solid ${border};border-radius:14px;padding:12px 14px;min-width:190px;">
+                            <div style="font-size:9px;font-weight:800;color:${muted};text-transform:uppercase;letter-spacing:0.08em;">Security posture grade</div>
+                            <div style="font-size:23px;font-weight:900;color:${metrics.gradeColor};line-height:1.1;margin-top:4px;">${escapeHtml(metrics.maturityGrade)}</div>
+                            <div style="font-size:10.5px;color:${muted};margin-top:3px;">${metrics.coverageStats.total - metrics.coverageStats.covered} mapped gaps remaining</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border-spacing:10px 0;margin:0 -10px;border:0;">
+                <tr>
+                    ${rows.map(row => `
+                        <td width="25%" style="width:25%;vertical-align:top;border:1px solid ${border};background-color:${card};border-radius:14px;padding:13px;">
+                            <div style="font-size:9px;font-weight:800;color:${muted};text-transform:uppercase;letter-spacing:0.08em;">${escapeHtml(row.label)}</div>
+                            <div style="font-size:24px;font-weight:900;color:${heading};line-height:1.05;margin-top:5px;">${escapeHtml(String(row.value))}</div>
+                            <div style="font-size:10.5px;color:${text};line-height:1.4;margin-top:5px;">${escapeHtml(row.detail)}</div>
+                            ${row.note ? `<div style="font-size:10px;color:${muted};line-height:1.35;margin-top:5px;">${row.note}</div>` : ''}
+                        </td>
+                    `).join('')}
+                </tr>
+            </table>
+            ${metrics.postureGuidanceHtml}
+            <div style="margin-top: 12px; padding: 9px 12px; background-color: ${card}; border: 1px solid ${border}; font-size: 11px; color: ${muted}; line-height: 1.45; text-align: center;">
+                Grade is calculated from mapped framework technique coverage and does not prove prevention, alert quality, or response readiness.
+            </div>
+        </div>
+    `;
+}
+
+function getExportVisuals(isDark = false) {
+    return {
+        border: isDark ? '#27303a' : '#d8e0e7',
+        borderSoft: isDark ? 'rgba(255,255,255,0.07)' : '#e5edf2',
+        panel: isDark ? '#101820' : '#f8fafc',
+        panelAlt: isDark ? '#0c0f12' : '#ffffff',
+        text: isDark ? '#cbd5e1' : '#334155',
+        muted: isDark ? '#94a3b8' : '#64748b',
+        heading: isDark ? '#ffffff' : '#0f172a',
+        accent: isDark ? '#9ccfd8' : '#0369a1',
+        accentSoft: isDark ? 'rgba(156,207,216,0.09)' : '#eef7f8',
+        semantic: {
+            critical: '#ef4444',
+            review: '#f59e0b',
+            healthy: '#16a34a',
+            info: isDark ? '#7ba8d8' : '#0369a1',
+            muted: isDark ? '#94a3b8' : '#64748b'
+        }
+    };
+}
+
+function buildExportSectionTitle(title, subtitle = '', isDark = false, accent = null) {
+    const v = getExportVisuals(isDark);
+    const color = accent || v.accent;
+    return `
+        <div class="export-section-title" style="margin-bottom:14px;">
+            <div style="font-size:10px;font-weight:900;color:${color};text-transform:uppercase;letter-spacing:0.14em;margin-bottom:5px;">${escapeHtml(title)}</div>
+            ${subtitle ? `<div style="font-size:12.5px;color:${v.muted};line-height:1.5;max-width:780px;">${escapeHtml(subtitle)}</div>` : ''}
+        </div>
+    `;
+}
+
+function buildExportTierHeading(number, title, subtitle, isDark = false, accent = null) {
+    const v = getExportVisuals(isDark);
+    const color = accent || v.accent;
+    return `
+        <div class="export-tier-heading" style="margin:0 0 18px;padding:18px 20px;border:1px solid ${v.border};border-left:6px solid ${color};border-radius:18px;background:${isDark ? 'linear-gradient(135deg,#111820,#0c0f12)' : 'linear-gradient(135deg,#f8fafc,#ffffff)'};">
+            <div style="font-size:11px;font-weight:900;color:${color};text-transform:uppercase;letter-spacing:0.16em;margin-bottom:6px;">Tier ${number}</div>
+            <div style="font-size:26px;font-weight:900;color:${v.heading};line-height:1.05;letter-spacing:-0.045em;">${escapeHtml(title)}</div>
+            <div style="font-size:12.5px;color:${v.muted};line-height:1.45;margin-top:7px;">${escapeHtml(subtitle)}</div>
+        </div>
+    `;
+}
+
+function buildStrategicRecommendationsExport(recommendations, isDark = false) {
+    if (!recommendations) return '';
+    const v = getExportVisuals(isDark);
+    return `
+        <div class="section" id="recommendations" style="page-break-inside: avoid;"><a name="recommendations"></a>
+            ${buildExportSectionTitle('Strategic Recommendations', 'Decision guidance and operating priorities for the next reporting cycle.', isDark, '#7ba8d8')}
+            <div style="border:1px solid ${v.border};border-radius:16px;background:${v.panel};padding:16px 18px;color:${v.text};font-size:13px;line-height:1.65;">
+                ${markdownToHtml(recommendations)}
+            </div>
+        </div>
+    `;
+}
+
+function buildExecutiveSecurityExport({ execSummary, monthlyFocus, leadership }, isDark = false) {
+    const v = getExportVisuals(isDark);
+    return `
+        <div class="section executive-security-export" style="page-break-inside: avoid;">
+            ${buildExportSectionTitle('Executive Security Brief', 'Leadership-ready context, current focus areas and strategic guidance.', isDark)}
+            <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border-spacing:12px 0;margin:0 -12px;border:0;">
+                <tr>
+                    <td width="58%" style="width:58%;vertical-align:top;border:1px solid ${v.border};border-radius:16px;background:${v.panelAlt};padding:16px;">
+                        <div style="font-size:10px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Executive Summary &amp; Context</div>
+                        <div style="font-size:13px;line-height:1.65;color:${v.text};">${execSummary ? markdownToHtml(execSummary) : '<p style="font-style:italic;color:#64748b;margin:0;">No executive summary provided for this period.</p>'}</div>
+                    </td>
+                    <td width="42%" style="width:42%;vertical-align:top;border:1px solid ${isDark ? 'rgba(56,189,248,0.22)' : '#bae6fd'};border-radius:16px;background:${isDark ? 'rgba(56,189,248,0.06)' : '#f0f9ff'};padding:16px;">
+                        <div style="font-size:10px;font-weight:900;color:${isDark ? '#38bdf8' : '#0284c7'};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Monthly Strategic Focus Areas</div>
+                        <div style="font-size:13px;line-height:1.65;color:${v.text};">${monthlyFocus ? markdownToHtml(monthlyFocus) : '<p style="font-style:italic;color:#64748b;margin:0;">No active monthly focus areas specified.</p>'}</div>
+                    </td>
+                </tr>
+            </table>
+            ${leadership ? `<div style="margin-top:14px;border:1px solid ${v.border};border-left:4px solid ${v.accent};border-radius:16px;background:${v.accentSoft};padding:16px;"><div style="font-size:10px;font-weight:900;color:${v.accent};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Strategic Leadership Guidance</div><div style="font-size:13px;line-height:1.65;color:${v.text};">${markdownToHtml(leadership)}</div></div>` : ''}
+        </div>
+    `;
+}
+
+function runReportQaValidation(report) {
+    const warnings = [];
+    const month = getReportMonth(report);
+    const coverageStats = getOverallCoverageStatsUpToMonth(month);
+    const coveragePct = Number(coverageStats?.pct || 0);
+    const dynamic = getReportDynamicContent(report);
+    const generatedSections = [
+        ['Executive summary', report.executiveSummary || dynamic.executiveSummary],
+        ['Leadership overview', report.leadershipOverview || dynamic.leadershipOverview],
+        ['Gap analysis', report.gapAnalysis || dynamic.gapAnalysis],
+        ['Recommendations', report.recommendations || dynamic.recommendations]
+    ];
+    const lowCoverageBadTerms = /\b(robust visibility|strong coverage|comprehensive detection|broad detection readiness|mature coverage|well covered|effective protection|minimi[sz]es blind spots|prevents attacker behaviour|guarantees visibility)\b/i;
+
+    generatedSections.forEach(([label, text]) => {
+        if (coveragePct < 50 && lowCoverageBadTerms.test(String(text || ''))) {
+            warnings.push(`${label} contains maturity wording that conflicts with low mapped coverage.`);
+        }
+        if (isRawAttackObjectId(text)) {
+            warnings.push(`${label} contains a raw ATT&CK/STIX object ID.`);
+        }
+    });
+
+    const recommendationText = String(report.recommendations || dynamic.recommendations || '');
+    const numbers = [...recommendationText.matchAll(/^\s*(\d+)\.\s+/gm)].map(match => Number(match[1]));
+    if (numbers.length > 1 && numbers.some((number, index) => number !== index + 1)) {
+        warnings.push('Recommendation numbering is not sequential. Regenerate recommendations or use automatic ordered lists.');
+    }
+
+    if (!report.generatedAt && !report.generatedDate) warnings.push('Report generated date is missing.');
+    if (!getReportAttackVersion(report) || getReportAttackVersion(report) === 'unknown') warnings.push('ATT&CK version is missing or unknown.');
+    if ((report.detectionResults || []).length === 0) warnings.push('No triggered detection results were imported for this reporting period; this must not be described as no alerts.');
+
+    const allQueries = [];
+    (state.currentLayer?.techniques || report.snapshot?.techniques || []).forEach(ann => {
+        (ann.queries || []).forEach(q => allQueries.push(q));
+    });
+    if (allQueries.some(q => q.archived && !q.archiveReason && !q.archivedAt)) warnings.push('Archived queries exist without archive date/reason metadata.');
+
+    ['companyName', 'author'].forEach(field => {
+        const value = String(report[field] || state[field] || '').trim();
+        if (/^(test|todo|tbd|placeholder|not set)$/i.test(value)) warnings.push(`${field} contains placeholder text.`);
+    });
+
+    return [...new Set(warnings)];
+}
+
+function buildReportQaWarningsSection(warnings, isDark = false) {
+    if (!warnings.length) return '';
+    const v = getExportVisuals(isDark);
+    return `
+        <div class="section report-qa-warnings" id="report-qa-warnings" style="page-break-inside: avoid; border-color: ${isDark ? 'rgba(245,158,11,0.42)' : '#fcd34d'} !important; background: ${isDark ? 'rgba(245,158,11,0.08)' : '#fffbeb'} !important;">
+            ${buildExportSectionTitle('Report QA Warnings', 'Generator validation found issues that should be reviewed before production distribution.', isDark, '#f59e0b')}
+            <ul style="margin:0;padding-left:18px;color:${v.text};font-size:12.5px;line-height:1.6;">
+                ${warnings.map(warning => `<li>${escapeHtml(warning)}</li>`).join('')}
+            </ul>
         </div>
     `;
 }
 
 function buildTopNextActionsExport(report, isDark = false) {
     const actions = getTopNextActions(report);
-    const border = isDark ? '#25263b' : '#e2e8f0';
-    const panel = isDark ? '#121324' : '#f8fafc';
-    const text = isDark ? '#cbd5e1' : '#475569';
-    const heading = isDark ? '#ffffff' : '#0f172a';
+    const v = getExportVisuals(isDark);
+    const accents = ['#ef4444', '#f59e0b', '#7ba8d8'];
     return `
         <div class="section" id="top-next-actions" style="page-break-inside: avoid;"><a name="top-next-actions"></a>
-            <h3>Top 3 Next Actions</h3>
-            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            ${buildExportSectionTitle('Top 3 Next Actions', 'The three highest-value follow-ups generated from current coverage, ownership and Sentinel candidate state.', isDark)}
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: separate; border-spacing: 10px 0; margin: 0 -10px; border: 0;">
+                <tr>
                 ${actions.map((action, index) => `
-                    <tr>
-                        <td style="width: 34px; border: 1px solid ${border}; background-color: ${panel}; color: ${heading}; font-weight: 800; text-align: center; vertical-align: top;">${index + 1}</td>
-                        <td style="border: 1px solid ${border}; background-color: ${panel}; vertical-align: top;">
-                            <div style="font-size: 9px; font-weight: 700; color: ${isDark ? '#38bdf8' : '#0284c7'}; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">${escapeHtml(action.priority)}</div>
-                            <div style="font-size: 13px; font-weight: 700; color: ${heading}; margin-bottom: 4px;">${escapeHtml(action.title)}</div>
-                            <div style="font-size: 12px; color: ${text}; line-height: 1.5;">${escapeHtml(action.detail)}</div>
-                        </td>
-                    </tr>
+                    <td width="33.33%" style="width:33.33%;vertical-align:top;border:1px solid ${v.border};border-top:4px solid ${accents[index]};border-radius:16px;background:${v.panel};padding:14px;">
+                        <div style="font-size:30px;font-weight:900;color:${accents[index]};line-height:1;margin-bottom:10px;">0${index + 1}</div>
+                        <div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">${escapeHtml(action.priority)}</div>
+                        <div style="font-size:14px;font-weight:800;color:${v.heading};line-height:1.25;margin-bottom:8px;">${escapeHtml(action.title)}</div>
+                        <div style="font-size:12px;color:${v.text};line-height:1.55;">${escapeHtml(action.detail)}</div>
+                    </td>
                 `).join('')}
+                </tr>
             </table>
         </div>
     `;
 }
 
 function buildTeamAssignmentsExport(report, isDark = false) {
-    const assignedTeams = report.teamAssignments || [];
-    const border = isDark ? '#25263b' : '#e2e8f0';
-    const panel = isDark ? '#121324' : '#fafafa';
-    const text = isDark ? '#cbd5e1' : '#475569';
-    let teamHtml = `<div class="section" id="team-assignments" style="page-break-inside: avoid;"><a name="team-assignments"></a><h3>Team Assignments &amp; Focus Areas</h3>`;
+    const assignedTeams = (report.teamAssignments || []).filter(teamId => TEAM_OPTIONS.some(t => t.id === teamId));
+    const v = getExportVisuals(isDark);
+    let teamHtml = `<div class="section" id="team-assignments" style="page-break-inside: avoid;"><a name="team-assignments"></a>${buildExportSectionTitle('Team Assignments & Focus Areas', 'Ownership routing for delivery, validation, governance and engineering follow-up.', isDark, '#34d399')}`;
 
     if (assignedTeams.length === 0) {
-        return teamHtml + `<p style="font-size: 12.5px; color: ${text}; margin: 0;">No teams assigned for this report.</p></div>`;
+        return teamHtml + `<div style="border:1px solid ${v.border};border-radius:16px;background:${v.panel};padding:16px;font-size:12.5px;color:${v.muted};">No teams assigned for this report.</div></div>`;
     }
 
-    teamHtml += `<table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">`;
-    assignedTeams.forEach(teamId => {
+    teamHtml += `<table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: separate; border-spacing: 10px; margin: 0 -10px; border: 0;">`;
+    assignedTeams.forEach((teamId, index) => {
         const team = TEAM_OPTIONS.find(t => t.id === teamId);
         if (!team) return;
         const rec = getEditableTeamRecommendation(teamId, report);
         const sentinelHtml = teamId === 'engineering' ? buildSentinelCandidatesExport(report, isDark) : '';
+        if (index % 2 === 0) teamHtml += '<tr>';
         teamHtml += `
-            <tr>
-                <td style="padding: 12px; border: 1px solid ${border}; vertical-align: top; background-color: ${panel};">
-                    <div style="font-size: 12px; font-weight: 700; color: ${team.color}; margin-bottom: 6px;">${escapeHtml(team.label)}</div>
-                    <div style="font-size: 11px; color: ${text}; margin-bottom: 4px;"><strong>Focus:</strong> ${escapeHtml(rec.focus)}</div>
-                    <div style="font-size: 11px; color: ${text}; margin-bottom: 4px;"><strong>Priority:</strong> ${escapeHtml(rec.priority)}</div>
-                    <div style="font-size: 11px; color: ${text};"><strong>Actions:</strong>
-                        <ul style="margin: 4px 0 0 0; padding-left: 16px;">
-                            ${rec.actions.map(a => `<li style="margin-bottom: 2px;">${escapeHtml(a)}</li>`).join('')}
-                        </ul>
+                <td width="50%" style="width: 50%; padding: 0; border: 1px solid ${v.border}; vertical-align: top; background-color: ${v.panel}; border-radius: 16px; overflow:hidden;">
+                    <div style="padding:12px 14px;border-bottom:1px solid ${v.border};background:${isDark ? 'rgba(255,255,255,0.025)' : '#ffffff'};">
+                        <div style="font-size:10px;font-weight:900;color:${team.color};text-transform:uppercase;letter-spacing:0.1em;">Assigned Owner</div>
+                        <div style="font-size:15px;font-weight:850;color:${v.heading};margin-top:4px;">${escapeHtml(team.label)}</div>
                     </div>
-                    ${sentinelHtml}
-                </td>
-            </tr>`;
+                    <div style="padding:14px;">
+                        <div style="font-size:10px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Focus</div>
+                        <div style="font-size:12.5px;color:${v.text};line-height:1.5;margin-bottom:10px;">${escapeHtml(rec.focus)}</div>
+                        <div style="font-size:10px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Priority</div>
+                        <div style="font-size:12.5px;color:${v.text};line-height:1.5;margin-bottom:10px;">${escapeHtml(rec.priority)}</div>
+                        <div style="font-size:10px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Recommended Actions</div>
+                        <ul style="margin: 0; padding-left: 16px; color:${v.text}; font-size:12px; line-height:1.55;">
+                            ${rec.actions.map(a => `<li style="margin-bottom: 4px;">${escapeHtml(a)}</li>`).join('')}
+                        </ul>
+                        ${sentinelHtml}
+                    </div>
+                </td>`;
+        if (index % 2 === 1) teamHtml += '</tr>';
     });
+    if (assignedTeams.length % 2 === 1) teamHtml += `<td width="50%" style="width: 50%; border: 0; padding: 0;"></td></tr>`;
     teamHtml += '</table></div>';
     return teamHtml;
 }
@@ -3146,12 +3434,12 @@ function buildTeamAssignmentsExport(report, isDark = false) {
 function buildDetectionResultsExport(report, isDark = false) {
     const results = report.detectionResults || [];
     if (results.length === 0) {
-        return `<div class="section" id="detection-results" style="page-break-inside: avoid;"><a name="detection-results"></a><h3>Active Hunt Detections</h3><p style="font-size: 12.5px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin: 0;">No detection results recorded for this period.</p></div>`;
+        return `<div class="section" id="detection-results" style="page-break-inside: avoid;"><a name="detection-results"></a>${buildExportSectionTitle('Triggered Detection Results', 'Imported alert or hunt execution outcomes for this reporting period.', isDark, '#34d399')}<p style="font-size: 12.5px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin: 0;">No triggered detection results were imported for this reporting period. This does not prove active queries produced no alerts unless result ingestion is enabled and complete.</p></div>`;
     }
     return `
         <div class="section" id="detection-results" style="page-break-inside: avoid;"><a name="detection-results"></a>
-            <h3>Active Hunt Detections</h3>
-            <p style="margin-bottom: 12px; font-size: 13px; color: ${isDark ? '#cbd5e1' : '#475569'};">Live alerts and indicators detected during this period's hunts:</p>
+            ${buildExportSectionTitle('Triggered Detection Results', 'Imported alert or hunt execution outcomes for this reporting period.', isDark, '#34d399')}
+            <p style="margin-bottom: 12px; font-size: 13px; color: ${isDark ? '#cbd5e1' : '#475569'};">Imported results from executed hunts or alert pipelines. Treat absence of records as an ingestion state, not proof of no alerts.</p>
             ${results.map(r => `
                 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse; margin-bottom:12px;" class="detection-item">
                     <tr>
@@ -3167,36 +3455,69 @@ function buildDetectionResultsExport(report, isDark = false) {
     `;
 }
 
-function buildStatusChangesExport(report, isDark = false) {
-    const month = getReportMonth(report);
-    const savedChanges = report.changes?.colorChanges || report.changes?.all?.filter(change => change.type === 'color_change').map(change => change.data) || [];
-    const changes = getColorChangesForMonth(month);
-    const effectiveChanges = changes.length ? changes : savedChanges;
-    if (!effectiveChanges.length) return '';
+function getThreatGroupRiskRows(report) {
+    if (!state.groups || state.groups.length === 0 || !state.relationships || !state.techniques) return [];
+    return state.groups.map(group => {
+        const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === group.id);
+        const relatedTechs = techRels.map(r => state.techniques.find(tech => tech.id === r.target_ref)).filter(Boolean);
+        const coveredCount = relatedTechs.filter(tech => {
+            const tid = tech.external_references?.[0]?.external_id || '';
+            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid) || report?.snapshot?.techniques?.find(a => a.techniqueID === tid);
+            return ann?.queries && ann.queries.some(q => !q.archived);
+        }).length;
+        const techCount = relatedTechs.length;
+        const coveragePct = techCount > 0 ? Math.round((coveredCount / techCount) * 100) : 0;
+        const gaps = techCount - coveredCount;
+        const likelihood = techCount >= 150 ? 'Critical' : techCount >= 80 ? 'High' : techCount >= 30 ? 'Medium' : 'Low';
+        const impact = coveragePct < 30 ? 'Critical' : coveragePct < 50 ? 'High' : coveragePct < 70 ? 'Medium' : 'Low';
+        return { name: resolveAttackObjectName(group.name || group.id), techCount, coveragePct, gaps, likelihood, impact };
+    }).filter(row => row.techCount > 0);
+}
 
-    const border = isDark ? '#25263b' : '#e2e8f0';
-    const panel = isDark ? '#121324' : '#f8fafc';
-    const text = isDark ? '#cbd5e1' : '#475569';
-    const muted = isDark ? '#94a3b8' : '#64748b';
-    const heading = isDark ? '#ffffff' : '#0f172a';
+function buildRiskHeatMapExport(report, isDark = false) {
+    const rows = getThreatGroupRiskRows(report);
+    const v = getExportVisuals(isDark);
+    if (!state.groups || state.groups.length === 0) {
+        return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>${buildExportSectionTitle('Risk Heat Map', 'Threat group data was not imported, so risk distribution cannot be calculated.', isDark, '#f59e0b')}</div>`;
+    }
+    if (rows.length === 0) {
+        return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>${buildExportSectionTitle('Risk Heat Map', 'Threat group relationships are unavailable or did not match mapped techniques for this period.', isDark, '#f59e0b')}</div>`;
+    }
+
+    const impacts = ['Critical', 'High', 'Medium', 'Low'];
+    const likelihoods = ['Low', 'Medium', 'High', 'Critical'];
+    const riskScore = (impact, likelihood) => impacts.indexOf(impact) <= 1 && likelihoods.indexOf(likelihood) >= 2 ? 'critical' : impacts.indexOf(impact) <= 1 ? 'high' : impacts.indexOf(impact) === 2 ? 'medium' : 'low';
+    const cellStyle = (count, score) => {
+        if (!count) return `background:${isDark ? '#0c0f12' : '#f8fafc'};color:${v.muted};`;
+        if (score === 'critical') return `background:${isDark ? 'rgba(239,68,68,0.16)' : '#fef2f2'};color:#ef4444;font-weight:900;`;
+        if (score === 'high') return `background:${isDark ? 'rgba(245,158,11,0.14)' : '#fffbeb'};color:#f59e0b;font-weight:900;`;
+        if (score === 'medium') return `background:${isDark ? 'rgba(245,158,11,0.08)' : '#fff7ed'};color:#d97706;font-weight:800;`;
+        return `background:${isDark ? 'rgba(52,211,153,0.08)' : '#f0fdf4'};color:#16a34a;font-weight:800;`;
+    };
+    const topRows = [...rows].sort((a, b) => {
+        const order = { Critical: 0, High: 1, Medium: 2, Low: 3 };
+        return (order[a.impact] - order[b.impact]) || (order[a.likelihood] - order[b.likelihood]) || b.gaps - a.gaps;
+    }).slice(0, 6);
 
     return `
-        <div class="section" id="status-coverage-changes" style="page-break-inside: avoid;"><a name="status-coverage-changes"></a>
-            <h3>${reportIcon('warning', isDark ? '#fbbf24' : '#d97706', 14)}Status &amp; Coverage Changes</h3>
-            <p style="font-size: 12px; color: ${muted}; margin-bottom: 10px;">Colour/status changes detected for ${escapeHtml(getReportMonthLabel(report))}. Labels reflect the rule that actually drove the colour change.</p>
-            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-                <thead><tr><th>Technique</th><th>Name</th><th>Previous</th><th>Current</th><th>Query</th></tr></thead>
+        <div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>
+            ${buildExportSectionTitle('Risk Heat Map', 'Compact distribution of threat groups by mapped coverage gap impact and ATT&CK technique-count likelihood.', isDark, '#f59e0b')}
+            <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:11px;line-height:1.4;margin-bottom:10px;">
+                <thead><tr><th>Impact / Likelihood</th>${likelihoods.map(label => `<th style="text-align:center;">${label}</th>`).join('')}</tr></thead>
                 <tbody>
-                    ${effectiveChanges.map(change => `
-                        <tr>
-                            <td style="font-family: monospace; font-weight: 700; color: ${heading};">${escapeHtml(change.techniqueID)}</td>
-                            <td style="color: ${text};">${escapeHtml(getTechniqueName(change.techniqueID) || 'Unknown')}</td>
-                            <td><span style="display:inline-block;width:10px;height:10px;background:${change.from || 'transparent'};border:1px solid ${change.from || border};vertical-align:-1px;margin-right:4px;"></span>${escapeHtml(change.fromLabel === 'None' ? 'Unassigned' : change.fromLabel)}</td>
-                            <td><span style="display:inline-block;width:10px;height:10px;background:${change.to || 'transparent'};border:1px solid ${change.to || border};vertical-align:-1px;margin-right:4px;"></span>${escapeHtml(change.toLabel === 'None' ? 'Unassigned' : change.toLabel)}</td>
-                            <td style="color: ${muted};">${escapeHtml(change.queryName || '')}</td>
-                        </tr>
-                    `).join('')}
+                    ${impacts.map(impact => `<tr>
+                        <td style="border:1px solid ${v.border};font-weight:800;color:${v.heading};">${impact}</td>
+                        ${likelihoods.map(likelihood => {
+                            const count = rows.filter(row => row.impact === impact && row.likelihood === likelihood).length;
+                            return `<td style="border:1px solid ${v.border};text-align:center;${cellStyle(count, riskScore(impact, likelihood))}">${count}</td>`;
+                        }).join('')}
+                    </tr>`).join('')}
                 </tbody>
+            </table>
+            <div style="font-size:11px;color:${v.muted};line-height:1.45;margin-bottom:10px;">Legend: red = urgent mapped gap risk, amber = needs review, green = lower mapped gap risk, grey = no groups in cell.</div>
+            <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:11px;line-height:1.45;">
+                <thead><tr><th>Priority group</th><th>Impact</th><th>Likelihood</th><th>Readiness</th><th>Mapped gaps</th></tr></thead>
+                <tbody>${topRows.map(row => `<tr><td>${escapeHtml(row.name)}</td><td>${escapeHtml(row.impact)}</td><td>${escapeHtml(row.likelihood)}</td><td>${row.coveragePct}%</td><td>${row.gaps}</td></tr>`).join('')}</tbody>
             </table>
         </div>
     `;
@@ -3241,7 +3562,7 @@ export function buildTeamAssignmentsSection(report) {
                     sentinelHtml = `
                         <div class="sentinel-candidates-section" style="margin-top: 15px; padding: 12px; background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 6px;">
                             <h6 style="color: #3b82f6; font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-                                <i class="bi bi-robot"></i> Microsoft Sentinel Candidate Queue (${candidates.length})
+                                <i class="bi bi-robot"></i> Candidates to convert to Microsoft Sentinel analytics (${candidates.length})
                             </h6>
                             <div class="candidates-list" style="max-height: 200px; overflow-y: auto;">
                                 ${candidates.map(c => {
@@ -3351,142 +3672,34 @@ export function updateTeamRecommendation(reportId, teamId, field, value) {
 }
 
 export function buildRiskHeatMap(report) {
-    const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
-    
-    // Get top threat groups
     if (!state.groups || state.groups.length === 0) {
-        return '<p class="text-on-surface-tertiary">No threat group data available.</p>';
+        return '<p class="text-on-surface-tertiary">Threat group data was not imported, so risk distribution cannot be calculated.</p>';
     }
-    
-    const allGroups = state.groups.map(group => {
-        const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === group.id);
-        const relatedTechs = techRels.map(r => state.techniques.find(tech => tech.id === r.target_ref)).filter(Boolean);
-        
-        const coveredCount = relatedTechs.filter(tech => {
-            const tid = tech.external_references?.[0]?.external_id || '';
-            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
-            return ann?.queries && ann.queries.length > 0;
-        }).length;
-        
-        const techCount = relatedTechs.length;
-        const coveragePct = techCount > 0 ? Math.round((coveredCount / techCount) * 100) : 0;
-        const gaps = techCount - coveredCount;
-        
-        // Calculate likelihood based on threat actor activity level
-        // High: 150+ techniques (major APTs), Medium: 50-149, Low: <50
-        const likelihood = techCount >= 150 ? 'High' : techCount >= 50 ? 'Medium' : 'Low';
-        
-        // Calculate impact based on coverage gap - aligns with Gap Mapper risk levels
-        // Critical: <30% coverage (major blind spot), High: 30-50%, Medium: 50-70%, Low: >70%
-        const impact = coveragePct < 30 ? 'Critical' : coveragePct < 50 ? 'High' : coveragePct < 70 ? 'Medium' : 'Low';
-        
-        return {
-            name: group.name,
-            techCount: techCount,
-            coveragePct: coveragePct,
-            gaps: gaps,
-            likelihood: likelihood,
-            impact: impact
-        };
-    }).sort((a, b) => {
-        // Sort by risk: Critical-High first, then by gaps
-        const riskOrder = { 'Critical-High': 0, 'Critical-Medium': 1, 'Critical-Low': 2, 'High-High': 3, 'High-Medium': 4, 'High-Low': 5, 'Medium-High': 6, 'Medium-Medium': 7, 'Medium-Low': 8, 'Low-High': 9, 'Low-Medium': 10, 'Low-Low': 11 };
-        const riskA = riskOrder[`${a.impact}-${a.likelihood}`] || 12;
-        const riskB = riskOrder[`${b.impact}-${b.likelihood}`] || 12;
-        return riskA - riskB || b.gaps - a.gaps;
-    }).slice(0, 12);
-    
-    // Define heat map quadrants - aligned with Gap Mapper risk levels
-    const quadrants = {
-        'Critical-High': { color: '#ef4444', label: 'Critical Risk', desc: 'Immediate action required' },
-        'Critical-Medium': { color: '#ef4444', label: 'Critical Risk', desc: 'Immediate action required' },
-        'Critical-Low': { color: '#f97316', label: 'High Risk', desc: 'Priority attention needed' },
-        'High-High': { color: '#f97316', label: 'High Risk', desc: 'Priority attention needed' },
-        'High-Medium': { color: '#f97316', label: 'High Risk', desc: 'Priority attention needed' },
-        'High-Low': { color: '#eab308', label: 'Moderate Risk', desc: 'Monitor and plan' },
-        'Medium-High': { color: '#eab308', label: 'Moderate Risk', desc: 'Monitor and plan' },
-        'Medium-Medium': { color: '#22c55e', label: 'Low Risk', desc: 'Maintain current posture' },
-        'Medium-Low': { color: '#22c55e', label: 'Low Risk', desc: 'Maintain current posture' },
-        'Low-High': { color: '#22c55e', label: 'Low Risk', desc: 'Maintain current posture' },
-        'Low-Medium': { color: '#22c55e', label: 'Low Risk', desc: 'Maintain current posture' },
-        'Low-Low': { color: '#22c55e', label: 'Low Risk', desc: 'Maintain current posture' }
-    };
-    
-    // Group threats by quadrant
-    const quadrantMap = {};
-    allGroups.forEach(g => {
-        const key = `${g.impact}-${g.likelihood}`;
-        if (!quadrantMap[key]) quadrantMap[key] = [];
-        quadrantMap[key].push(g);
+    const rows = getThreatGroupRiskRows(report);
+    if (!rows.length) return '<p class="text-on-surface-tertiary">Threat group relationships are unavailable or did not match mapped techniques for this period.</p>';
+
+    const impacts = ['Critical', 'High', 'Medium', 'Low'];
+    const likelihoods = ['Low', 'Medium', 'High', 'Critical'];
+    const topRows = [...rows].sort((a, b) => b.gaps - a.gaps).slice(0, 6);
+    let html = '<div class="risk-heatmap-container"><table class="report-table risk-heatmap-matrix"><thead><tr><th>Impact / Likelihood</th>';
+    likelihoods.forEach(label => { html += `<th>${label}</th>`; });
+    html += '</tr></thead><tbody>';
+    impacts.forEach(impact => {
+        html += `<tr><td><strong>${impact}</strong></td>`;
+        likelihoods.forEach(likelihood => {
+            const count = rows.filter(row => row.impact === impact && row.likelihood === likelihood).length;
+            const tone = count === 0 ? 'empty' : (impact === 'Critical' && ['High', 'Critical'].includes(likelihood) ? 'critical' : impact === 'High' ? 'high' : impact === 'Medium' ? 'medium' : 'low');
+            html += `<td class="risk-cell ${tone}" aria-label="${count} ${impact} impact, ${likelihood} likelihood group${count === 1 ? '' : 's'}">${count}</td>`;
+        });
+        html += '</tr>';
     });
-    
-    let html = '<div class="risk-heatmap-container">';
-    
-    // Heat map grid (Impact on Y-axis, Likelihood on X-axis)
-    html += '<div class="risk-heatmap-grid">';
-    
-    // Header row
-    html += '<div class="risk-heatmap-cell risk-heatmap-header"></div>';
-    html += '<div class="risk-heatmap-cell risk-heatmap-header">Low Likelihood</div>';
-    html += '<div class="risk-heatmap-cell risk-heatmap-header">Medium Likelihood</div>';
-    html += '<div class="risk-heatmap-cell risk-heatmap-header">High Likelihood</div>';
-    
-    // Critical Impact row
-    html += '<div class="risk-heatmap-cell risk-heatmap-label">Critical Impact</div>';
-    ['Critical-Low', 'Critical-Medium', 'Critical-High'].forEach(key => {
-        const q = quadrants[key];
-        const groups = quadrantMap[key] || [];
-        html += `<div class="risk-heatmap-cell risk-heatmap-quadrant" style="background-color: ${q.color}15; border-color: ${q.color}50;">
-            ${groups.length > 0 ? `<div class="risk-heatmap-count" style="color: ${q.color};">${groups.length}</div>
-            <div class="risk-heatmap-groups">${groups.map(g => `<span class="risk-heatmap-group" title="${g.name}: ${g.coveragePct}% coverage, ${g.gaps} gaps">${g.name.split(' ')[0]}</span>`).join('')}</div>` : '<div class="risk-heatmap-empty">-</div>'}
-        </div>`;
+    html += '</tbody></table>';
+    html += '<p class="text-on-surface-tertiary text-xs mt-2">Legend: red = urgent mapped gap risk, amber = needs review, green = lower mapped gap risk, grey = no groups in cell.</p>';
+    html += '<div class="risk-heatmap-priority-list">';
+    topRows.forEach(row => {
+        html += `<div><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(row.impact)} impact / ${escapeHtml(row.likelihood)} likelihood / ${row.coveragePct}% readiness / ${row.gaps} mapped gaps</span></div>`;
     });
-    
-    // High Impact row
-    html += '<div class="risk-heatmap-cell risk-heatmap-label">High Impact</div>';
-    ['High-Low', 'High-Medium', 'High-High'].forEach(key => {
-        const q = quadrants[key];
-        const groups = quadrantMap[key] || [];
-        html += `<div class="risk-heatmap-cell risk-heatmap-quadrant" style="background-color: ${q.color}15; border-color: ${q.color}50;">
-            ${groups.length > 0 ? `<div class="risk-heatmap-count" style="color: ${q.color};">${groups.length}</div>
-            <div class="risk-heatmap-groups">${groups.map(g => `<span class="risk-heatmap-group" title="${g.name}: ${g.coveragePct}% coverage, ${g.gaps} gaps">${g.name.split(' ')[0]}</span>`).join('')}</div>` : '<div class="risk-heatmap-empty">-</div>'}
-        </div>`;
-    });
-    
-    // Medium Impact row
-    html += '<div class="risk-heatmap-cell risk-heatmap-label">Medium Impact</div>';
-    ['Medium-Low', 'Medium-Medium', 'Medium-High'].forEach(key => {
-        const q = quadrants[key];
-        const groups = quadrantMap[key] || [];
-        html += `<div class="risk-heatmap-cell risk-heatmap-quadrant" style="background-color: ${q.color}15; border-color: ${q.color}50;">
-            ${groups.length > 0 ? `<div class="risk-heatmap-count" style="color: ${q.color};">${groups.length}</div>
-            <div class="risk-heatmap-groups">${groups.map(g => `<span class="risk-heatmap-group" title="${g.name}: ${g.coveragePct}% coverage, ${g.gaps} gaps">${g.name.split(' ')[0]}</span>`).join('')}</div>` : '<div class="risk-heatmap-empty">-</div>'}
-        </div>`;
-    });
-    
-    // Low Impact row
-    html += '<div class="risk-heatmap-cell risk-heatmap-label">Low Impact</div>';
-    ['Low-Low', 'Low-Medium', 'Low-High'].forEach(key => {
-        const q = quadrants[key];
-        const groups = quadrantMap[key] || [];
-        html += `<div class="risk-heatmap-cell risk-heatmap-quadrant" style="background-color: ${q.color}15; border-color: ${q.color}50;">
-            ${groups.length > 0 ? `<div class="risk-heatmap-count" style="color: ${q.color};">${groups.length}</div>
-            <div class="risk-heatmap-groups">${groups.map(g => `<span class="risk-heatmap-group" title="${g.name}: ${g.coveragePct}% coverage, ${g.gaps} gaps">${g.name.split(' ')[0]}</span>`).join('')}</div>` : '<div class="risk-heatmap-empty">-</div>'}
-        </div>`;
-    });
-    
-    html += '</div>';
-    
-    // Legend
-    html += '<div class="risk-heatmap-legend">';
-    html += '<div class="risk-legend-item"><span class="risk-legend-color" style="background-color: #ef4444;"></span> Critical Risk (&lt;30% coverage) - Immediate action required</div>';
-    html += '<div class="risk-legend-item"><span class="risk-legend-color" style="background-color: #f97316;"></span> High Risk (30-50% coverage) - Priority attention needed</div>';
-    html += '<div class="risk-legend-item"><span class="risk-legend-color" style="background-color: #eab308;"></span> Moderate Risk (50-70% coverage) - Monitor and plan</div>';
-    html += '<div class="risk-legend-item"><span class="risk-legend-color" style="background-color: #22c55e;"></span> Low Risk (&gt;70% coverage) - Maintain current posture</div>';
-    html += '</div>';
-    
-    html += '</div>';
-    
+    html += '</div></div>';
     return html;
 }
 
@@ -3496,6 +3709,7 @@ export function generateDynamicExecutiveSummary(report) {
     
     const coverageStats = getOverallCoverageStatsUpToMonth(month);
     const overallCoverage = coverageStats.pct % 1 === 0 ? coverageStats.pct : coverageStats.pct.toFixed(1);
+    const wording = getCoverageWording(coverageStats.pct || 0);
     
     const mappedThreatEntities = getThreatsDisruptedCount(month);
     
@@ -3503,21 +3717,21 @@ export function generateDynamicExecutiveSummary(report) {
     
     if (coverageStats.parents && coverageStats.parents.total) {
         const allPct = coverageStats.all.pct % 1 === 0 ? coverageStats.all.pct : coverageStats.all.pct.toFixed(1);
-        summary += `Overall detection coverage stands at ${overallCoverage}% across ${coverageStats.parents.covered} of ${coverageStats.parents.total} parent techniques (or ${allPct}% across ${coverageStats.all.covered} of ${coverageStats.all.total} total techniques and sub-techniques). `;
+        summary += `Mapped coverage stands at ${overallCoverage}% across ${coverageStats.parents.covered} of ${coverageStats.parents.total} parent techniques (or ${allPct}% across ${coverageStats.all.covered} of ${coverageStats.all.total} total techniques and sub-techniques), indicating ${wording.posture}. `;
     } else {
-        summary += `Overall detection coverage stands at ${overallCoverage}% across ${coverageStats.covered} of ${coverageStats.total} techniques. `;
+        summary += `Mapped coverage stands at ${overallCoverage}% across ${coverageStats.covered} of ${coverageStats.total} techniques, indicating ${wording.posture}. `;
     }
     
     if (stats.mainTechs > 0 || stats.subTechs > 0) {
-        summary += `During this period, ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} were added to the detection portfolio, `;
-        summary += `resulting in ${stats.queries} new detection quer${stats.queries !== 1 ? 'ies' : 'y'} added. `;
+        summary += `During this period, ${stats.mainTechs} new technique${stats.mainTechs !== 1 ? 's' : ''} and ${stats.subTechs} sub-technique${stats.subTechs !== 1 ? 's' : ''} were added to the mapped query portfolio, `;
+        summary += `resulting in ${stats.queries} new active hunt quer${stats.queries !== 1 ? 'ies' : 'y'} recorded. `;
     }
     
     if (mappedThreatEntities > 0) {
-        summary += `Current coverage maps to ${mappedThreatEntities} threat groups and tools through ATT&CK relationships, indicating where deployed detections overlap known adversary behavior. `;
+        summary += `Current mappings overlap ${mappedThreatEntities} threat groups and tools through ATT&CK relationships, indicating where active queries should be validated against known adversary behavior. `;
     }
     
-    summary += `These queries represent our active detection logging efforts across the enterprise, providing visibility into adversary behaviors aligned with the MITRE ATT&CK framework.`;
+    summary += `${getReportGuardrailText()} Further validation is required before mapped coverage is treated as production detection readiness.`;
     
     return summary;
 }
@@ -3622,10 +3836,13 @@ export async function exportReportHTMLPDF(reportId) {
     }
 
     await ensureAttackVersionAppendixDiff(report, true);
+    const qaWarnings = runReportQaValidation(report);
+    if (qaWarnings.length) showToast(`Report QA warnings: ${qaWarnings.length} issue${qaWarnings.length === 1 ? '' : 's'} included in export`, 'warning');
     showToast('Opening print-ready HTML PDF view...', 'info');
-    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
-    const htmlContent = buildEmailHTML(report, isDark, { isPrint: true, isStandaloneHtml: true }).replace('<body>', '<body class="is-pdf">');
-    const printBodyBg = isDark ? '#070814' : '#ffffff';
+    const darkToggle = document.getElementById('export-dark-mode-toggle');
+    const isDark = darkToggle ? darkToggle.checked : true;
+    const htmlContent = buildEmailHTML(report, isDark, { isPrint: true, isStandaloneHtml: true }).replace(/<body([^>]*)>/i, '<body class="is-pdf"$1>');
+    const printBodyBg = isDark ? '#06080a' : '#ffffff';
     const printWindow = window.open('', '_blank', 'width=900,height=1100');
 
     if (!printWindow) {
@@ -3641,8 +3858,8 @@ export async function exportReportHTMLPDF(reportId) {
             @media print {
                 body { background: ${printBodyBg} !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .email-wrapper { max-width: none !important; width: 100% !important; padding: 0 !important; }
-                .container { box-shadow: none !important; border-radius: 0 !important; background-color: ${isDark ? '#0f1123' : '#ffffff'} !important; }
-                .content { background-color: ${isDark ? '#0f1123' : '#ffffff'} !important; }
+                .container { box-shadow: none !important; border-radius: 0 !important; background-color: ${isDark ? '#0c0f12' : '#ffffff'} !important; }
+                .content { background-color: ${isDark ? '#0c0f12' : '#ffffff'} !important; }
                 .pdf-page-break { break-before: page; page-break-before: always; }
                 a { color: inherit; text-decoration: none; }
             }
@@ -3667,7 +3884,10 @@ export async function exportReportHTML(reportId) {
     }
 
     await ensureAttackVersionAppendixDiff(report, true);
-    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const qaWarnings = runReportQaValidation(report);
+    if (qaWarnings.length) showToast(`Report QA warnings: ${qaWarnings.length} issue${qaWarnings.length === 1 ? '' : 's'} included in export`, 'warning');
+    const darkToggle = document.getElementById('export-dark-mode-toggle');
+    const isDark = darkToggle ? darkToggle.checked : true;
     const htmlContent = buildEmailHTML(report, isDark, {
         isStandaloneHtml: true
     });
@@ -3689,7 +3909,7 @@ async function buildReportSvgDataUrl(report, isDark = false) {
     const htmlContent = buildEmailHTML(report, isDark, { isStandaloneHtml: true });
     const container = document.createElement('div');
     container.style.cssText = isDark
-        ? 'width:900px;background:#070814;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#cbd5e1;position:absolute;top:-9999px;left:-9999px;'
+        ? 'width:900px;background:#06080a;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#cbd5e1;position:absolute;top:-9999px;left:-9999px;'
         : 'width:900px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;line-height:1.6;color:#1e293b;position:absolute;top:-9999px;left:-9999px;';
     container.innerHTML = htmlContent;
     document.body.appendChild(container);
@@ -3714,7 +3934,8 @@ export async function exportReportSVG(reportId) {
 
     showToast('Generating SVG...', 'info');
 
-    const isDark = document.getElementById('export-dark-mode-toggle')?.checked || false;
+    const darkToggle = document.getElementById('export-dark-mode-toggle');
+    const isDark = darkToggle ? darkToggle.checked : true;
 
     try {
         const svgDataUrl = await buildReportSvgDataUrl(report, isDark);
@@ -3775,7 +3996,7 @@ export function buildGapAnalysisVisual(report, theme, isDark = false) {
                 </div>
                 ${items}
                 <div style="font-size: 11px; color: ${isDark ? '#fca5a5' : '#7f1d1d'}; margin-top: 10px; font-style: italic;">
-                    <strong>Recommendation:</strong> Prioritize immediate deployment of threat hunts in these sectors to minimize active blindspots.
+                    <strong>Recommendation:</strong> Prioritize targeted hunt queries and validation in these sectors to identify and reduce active blind spots.
                 </div>
             </div>
         `;
@@ -3814,36 +4035,26 @@ export function buildGapAnalysisVisual(report, theme, isDark = false) {
     }
     
     // Action Plan Panel
+    const roadmapItems = [
+        { color: '#ef4444', label: 'Immediate Defense', detail: `Target and close critical gaps in low-coverage tactics (${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(', ') || 'highest-risk tactics'}).` },
+        { color: '#f59e0b', label: 'Query Optimization', detail: 'Refine detection query logic in moderate-coverage sectors to raise them to strong standards.' },
+        { color: '#7ba8d8', label: 'Continuous Validation', detail: 'Maintain systematic test-runs against established strong tactics to prevent detection decay.' }
+    ];
     html += `
-        <div style="background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'}; border-radius: 8px; padding: 14px;">
-            <div style="font-size: 12px; font-weight: 700; color: ${isDark ? '#ffffff' : '#475569'}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
-                [&gt;&gt;] PRIORITIZED STRATEGIC ROADMAP
-            </div>
-            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 11px; margin: 0;">
-                <tr>
-                    <td style="width: 30px; vertical-align: top; padding: 4px 0; border: none;">
-                        <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; background-color: #ef4444; color: #ffffff; text-align: center; font-weight: 700;">1</span>
-                    </td>
-                    <td style="vertical-align: top; padding: 4px 0 8px 6px; border: none; color: ${isDark ? '#cbd5e1' : '#334155'};">
-                        <strong>Immediate Defense:</strong> Target and close critical gaps in low-coverage tactics (${lowCoverage.slice(0, 2).map(t => t.tactic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())).join(', ')}).
-                    </td>
-                </tr>
-                <tr>
-                    <td style="width: 30px; vertical-align: top; padding: 4px 0; border: none;">
-                        <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; background-color: #fbbf24; color: #ffffff; text-align: center; font-weight: 700;">2</span>
-                    </td>
-                    <td style="vertical-align: top; padding: 4px 0 8px 6px; border: none; color: ${isDark ? '#cbd5e1' : '#334155'};">
-                        <strong>Query Optimization:</strong> Refine detection query logic in Moderate sectors to raise them to Strong standards.
-                    </td>
-                </tr>
-                <tr>
-                    <td style="width: 30px; vertical-align: top; padding: 4px 0; border: none;">
-                        <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 50%; background-color: #3b82f6; color: #ffffff; text-align: center; font-weight: 700;">3</span>
-                    </td>
-                    <td style="vertical-align: top; padding: 4px 0 4px 6px; border: none; color: ${isDark ? '#cbd5e1' : '#334155'};">
-                        <strong>Continuous Validation:</strong> Maintain systematic test-runs against established Strong tactics to prevent detection decay.
-                    </td>
-                </tr>
+        <div style="background-color: ${isDark ? '#101820' : '#f8fafc'}; border: 1px solid ${isDark ? '#27303a' : '#d8e0e7'}; border-radius: 16px; padding: 16px;">
+            ${buildExportSectionTitle('Prioritized Strategic Roadmap', 'Sequenced work to close the highest-risk visibility gaps first.', isDark, '#7ba8d8')}
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: separate; border-spacing: 0 8px; font-size: 12px; margin: 0; border:0;">
+                ${roadmapItems.map((item, index) => `
+                    <tr>
+                        <td style="width: 48px; vertical-align: top; padding: 0 10px 0 0; border: none;">
+                            <span style="display: inline-block; width: 34px; height: 34px; line-height: 34px; border-radius: 10px; background-color: ${item.color}; color: #ffffff; text-align: center; font-weight: 900;">${index + 1}</span>
+                        </td>
+                        <td style="vertical-align: top; padding: 10px 12px; border: 1px solid ${isDark ? '#27303a' : '#d8e0e7'}; border-radius: 12px; background: ${isDark ? '#0c0f12' : '#ffffff'}; color: ${isDark ? '#cbd5e1' : '#334155'};">
+                            <strong style="display:block;color:${isDark ? '#ffffff' : '#0f172a'};font-size:13px;margin-bottom:3px;">${escapeHtml(item.label)}</strong>
+                            ${escapeHtml(item.detail)}
+                        </td>
+                    </tr>
+                `).join('')}
             </table>
         </div>
     `;
@@ -3873,7 +4084,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         blue: '#0f172a',
         orange: '#1a0f00',
         green: '#052e16',
-        purple: '#1a0a2e',
+        purple: '#101820',
         red: '#2a0a0a',
         teal: '#042f2e',
         slate: '#1e293b'
@@ -3885,54 +4096,56 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
     const reportMonthLabel = getReportMonthLabel(report);
     const reportTitle = getReportTitle(report);
     const logoSrc = safeImageSrc(report.companyLogo);
-    
-    const execSummary = report.executiveSummary || generateDynamicExecutiveSummary(report);
-    const monthlyFocus = report.monthlyFocus || generateDynamicMonthlyFocus(report);
-    const gapAnalysis = report.gapAnalysis || generateDynamicGapAnalysis(report);
-    const leadership = report.leadershipOverview || generateLeadershipOverview(report);
-    const recommendations = report.recommendations || generateDynamicRecommendations(report);
+    const qaWarnings = runReportQaValidation(report);
+
+    const contentCoveragePct = getOverallCoverageStatsUpToMonth(month).pct || 0;
+    const execSummary = sanitizeMaturityCopy(report.executiveSummary || generateDynamicExecutiveSummary(report), contentCoveragePct);
+    const monthlyFocus = sanitizeMaturityCopy(report.monthlyFocus || generateDynamicMonthlyFocus(report), contentCoveragePct);
+    const gapAnalysis = sanitizeMaturityCopy(report.gapAnalysis || generateDynamicGapAnalysis(report), contentCoveragePct);
+    const leadership = sanitizeMaturityCopy(report.leadershipOverview || generateLeadershipOverview(report), contentCoveragePct);
+    const recommendations = sanitizeMaturityCopy(report.recommendations || generateDynamicRecommendations(report), contentCoveragePct);
     const bodyInline = isEmail
         ? isDark
-            ? ' style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#070814;"'
+            ? ' style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#06080a;"'
             : ' style="margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1e293b;background-color:#f8fafc;"'
         : isDark
-            ? ' style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#070814;"'
+            ? ' style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#06080a;"'
             : ' style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;line-height:1.6;color:#1e293b;background-color:#f8fafc;"';
     const wrapperInline = isEmail
         ? isDark
-            ? ' style="width:680px;margin:0 auto;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#070814;"'
+            ? ' style="width:680px;margin:0 auto;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#cbd5e1;background-color:#06080a;"'
             : ' style="width:680px;margin:0 auto;padding:0;font-family:Arial,Helvetica,sans-serif;line-height:1.6;color:#1e293b;background-color:#f8fafc;"'
         : isDark
-            ? ` style="max-width:${isStandaloneHtml ? '900px' : '680px'};margin:0 auto;padding:24px 16px;color:#cbd5e1;background-color:#070814;"`
+            ? ` style="max-width:${isStandaloneHtml ? '900px' : '680px'};margin:0 auto;padding:24px 16px;color:#cbd5e1;background-color:#06080a;"`
             : ` style="max-width:${isStandaloneHtml ? '900px' : '680px'};margin:0 auto;padding:24px 16px;color:#1e293b;background-color:#f8fafc;"`;
     const containerInline = isEmail
         ? isDark
-            ? ' style="width:680px;background-color:#0f1123;border:1px solid #25263b;color:#cbd5e1;"'
+            ? ' style="width:680px;background-color:#0c0f12;border:1px solid #27303a;color:#cbd5e1;"'
             : ' style="width:680px;background-color:#ffffff;border:1px solid #e2e8f0;color:#1e293b;"'
         : isDark
-            ? ` style="background-color:#0f1123;border:1px solid rgba(${accentRgb},0.2);border-radius:12px;overflow:hidden;color:#cbd5e1;"`
+            ? ` style="background-color:#0c0f12;border:1px solid rgba(${accentRgb},0.2);border-radius:12px;overflow:hidden;color:#cbd5e1;"`
             : ' style="background-color:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;color:#1e293b;"';
     const headerInline = isEmail
         ? ` style="background-color:${fallbackBg};color:#ffffff;padding:28px;text-align:center;border-bottom:3px solid ${theme.accent};font-family:Arial,Helvetica,sans-serif;"`
         : ` style="background-color:${fallbackBg};color:#ffffff;padding:32px 28px 28px;text-align:center;border-bottom:3px solid ${theme.accent};"`;
     const contentInline = isEmail
         ? isDark
-            ? ' style="padding:24px 28px;font-family:Arial,Helvetica,sans-serif;background-color:#0f1123;color:#cbd5e1;"'
+            ? ' style="padding:24px 28px;font-family:Arial,Helvetica,sans-serif;background-color:#0c0f12;color:#cbd5e1;"'
             : ' style="padding:24px 28px;font-family:Arial,Helvetica,sans-serif;background-color:#ffffff;color:#1e293b;"'
         : isDark
-            ? ' style="padding:24px 28px;background-color:#0f1123;color:#cbd5e1;"'
+            ? ' style="padding:24px 28px;background-color:#0c0f12;color:#cbd5e1;"'
             : ' style="padding:24px 28px;background-color:#ffffff;color:#1e293b;"';
     const footerInline = isEmail
         ? isDark
-            ? ' style="background-color:#070814;padding:16px 28px;text-align:center;border-top:1px solid #25263b;font-family:Arial,Helvetica,sans-serif;color:#64748b;"'
+            ? ' style="background-color:#06080a;padding:16px 28px;text-align:center;border-top:1px solid #27303a;font-family:Arial,Helvetica,sans-serif;color:#64748b;"'
             : ' style="background-color:#f8fafc;padding:16px 28px;text-align:center;border-top:1px solid #e2e8f0;font-family:Arial,Helvetica,sans-serif;color:#94a3b8;"'
         : isDark
-            ? ' style="background-color:#070814;padding:16px 28px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);color:#64748b;"'
+            ? ' style="background-color:#06080a;padding:16px 28px;text-align:center;border-top:1px solid rgba(255,255,255,0.05);color:#64748b;"'
             : ' style="background-color:#f8fafc;padding:16px 28px;text-align:center;border-top:1px solid #e2e8f0;color:#94a3b8;"';
     const standaloneToolbarHtml = isStandaloneHtml ? `
         <div class="html-export-toolbar" role="navigation" aria-label="Export navigation">
             <strong>${escapeHtml(reportTitle)}</strong>
-            <span>Generated ${escapeHtml(report.generatedDate || new Date().toLocaleDateString())}</span>
+            <span>Generated ${escapeHtml(formatReportDate(report.generatedAt || report.generatedDate || new Date()))}</span>
             <a href="#tier-1">Executive</a>
             <a href="#tier-2">Threats</a>
             <a href="#tier-3">Operations</a>
@@ -3949,7 +4162,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             gapAnalysisHtml = `
                 <div class="section" id="gap-analysis" style="page-break-inside: avoid;"><a name="gap-analysis"></a>
                     <h3>Gap Analysis &amp; Prioritization</h3>
-                    <div style="background-color: ${isDark ? '#0f1123' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(168,85,247,0.2)' : '#e2e8f0'}; color: ${isDark ? '#cbd5e1' : '#334155'}; padding: 16px; font-size: 13px; line-height: 1.6;">
+                    <div style="background-color: ${isDark ? '#0c0f12' : '#f8fafc'}; border: 1px solid ${isDark ? '#27303a' : '#e2e8f0'}; color: ${isDark ? '#cbd5e1' : '#334155'}; padding: 16px; font-size: 13px; line-height: 1.6;">
                         ${markdownToHtml(gapAnalysis)}
                     </div>
                 </div>
@@ -3993,34 +4206,31 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         if (report.methodologyNotes) {
             notesHtml = `
                 <div style="margin-top: 14px; padding: 12px; background-color: ${isDark ? 'rgba(255, 255, 255, 0.02)' : '#f8fafc'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : '#e2e8f0'}; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; line-height: 1.5; width: 100%;">
-                    <strong style="color: ${isDark ? '#ffffff' : '#0f172a'}; display: block; margin-bottom: 4px;">Note: Additional Methodology &amp; Scope Notes:</strong>
+                    <strong style="color: ${isDark ? '#ffffff' : '#0f172a'}; display: block; margin-bottom: 4px;">Note: Additional Methodology and Scope Notes:</strong>
                     ${markdownToHtml(report.methodologyNotes)}
                 </div>
             `;
         }
+        const v = getExportVisuals(isDark);
         methodScopeHtml = `<div class="section" id="methodology-scope" style="page-break-inside: avoid;"><a name="methodology-scope"></a>
-            <h3>Methodology &amp; Scope</h3>
-            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            ${buildExportSectionTitle('Methodology & Scope', 'How this report was built and what telemetry domains were included.', isDark, '#38bdf8')}
+            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: separate; border-spacing: 12px 0; margin: 0 -12px; border: 0;">
                 <tr>
-                    <td valign="top" style="width: 48%; padding-right: 4%; vertical-align: top; border: none;">
-                        <div style="background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding: 16px; min-height: 220px;">
-                            <h4 style="margin-top: 0; margin-bottom: 12px; color: ${isDark ? '#a855f7' : '#7c3aed'}; font-size: 14px; font-weight: 700; border-bottom: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding-bottom: 6px;">HUNTING METHODOLOGY</h4>
+                    <td valign="top" style="width: 50%; vertical-align: top; border: 1px solid ${v.border}; border-radius: 16px; background: ${v.panel}; padding: 16px;">
+                        <div style="font-size:10px;font-weight:900;color:${v.accent};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Hunting Methodology</div>
                             ${selectedMethods.length ? selectedMethods.map(m => `
-                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; border-collapse: collapse;">
-                                    <tr><td valign="top" style="width: 16px; color: #10b981; font-weight: bold; font-size: 13px; border: none; padding: 0;">✓</td><td valign="top" style="padding-left: 6px; border: none; color: ${isDark ? '#cbd5e1' : '#475569'};">${m}</td></tr>
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 9px; font-size: 12px; color: ${v.text}; border-collapse: collapse; border:0;">
+                                    <tr><td valign="top" style="width: 18px; color: #34d399; font-weight: 900; font-size: 13px; border: none; padding: 0;">+</td><td valign="top" style="padding-left: 6px; border: none; color: ${v.text}; line-height:1.5;">${m}</td></tr>
                                 </table>
-                            `).join('') : `<p style="color: ${isDark ? '#6b709c' : '#94a3b8'}; font-size: 12px; font-style: italic; margin: 0;">No specific methodologies specified.</p>`}
-                        </div>
+                            `).join('') : `<p style="color: ${v.muted}; font-size: 12px; font-style: italic; margin: 0;">No specific methodologies specified.</p>`}
                     </td>
-                    <td valign="top" style="width: 48%; vertical-align: top; border: none;">
-                        <div style="background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding: 16px; min-height: 220px;">
-                            <h4 style="margin-top: 0; margin-bottom: 12px; color: ${isDark ? '#06b6d4' : '#0284c7'}; font-size: 14px; font-weight: 700; border-bottom: 1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'}; padding-bottom: 6px;">DEFENSIVE TELEMETRY SCOPE</h4>
+                    <td valign="top" style="width: 50%; vertical-align: top; border: 1px solid ${v.border}; border-radius: 16px; background: ${v.panel}; padding: 16px;">
+                        <div style="font-size:10px;font-weight:900;color:${isDark ? '#38bdf8' : '#0284c7'};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;">Defensive Telemetry Scope</div>
                             ${selectedScopes.length ? selectedScopes.map(s => `
-                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; border-collapse: collapse;">
-                                    <tr><td valign="top" style="width: 16px; color: #06b6d4; font-weight: bold; font-size: 13px; border: none; padding: 0;">•</td><td valign="top" style="padding-left: 6px; border: none; color: ${isDark ? '#cbd5e1' : '#475569'};">${s}</td></tr>
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 9px; font-size: 12px; color: ${v.text}; border-collapse: collapse; border:0;">
+                                    <tr><td valign="top" style="width: 18px; color: #38bdf8; font-weight: 900; font-size: 13px; border: none; padding: 0;">+</td><td valign="top" style="padding-left: 6px; border: none; color: ${v.text}; line-height:1.5;">${s}</td></tr>
                                 </table>
-                            `).join('') : `<p style="color: ${isDark ? '#6b709c' : '#94a3b8'}; font-size: 12px; font-style: italic; margin: 0;">No specific data scopes specified.</p>`}
-                        </div>
+                            `).join('') : `<p style="color: ${v.muted}; font-size: 12px; font-style: italic; margin: 0;">No specific data scopes specified.</p>`}
                     </td>
                 </tr>
             </table>
@@ -4067,7 +4277,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         
         if (newQueries.length > 0) {
             const layerTechs = report.snapshot?.techniques || state.currentLayer?.techniques || [];
-            const queryList = newQueries.map(q => {
+            const queryRows = newQueries.map(q => {
                 const queryName = q.name || 'Unnamed Query';
                 const assoc = getQueryAssociations(q, layerTechs);
                 const parents = assoc.filter(x => !x.isSub);
@@ -4105,22 +4315,26 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 badgesHtml += '</div>';
                 
                 return `
-                    <li style="margin-bottom: 12px; list-style-type: none; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px;">
-                        <strong style="font-size: 13px; color: ${isDark ? '#ffffff' : '#0f172a'};">${escapeHtml(queryName)}</strong>
-                        <span style="background-color: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 8px; vertical-align: middle; display: inline-block;">${escapeHtml(q.language || '')}</span>
-                        ${q.source ? `<span style="background-color: ${isDark ? '#121324' : '#f8fafc'}; color: ${isDark ? '#94a3b8' : '#64748b'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; vertical-align: middle; display: inline-block;">${escapeHtml(q.source)}</span>` : ''}
-                        ${q.sentinelCandidate ? `<span style="background-color: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; vertical-align: middle; display: inline-block;">${reportIcon('robot', '#3b82f6', 11)}Sentinel Candidate</span>` : ''}
-                        ${q.created ? `<div style="font-size: 10px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-top: 3px;">Created ${escapeHtml(formatTimestamp(q.created))}</div>` : ''}
-                        ${q.description ? `<div style="font-size: 12px; color: ${isDark ? '#a2a6cc' : '#475569'}; margin-top: 4px; line-height: 1.5; font-style: italic;">${escapeHtml(q.description)}</div>` : ''}
-                        ${badgesHtml}
-                        ${sigmaLinksHtml}
-                    </li>
+                    <tr>
+                        <td style="border: 1px solid ${isDark ? '#27303a' : '#dfe7ee'}; color: ${isDark ? '#ffffff' : '#0f172a'}; font-weight: 700; vertical-align: top;">${escapeHtml(queryName)}</td>
+                        <td style="border: 1px solid ${isDark ? '#27303a' : '#dfe7ee'}; vertical-align: top;"><span style="background-color: ${isDark ? '#1e293b' : '#f1f5f9'}; color: ${isDark ? '#cbd5e1' : '#475569'}; padding: 2px 6px; font-size: 9px; font-weight: bold; display: inline-block;">${escapeHtml(q.language || '')}</span>${q.sentinelCandidate ? `<span style="background-color: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 2px 6px; font-size: 9px; font-weight: bold; margin-left: 6px; display: inline-block;">${reportIcon('robot', '#3b82f6', 11)}Candidate to convert to Sentinel analytic</span>` : ''}</td>
+                        <td style="border: 1px solid ${isDark ? '#27303a' : '#dfe7ee'}; color: ${isDark ? '#94a3b8' : '#64748b'}; vertical-align: top;">${q.created ? escapeHtml(formatReportDate(q.created, { includeRelative: true })) : ''}</td>
+                        <td style="border: 1px solid ${isDark ? '#27303a' : '#dfe7ee'}; color: ${isDark ? '#cbd5e1' : '#475569'}; vertical-align: top;">
+                            ${q.description ? `<div style="font-size: 12px; line-height: 1.5; font-style: italic;">${escapeHtml(q.description)}</div>` : ''}
+                            ${renderQuerySourceLinksExport(q, isDark)}
+                            ${badgesHtml}
+                            ${sigmaLinksHtml}
+                        </td>
+                    </tr>
                 `;
             }).join('');
             newQueriesHtml = `<div class="section" id="query-library"><a name="query-library"></a><h3>${reportIcon('search', isDark ? '#38bdf8' : '#0284c7', 14)}New Threat Hunt Queries</h3>
                 ${queryRepositoryHtml}
                 <p style="margin-bottom: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; font-size: 13px;">${newQueries.length} queries for this period:</p>
-                <ul style="padding-left: 0; margin: 0;">${queryList}</ul>
+                <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 11px; line-height: 1.45;">
+                    <thead><tr><th>Query</th><th>Type</th><th>Created</th><th>Mappings &amp; sources</th></tr></thead>
+                    <tbody>${queryRows}</tbody>
+                </table>
             </div>`;
         }
     }
@@ -4202,7 +4416,6 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
     
     // Coverage Breakdown/Changes
     let coverageHtml = '';
-    const statusChangesExportHtml = buildStatusChangesExport(report, isDark);
     const liveTactics = getCoverageByTactic();
     const fmtCov = (v) => v % 1 === 0 ? v : v.toFixed(1);
     if (report.type === 'initial') {
@@ -4327,50 +4540,32 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
     const topNextActionsHtml = buildTopNextActionsExport(report, isDark);
     const teamAssignmentsHtml = buildTeamAssignmentsExport(report, isDark);
     const detectionResultsExportHtml = buildDetectionResultsExport(report, isDark);
+    const postureGuidanceHtml = buildSecurityPostureGuidanceExport(frameworkCoverage, isDark);
 
     // Clickable Table of Contents Index using anchors.
     const tocIndexHtml = `
-        <div style="margin-bottom: 24px; padding: 16px; background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'};">
-            <h4 style="margin: 0 0 10px 0; font-size: 12px; font-weight: 700; color: ${isDark ? '#38bdf8' : '#0284c7'}; text-transform: uppercase; letter-spacing: 0.5px; font-family: sans-serif;">Table of Contents</h4>
-            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: sans-serif;">
-                <tr>
-                    <td width="50%" style="padding: 4px 0; border: none; vertical-align: top; text-align: left;">
-                        <a href="#tier-1" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">1. Tier 1: Executive Security Posture</a>
-                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Dashboard, Maturity Grade &amp; Unified Leadership Brief</div>
-                        <div class="pdf-page-ref" style="display:none; font-size: 9px; color: #94a3b8; margin-top: 1px;">Page 2</div>
-                    </td>
-                    <td width="50%" style="padding: 4px 0; border: none; vertical-align: top; text-align: left;">
-                        <a href="#tier-3" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">3. Tier 3: Operational Hunt Progress</a>
-                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Activity Timeline Feed, Active Detections &amp; Monthly Trends</div>
-                        <div class="pdf-page-ref" style="display:none; font-size: 9px; color: #94a3b8; margin-top: 1px;">Page 4</div>
-                    </td>
-                </tr>
-                <tr>
-                    <td width="50%" style="padding: 8px 0 0 0; border: none; vertical-align: top; text-align: left;">
-                        <a href="#tier-2" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">2. Tier 2: Threat Landscape &amp; Strategic Gaps</a>
-                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Adversary Mapper, High-risk Zero-coverage &amp; Priorities Roadmap</div>
-                        <div class="pdf-page-ref" style="display:none; font-size: 9px; color: #94a3b8; margin-top: 1px;">Page 3</div>
-                    </td>
-                    <td width="50%" style="padding: 8px 0 0 0; border: none; vertical-align: top; text-align: left;">
-                        <a href="#tier-4" style="color: ${isDark ? '#38bdf8' : '#0284c7'}; text-decoration: none; font-weight: 600;">4. Tier 4: Telemetry Proof &amp; Appendix</a>
-                        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">KQL/Sigma Queries Library, Data Scopes &amp; Methodology</div>
-                        <div class="pdf-page-ref" style="display:none; font-size: 9px; color: #94a3b8; margin-top: 1px;">Page 5</div>
-                    </td>
-                </tr>
-            </table>
-            <div style="font-size: 9px; color: #94a3b8; margin-top: 8px; font-style: italic; border-top: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-top: 6px;">
-                Page references shown in PDF exports. Click section titles to navigate in digital formats.
-            </div>
-        </div>
+        <nav class="export-toc" aria-label="Report contents">
+            <h4>Contents</h4>
+            <ol class="export-toc-list">
+                <li><a href="#tier-1"><code>01</code><strong>Executive posture</strong><span>Summary, focus areas, leadership guidance.</span><em class="pdf-page-ref">Page 2</em></a></li>
+                <li><a href="#tier-2"><code>02</code><strong>Threat landscape</strong><span>Actor/software overlap and strategic gaps.</span><em class="pdf-page-ref">Page 3</em></a></li>
+                <li><a href="#gap-analysis"><code>03</code><strong>Gap analysis</strong><span>Tactic visibility, roadmap and ownership.</span><em class="pdf-page-ref">Page 3</em></a></li>
+                <li><a href="#tier-3"><code>04</code><strong>Operational progress</strong><span>Timeline, trend movement and query changes.</span><em class="pdf-page-ref">Page 4</em></a></li>
+                <li><a href="#query-library"><code>05</code><strong>Hunt queries</strong><span>New detections, mappings and deployment state.</span><em class="pdf-page-ref">Page 5</em></a></li>
+                <li><a href="#methodology-scope"><code>06</code><strong>Methodology</strong><span>Telemetry scope, assumptions and references.</span><em class="pdf-page-ref">Page 5</em></a></li>
+                <li><a href="#mitre-appendix"><code>07</code><strong>Appendix</strong><span>Dynamic layout, data quality and export rules.</span><em class="pdf-page-ref">Page 6</em></a></li>
+                <li><a href="#top"><code>Top</code><strong>Back to top</strong><span>Normal anchor navigation, export friendly.</span></a></li>
+            </ol>
+        </nav>
     `;
 
     // Redesigned Stats Bar - Nested tables to replace flexbox entirely for Outlook support
-    const statsBarHtml = isDark ? `
-        <div style="background-color: #0f1123; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);" id="posture-dashboard"><a name="posture-dashboard"></a>
+    const legacyStatsBarHtml = isDark ? `
+        <div style="background-color: #0c0f12; padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.05);" id="posture-dashboard"><a name="posture-dashboard"></a>
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td width="50%" style="padding: 0 10px 14px 0; border: none; vertical-align: top;">
-                        <div style="background-color: #141324; border: 1px solid rgba(168, 85, 247, 0.2); padding: 14px; min-height: 90px;">
+                        <div style="background-color: #111820; border: 1px solid rgba(${accentRgb}, 0.22); border-radius: 14px; padding: 14px; min-height: 90px;">
                             <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Framework Coverage</div>
                             <div style="font-size: 26px; font-weight: 800; color: #ffffff; margin-top: 4px; line-height: 1;">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
                             ${deltaHtml}
@@ -4380,8 +4575,8 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                         </div>
                     </td>
                     <td width="50%" style="padding: 0 0 14px 10px; border: none; vertical-align: top;">
-                        <div style="background-color: #0c1424; border: 1px solid rgba(56, 189, 248, 0.2); padding: 14px; min-height: 90px;">
-                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Active Detections</div>
+                        <div style="background-color: #0c1424; border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; padding: 14px; min-height: 90px;">
+                            <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Active Detection Queries</div>
                             <div style="font-size: 26px; font-weight: 800; color: #38bdf8; margin-top: 4px; line-height: 1;">${totalQueries}</div>
                             <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">threat hunt queries deployed</div>
                             <div style="font-size: 9px; color: ${stats.queries > 0 ? '#34d399' : '#94a3b8'}; margin-top: 4px; font-weight: 500;">
@@ -4392,14 +4587,14 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 </tr>
                 <tr>
                     <td width="50%" style="padding: 10px 10px 0 0; border: none; vertical-align: top;">
-                        <div style="background-color: #0c1c14; border: 1px solid rgba(52, 211, 153, 0.2); padding: 14px; min-height: 90px;">
+                        <div style="background-color: #0c1c14; border: 1px solid rgba(52, 211, 153, 0.2); border-radius: 14px; padding: 14px; min-height: 90px;">
                             <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">Tactical Gaps Filled</div>
                             <div style="font-size: 26px; font-weight: 800; color: #34d399; margin-top: 4px; line-height: 1;">${techniquesCovered}</div>
                             <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">techniques covered this period</div>
                         </div>
                     </td>
                     <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
-                        <div style="background-color: #1a150c; border: 1px solid rgba(251, 191, 36, 0.2); padding: 14px; min-height: 90px;">
+                        <div style="background-color: #1a150c; border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 14px; padding: 14px; min-height: 90px;">
                             <div style="font-size: 9px; font-weight: 700; color: #a2a6cc; text-transform: uppercase; letter-spacing: 0.5px;">${getReportMetricLabel()}</div>
                             <div style="font-size: 26px; font-weight: 800; color: #fbbf24; margin-top: 4px; line-height: 1;">${threatsDisrupted}</div>
                             <div style="font-size: 10px; color: #94a3b8; font-weight: 600; margin-top: 2px;">${getReportMetricDetail()}</div>
@@ -4411,7 +4606,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 14px;">
                 <tr>
                     <td style="border: none;">
-                        <div style="background-color: #121324; border: 1px solid rgba(255,255,255,0.06); padding: 16px;">
+                        <div style="background-color: #101820; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 16px;">
                             <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%;">
                                 <tr>
                                     <td style="vertical-align: middle; border: none; padding: 0;">
@@ -4445,6 +4640,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                     </td>
                 </tr>
             </table>
+            ${postureGuidanceHtml}
             <div style="margin-top: 14px; padding: 10px 14px; background-color: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: #a2a6cc; text-align: center; line-height: 1.4; font-family: sans-serif;">
                 Note: <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
                 For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${escapeHtml(report.author || state.author || 'the Security Operations Team')}</strong>.
@@ -4455,7 +4651,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td width="50%" style="padding: 0 10px 14px 0; border: none; vertical-align: top;">
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 14px; min-height: 90px;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; min-height: 90px;">
                             <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Framework Coverage</div>
                             <div style="font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 4px; line-height: 1;">${frameworkCoverage % 1 === 0 ? frameworkCoverage : frameworkCoverage.toFixed(1)}%</div>
                             ${deltaHtml}
@@ -4465,8 +4661,8 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                         </div>
                     </td>
                     <td width="50%" style="padding: 0 0 14px 10px; border: none; vertical-align: top;">
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 14px; min-height: 90px;">
-                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Active Detections</div>
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; min-height: 90px;">
+                            <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Active Detection Queries</div>
                             <div style="font-size: 26px; font-weight: 800; color: #0284c7; margin-top: 4px; line-height: 1;">${totalQueries}</div>
                             <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">threat hunt queries deployed</div>
                             <div style="font-size: 9px; color: ${stats.queries > 0 ? '#16a34a' : '#64748b'}; margin-top: 4px; font-weight: 500;">
@@ -4477,14 +4673,14 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 </tr>
                 <tr>
                     <td width="50%" style="padding: 10px 10px 0 0; border: none; vertical-align: top;">
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 14px; min-height: 90px;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; min-height: 90px;">
                             <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Tactical Gaps Filled</div>
                             <div style="font-size: 26px; font-weight: 800; color: #16a34a; margin-top: 4px; line-height: 1;">${techniquesCovered}</div>
                             <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">techniques covered this period</div>
                         </div>
                     </td>
                     <td width="50%" style="padding: 10px 0 0 10px; border: none; vertical-align: top;">
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 14px; min-height: 90px;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; min-height: 90px;">
                             <div style="font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">${getReportMetricLabel()}</div>
                             <div style="font-size: 26px; font-weight: 800; color: #b45309; margin-top: 4px; line-height: 1;">${threatsDisrupted}</div>
                             <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-top: 2px;">${getReportMetricDetail()}</div>
@@ -4496,7 +4692,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 14px;">
                 <tr>
                     <td style="border: none;">
-                        <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 16px;">
+                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px;">
                             <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%;">
                                 <tr>
                                     <td style="vertical-align: middle; border: none; padding: 0;">
@@ -4530,6 +4726,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                     </td>
                 </tr>
             </table>
+            ${postureGuidanceHtml}
             <div style="margin-top: 14px; padding: 10px 14px; background-color: #ffffff; border: 1px solid #e2e8f0; font-size: 11px; color: #64748b; text-align: center; line-height: 1.4; font-family: sans-serif;">
                 Note: <strong>Maturity Grading:</strong> Grade is calculated based on framework technique coverage (A: &ge;70%, B: 50%-70%, C: 30%-50%, D/F: &lt;30%).
                 For the complete catalog of all <strong>${totalQueries}</strong> active detection queries, please email the author: <strong>${escapeHtml(report.author || state.author || 'the Security Operations Team')}</strong>.
@@ -4539,16 +4736,16 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
 
     // Redesigned modern CSS styles
     const stylesHtml = isDark ? `
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #cbd5e1; background-color: #070814; }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #cbd5e1; background-color: #06080a; }
         * { box-sizing: border-box; }
-        .html-export-toolbar { position: sticky; top: 0; z-index: 20; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(7, 8, 20, 0.96); border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px; }
+        .html-export-toolbar { position: static; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(7, 8, 20, 0.96); border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8; font-size: 11px; }
         .html-export-toolbar strong { color: #ffffff; }
         .html-export-toolbar a { color: #38bdf8; text-decoration: none; font-weight: 700; }
         .html-export-toolbar a:hover { text-decoration: underline; }
         .email-wrapper { max-width: 680px; margin: 0 auto; padding: 24px 16px; }
-        .container { background-color: #0f1123; border: 1px solid rgba(${accentRgb}, 0.2); border-radius: 12px; overflow: hidden; box-shadow: 0 0 30px rgba(${accentRgb}, 0.1); }
+        .container { background-color: #0c0f12; border: 1px solid rgba(${accentRgb}, 0.2); border-radius: 12px; overflow: hidden; box-shadow: 0 0 30px rgba(${accentRgb}, 0.1); }
         .header { background-color: ${fallbackBg}; color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; border-bottom: 2px solid ${theme.accent}; }
-        .header .logo { max-height: 40px; margin-bottom: 14px; filter: brightness(0) invert(1); }
+        .header .logo { max-height: 40px; margin-bottom: 14px; filter: none; background: rgba(255,255,255,0.88); padding: 6px 8px; }
         .header h1 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
         .header .subtitle { font-size: 13px; font-weight: 400; color: #94a3b8; margin: 0 0 12px 0; }
         .header .report-type { display: inline-block; background: rgba(${accentRgb}, 0.15); border: 1px solid rgba(${accentRgb}, 0.3); padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffffcc; margin-bottom: 10px; }
@@ -4570,7 +4767,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         .coverage-high { background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
         .coverage-mid { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
         .coverage-low { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .footer { background-color: #070814; padding: 16px 28px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .footer { background-color: #06080a; padding: 16px 28px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.05); }
         .footer p { margin: 0; font-size: 11px; color: #64748b; }
         .footer .tool-info { font-size: 10px; color: #475569; margin-top: 3px; }
         .footer .confidential { font-size: 10px; color: #7f1d1d; margin-top: 2px; }
@@ -4586,7 +4783,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         .detection-item {
             background-color: rgba(255, 255, 255, 0.02) !important;
             border: 1px solid rgba(255, 255, 255, 0.08) !important;
-            border-left: 4px solid #7c3aed !important;
+            border-left: 4px solid #9ccfd8 !important;
             border-radius: 8px !important;
             padding: 14px 18px !important;
             margin-bottom: 12px !important;
@@ -4628,7 +4825,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
     ` : `
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; }
         * { box-sizing: border-box; }
-        .html-export-toolbar { position: sticky; top: 0; z-index: 20; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(248, 250, 252, 0.96); border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 11px; }
+        .html-export-toolbar { position: static; display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; padding: 10px 14px; background: rgba(248, 250, 252, 0.96); border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 11px; }
         .html-export-toolbar strong { color: #0f172a; }
         .html-export-toolbar a { color: #0284c7; text-decoration: none; font-weight: 700; }
         .html-export-toolbar a:hover { text-decoration: underline; }
@@ -4636,7 +4833,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         .container { background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0; }
         .header { background-color: ${fallbackBg}; color: #ffffff; padding: 32px 28px 28px; text-align: center; position: relative; }
         .header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: ${theme.accent}; }
-        .header .logo { max-height: 40px; margin-bottom: 14px; filter: brightness(0) invert(1); }
+        .header .logo { max-height: 40px; margin-bottom: 14px; filter: none; background: rgba(255,255,255,0.88); padding: 6px 8px; }
         .header h1 { margin: 0 0 4px 0; font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
         .header .subtitle { font-size: 13px; font-weight: 400; color: #cbd5e1; margin: 0 0 12px 0; }
         .header .report-type { display: inline-block; background: ${theme.accent}33; border: 1px solid ${theme.accent}55; padding: 4px 12px; border-radius: 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #ffffffcc; margin-bottom: 10px; }
@@ -4674,7 +4871,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         .detection-item {
             background-color: #ffffff !important;
             border: 1px solid #e2e8f0 !important;
-            border-left: 4px solid #7c3aed !important;
+            border-left: 4px solid #0369a1 !important;
             border-radius: 8px !important;
             padding: 14px 18px !important;
             margin-bottom: 12px !important;
@@ -4728,6 +4925,235 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         }
     `;
 
+    const statsBarHtml = buildExportPostureDashboard({
+        frameworkCoverage,
+        deltaHtml,
+        coverageStats,
+        totalQueries,
+        queryDelta: stats.queries,
+        techniquesCovered,
+        threatsDisrupted,
+        maturityGrade,
+        gradeColor,
+        postureGuidanceHtml
+    }, isDark);
+
+    const reportV9StyleHtml = isEmail ? '' : `
+        html { scroll-behavior: smooth; }
+        body {
+            background: ${isDark ? `radial-gradient(circle at 20% -10%, rgba(${accentRgb},.13), transparent 34rem), radial-gradient(circle at 86% 14%, rgba(216,179,106,.10), transparent 28rem), linear-gradient(180deg,#050607,#090c0f 42%,#06080a)` : '#f3f6f8'} !important;
+        }
+        .html-export-toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            max-width: 1180px;
+            margin: 18px auto 0;
+            justify-content: flex-end;
+            border: 1px solid ${isDark ? '#2a313a' : '#d8e0e7'} !important;
+            border-radius: 18px 18px 0 0;
+            background: ${isDark ? 'rgba(12,15,18,.94)' : 'rgba(255,255,255,.94)'} !important;
+            backdrop-filter: blur(14px);
+        }
+        .html-export-toolbar strong { margin-right: auto; }
+        .email-wrapper { max-width: 1180px !important; padding: 0 18px 56px !important; }
+        .container {
+            border-radius: 0 0 24px 24px !important;
+            border-color: ${isDark ? '#2a313a' : '#d8e0e7'} !important;
+            box-shadow: ${isDark ? '0 30px 100px rgba(0,0,0,.45)' : '0 24px 70px rgba(15,23,42,.12)'} !important;
+            background: ${isDark ? '#0c0f12' : '#ffffff'} !important;
+        }
+        .header {
+            text-align: left !important;
+            min-height: 235px;
+            padding: 34px 38px 32px !important;
+            background: ${isDark ? `linear-gradient(135deg, rgba(${accentRgb},.12), transparent 38%), linear-gradient(180deg,#101820,#0c0f12)` : 'linear-gradient(135deg, #eef7f8, #ffffff)'} !important;
+            color: ${isDark ? '#e7edf4' : '#0f172a'} !important;
+            border-bottom: 1px solid ${isDark ? '#2a313a' : '#d8e0e7'} !important;
+        }
+        .header::after { display: none !important; }
+        .header h1 {
+            max-width: 820px;
+            margin-top: 20px !important;
+            font-size: clamp(34px, 5vw, 54px) !important;
+            line-height: .96 !important;
+            letter-spacing: -0.075em !important;
+            color: inherit !important;
+        }
+        .export-cover-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 330px;
+            gap: 24px;
+            align-items: start;
+        }
+        .export-kicker {
+            color: ${theme.accent};
+            font: 800 11px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+        .export-cover-meta {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 34px;
+        }
+        .export-cover-meta div,
+        .export-grade-card,
+        .export-guardrail-card {
+            border: 1px solid ${isDark ? '#27303a' : '#d8e0e7'};
+            border-radius: 14px;
+            background: ${isDark ? 'rgba(255,255,255,.035)' : 'rgba(255,255,255,.72)'};
+        }
+        .export-cover-meta div { padding: 14px; }
+        .export-cover-meta span,
+        .export-guardrail-card strong {
+            display: block;
+            color: ${isDark ? '#7f90a3' : '#64748b'};
+            font: 800 9px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+        .export-cover-meta strong {
+            display: block;
+            margin-top: 7px;
+            color: ${isDark ? '#ffffff' : '#0f172a'};
+            font-size: 13px;
+        }
+        .export-cover-side { display: grid; gap: 16px; }
+        .export-grade-card {
+            display: grid;
+            grid-template-columns: minmax(0,1fr) auto;
+            gap: 18px;
+            align-items: center;
+            padding: 22px;
+            border-color: ${isDark ? 'rgba(239,104,104,.42)' : '#fecaca'};
+            background: ${isDark ? 'rgba(64,20,24,.32)' : '#fff1f2'};
+        }
+        .export-grade-card strong {
+            display: block;
+            color: ${isDark ? '#ffffff' : '#0f172a'};
+            font-size: 22px;
+            letter-spacing: -0.035em;
+        }
+        .export-grade-card p,
+        .export-guardrail-card p {
+            margin: 8px 0 0 !important;
+            color: ${isDark ? '#d0d8e2' : '#334155'} !important;
+            font-size: 12px !important;
+            line-height: 1.55 !important;
+        }
+        .export-grade-card b {
+            font-size: 58px;
+            line-height: 1;
+        }
+        .export-guardrail-card { padding: 18px; }
+        .export-guardrail-card strong { color: ${theme.accent}; }
+        .header .subtitle, .header .report-date, .header .author, .header .attck-version { color: ${isDark ? '#aab6c4' : '#475569'} !important; }
+        .header .report-type {
+            border-radius: 999px !important;
+            color: ${theme.accent} !important;
+            background: ${isDark ? 'rgba(156,207,216,.1)' : '#e0f2fe'} !important;
+            border-color: ${isDark ? 'rgba(156,207,216,.32)' : '#bae6fd'} !important;
+        }
+        .content { padding: 34px 42px !important; background: ${isDark ? '#0c0f12' : '#ffffff'} !important; }
+        .export-toc {
+            margin-bottom: 28px;
+            padding: 20px 24px;
+            border: 1px solid ${isDark ? '#27303a' : '#dfe7ee'};
+            background: ${isDark ? '#0c0f12' : '#ffffff'};
+        }
+        .export-toc h4 {
+            margin: 0 0 16px;
+            color: ${theme.accent};
+            font: 800 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+        .export-toc-list {
+            display: grid;
+            gap: 0;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            border-top: 1px solid ${isDark ? '#27303a' : '#dfe7ee'};
+        }
+        .export-toc-list li { margin: 0; }
+        .export-toc-list a {
+            display: grid;
+            grid-template-columns: 54px minmax(150px, 0.8fr) minmax(0, 1.8fr) auto;
+            gap: 14px;
+            align-items: baseline;
+            padding: 10px 0;
+            border-bottom: 1px solid ${isDark ? '#27303a' : '#dfe7ee'};
+            color: inherit;
+            text-decoration: none;
+        }
+        .export-toc-list code {
+            color: ${isDark ? '#8aa0bd' : '#64748b'};
+            font: 800 10px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+        .export-toc-list strong {
+            color: ${isDark ? '#ffffff' : '#0f172a'} !important;
+            font-size: 13px;
+            letter-spacing: -0.025em;
+        }
+        .export-toc-list span {
+            color: ${isDark ? '#b4c4d6' : '#475569'};
+            font-size: 12px;
+            line-height: 1.45;
+        }
+        .export-toc-list em {
+            display: none;
+            color: ${isDark ? '#7f90a3' : '#94a3b8'};
+            font-size: 10px;
+            font-style: normal;
+        }
+        #posture-dashboard { border-bottom-color: ${isDark ? '#2a313a' : '#d8e0e7'} !important; }
+        .section, .tier-container > div:not(.page-number-footer) {
+            border-color: ${isDark ? '#27303a' : '#dfe7ee'} !important;
+            border-radius: 22px !important;
+        }
+        .section {
+            padding: 18px !important;
+            background: ${isDark ? 'linear-gradient(180deg,#111820,#0d1116)' : '#ffffff'} !important;
+        }
+        .section h3 {
+            padding-left: 0 !important;
+            border-left: 0 !important;
+            color: ${isDark ? '#e7edf4' : '#0f172a'} !important;
+            letter-spacing: -0.035em;
+            font-size: 22px !important;
+        }
+        .tier-container > div:first-child {
+            color: ${theme.accent} !important;
+        }
+        #report-basis h3 { border-radius: 0 !important; }
+        table { border: 1px solid ${isDark ? '#27303a' : '#e5edf2'}; border-radius: 14px; overflow: hidden; }
+        .header .logo { filter: none !important; background: ${isDark ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.86)'} !important; padding: 7px 10px !important; border: 1px solid ${isDark ? '#27303a' : '#d8e0e7'} !important; }
+        .pdf-advisory-bar { background-color: ${isDark ? '#101820' : '#eef7f8'} !important; border-bottom-color: ${isDark ? '#27303a' : '#d8e0e7'} !important; color: ${isDark ? '#9ccfd8' : '#0369a1'} !important; }
+        th { background: ${isDark ? '#151a20' : '#f8fafc'} !important; color: ${isDark ? '#9aa8b7' : '#475569'} !important; }
+        td { border-color: ${isDark ? '#27303a' : '#eef2f5'} !important; }
+        pre, code { white-space: pre-wrap; overflow-wrap: anywhere; }
+        .footer { background: ${isDark ? '#07090b' : '#f8fafc'} !important; border-top-color: ${isDark ? '#27303a' : '#e5edf2'} !important; }
+        @media print {
+            .html-export-toolbar { display: none !important; }
+            .email-wrapper { max-width: none !important; padding: 0 !important; }
+            .container { border-radius: 0 !important; box-shadow: none !important; }
+            .header { min-height: auto; page-break-after: avoid; }
+            .export-cover-grid { grid-template-columns: minmax(0, 1fr) 310px; gap: 22px; }
+            .export-cover-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .export-toc-list a { grid-template-columns: 44px minmax(130px, 0.8fr) minmax(0, 1.5fr) auto; }
+            .section, .tier-container { break-inside: avoid; }
+        }
+        @media only screen and (max-width: 820px) {
+            .export-cover-grid { grid-template-columns: 1fr; }
+            .export-cover-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .export-toc-list a { grid-template-columns: 44px minmax(0, 1fr); }
+            .export-toc-list span { grid-column: 2; }
+        }
+    `;
+
     return `
 <!DOCTYPE html>
 <html>
@@ -4737,27 +5163,40 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
     <title>${escapeHtml(reportTitle)}</title>
     <style>
         ${stylesHtml}
+        ${reportV9StyleHtml}
     </style>
 </head>
 <body${bodyInline}>
     ${standaloneToolbarHtml}
     <div class="email-wrapper"${wrapperInline}>
-        <div class="container"${containerInline}>
+        <div class="container" id="top"${containerInline}>
             ${isEmail ? `<div class="advisory-bar" style="background-color: #fffbeb; border-bottom: 1.5px solid #fde68a; padding: 10px 16px; font-size: 11px; color: #b45309; text-align: center; font-family: Arial, Helvetica, sans-serif; font-weight: 600; line-height: 1.4;">
                 Outlook-safe summary generated from the interactive MITRE ATT&amp;CK report. Some live dashboard controls are intentionally omitted.
             </div>` : ''}
             <!-- Disclaimer for PDF formats (Pristine layout advisory) -->
-            <div class="pdf-advisory-bar" style="display: none; background-color: ${isDark ? '#16101d' : '#fcfaff'}; border-bottom: 1.5px solid ${isDark ? 'rgba(168,85,247,0.15)' : '#f5f3ff'}; padding: 10px 16px; font-size: 11px; color: ${isDark ? '#c084fc' : '#6d28d9'}; text-align: center; font-family: sans-serif; font-weight: 600; line-height: 1.4;">
+            <div class="pdf-advisory-bar" style="display: none; background-color: ${isDark ? '#101820' : '#eef7f8'}; border-bottom: 1.5px solid ${isDark ? '#27303a' : '#d8e0e7'}; padding: 10px 16px; font-size: 11px; color: ${isDark ? '#9ccfd8' : '#0369a1'}; text-align: center; font-family: sans-serif; font-weight: 600; line-height: 1.4;">
                 Print Export: This PDF is generated by the browser print engine for selectable text and cleaner pagination.
             </div>
             <div class="header"${headerInline}>
-                ${logoSrc ? `<img src="${logoSrc}" class="logo" alt="Logo">` : ''}
-                <h1>${escapeHtml(reportTitle)}</h1>
-                <p class="subtitle">${escapeHtml(report.companyName) || 'MITRE ATT&amp;CK Coverage Report'}</p>
-                <div class="report-type">${report.type === 'initial' ? 'Initial Assessment' : 'Monthly Update'}</div>
-                <p class="report-date">${escapeHtml(reportMonthLabel)}</p>
-                ${report.attckVersion ? `<p class="attck-version">ATT&amp;CK Framework v${escapeHtml(report.attckVersion)}</p>` : ''}
-                ${report.author || state.author ? `<p class="author">Prepared by: ${escapeHtml(report.author || state.author)}</p>` : ''}
+                <div class="export-cover-grid">
+                    <div class="export-cover-main">
+                        ${logoSrc ? `<img src="${logoSrc}" class="logo" alt="Logo">` : ''}
+                        <div class="export-kicker">Monthly coverage update / Enterprise ATT&amp;CK v${escapeHtml(formatAttackVersion(getReportAttackVersion(report) || getLoadedAttackVersion()))}</div>
+                        <h1>${escapeHtml(reportTitle)}</h1>
+                        <p class="subtitle">A dynamic security posture report for detection coverage, adversary overlap, critical gaps, activity history, hunt queries, telemetry scope and export-time limitations.</p>
+                        <div class="export-cover-meta">
+                            <div><span>Organisation</span><strong>${escapeHtml(report.companyName || state.companyName || 'Not set')}</strong></div>
+                            <div><span>Prepared by</span><strong>${escapeHtml(report.author || state.author || 'Security Team')}</strong></div>
+                            <div><span>Period</span><strong>${escapeHtml(reportMonthLabel)}</strong></div>
+                            <div><span>Classification</span><strong>${escapeHtml(report.classification || 'Internal')}</strong></div>
+                        </div>
+                    </div>
+                    <aside class="export-cover-side">
+                        <div class="export-guardrail-card"><strong>Report basis</strong><p>Metrics are calculated at export time from the selected report month, active queries, archived-query state and loaded ATT&amp;CK dataset.</p></div>
+                        <div class="export-guardrail-card"><strong>Metric guardrail</strong><p>Coverage means at least one mapped detection/query exists. Track validation quality, telemetry health, false-positive rate and response playbook maturity separately.</p></div>
+                        <div class="export-guardrail-card"><strong>Dynamic content policy</strong><p>Sections expand, collapse or show explicit empty states depending on source data. Nothing should disappear silently.</p></div>
+                    </aside>
+                </div>
             </div>
 
             ${statsBarHtml}
@@ -4765,6 +5204,8 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             ${reportBasisHtml}
 
             <div class="content"${contentInline}>
+                ${options.includeQaWarnings ? buildReportQaWarningsSection(qaWarnings, isDark) : ''}
+
                 ${tocIndexHtml}
 
                 ${topNextActionsHtml}
@@ -4772,42 +5213,8 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 1: Executive Security Posture Briefing -->
                 <div class="tier-container" id="tier-1" style="margin-top: 24px; margin-bottom: 30px;">
                     <a name="tier-1"></a>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#a855f7' : '#7c3aed'}; margin-bottom: 10px;">
-                        Tier 1: Executive Security Posture
-                    </div>
-                    
-                    <div style="background-color: ${isDark ? '#121324' : '#ffffff'}; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding: 20px;">
-                        <h3 style="margin-top: 0; margin-bottom: 14px; font-size: 14px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'}; border-bottom: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; padding-bottom: 8px; font-family: sans-serif;">
-                            Note: Unified Leadership Briefing
-                        </h3>
-                        
-                        <!-- Top Row: Executive Summary + Monthly Focus Areas -->
-                        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: none; width: 100%; margin-bottom: 16px;">
-                            <tr>
-                                <td valign="top" width="48%" style="width: 48%; vertical-align: top; border: none; font-size: 12.5px; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
-                                    <strong style="color: ${isDark ? '#ffffff' : '#0f172a'}; display: block; margin-bottom: 6px; font-size: 12.5px;">Executive Summary &amp; Context</strong>
-                                    ${execSummary ? markdownToHtml(execSummary) : '<p style="font-style:italic; color:#64748b;">No executive summary provided for this period.</p>'}
-                                </td>
-                                <td width="4%" style="width: 4%; border: none; padding: 0;"></td>
-                                <td valign="top" width="48%" style="width: 48%; vertical-align: top; border: none; font-size: 12.5px; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
-                                    <div style="background-color: ${isDark ? 'rgba(56,189,248,0.05)' : '#f0f9ff'}; border: 1px solid ${isDark ? 'rgba(56,189,248,0.15)' : '#bae6fd'}; padding: 14px; min-height: 180px;">
-                                        <strong style="color: ${isDark ? '#38bdf8' : '#0284c7'}; display: block; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-family: sans-serif;">Monthly Strategic Focus Areas</strong>
-                                        ${monthlyFocus ? markdownToHtml(monthlyFocus) : '<p style="font-style:italic; color:#64748b;">No active monthly focus areas specified.</p>'}
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
-                        
-                        <!-- Bottom Row: Strategic Leadership Guidance (Full Width) -->
-                        ${leadership ? `
-                        <div style="background-color: ${isDark ? 'rgba(168,85,247,0.05)' : '#faf5ff'}; border: 1px solid ${isDark ? 'rgba(168,85,247,0.15)' : '#e9d5ff'}; padding: 14px;">
-                            <strong style="color: ${isDark ? '#a855f7' : '#7c3aed'}; display: block; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-family: sans-serif;">Strategic Leadership Guidance</strong>
-                            <div style="font-size: 12.5px; line-height: 1.6; color: ${isDark ? '#cbd5e1' : '#475569'};">
-                                ${markdownToHtml(leadership)}
-                            </div>
-                        </div>
-                        ` : ''}
-                    </div>
+                    ${buildExportTierHeading('1', 'Executive Security Posture', 'Leadership view of posture, focus areas and business-facing guidance.', isDark, isDark ? '#9ccfd8' : '#0369a1')}
+                    ${buildExecutiveSecurityExport({ execSummary, monthlyFocus, leadership }, isDark)}
                 </div>
                 <div class="page-number-footer" style="display:none; text-align:center; font-size:9px; color:#94a3b8; padding:8px 0; border-top:1px solid #e2e8f0; margin-top:15px;">Page 2 of 5</div>
 
@@ -4816,80 +5223,19 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 2: Threat Landscape & Strategic Gaps -->
                 <div class="tier-container" id="tier-2" style="margin-bottom: 30px;">
                     <a name="tier-2"></a>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#fbbf24' : '#d97706'}; margin-bottom: 10px;">
-                        Tier 2: Threat Landscape &amp; Strategic Gaps
-                    </div>
+                    ${buildExportTierHeading('2', 'Threat Landscape & Strategic Gaps', 'Adversary overlap, zero-coverage exposure, roadmap priorities and team ownership.', isDark, isDark ? '#fbbf24' : '#d97706')}
                     
                     ${buildThreatsSectionEmail(report, isDark) ? `<div id="adversary-mapper"><a name="adversary-mapper"></a>${buildThreatsSectionEmail(report, isDark)}</div>` : ''}
                     
                     ${buildTechniquesAtRiskEmail(report, isDark) ? `<div id="techniques-at-risk"><a name="techniques-at-risk"></a>${buildTechniquesAtRiskEmail(report, isDark)}</div>` : ''}
 
-                    ${recommendations ? `<div class="section" id="recommendations" style="page-break-inside: avoid;"><a name="recommendations"></a><h3>Strategic Recommendations</h3><div style="background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; color: ${isDark ? '#cbd5e1' : '#334155'}; padding: 16px; font-size: 13px; line-height: 1.6;">${markdownToHtml(recommendations)}</div></div>` : ''}
+                    ${buildStrategicRecommendationsExport(recommendations, isDark)}
                     
                     ${gapAnalysisHtml}
                     
                     ${teamAssignmentsHtml}
                     
-                    ${(() => {
-                        if (!state.groups || state.groups.length === 0) return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a><h3>Risk Heat Map</h3><p style="font-size: 12.5px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin: 0;">No threat group data available for risk heat map generation.</p></div>`;
-                        const month = report.selectedMonth || report.generatedAt?.slice(0, 7) || new Date().toISOString().slice(0, 7);
-                        const allGroups = state.groups.map(group => {
-                            const techRels = state.relationships.filter(r => r.relationship_type === 'uses' && r.source_ref === group.id);
-                            const relatedTechs = techRels.map(r => state.techniques.find(tech => tech.id === r.target_ref)).filter(Boolean);
-                            const coveredCount = relatedTechs.filter(tech => {
-                                const tid = tech.external_references?.[0]?.external_id || '';
-                                const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
-                                return ann?.queries && ann.queries.length > 0;
-                            }).length;
-                            const techCount = relatedTechs.length;
-                            const coveragePct = techCount > 0 ? Math.round((coveredCount / techCount) * 100) : 0;
-                            const gaps = techCount - coveredCount;
-                            const likelihood = techCount >= 150 ? 'High' : techCount >= 50 ? 'Medium' : 'Low';
-                            const impact = coveragePct < 30 ? 'Critical' : coveragePct < 50 ? 'High' : coveragePct < 70 ? 'Medium' : 'Low';
-                            return { name: group.name, techCount, coveragePct, gaps, likelihood, impact };
-                        }).sort((a, b) => {
-                            const riskOrder = { 'Critical-High': 0, 'Critical-Medium': 1, 'Critical-Low': 2, 'High-High': 3, 'High-Medium': 4, 'High-Low': 5, 'Medium-High': 6, 'Medium-Medium': 7, 'Medium-Low': 8, 'Low-High': 9, 'Low-Medium': 10, 'Low-Low': 11 };
-                            return (riskOrder[`${a.impact}-${a.likelihood}`] || 12) - (riskOrder[`${b.impact}-${b.likelihood}`] || 12) || b.gaps - a.gaps;
-                        }).slice(0, 8);
-                        
-                        if (allGroups.length === 0) return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a><h3>Risk Heat Map</h3><p style="font-size: 12.5px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin: 0;">No threat group mappings available for risk heat map generation.</p></div>`;
-                        
-                        const riskColor = (impact, likelihood) => {
-                            if (impact === 'Critical') return '#ef4444';
-                            if (impact === 'High' && likelihood === 'High') return '#f97316';
-                            if (impact === 'High') return '#eab308';
-                            return '#22c55e';
-                        };
-                        
-                        let heatHtml = `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a><h3>Risk Heat Map</h3>
-                            <p style="margin-bottom: 12px; font-size: 12px; color: ${isDark ? '#cbd5e1' : '#475569'};">Threat groups plotted by impact (coverage gap) vs likelihood (technique count):</p>
-                            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
-                                <tr>
-                                    <td style="width: 100px; border: none;"></td>
-                                    <td style="text-align: center; font-size: 10px; font-weight: 700; color: ${isDark ? '#94a3b8' : '#64748b'}; padding: 4px; border: none;">Low Likelihood</td>
-                                    <td style="text-align: center; font-size: 10px; font-weight: 700; color: ${isDark ? '#94a3b8' : '#64748b'}; padding: 4px; border: none;">Medium Likelihood</td>
-                                    <td style="text-align: center; font-size: 10px; font-weight: 700; color: ${isDark ? '#94a3b8' : '#64748b'}; padding: 4px; border: none;">High Likelihood</td>
-                                </tr>`;
-                        
-                        ['Critical', 'High', 'Medium', 'Low'].forEach(impact => {
-                            heatHtml += `<tr>
-                                <td style="font-size: 10px; font-weight: 700; color: ${isDark ? '#94a3b8' : '#64748b'}; padding: 4px; text-align: right; vertical-align: middle; border: none;">${impact} Impact</td>`;
-                            ['Low', 'Medium', 'High'].forEach(likelihood => {
-                                const groups = allGroups.filter(g => g.impact === impact && g.likelihood === likelihood);
-                                const color = riskColor(impact, likelihood);
-                                heatHtml += `<td style="padding: 8px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0'}; background-color: ${color}10; vertical-align: top; min-height: 60px;">
-                                    ${groups.length > 0 ? groups.map(g => `
-                                        <div style="font-size: 10px; font-weight: 600; color: ${color}; margin-bottom: 2px;">${escapeHtml(g.name.split(' ')[0])}</div>
-                                        <div style="font-size: 9px; color: ${isDark ? '#94a3b8' : '#64748b'};">${g.coveragePct}% cov, ${g.gaps} gaps</div>
-                                    `).join('') : '<span style="font-size: 10px; color: #94a3b8;">-</span>'}
-                                </td>`;
-                            });
-                            heatHtml += '</tr>';
-                        });
-                        
-                        heatHtml += '</table></div>';
-                        return heatHtml;
-                    })()}
+                    ${buildRiskHeatMapExport(report, isDark)}
                 </div>
                 <div class="page-number-footer" style="display:none; text-align:center; font-size:9px; color:#94a3b8; padding:8px 0; border-top:1px solid #e2e8f0; margin-top:15px;">Page 3 of 5</div>
 
@@ -4898,12 +5244,8 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 3: Operational Hunt Progress -->
                 <div class="tier-container" id="tier-3" style="margin-bottom: 30px;">
                     <a name="tier-3"></a>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#34d399' : '#16a34a'}; margin-bottom: 10px;">
-                        Tier 3: Operational Hunt Progress
-                    </div>
+                    ${buildExportTierHeading('3', 'Operational Hunt Progress', 'Reporting-period changes, detection results, trend movement and coverage breakdown.', isDark, isDark ? '#34d399' : '#16a34a')}
                     
-                    ${statusChangesExportHtml}
-
                     ${buildEmailMonthlyActivity(report, theme, isDark)}
                     ${tacticsGraphHtml}
                     
@@ -4918,9 +5260,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 4: Telemetry Proof & Appendix -->
                 <div class="tier-container" id="tier-4" style="margin-bottom: 0;">
                     <a name="tier-4"></a>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${isDark ? '#38bdf8' : '#0284c7'}; margin-bottom: 10px;">
-                        Tier 4: Telemetry Proof &amp; Appendix
-                    </div>
+                    ${buildExportTierHeading('4', 'Telemetry Proof & Appendix', 'New hunt queries, methodology, ATT&CK version context, references and export notes.', isDark, isDark ? '#38bdf8' : '#0284c7')}
                     
                     ${newQueriesHtml}
                     
@@ -4959,7 +5299,8 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
 
                         const mergedReferences = [
                             ...(report.references || []),
-                            ...activeSigmaReferences.map(sr => `[SigmaHQ] ${sr.title}: ${sr.url}`)
+                            ...activeSigmaReferences.map(sr => `[SigmaHQ] ${sr.title}: ${sr.url}`),
+                            ...getQuerySourceReferencesForReport(report, seenUrls).map(sr => `[Query Source] ${sr.title}: ${sr.url}`)
                         ];
 
                         if (mergedReferences.length === 0) return '';
@@ -4989,7 +5330,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                     
                     ${appendixHtml}
                     
-                    <div style="background-color: ${isDark ? '#121324' : '#f8fafc'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'}; margin-top: 20px; padding: 14px 18px; overflow: hidden; text-align: left;">
+                    <div style="background-color: ${isDark ? '#101820' : '#f8fafc'}; border: 1px solid ${isDark ? '#27303a' : '#e2e8f0'}; margin-top: 20px; padding: 14px 18px; overflow: hidden; text-align: left;">
                         <h4 style="margin: 0 0 3px 0; font-size: 13px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'};">${reportIcon('image', isDark ? '#38bdf8' : '#0284c7', 14)}Export Note</h4>
                         <p style="margin: 0; font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; line-height: 1.4;">View the attached SVG snapshot for the full formatted report image.</p>
                     </div>
@@ -4998,8 +5339,8 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             </div>
  
             <div class="footer"${footerInline}>
-                <p>Generated by MITRE ATT&amp;CK Coverage Tool | ${report.generatedDate || new Date().toLocaleDateString()}</p>
-                <p class="tool-info">ATT&amp;CK v${report.attckVersion || '19.1'} | Data sourced from MITRE ATT&amp;CK Framework</p>
+                <p>Generated by MITRE ATT&amp;CK Coverage Tool | ${escapeHtml(formatReportDate(report.generatedAt || report.generatedDate || new Date()))}</p>
+                <p class="tool-info">ATT&amp;CK v${formatAttackVersion(report.attckVersion || getLoadedAttackVersion() || '19.1')} | Data sourced from MITRE ATT&amp;CK Framework</p>
                 <p class="confidential">Confidential - For authorized recipients only</p>
             </div>
         </div>
@@ -5010,8 +5351,9 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
 }
 
 export function buildThreatsSectionEmail(report, isDark = false) {
+    const v = getExportVisuals(isDark);
     if (!state.groups || state.groups.length === 0) {
-        return `<div class="section"><h3>Adversary Group Defensive Gap Mapper</h3><p style="margin:0;font-size:12.5px;color:${isDark ? '#94a3b8' : '#64748b'};">Threat intelligence data is not loaded, so adversary group coverage mapping is unavailable for this export.</p></div>`;
+        return `<div class="section">${buildExportSectionTitle('Adversary Group Defensive Gap Mapper', 'Threat intelligence data is not loaded, so adversary group coverage mapping is unavailable for this export.', isDark, '#f59e0b')}</div>`;
     }
     
     // Sort all groups by total techniques used in ATT&CK to find the top threats overall (same as buildThreatsSection)
@@ -5040,11 +5382,11 @@ export function buildThreatsSectionEmail(report, isDark = false) {
         };
     }).sort((a, b) => b.techCount - a.techCount).slice(0, 5); // Take top 5 overall threat groups
     
-    let cardsHtml = '';
-    allGroups.forEach(t => {
-        const typeLabel = 'Threat Group';
-        
-        // Determine exposure risk based on count of techniques used
+    const totalTechniques = allGroups.reduce((sum, group) => sum + group.techCount, 0);
+    const totalGaps = allGroups.reduce((sum, group) => sum + group.gaps, 0);
+    const avgCoverage = allGroups.length ? Math.round(allGroups.reduce((sum, group) => sum + group.coveragePct, 0) / allGroups.length) : 0;
+
+    const rowsHtml = allGroups.map((t, index) => {
         let exposureLevel = 'Medium';
         let expColor = '#38bdf8';
         let expBg = isDark ? '#0c1424' : '#eff6ff';
@@ -5059,46 +5401,41 @@ export function buildThreatsSectionEmail(report, isDark = false) {
         }
         
         // Truncate techniques list to top 6 elements
-        const techIds = t.techniqueIds?.map(id => getTechniqueIdFromStix(id) || id) || [];
+        const techIds = t.techniqueIds?.map(id => getTechniqueIdFromStix(id) || (isRawAttackObjectId(id) ? 'Unresolved ATT&CK object. Review ATT&CK relationship import.' : id)) || [];
         const truncatedTechIds = techIds.slice(0, 6);
         const extraCount = techIds.length - truncatedTechIds.length;
         const techList = truncatedTechIds.join(', ') + (extraCount > 0 ? `, +${extraCount} more` : '');
-        
         const progressColor = t.coveragePct >= 70 ? '#10b981' : t.coveragePct >= 40 ? '#f59e0b' : '#ef4444';
-        const progressBg = isDark ? '#25263b' : '#e2e8f0';
-        
-        cardsHtml += `
-            <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; background-color: ${isDark ? '#121324' : '#fafafa'}; border: 1px solid ${isDark ? '#25263b' : '#e2e8f0'};">
-                <tr>
-                    <td style="padding: 10px 14px; border: none; vertical-align: middle; width: 60%;">
-                        <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 0 4px 0; width: auto;">
-                            <tr>
-                                <td style="border: none; padding: 0 8px 0 0;"><span style="font-size: 9px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px;">${typeLabel}</span></td>
-                                <td style="border: none; padding: 0;"><span style="font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; background-color: ${expBg}; color: ${expColor}; letter-spacing: 0.5px;">${exposureLevel} Risk</span></td>
-                            </tr>
-                        </table>
-                        <div style="font-size: 14px; font-weight: 700; color: ${isDark ? '#ffffff' : '#0f172a'}; margin-bottom: 2px;">${escapeHtml(t.name)}</div>
-                        <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; font-family: monospace; background-color: ${isDark ? '#0f1123' : '#f1f5f9'}; padding: 3px 8px; display: inline-block;">
-                            TTPs: ${escapeHtml(techList)}
-                        </div>
-                    </td>
-                    <td style="padding: 10px 14px; border: none; vertical-align: middle; width: 40%; text-align: right;">
-                        <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-bottom: 6px;">Defensive Readiness</div>
-                        <div style="font-size: 22px; font-weight: 800; color: ${progressColor}; line-height: 1;">${t.coveragePct}%</div>
-                        <div style="height: 6px; background-color: ${progressBg}; margin: 8px 0 6px 0; overflow: hidden;">
-                            <div style="width: ${t.coveragePct}%; height: 100%; background-color: ${progressColor};"></div>
-                        </div>
-                        <div style="font-size: 10px; color: ${isDark ? '#94a3b8' : '#64748b'};">
-                            ✓ ${t.coveredCount}/${t.techCount} covered
-                            <span style="margin-left: 8px; font-weight: 600; color: ${t.gaps > 0 ? '#ef4444' : '#10b981'};">${t.gaps > 0 ? `${reportIcon('warning', '#ef4444', 11)}${t.gaps} gaps` : `${reportIcon('check', '#10b981', 11)}Complete`}</span>
-                        </div>
-                    </td>
-                </tr>
-            </table>
+
+        return `
+            <tr>
+                <td style="border:1px solid ${v.border};vertical-align:top;color:${v.muted};font-weight:900;text-align:center;width:42px;">${index + 1}</td>
+                <td style="border:1px solid ${v.border};vertical-align:top;color:${v.heading};font-weight:800;">
+                    ${escapeHtml(t.name)}
+                    <div style="margin-top:5px;font-family:monospace;font-size:10px;color:${v.muted};line-height:1.45;">${escapeHtml(techList || 'No mapped TTPs')}</div>
+                </td>
+                <td style="border:1px solid ${v.border};vertical-align:top;white-space:nowrap;"><span style="display:inline-block;background:${expBg};color:${expColor};border:1px solid ${expColor}44;border-radius:999px;padding:3px 8px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:0.05em;">${escapeHtml(exposureLevel)} risk</span></td>
+                <td style="border:1px solid ${v.border};vertical-align:top;color:${progressColor};font-size:18px;font-weight:900;white-space:nowrap;">${t.coveragePct}%</td>
+                <td style="border:1px solid ${v.border};vertical-align:top;color:${v.text};white-space:nowrap;">${t.coveredCount}/${t.techCount} covered</td>
+                <td style="border:1px solid ${v.border};vertical-align:top;color:${t.gaps > 0 ? '#ef4444' : '#10b981'};font-weight:800;white-space:nowrap;">${t.gaps > 0 ? `${t.gaps} gaps` : 'Complete'}</td>
+            </tr>
         `;
-    });
-    
-    return `<div class="section"><h3>Adversary Group Defensive Gap Mapper</h3><p style="margin-bottom:12px;font-size:12px;color:${isDark?'#94a3b8':'#64748b'};">This section ranks the top threat actor groups by their relevance to your environment, based on the number of ATT&amp;CK techniques they employ that overlap with your coverage map. Groups are selected by cross-referencing known adversary TTPs against your deployed detection queries, highlighting where your defensive posture is strongest and where critical blind spots exist.</p>${cardsHtml}</div>`;
+    }).join('');
+
+    return `<div class="section" id="adversary-mapper-section" style="page-break-inside: avoid;">
+        ${buildExportSectionTitle('Adversary Group Defensive Gap Mapper', 'Threat groups ranked by ATT&CK technique overlap, defensive readiness and remaining mapped gaps.', isDark, '#f59e0b')}
+        <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border-spacing:10px 0;margin:0 -10px 14px;border:0;">
+            <tr>
+                <td width="33.33%" style="width:33.33%;border:1px solid ${v.border};border-radius:14px;background:${v.panel};padding:12px;"><div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;">Threat groups ranked</div><div style="font-size:24px;font-weight:900;color:${v.heading};line-height:1;margin-top:6px;">${allGroups.length}</div></td>
+                <td width="33.33%" style="width:33.33%;border:1px solid ${v.border};border-radius:14px;background:${v.panel};padding:12px;"><div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;">Average readiness</div><div style="font-size:24px;font-weight:900;color:${avgCoverage >= 70 ? '#10b981' : avgCoverage >= 40 ? '#f59e0b' : '#ef4444'};line-height:1;margin-top:6px;">${avgCoverage}%</div></td>
+                <td width="33.33%" style="width:33.33%;border:1px solid ${v.border};border-radius:14px;background:${v.panel};padding:12px;"><div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;">Mapped gaps</div><div style="font-size:24px;font-weight:900;color:${totalGaps > 0 ? '#ef4444' : '#10b981'};line-height:1;margin-top:6px;">${totalGaps}</div><div style="font-size:10px;color:${v.muted};margin-top:4px;">across ${totalTechniques} adversary techniques</div></td>
+            </tr>
+        </table>
+        <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:11px;line-height:1.45;">
+            <thead><tr><th>Rank</th><th>Threat group</th><th>Exposure</th><th>Readiness</th><th>Mapped coverage</th><th>Gap state</th></tr></thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
+    </div>`;
 }
 
 export function buildTechniquesAtRiskEmail(report, isDark = false) {

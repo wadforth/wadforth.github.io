@@ -35,14 +35,13 @@ export function renderReportPreviewCard(report) {
     const trendData = calculateCoverageTrend(report);
     const safeReportId = escapeHtml(report.id || '');
     const safeType = safeClassToken(report.type || 'initial');
+    const typeLabel = String(report.type || 'Initial').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const reportVersion = getReportAttackVersionLabel(report);
     
     return `
         <div class="report-preview-card card-hover-lift" data-report-id="${escapeHtml(report.id || '')}">
             <div class="report-preview-header">
-                <div class="report-preview-type">
-                    <span class="report-type-badge ${safeType}">${escapeHtml(report.type || 'Initial')}</span>
-                </div>
+                <div class="report-preview-title">${escapeHtml(report.title || 'Untitled Report')}</div>
                 <div class="report-preview-actions">
                     <button class="btn btn-ghost btn-sm" data-report-action="view-report" data-report-id="${safeReportId}" data-tooltip="View Report" aria-label="View report">
                         <i class="bi bi-eye"></i>
@@ -52,26 +51,17 @@ export function renderReportPreviewCard(report) {
                     </button>
                 </div>
             </div>
-            <div class="report-preview-title">${escapeHtml(report.title || 'Untitled Report')}</div>
             <div class="report-preview-meta">
+                <span class="report-type-badge ${safeType}">${escapeHtml(typeLabel)}</span>
                 <span class="report-preview-date"><i class="bi bi-calendar3"></i> ${formatTimestamp(report.generatedAt)}</span>
                 <span class="report-preview-version"><i class="bi bi-diagram-3"></i> ATT&amp;CK v${escapeHtml(reportVersion)}</span>
                 ${report.layerName ? `<span class="report-preview-layer text-sm text-primary" style="margin-left: 8px;"><i class="bi bi-layers"></i> ${escapeHtml(report.layerName)}</span>` : ''}
                 ${getChangeCount(report) > 0 ? `<span class="report-preview-changes"><i class="bi bi-arrow-left-right"></i> ${getChangeCount(report)} changes</span>` : ''}
             </div>
-            <div class="report-preview-charts">
-                <div class="report-preview-chart">
-                    <div class="chart-label">Coverage</div>
-                    <div class="mini-bar-chart">
-                        ${renderMiniBarChart(coverageData)}
-                    </div>
-                </div>
-                <div class="report-preview-chart">
-                    <div class="chart-label">Trend</div>
-                    <div class="mini-sparkline">
-                        ${renderMiniSparkline(trendData)}
-                    </div>
-                </div>
+            <div class="report-preview-metrics" aria-label="Report summary metrics">
+                <div><span>Coverage</span><strong>${coverageData.percentage}%</strong><small>${coverageData.covered}/${coverageData.total || 0} mapped</small></div>
+                <div><span>Change Set</span><strong>${getChangeCount(report)}</strong><small>tracked events</small></div>
+                <div><span>Trend</span><strong>${trendData.length ? trendData[trendData.length - 1].percentage + '%' : 'n/a'}</strong><small>${trendData.length ? 'latest month' : 'no history'}</small></div>
             </div>
             ${report.summary ? `<div class="report-preview-summary">${escapeHtml(report.summary.substring(0, 100))}${report.summary.length > 100 ? '...' : ''}</div>` : ''}
         </div>
@@ -122,46 +112,33 @@ export function calculateCoverageTrend(report) {
     });
 }
 
-export function renderMiniBarChart(data) {
-    const { covered, total, percentage } = data;
-    const height = 40;
-    const barWidth = 8;
-    const gap = 2;
-    
-    return `
-        <svg width="100%" height="${height}" viewBox="0 0 120 ${height}">
-            <rect x="10" y="${height - (percentage / 100) * height}" width="${barWidth}" height="${(percentage / 100) * height}" fill="var(--primary)" rx="2"/>
-            <rect x="22" y="${height - ((covered / total) * 100 / 100) * height}" width="${barWidth}" height="${((covered / total) * 100 / 100) * height}" fill="var(--accent-green)" rx="2"/>
-            <text x="60" y="${height / 2 + 4}" fill="var(--on-surface-secondary)" font-size="10" text-anchor="middle">${percentage}%</text>
-        </svg>
-    `;
+function getReportPostureGrade(coveragePct) {
+    if (coveragePct >= 80) return { label: 'A+ Excellent', short: 'A+', tone: 'good' };
+    if (coveragePct >= 70) return { label: 'A Strong', short: 'A', tone: 'good' };
+    if (coveragePct >= 60) return { label: 'B+ Capable', short: 'B+', tone: 'warn' };
+    if (coveragePct >= 50) return { label: 'B Good', short: 'B', tone: 'warn' };
+    if (coveragePct >= 40) return { label: 'C+ Developing', short: 'C+', tone: 'watch' };
+    if (coveragePct >= 30) return { label: 'C Baseline', short: 'C', tone: 'watch' };
+    if (coveragePct >= 20) return { label: 'D Lacking', short: 'D', tone: 'bad' };
+    return { label: 'F Critical Gaps', short: 'F', tone: 'bad' };
 }
 
-export function renderMiniSparkline(data) {
-    if (data.length === 0) return '<span class="text-muted">No data</span>';
-    
-    const width = 120;
-    const height = 40;
-    const padding = 5;
-    const maxVal = Math.max(...data.map(d => d.percentage), 100);
-    
-    const points = data.map((d, i) => {
-        const x = padding + (i / (data.length - 1 || 1)) * (width - padding * 2);
-        const y = height - padding - (d.percentage / maxVal) * (height - padding * 2);
-        return `${x},${y}`;
-    }).join(' ');
-    
-    const lastPoint = data[data.length - 1];
-    const trendIcon = data.length > 1 
-        ? (lastPoint.percentage > data[data.length - 2].percentage ? '↑' : lastPoint.percentage < data[data.length - 2].percentage ? '↓' : '→')
-        : '';
-    
+function renderReportsOverview(reports, latest, latestCoverage, latestChanges) {
+    const latestGrade = getReportPostureGrade(latestCoverage.percentage || 0);
+    const previous = reports?.[1] || null;
+    const previousCoverage = previous ? calculateReportCoverage(previous) : null;
+    const delta = previousCoverage ? latestCoverage.percentage - previousCoverage.percentage : null;
+    const deltaLabel = delta === null ? 'Initial baseline' : `${delta > 0 ? '+' : ''}${delta}% since previous report`;
+    const attackVersion = latest ? getReportAttackVersionLabel(latest) : String(state.currentVersion || state.currentLayer?.versions?.attack || 'unknown').trim().replace(/^v/i, '');
+    const generated = latest ? formatTimestamp(latest.generatedAt) : 'No generated report yet';
+
     return `
-        <svg width="100%" height="${height}" viewBox="0 0 ${width} ${height}">
-            <polyline points="${points}" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="${points.split(' ').pop().split(',')[0]}" cy="${points.split(' ').pop().split(',')[1]}" r="3" fill="var(--primary)"/>
-        </svg>
-        <span class="sparkline-trend ${trendIcon === '↑' ? 'trend-up' : trendIcon === '↓' ? 'trend-down' : ''}">${trendIcon} ${lastPoint.percentage}%</span>
+        <section class="reports-summary-strip" aria-label="Reports workspace summary">
+            <div><span>Posture</span><strong class="${latestGrade.tone}">${escapeHtml(latestGrade.short)}</strong><small>${escapeHtml(latestGrade.label)}</small></div>
+            <div><span>Coverage</span><strong>${latestCoverage.percentage}%</strong><small>${latestCoverage.covered}/${latestCoverage.total || 0} mapped</small></div>
+            <div><span>History</span><strong>${escapeHtml(deltaLabel)}</strong><small>${reports.length} generated reports</small></div>
+            <div><span>Report data</span><strong>ATT&amp;CK v${escapeHtml(attackVersion)}</strong><small>${escapeHtml(generated)} / ${latestChanges} changes</small></div>
+        </section>
     `;
 }
 
@@ -447,28 +424,28 @@ export function renderReportsListEnhanced(reports) {
     const container = document.getElementById('reports-list');
     if (!container) return;
     
-    const viewMode = localStorage.getItem('reports-view-mode') || 'cards';
+    const viewMode = 'list';
+    const latest = reports?.[0] || null;
+    const latestCoverage = latest ? calculateReportCoverage(latest) : { covered: 0, total: 0, percentage: 0 };
+    const latestChanges = latest ? getChangeCount(latest) : 0;
+    const latestTitle = latest ? (latest.title || 'Untitled Report') : 'No report generated yet';
+    const latestId = escapeHtml(latest?.id || '');
     
     let html = `
-        <div class="reports-container">
+        <div class="reports-container reports-workbench-container">
             <div class="reports-header">
                 <div>
-                    <h2>Reports</h2>
-                    <p>Generate and manage detection coverage reports</p>
+                    <div class="reports-breadcrumb"><strong>Reports</strong><span>/</span><span>${latest ? escapeHtml(formatTimestamp(latest.generatedAt)) : 'leadership coverage updates'}</span></div>
+                    <h2>Coverage reports</h2>
+                    <p>Report history, latest posture, and monthly export controls. Create a report, open it, edit tier text, assign teams, add evidence, then export HTML/PDF.</p>
                 </div>
                 <div class="reports-actions">
+                    ${latest ? `
+                    <button class="btn btn-outline-secondary" data-report-action="view-report" data-report-id="${latestId}">Review latest</button>
+                    <button class="btn btn-outline-secondary" data-report-action="export-html" data-report-id="${latestId}">Export HTML</button>
+                    ` : ''}
                     ${reports && reports.length > 0 ? `
-                    <div class="btn-group">
-                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'cards' ? 'active' : ''}" data-report-action="set-view-mode" data-report-mode="cards" data-tooltip="Card View">
-                            <i class="bi bi-grid"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'list' ? 'active' : ''}" data-report-action="set-view-mode" data-report-mode="list" data-tooltip="List View">
-                            <i class="bi bi-list-ul"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary ${viewMode === 'timeline' ? 'active' : ''}" data-report-action="set-view-mode" data-report-mode="timeline" data-tooltip="Timeline View">
-                            <i class="bi bi-calendar3"></i>
-                        </button>
-                    </div>
+                    <span class="reports-list-mode-pill"><i class="bi bi-list-ul"></i> List view</span>
                     <button class="btn btn-outline-danger" data-report-action="delete-all-reports">
                         <i class="bi bi-trash-fill"></i> Delete All
                     </button>
@@ -478,13 +455,10 @@ export function renderReportsListEnhanced(reports) {
                     </button>
                 </div>
             </div>
+            ${renderReportsOverview(reports || [], latest, latestCoverage, latestChanges)}
     `;
     
     if (reports && reports.length > 0) {
-        html += '<div class="reports-stats">';
-        html += renderReportStats(reports);
-        html += '</div>';
-        
         if (viewMode === 'cards') {
             html += '<div class="reports-grid">';
             reports.forEach(report => {
@@ -501,7 +475,6 @@ export function renderReportsListEnhanced(reports) {
             html += '</div>';
         }
         
-        html += renderInsightsSection(generateReportInsights(reports[0]));
     } else {
         html += `
             <div class="reports-empty">
@@ -519,32 +492,6 @@ export function renderReportsListEnhanced(reports) {
     container.innerHTML = html;
     
     initTooltips();
-}
-
-export function renderReportStats(reports) {
-    const totalReports = reports.length;
-    const totalChanges = reports.reduce((sum, r) => sum + getChangeCount(r), 0);
-    const latestReport = reports[0];
-    const coverage = calculateReportCoverage(latestReport);
-    
-    return `
-        <div class="stat-card">
-            <div class="stat-value">${totalReports}</div>
-            <div class="stat-label">Total Reports</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${coverage.percentage}%</div>
-            <div class="stat-label">Coverage</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${totalChanges}</div>
-            <div class="stat-label">Total Changes</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">${formatTimestamp(latestReport?.generatedAt)}</div>
-            <div class="stat-label">Latest Report</div>
-        </div>
-    `;
 }
 
 export function renderReportListItem(report) {
@@ -695,8 +642,6 @@ window.getChangeCount = getChangeCount;
 window.renderReportPreviewCard = renderReportPreviewCard;
 window.calculateReportCoverage = calculateReportCoverage;
 window.calculateCoverageTrend = calculateCoverageTrend;
-window.renderMiniBarChart = renderMiniBarChart;
-window.renderMiniSparkline = renderMiniSparkline;
 window.renderReportsTimeline = renderReportsTimeline;
 window.showReportComparison = showReportComparison;
 window.calculateReportDiff = calculateReportDiff;
@@ -705,7 +650,6 @@ window.getTacticsWithLowestCoverage = getTacticsWithLowestCoverage;
 window.getTopTechniquesByQueries = getTopTechniquesByQueries;
 window.renderInsightsSection = renderInsightsSection;
 window.renderReportsListEnhanced = renderReportsListEnhanced;
-window.renderReportStats = renderReportStats;
 window.renderReportListItem = renderReportListItem;
 window.setReportsViewMode = setReportsViewMode;
 window.createNewReport = createNewReport;

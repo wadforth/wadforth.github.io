@@ -4,71 +4,117 @@
 
 export let landingEnhanced = false;
 
-export function enhanceLandingPage() {
-    if (landingEnhanced) return;
-    landingEnhanced = true;
+function escapeLandingHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
-    // 1. Mouse Tracking for Orbs and Tilt
-    const landingView = document.getElementById('landing-view');
-    const commandBox = document.querySelector('.command-box');
+function getLayerTechniqueRows() {
+    return window.state?.currentLayer?.techniques || [];
+}
 
-    if (landingView) {
-        landingView.addEventListener('mousemove', (e) => {
-            const x = (e.clientX - window.innerWidth / 2);
-            const y = (e.clientY - window.innerHeight / 2);
-
-            // Update CSS variables for orb animations
-            landingView.style.setProperty('--mouse-x', `${x}px`);
-            landingView.style.setProperty('--mouse-y', `${y}px`);
-
-            // Command Box 3D Tilt
-            if (commandBox) {
-                const tiltX = (y / window.innerHeight) * -10; // max tilt 10deg
-                const tiltY = (x / window.innerWidth) * 10;
-                commandBox.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
-            }
+function countUniqueQueries(techniques) {
+    const seen = new Set();
+    techniques.forEach(technique => {
+        (technique.queries || []).forEach(query => {
+            if (query?.id) seen.add(query.id);
+            else if (query?.name || query?.query) seen.add(`${query.name || ''}:${query.query || ''}`);
         });
+    });
+    return seen.size;
+}
 
-        // Reset tilt on mouse leave
-        landingView.addEventListener('mouseleave', () => {
-            if (commandBox) {
-                commandBox.style.transform = 'rotateX(0deg) rotateY(0deg)';
-            }
-        });
+export function renderLandingWorkspaceSummary() {
+    const container = document.getElementById('landing-workspace-summary');
+    if (!container) return;
+
+    const state = window.state;
+    const layer = state?.currentLayer;
+    const techniques = layer ? getLayerTechniqueRows() : [];
+    const annotated = techniques.length;
+    const queries = countUniqueQueries(techniques);
+    const totalTechniques = state?.techniques?.length || annotated;
+    const gaps = Math.max(totalTechniques - annotated, 0);
+    const coverage = totalTechniques ? `${((annotated / totalTechniques) * 100).toFixed(1)}%` : '0%';
+
+    container.className = 'landing-summary-grid landing-summary-compact';
+    container.innerHTML = `
+        <div class="landing-summary-card"><span>Coverage</span><strong class="summary-risk">${escapeLandingHtml(coverage)}</strong></div>
+        <div class="landing-summary-card"><span>Queries</span><strong class="summary-good">${queries}</strong></div>
+        <div class="landing-summary-card"><span>Gaps</span><strong class="summary-warn">${gaps}</strong></div>
+    `;
+}
+
+function openLandingView(view) {
+    const hasLayer = Boolean(window.state?.currentLayer);
+    if (!hasLayer) {
+        const createNewBtn = document.getElementById('btn-create-new');
+        if (createNewBtn) createNewBtn.click();
+    } else if (window.showWorkspace) {
+        window.showWorkspace();
     }
 
-    // 2. Universal Search Bar Logic
+    const navigateWhenReady = () => {
+        const target = document.querySelector(`[data-view="${view}"]`);
+        if (target) target.click();
+    };
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+        attempts += 1;
+        if (window.state?.currentLayer || attempts > 30) {
+            clearInterval(timer);
+            navigateWhenReady();
+        }
+    }, 100);
+}
+
+function runLandingMatrixSearch(query) {
+    openLandingView('matrix');
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+        attempts += 1;
+        const matrixSearch = document.getElementById('matrix-search-input');
+        if (matrixSearch || attempts > 30) {
+            clearInterval(timer);
+            if (matrixSearch) {
+                matrixSearch.value = query;
+                matrixSearch.dispatchEvent(new Event('input'));
+            }
+        }
+    }, 100);
+}
+
+export function enhanceLandingPage() {
+    if (landingEnhanced) {
+        renderLandingWorkspaceSummary();
+        return;
+    }
+    landingEnhanced = true;
+
+    renderLandingWorkspaceSummary();
+
     const searchInput = document.getElementById('landing-universal-search');
     if (searchInput) {
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && searchInput.value.trim()) {
                 const query = searchInput.value.trim();
-                
-                // If it's a Sigma Rule lookup (starts with SIGMA or has "rule" in it), we could route to Sigma view.
-                // For now, route everything to the Matrix view where the primary search lives.
-                
-                // Open new layer first if in landing
-                const createNewBtn = document.getElementById('btn-create-new');
-                if (createNewBtn) createNewBtn.click();
-                
-                // Wait for the workspace to load, then trigger search
-                setTimeout(() => {
-                    const matrixNav = document.querySelector('[data-view="matrix"]');
-                    if (matrixNav) matrixNav.click();
-
-                    setTimeout(() => {
-                        const matrixSearch = document.getElementById('matrix-search-input');
-                        if (matrixSearch) {
-                            matrixSearch.value = query;
-                            matrixSearch.dispatchEvent(new Event('input'));
-                        }
-                    }, 50);
-                }, 150);
+                runLandingMatrixSearch(query);
             }
         });
     }
+
+    document.querySelectorAll('[data-landing-open-view]').forEach(button => {
+        button.addEventListener('click', () => openLandingView(button.dataset.landingOpenView || 'matrix'));
+    });
 }
 
 // Legacy Window Bindings
 window.landingEnhanced = landingEnhanced;
 window.enhanceLandingPage = enhanceLandingPage;
+window.renderLandingWorkspaceSummary = renderLandingWorkspaceSummary;

@@ -13,7 +13,7 @@ export async function fetchReleases() {
 
     try {
         const resp = await fetch(`${GITHUB_API}/releases?per_page=10`);
-        if (!resp.ok) throw new Error('Failed');
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const releases = await resp.json();
         state.releases = releases.map(r => ({
             tag: r.tag_name,
@@ -31,7 +31,7 @@ export async function fetchReleases() {
         populateVersionSelect();
         return releases;
     } catch (err) {
-        console.warn('Could not fetch releases, falling back to latest stable:', err);
+        console.info('Could not fetch ATT&CK releases; using bundled latest stable fallback.', err);
         state.releases = [{ tag: 'v19.1', name: 'v19.1 (Latest)', published: null }];
         populateVersionSelect();
         return [];

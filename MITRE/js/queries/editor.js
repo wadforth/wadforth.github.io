@@ -209,6 +209,42 @@ export async function openQueryEditor(queryData = null, techniqueId = null, opti
     }, { once: true });
 }
 
+function normalizeQuerySourceToken(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\/sigmahq\.io\/.*\/(rules\/)?/i, '')
+        .replace(/^https?:\/\/github\.com\/sigmahq\/sigma\/blob\/master\/rules\//i, '')
+        .replace(/\.(ya?ml)$/i, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+}
+
+function refreshSigmaViewsAfterQueryChange() {
+    if (typeof window.refreshSigmaFilteredCache !== 'function') return;
+    Promise.resolve(window.refreshSigmaFilteredCache()).then(() => {
+        if (typeof window.renderSigmaStats === 'function') window.renderSigmaStats();
+        if (typeof window.renderSigmaList === 'function') window.renderSigmaList();
+        if (typeof window.renderSigmaDetails === 'function') window.renderSigmaDetails();
+    });
+}
+
+function removeDuplicateSigmaSources(source, sigmaRuleId, sigmaRuleTitle, sigmaRuleUrl) {
+    const sigmaUrls = new Set(String(sigmaRuleUrl || '').split('|').map(url => url.trim()).filter(Boolean));
+    const sigmaTokens = new Set([
+        ...String(sigmaRuleUrl || '').split('|'),
+        ...String(sigmaRuleTitle || '').split('|'),
+        ...String(sigmaRuleId || '').split('|')
+    ].map(normalizeQuerySourceToken).filter(Boolean));
+
+    return String(source || '')
+        .split(/[\n,]+/)
+        .map(item => item.trim())
+        .filter(Boolean)
+        .filter(item => !sigmaUrls.has(item) && !sigmaTokens.has(normalizeQuerySourceToken(item)))
+        .join('\n');
+}
+
 export function saveQuery() {
     const editId = document.getElementById('query-edit-id').value;
     let techniqueIds = getSelectedTechniques();
@@ -217,7 +253,7 @@ export function saveQuery() {
     const language = document.getElementById('query-language').value;
     const queryText = document.getElementById('query-text').value.trim();
     const description = document.getElementById('query-description').value.trim();
-    const source = document.getElementById('query-source').value.trim();
+    const rawSource = document.getElementById('query-source').value.trim();
     const monthAdded = document.getElementById('query-month').value || new Date().toISOString().slice(0, 7);
     const now = new Date().toISOString();
     
@@ -229,6 +265,7 @@ export function saveQuery() {
     const sigmaRuleId = sigmaRuleIdRaw || undefined;
     const sigmaRuleTitle = sigmaRuleTitleRaw || undefined;
     const sigmaRuleUrl = sigmaRuleUrlRaw || undefined;
+    const source = removeDuplicateSigmaSources(rawSource, sigmaRuleId, sigmaRuleTitle, sigmaRuleUrl);
     const sentinelCandidate = document.getElementById('query-sentinel-candidate').checked;
     
     if (techniqueIds.length === 0) {
@@ -304,6 +341,7 @@ export function saveQuery() {
     requestAnimationFrame(() => {
         renderMatrix();
         renderQueriesView();
+        refreshSigmaViewsAfterQueryChange();
     });
     
     showToast(editId ? 'Query updated' : `Query added to ${techniqueIds.length} technique${techniqueIds.length > 1 ? 's' : ''}`, 'success');
@@ -323,6 +361,7 @@ export function deleteQuery(techniqueId, queryId) {
     logActivity('query_delete', techniqueId, queryName || queryId);
     renderMatrix();
     renderQueriesView();
+    refreshSigmaViewsAfterQueryChange();
     refreshTechniqueModalQueries();
     showToast('Query deleted', 'success');
 }
@@ -347,6 +386,8 @@ document.getElementById('btn-save-query').addEventListener('click', saveQuery);
 export let archiveTargetQueryId = null;
 export let archiveTargetTechniqueId = null;
 export let archiveReturnTechniqueId = null;
+
+const SIEM_ARCHIVE_REASON = 'Implemented into SIEM';
 
 function cleanupModalBackdrops() {
     const openModals = document.querySelectorAll('.modal.show').length;
@@ -392,6 +433,8 @@ window.openArchiveModal = function(queryId, techniqueId) {
     
     document.getElementById('archive-query-name').textContent = queryName || 'Unknown Query';
     document.getElementById('archive-reason').value = '';
+    const siemCheck = document.getElementById('archive-implemented-siem');
+    if (siemCheck) siemCheck.checked = false;
 
     const techniqueEl = document.getElementById('technique-modal');
     if (techniqueEl?.classList.contains('show')) {
@@ -442,6 +485,7 @@ window.confirmArchiveQuery = function() {
     
     renderMatrix();
     renderQueriesView();
+    refreshSigmaViewsAfterQueryChange();
     if (document.getElementById('technique-modal')?.classList.contains('show')) {
         refreshTechniqueModalQueries();
     }
@@ -476,12 +520,24 @@ window.unarchiveQuery = function(queryId, techniqueId) {
     
     renderMatrix();
     renderQueriesView();
+    refreshSigmaViewsAfterQueryChange();
     refreshTechniqueModalQueries();
     
     showToast('Query restored', 'success');
 };
 
 document.getElementById('btn-confirm-archive').addEventListener('click', confirmArchiveQuery);
+
+document.getElementById('archive-implemented-siem')?.addEventListener('change', (event) => {
+    const reasonInput = document.getElementById('archive-reason');
+    if (!reasonInput) return;
+    const current = reasonInput.value.trim();
+    if (event.target.checked && !current) {
+        reasonInput.value = SIEM_ARCHIVE_REASON;
+    } else if (!event.target.checked && current === SIEM_ARCHIVE_REASON) {
+        reasonInput.value = '';
+    }
+});
 
 document.getElementById('btn-add-query-global').addEventListener('click', () => {
     if (!state.currentLayer) return;

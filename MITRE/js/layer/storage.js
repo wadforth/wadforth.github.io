@@ -86,7 +86,7 @@ function compactLayerRef(layer) {
         id: layer.id,
         storage: 'indexeddb',
         name: layer.name,
-        domain: layer.domain || state.currentDomain,
+        domain: 'enterprise-attack',
         attackVersion: layer.versions?.attack || layer.attackVersion || state.currentVersion,
         timestamp: Date.now()
     };
@@ -98,7 +98,7 @@ function compactRecentLayer(layer, preserveLegacyData = false) {
         id: layer.id || legacyData?.id || `${layer.name || legacyData?.name || 'layer'}${layer.domain || legacyData?.domain || ''}`,
         layerId: layer.layerId || layer.id || legacyData?.id,
         name: layer.name || legacyData?.name || 'Untitled Layer',
-        domain: layer.domain || legacyData?.domain || 'enterprise-attack',
+        domain: 'enterprise-attack',
         attackVersion: layer.attackVersion || layer.versions?.attack || legacyData?.versions?.attack || legacyData?.attackVersion,
         timestamp: layer.timestamp || Date.now()
     };
@@ -550,7 +550,7 @@ export function saveRecentLayer(layer) {
         id: layer.id,
         layerId: layer.id,
         name: layer.name,
-        domain: layer.domain || state.currentDomain,
+        domain: 'enterprise-attack',
         attackVersion: layer.versions?.attack || layer.attackVersion || state.currentVersion,
         timestamp: Date.now()
     });
@@ -603,7 +603,7 @@ export function renderRecentLayers() {
             if (e.target.closest('.recent-layer-delete')) return;
             const layer = recent.find(l => l.id === item.dataset.id);
             if (layer) {
-                state.currentDomain = layer.domain || 'enterprise-attack';
+                state.currentDomain = 'enterprise-attack';
                 state.currentVersion = layer.versions?.attack || layer.attackVersion;
                 const domainSelect = document.getElementById('domain-select');
                 if (domainSelect) domainSelect.value = state.currentDomain;

@@ -318,8 +318,8 @@ export function showSoftwareModal(softwareId) {
         const modalHtml = `
             <div class="modal fade" id="software-detail-modal" tabindex="-1">
                 <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                    <div class="modal-content technique-modal" style="border: 1px solid rgba(${theme.accentRGB}, 0.2) !important; box-shadow: 0 5px 30px rgba(0,0,0,0.5), 0 0 25px rgba(${theme.accentRGB}, 0.1) !important;">
-                        <div class="tech-modal-header software-modal-header" style="border-bottom: 1px solid rgba(${theme.accentRGB}, 0.15) !important; background: rgba(${theme.accentRGB}, 0.03) !important;">
+                    <div class="modal-content technique-modal entity-detail-modal" style="border: 1px solid rgba(${theme.accentRGB}, 0.2) !important; box-shadow: 0 5px 30px rgba(0,0,0,0.5), 0 0 25px rgba(${theme.accentRGB}, 0.1) !important;">
+                        <div class="tech-modal-header software-modal-header entity-detail-header" style="border-bottom: 1px solid rgba(${theme.accentRGB}, 0.15) !important; background: rgba(${theme.accentRGB}, 0.03) !important;">
                             <button type="button" class="btn-close tech-modal-close" data-bs-dismiss="modal"></button>
                             <div class="software-detail-header-wrap" style="display: flex; align-items: center; gap: 1rem;">
                                 <div class="detail-modal-avatar" style="width: 52px; height: 52px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: none; padding: 0; border: 1px solid rgba(${theme.accentRGB}, 0.3); box-shadow: 0 0 15px rgba(${theme.accentRGB}, 0.2);">
@@ -327,7 +327,7 @@ export function showSoftwareModal(softwareId) {
                                 </div>
                                 <div class="tech-modal-header-content" style="display: flex; flex-direction: column; gap: 0.25rem;">
                                     <div class="tech-modal-badges" style="display: flex; align-items: center; gap: 0.5rem;">
-                                        ${swId_display && swId_display !== 'N/A' && swId_display.trim() !== '' ? `<span class="tech-badge-id" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${escapeHtml(swId_display)}</span>` : ''}
+                                        ${swId_display && swId_display !== 'N/A' && swId_display.trim() !== '' ? `<span class="entity-detail-id-chip" style="border-color: rgba(${theme.accentRGB}, 0.28); color: ${theme.accentHex};">${escapeHtml(swId_display)}</span>` : ''}
                                         <span class="${theme.badgeClass}"><i class="bi ${theme.icon}"></i> ${theme.name}</span>
                                     </div>
                                     <h3 class="tech-modal-title" style="margin: 0; font-size: 1.4rem; font-weight: 800; color: var(--on-surface); text-shadow: 0 0 12px rgba(${theme.accentRGB}, 0.15);">${escapeHtml(software.name)}</h3>

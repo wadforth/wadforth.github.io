@@ -1,4 +1,5 @@
 import { debounce } from '../utils/performance.js';
+import { renderThreatIntelCatalogue } from '../groups/view.js';
 
 export let softwareSortBy = 'name';
 export let softwareSortDir = 'asc';
@@ -66,6 +67,9 @@ export function sortSoftware(software) {
 }
 
 export function renderSoftwareView() {
+    renderThreatIntelCatalogue('software');
+    return;
+
     const renderToken = ++softwareRenderToken;
     const container = document.getElementById('software-list');
     const controlsContainer = document.getElementById('software-controls');
@@ -91,7 +95,12 @@ export function renderSoftwareView() {
         software = software.filter(s =>
             s.name.toLowerCase().includes(query) ||
             (s.description || '').toLowerCase().includes(query) ||
-            (s.external_references?.[0]?.external_id || '').toLowerCase().includes(query)
+            (s.external_references?.[0]?.external_id || '').toLowerCase().includes(query) ||
+            (s.type || '').toLowerCase().includes(query) ||
+            (s.aliases || []).some(a => a.toLowerCase().includes(query)) ||
+            (s.x_mitre_aliases || []).some(a => a.toLowerCase().includes(query)) ||
+            (s.x_mitre_platforms || []).some(p => p.toLowerCase().includes(query)) ||
+            (s.x_mitre_contributors || []).some(c => c.toLowerCase().includes(query))
         );
     }
     

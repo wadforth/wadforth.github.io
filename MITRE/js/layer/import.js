@@ -31,7 +31,7 @@ export class LayerImportEngine {
                     const state = window.state;
                     if (!state) return;
                     
-                    state.currentDomain = layerData.domain || 'enterprise-attack';
+                    state.currentDomain = 'enterprise-attack';
                     
                     const importedVerRaw = layerData.versions?.attack || layerData.attackVersion || 'master';
                     const normImported = window.normalizeVersion ? window.normalizeVersion(importedVerRaw) : importedVerRaw;
@@ -116,10 +116,10 @@ export class LayerImportEngine {
             e.target.value = '';
         });
 
-        document.getElementById('domain-select')?.addEventListener('change', (e) => {
+        document.getElementById('domain-select')?.addEventListener('change', () => {
             const state = window.state;
             if (!state) return;
-            state.currentDomain = e.target.value;
+            state.currentDomain = 'enterprise-attack';
             if (state.currentLayer && window.loadSTIX) {
                 window.loadSTIX(state.currentDomain, state.currentVersion || 'master', state.currentLayer);
             }
@@ -183,9 +183,9 @@ export class LayerImportEngine {
             throw new Error('Layer JSON must be an object.');
         }
 
-        const allowedDomains = new Set(['enterprise-attack', 'mobile-attack', 'ics-attack']);
+        const allowedDomains = new Set(['enterprise-attack']);
         if (layerData.domain && !allowedDomains.has(layerData.domain)) {
-            throw new Error('Layer domain must be enterprise-attack, mobile-attack, or ics-attack.');
+            throw new Error('Layer domain must be enterprise-attack.');
         }
 
         if (layerData.techniques && !Array.isArray(layerData.techniques)) {

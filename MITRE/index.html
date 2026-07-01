@@ -25,30 +25,42 @@
     <link href="css/sigma.css" rel="stylesheet">
     <link href="css/professional.css?v=9" rel="stylesheet">
     <link href="css/workstation.css?v=3" rel="stylesheet">
+    <link href="css/design-system.css?v=1" rel="stylesheet">
+    <link href="css/landing-redesign.css?v=1" rel="stylesheet">
+    <link href="css/matrix-workbench.css?v=4" rel="stylesheet">
+    <link href="css/queries-workbench.css?v=3" rel="stylesheet">
+    <link href="css/entity-workbench.css?v=2" rel="stylesheet">
+    <link href="css/mitigations-workbench.css?v=2" rel="stylesheet">
+    <link href="css/reports-workbench.css?v=3" rel="stylesheet">
+    <link href="css/sigma-workbench.css?v=6" rel="stylesheet">
 </head>
 <body>
+    <a class="skip-link" href="#workspace-view">Skip to workspace</a>
     <nav class="navbar fixed-top">
         <div class="container-fluid px-4 flex items-center justify-between">
-            <a class="navbar-brand flex items-center gap-2" href="#" id="nav-home">
-                <div class="brand-icon">
-                    <i class="bi bi-shield-check"></i>
-                </div>
-                <span class="font-bold brand-text">ATT&CK Explorer</span>
+            <a class="navbar-brand flex items-center gap-2" href="#" id="nav-home" aria-label="ATT&CK Xplorer home">
+                <svg class="brand-mark brand-mark-xplorer" viewBox="0 0 64 64" role="img" aria-labelledby="brand-mark-title">
+                    <title id="brand-mark-title">ATT&amp;CK Xplorer</title>
+                    <rect x="6" y="6" width="52" height="52" rx="14" class="mark-shell"></rect>
+                    <path d="M18 42 28.5 18h7L46 42h-6.4l-2.1-5.2h-11L24.4 42H18Zm10.4-10h7.2L32 23.1 28.4 32Z" class="mark-fill"></path>
+                    <path d="M15 17h11v3.5H15zM38 17h11v3.5H38zM15 46h34v-3.5H15z" class="mark-gold"></path>
+                    <path d="M18 52 52 18" class="mark-slash"></path>
+                </svg>
+                <span class="brand-copy"><strong>ATT&amp;CK Xplorer</strong><small>Coverage Workbench</small></span>
                 <span id="loaded-version" class="version-badge">v19.1 - May 2026</span>
             </a>
 
-            <div class="top-nav hidden">
-                <ul class="nav nav-pills top-nav-pills flex gap-2">
-                    <li class="nav-item"><a class="nav-link active" href="#" data-view="matrix"><i class="bi bi-grid-3x3-gap-fill mr-1"></i>Matrix</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-view="queries"><i class="bi bi-code-slash mr-1"></i>Queries</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-view="groups"><i class="bi bi-people-fill mr-1"></i>Groups</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-view="software"><i class="bi bi-cpu-fill mr-1"></i>Software</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-view="mitigations"><i class="bi bi-shield-fill-check mr-1"></i>Mitigations</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#" data-view="reports"><i class="bi bi-file-earmark-text mr-1"></i>Reports</a></li>
+            <div class="top-nav hidden" aria-label="Workspace sections">
+                <ul class="nav nav-pills top-nav-pills flex gap-2" role="list">
+                    <li class="nav-item"><a class="nav-link active" href="#" data-view="matrix" aria-current="page"><i class="bi bi-grid-3x3-gap-fill mr-1" aria-hidden="true"></i>Matrix</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-view="queries"><i class="bi bi-code-slash mr-1" aria-hidden="true"></i>Queries</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-view="groups"><i class="bi bi-diagram-3-fill mr-1" aria-hidden="true"></i>Threat Intel</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-view="mitigations"><i class="bi bi-shield-fill-check mr-1" aria-hidden="true"></i>Mitigations</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#" data-view="reports"><i class="bi bi-file-earmark-text mr-1" aria-hidden="true"></i>Reports</a></li>
 
                     <li class="nav-item">
                         <a class="nav-link" href="#" data-view="sigma">
-                            <i class="bi bi-terminal-fill mr-1"></i>Sigma Rules
+                            <i class="bi bi-terminal-fill mr-1" aria-hidden="true"></i>Sigma Rules
                         </a>
                     </li>
                 </ul>
@@ -59,11 +71,11 @@
                     <span class="spinner-border spinner-border-sm mr-1"></span>
                     <span class="text-sm">Checking...</span>
                 </div>
-                <select id="version-select" class="form-select form-select-sm">
+                <select id="version-select" class="form-select form-select-sm" aria-label="ATT&CK version">
                     <option value="">Loading...</option>
                 </select>
-                <button id="theme-toggle" class="btn btn-sm btn-ghost" title="Toggle dark mode">
-                    <i class="bi bi-moon-fill"></i>
+                <button id="theme-toggle" class="btn btn-sm btn-ghost" title="Toggle dark mode" aria-label="Toggle dark mode" aria-pressed="false">
+                    <i class="bi bi-moon-fill" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
@@ -77,50 +89,34 @@
             <div class="ambient-orb orb-4"></div>
         </div>
         
-        <div class="landing-top-bar">
-            <div class="landing-brand">
-                <i class="bi bi-shield-check"></i>
-                <span class="brand-text">ATT&CK Explorer</span>
-            </div>
-            <button id="landing-theme-toggle" class="btn btn-ghost landing-theme-btn" title="Toggle dark mode">
-                <i class="bi bi-moon-fill"></i>
-            </button>
-        </div>
-        
         <div class="landing-container">
             <div class="command-box">
+                <div class="landing-hero-top">
+                    <div class="landing-brand">
+                        <svg class="brand-mark brand-mark-xplorer" viewBox="0 0 64 64" role="img" aria-label="ATT&CK Xplorer">
+                            <rect x="6" y="6" width="52" height="52" rx="14" class="mark-shell"></rect>
+                            <path d="M18 42 28.5 18h7L46 42h-6.4l-2.1-5.2h-11L24.4 42H18Zm10.4-10h7.2L32 23.1 28.4 32Z" class="mark-fill"></path>
+                            <path d="M15 17h11v3.5H15zM38 17h11v3.5H38zM15 46h34v-3.5H15z" class="mark-gold"></path>
+                            <path d="M18 52 52 18" class="mark-slash"></path>
+                        </svg>
+                        <span class="brand-copy"><strong>ATT&amp;CK Xplorer</strong><small>Coverage, detection and threat mapping workbench</small></span>
+                    </div>
+                    <nav class="landing-nav" aria-label="Landing workspace sections">
+                        <span>Matrix</span>
+                        <span>Queries</span>
+                        <span>Reports</span>
+                        <span>Sigma</span>
+                    </nav>
+                    <button id="landing-theme-toggle" class="btn btn-ghost landing-theme-btn" title="Toggle dark mode" aria-label="Toggle dark mode" aria-pressed="false">
+                        <i class="bi bi-moon-fill" aria-hidden="true"></i>
+                    </button>
+                </div>
                 <div class="command-box-header stagger-1">
-                    <div class="command-box-icon"><i class="bi bi-shield-lock"></i></div>
-                    <h2 class="text-gradient">Build an ATT&CK coverage layer</h2>
-                    <p>Map detections, hunts, threat intelligence, and reporting against the MITRE ATT&CK framework.</p>
-                </div>
-                
-                <div class="landing-search-container stagger-2">
-                    <div class="landing-search-bar">
-                        <i class="bi bi-search"></i>
-                        <input type="text" id="landing-universal-search" placeholder="Search techniques, groups, or rules...">
-                        <div class="search-shortcut">/</div>
-                    </div>
-                </div>
-                
-                <div class="command-box-controls stagger-3 landing-control-row">
-                    <div class="control-group landing-domain-control">
-                        <label class="landing-control-label">ATT&CK Domain</label>
-                        <select id="domain-select" class="form-select custom-glass-select landing-centered-select">
-                            <option value="enterprise-attack">Enterprise</option>
-                            <option value="mobile-attack">Mobile</option>
-                            <option value="ics-attack">ICS</option>
-                        </select>
-                    </div>
-                    <div class="control-group landing-version-control">
-                        <label class="landing-control-label">ATT&CK Version</label>
-                        <select id="landing-version-select" class="form-select custom-glass-select landing-centered-select">
-                            <option value="">Loading...</option>
-                        </select>
-                    </div>
+                    <h2 class="text-gradient">Know where you can see attacker behaviour, and where you cannot.</h2>
+                    <p>Map detections, Sigma rules, mitigations, telemetry and adversary procedures against ATT&amp;CK without losing operational context.</p>
                 </div>
 
-                <div class="command-box-actions stagger-4">
+                <div class="command-box-actions stagger-2">
                     <button class="pill-btn primary" id="btn-create-new">
                         <i class="bi bi-plus-lg"></i> New Layer
                     </button>
@@ -131,35 +127,66 @@
                         <i class="bi bi-grid-3x3-gap"></i> Browse Matrix
                     </button>
                 </div>
-            </div>
-
-            <aside class="landing-insight-panel stagger-5" aria-label="Workspace capabilities">
-                <div class="insight-kicker">Analyst Workspace</div>
-                <h3>Coverage, hunts, rules, and reports in one operating view.</h3>
-                <p>Start from ATT&CK, connect techniques to detection logic, track Sigma coverage, and turn layer activity into shareable reporting.</p>
-                <div class="insight-steps">
-                    <div class="insight-step">
-                        <span>01</span>
-                        <div>
-                            <strong>Map Coverage</strong>
-                            <small>Annotate techniques, sub-techniques, gaps, and priorities.</small>
-                        </div>
-                    </div>
-                    <div class="insight-step">
-                        <span>02</span>
-                        <div>
-                            <strong>Link Detection Logic</strong>
-                            <small>Connect hunts, query languages, Sigma rules, and Sentinel candidates.</small>
-                        </div>
-                    </div>
-                    <div class="insight-step">
-                        <span>03</span>
-                        <div>
-                            <strong>Report Outcomes</strong>
-                            <small>Generate monthly coverage narratives and exportable artifacts.</small>
-                        </div>
+                
+                <div class="landing-search-container stagger-3">
+                    <div class="landing-search-bar">
+                        <i class="bi bi-search" aria-hidden="true"></i>
+                        <input type="text" id="landing-universal-search" aria-label="Search techniques, groups, or Sigma rules" placeholder="Search techniques, groups, or rules...">
+                        <div class="search-shortcut" aria-hidden="true">/</div>
                     </div>
                 </div>
+                
+                <div class="command-box-controls stagger-4 landing-control-row">
+                    <div class="control-group landing-domain-control">
+                        <input type="hidden" id="domain-select" value="enterprise-attack">
+                        <span class="landing-control-label" id="landing-domain-label">ATT&CK Domain</span>
+                        <span class="landing-static-meta" aria-labelledby="landing-domain-label">Enterprise</span>
+                    </div>
+                    <div class="control-group landing-version-control">
+                        <label class="landing-control-label" for="landing-version-select">ATT&CK Version</label>
+                        <select id="landing-version-select" class="form-select custom-glass-select landing-centered-select" aria-label="Landing ATT&CK version">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+
+            <aside class="landing-insight-panel stagger-5" aria-label="Workspace snapshot and suggested journeys">
+                <section class="landing-summary-panel" aria-labelledby="landing-summary-title">
+                    <div class="landing-panel-header">
+                        <div>
+                            <h4 id="landing-summary-title">Workspace snapshot</h4>
+                            <p class="landing-panel-note">Use the landing page for immediate orientation, not marketing filler.</p>
+                        </div>
+                    </div>
+                    <div id="landing-workspace-summary" class="landing-summary-grid landing-summary-compact" aria-live="polite"></div>
+                </section>
+
+                <section class="landing-journey-panel" aria-labelledby="landing-journey-title">
+                    <div class="landing-panel-header">
+                        <div>
+                            <h4 id="landing-journey-title">Suggested analyst journeys</h4>
+                        </div>
+                    </div>
+                    <div class="landing-journeys">
+                        <button type="button" class="landing-journey-item" data-landing-open-view="matrix">
+                            <i>01</i>
+                            <div><strong>Review high-risk gaps</strong><span>Credential Access, Privilege Escalation, Stealth.</span></div>
+                            <span class="status bad">P1</span>
+                        </button>
+                        <button type="button" class="landing-journey-item" data-landing-open-view="queries">
+                            <i>02</i>
+                            <div><strong>Convert Sigma candidates</strong><span>Translate and validate mapped rules.</span></div>
+                            <span class="status query">worklist</span>
+                        </button>
+                        <button type="button" class="landing-journey-item" data-landing-open-view="reports">
+                            <i>03</i>
+                            <div><strong>Generate monthly report</strong><span>Export posture, gaps, queries and evidence.</span></div>
+                            <span class="status good">ready</span>
+                        </button>
+                    </div>
+                </section>
             </aside>
 
             <div id="recent-layers-section" class="recent-layers-panel hidden">
@@ -194,16 +221,16 @@
                     </button>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button class="btn btn-sm btn-ghost" id="btn-set-company-logo" title="Set Company Logo">
+                    <button class="btn btn-sm btn-ghost" id="btn-set-company-logo" title="Set Company Logo" aria-label="Set company logo">
                         <i class="bi bi-image"></i>
                     </button>
-                    <button class="btn btn-sm btn-ghost" id="btn-set-company-name" title="Set Company Name">
+                    <button class="btn btn-sm btn-ghost" id="btn-set-company-name" title="Set Company Name" aria-label="Set company name">
                         <i class="bi bi-building"></i>
                     </button>
-                    <button class="btn btn-sm btn-ghost" id="btn-set-author" title="Set Author">
+                    <button class="btn btn-sm btn-ghost" id="btn-set-author" title="Set Author" aria-label="Set report author">
                         <i class="bi bi-person"></i>
                     </button>
-                    <button class="btn btn-sm btn-ghost" id="btn-performance-mode" title="Toggle performance mode" aria-pressed="false">
+                    <button class="btn btn-sm btn-ghost" id="btn-performance-mode" title="Toggle performance mode" aria-label="Toggle performance mode" aria-pressed="false">
                         <i class="bi bi-speedometer2"></i>
                     </button>
                     <div class="vr mx-1 layer-toolbar-divider"></div>
@@ -216,7 +243,7 @@
                     <button class="btn btn-sm btn-ghost" id="btn-save-layer" title="Save Layer">
                         <i class="bi bi-save mr-1"></i>Save
                     </button>
-                    <button class="btn btn-sm btn-outline-danger" id="btn-close-layer" title="Close Layer">
+                    <button class="btn btn-sm btn-outline-danger" id="btn-close-layer" title="Close Layer" aria-label="Close current layer">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
@@ -224,7 +251,7 @@
         </div>
 
         <div class="workspace-content">
-            <div id="loading-overlay" class="loading-overlay hidden">
+            <div id="loading-overlay" class="loading-overlay hidden" role="status" aria-live="polite" aria-atomic="true">
                 <div class="loading-card">
                     <div class="spinner-border text-primary mb-3 loading-spinner-lg"></div>
                     <h5 class="mb-1">Loading ATT&CK Data</h5>
@@ -245,7 +272,7 @@
                         <div class="matrix-search">
                             <div class="input-group input-group-sm">
                                 <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary text-xs"></i></span>
-                                <input type="text" id="matrix-search-input" class="form-control border-start-0 text-xs matrix-search-input" placeholder="Filter techniques...">
+                                <input type="text" id="matrix-search-input" class="form-control border-start-0 text-xs matrix-search-input" aria-label="Filter matrix techniques" placeholder="Filter techniques...">
                                 <button class="btn btn-outline-secondary hidden" id="matrix-search-clear" type="button"><i class="bi bi-x-lg"></i></button>
                             </div>
                         </div>
@@ -260,38 +287,61 @@
                         </div>
 
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-secondary" id="btn-expand-all" title="Expand All"><i class="bi bi-arrows-expand"></i></button>
-                            <button class="btn btn-outline-secondary" id="btn-collapse-all" title="Collapse All"><i class="bi bi-arrows-collapse"></i></button>
+                            <button class="btn btn-outline-secondary" id="btn-expand-all" title="Expand All" aria-label="Expand all sub-techniques"><i class="bi bi-arrows-expand" aria-hidden="true"></i></button>
+                            <button class="btn btn-outline-secondary" id="btn-collapse-all" title="Collapse All" aria-label="Collapse all sub-techniques"><i class="bi bi-arrows-collapse" aria-hidden="true"></i></button>
                         </div>
-                        <button class="btn btn-sm btn-outline-secondary" id="btn-export-matrix" title="Export Matrix as Image">
-                            <i class="bi bi-camera"></i>
+                        <button class="btn btn-sm btn-outline-secondary" id="btn-export-matrix" title="Export Matrix as SVG" aria-label="Export matrix as SVG">
+                            <i class="bi bi-camera" aria-hidden="true"></i>
                         </button>
                     </div>
                 </div>
-                <div id="matrix-legend-bar" class="matrix-legend-bar hidden"></div>
-                <div id="matrix-container" class="matrix-wrapper"></div>
-                <div id="matrix-no-results" class="hidden text-center py-5">
-                    <i class="bi bi-search empty-search-icon"></i>
-                    <h5 class="mt-3 text-on-surface-secondary">No matching techniques</h5>
-                    <p class="text-on-surface-tertiary text-sm">Try a different search term</p>
+                <div class="matrix-content-grid">
+                    <section class="matrix-map-panel" aria-labelledby="matrix-map-title">
+                        <div class="matrix-panel-head">
+                            <strong id="matrix-map-title">Coverage map</strong>
+                            <div id="matrix-legend-bar" class="matrix-legend-bar hidden" aria-label="Matrix legend"></div>
+                        </div>
+                        <div class="matrix-panel-body">
+                            <div id="matrix-coverage-strip" class="matrix-coverage-strip" aria-label="Coverage summary">
+                                <div class="matrix-stat-tile"><strong id="matrix-stat-covered">0</strong><span>techniques with logic</span></div>
+                                <div class="matrix-stat-tile"><strong id="matrix-stat-queries">0</strong><span>linked queries</span></div>
+                                <div class="matrix-stat-tile"><strong id="matrix-stat-sigma">0</strong><span>Sigma candidates</span></div>
+                                <div class="matrix-stat-tile"><strong id="matrix-stat-gaps">0</strong><span>priority gaps</span></div>
+                                <div class="matrix-stat-tile"><strong id="matrix-stat-platforms">0</strong><span>active platforms</span></div>
+                            </div>
+                            <div id="matrix-container" class="matrix-wrapper"></div>
+                            <div id="matrix-no-results" class="hidden text-center py-5">
+                                <i class="bi bi-search empty-search-icon"></i>
+                                <h5 class="mt-3 text-on-surface-secondary">No matching techniques</h5>
+                                <p class="text-on-surface-tertiary text-sm">Try a different search term</p>
+                            </div>
+                        </div>
+                    </section>
+                    <aside id="matrix-inspector" class="matrix-inspector-panel" aria-live="polite" aria-label="Selected technique inspector">
+                        <div class="matrix-inspector-title-card">
+                            <span class="matrix-inspector-chip">Selection</span>
+                            <h3>No technique selected</h3>
+                            <p>Select a technique in the matrix to inspect procedures, linked queries, Sigma candidates, mitigations and coverage state without losing browsing context.</p>
+                        </div>
+                    </aside>
                 </div>
             </div>
 
-            <div id="queries-view" class="view-section hidden">
+            <div id="queries-view" class="view-section hidden queries-workbench-view">
                 <div class="view-header">
                     <div>
-                        <h4 class="view-title">Query Library</h4>
+                        <h4 class="view-title">Query library</h4>
                         <p class="view-subtitle text-on-surface-secondary" id="queries-subtitle"></p>
                     </div>
                     <button class="btn btn-sm btn-primary" id="btn-add-query-global">
                         <i class="bi bi-plus-lg mr-1"></i>Add Query
                     </button>
                 </div>
-                <div class="search-container mb-3">
+                <div class="search-container queries-command-bar mb-3" aria-label="Query search and filters">
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
-                        <input type="text" id="query-search-input" class="form-control border-start-0" placeholder="Search queries...">
-                        <select id="query-language-filter" class="form-select query-language-filter">
+                        <input type="text" id="query-search-input" class="form-control border-start-0" aria-label="Search detection queries" placeholder="Search query code, Sigma title, MITRE ID, source, or description...">
+                        <select id="query-language-filter" class="form-select query-language-filter" aria-label="Filter queries by language">
                             <option value="all">All Languages</option>
                             <option value="splunk">Splunk</option>
                             <option value="kql">KQL</option>
@@ -305,48 +355,48 @@
                     <i class="bi bi-info-circle"></i>
                     <span>Queries stored here are drafts and may not reflect the final version deployed to your SIEM/EDR.</span>
                 </div>
-                <div id="queries-controls"></div>
-                <div class="queries-view-toggle mb-2">
+                <div class="queries-view-toggle mb-2" aria-label="Query workspace view mode">
                     <button class="btn btn-sm btn-outline-secondary active" id="btn-queries-cards">
-                        <i class="bi bi-card-list"></i> Cards
+                        <i class="bi bi-card-list"></i> Records
                     </button>
                     <button class="btn btn-sm btn-outline-secondary" id="btn-queries-heatmap">
                         <i class="bi bi-grid-3x3-gap"></i> Heatmap
                     </button>
                 </div>
+                <div id="queries-controls"></div>
                 <div id="queries-list"></div>
                 <div id="queries-heatmap" class="queries-heatmap hidden"></div>
             </div>
 
-            <div id="groups-view" class="view-section hidden">
+            <div id="groups-view" class="view-section hidden entity-workbench-view entity-groups-view">
                 <div class="view-header">
                     <div>
                         <h4 class="view-title">Adversary Groups</h4>
                         <p class="view-subtitle text-on-surface-secondary" id="groups-subtitle"></p>
                     </div>
                 </div>
-                <div class="search-container mb-3">
+                <div class="search-container entity-command-bar mb-3" aria-label="Group search">
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
-                        <input type="text" id="groups-search-input" class="form-control border-start-0" placeholder="Search groups by name, alias, or ID...">
+                        <input type="text" id="groups-search-input" class="form-control border-start-0" aria-label="Search adversary groups" placeholder="Search group, alias, ID, description, or contributor...">
                     </div>
                 </div>
                 <div id="groups-controls"></div>
                 <div id="groups-list" class="groups-grid"></div>
             </div>
 
-            <div id="software-view" class="view-section hidden">
+            <div id="software-view" class="view-section hidden entity-workbench-view entity-software-view">
                 <div class="view-header">
                     <div>
-                        <h4 class="view-title">Software</h4>
+                        <h4 class="view-title">Software Catalogue</h4>
                         <p class="view-subtitle text-on-surface-secondary" id="software-subtitle"></p>
                     </div>
                 </div>
-                <div class="search-container mb-3">
+                <div class="search-container entity-command-bar mb-3" aria-label="Software search and filters">
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
-                        <input type="text" id="software-search-input" class="form-control border-start-0" placeholder="Search software by name or ID...">
-                        <select id="software-type-filter" class="form-select software-type-filter">
+                        <input type="text" id="software-search-input" class="form-control border-start-0" aria-label="Search software" placeholder="Search software, malware, tool, ID, platform, or description...">
+                        <select id="software-type-filter" class="form-select software-type-filter" aria-label="Filter software by type">
                             <option value="all">All Types</option>
                             <option value="tool">Tools</option>
                             <option value="malware">Malware</option>
@@ -357,24 +407,24 @@
                 <div id="software-list" class="software-grid"></div>
             </div>
 
-            <div id="mitigations-view" class="view-section hidden">
+            <div id="mitigations-view" class="view-section hidden mitigation-workbench-view">
                 <div class="view-header">
                     <div>
-                        <h4 class="view-title">Mitigations</h4>
+                        <h4 class="view-title">Mitigation coverage</h4>
                         <p class="view-subtitle text-on-surface-secondary" id="mitigations-subtitle"></p>
                     </div>
                 </div>
-                <div class="search-container mb-3">
+                <div class="search-container mitigation-command-bar mb-3" aria-label="Mitigation search">
                     <div class="input-group">
                         <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-on-surface-tertiary"></i></span>
-                        <input type="text" id="mitigations-search-input" class="form-control border-start-0" placeholder="Search mitigations, techniques, or IDs...">
+                        <input type="text" id="mitigations-search-input" class="form-control border-start-0" aria-label="Search mitigations" placeholder="Search mitigation, technique, tactic, platform, ID, or description...">
                     </div>
                 </div>
                 <div id="mitigations-controls"></div>
                 <div id="mitigations-list" class="mitigations-grid"></div>
             </div>
 
-            <div id="reports-view" class="view-section hidden">
+            <div id="reports-view" class="view-section hidden reports-workbench-view">
                 <div id="reports-list"></div>
                 <div id="reports-empty" class="empty-state hidden">
                     <i class="bi bi-file-earmark-text"></i>
@@ -385,44 +435,45 @@
 
 
             <!-- SIGMA RULES EXPLORER VIEW -->
-            <div id="sigma-view" class="view-section hidden">
+            <div id="sigma-view" class="view-section hidden sigma-workbench-view">
                 <div class="view-header mb-3">
                     <div>
-                        <h4 class="view-title">SigmaHQ Rules Explorer</h4>
-                        <p class="view-subtitle text-on-surface-secondary">High-fidelity detection engineering catalog mapped to ATT&CK techniques, tactics, and log sources.</p>
+                        <h4 class="view-title">Sigma Rule Triage</h4>
+                        <p class="view-subtitle text-on-surface-secondary">Review SigmaHQ rules from triage to ATT&amp;CK mapping, query translation, and deployable detection candidates.</p>
                     </div>
                 </div>
 
-                <!-- STATISTICS DASHBOARD -->
-                <div id="sigma-stats-dashboard" class="sigma-stats-dashboard"></div>
+                <div class="sigma-command-deck">
+                    <!-- STATISTICS DASHBOARD -->
+                    <div id="sigma-stats-dashboard" class="sigma-stats-dashboard"></div>
 
-                <!-- HYDRATION STATUS INDICATOR -->
-                <div id="sigma-hydrate-status" class="sigma-hydrate-status hidden">
-                    <i class="bi bi-database"></i> Initializing...
-                </div>
+                    <!-- HYDRATION STATUS INDICATOR -->
+                    <div id="sigma-hydrate-status" class="sigma-hydrate-status hidden">
+                        <i class="bi bi-database"></i> Initializing...
+                    </div>
 
-                <!-- SYNC PROGRESS BAR (hidden by default) -->
-                <div id="sigma-sync-container" class="sigma-sync-container hidden">
-                    <div class="sigma-sync-progress-wrapper">
-                        <div class="sigma-sync-details">
-                            <span class="sigma-sync-status">
-                                <i class="bi bi-arrow-repeat rotate-spin sigma-sync-icon"></i>
-                                <span class="sigma-sync-status-text">Initializing...</span>
-                            </span>
-                            <span class="sigma-sync-pct">0%</span>
-                        </div>
-                        <div class="sigma-sync-bar-outer">
-                            <div class="sigma-sync-bar-inner"></div>
+                    <!-- SYNC PROGRESS BAR (hidden by default) -->
+                    <div id="sigma-sync-container" class="sigma-sync-container hidden">
+                        <div class="sigma-sync-progress-wrapper">
+                            <div class="sigma-sync-details">
+                                <span class="sigma-sync-status">
+                                    <i class="bi bi-arrow-repeat rotate-spin sigma-sync-icon"></i>
+                                    <span class="sigma-sync-status-text">Initializing...</span>
+                                </span>
+                                <span class="sigma-sync-pct">0%</span>
+                            </div>
+                            <div class="sigma-sync-bar-outer">
+                                <div class="sigma-sync-bar-inner"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- TOP CONTROL BAR -->
-                <div class="sigma-top-bar">
+
+                    <!-- TOP CONTROL BAR -->
+                    <div class="sigma-top-bar">
                     <div class="sigma-top-bar-left">
                         <div class="sigma-search-wrapper">
                             <i class="bi bi-search"></i>
-                            <input type="text" id="sigma-search-input" placeholder="Search rules by title, keyword, ID, or technique...">
+                            <input type="text" id="sigma-search-input" aria-label="Search Sigma rules" placeholder="Search rule title, CVE, ATT&amp;CK ID, product, service, or keyword...">
                         </div>
                         
                         <div class="sigma-multi-select" id="sigma-multi-logsource">
@@ -435,7 +486,7 @@
                             </div>
                         </div>
                         
-                        <select id="sigma-tactic-filter" class="sigma-select-filter">
+                        <select id="sigma-tactic-filter" class="sigma-select-filter" aria-label="Filter Sigma rules by tactic">
                             <option value="all">All Tactics</option>
                             <option value="Initial Access">Initial Access</option>
                             <option value="Execution">Execution</option>
@@ -472,14 +523,14 @@
                             </div>
                         </details>
                     </div>
-                </div>
+                    </div>
 
-                <!-- ADDITIONAL FILTERS ROW -->
-                <details class="sigma-advanced-filters">
+                    <!-- ADDITIONAL FILTERS ROW -->
+                    <details class="sigma-advanced-filters">
                     <summary><i class="bi bi-sliders"></i> Advanced filters <span>severity, link state, release changes, products, date, sort</span></summary>
                     <div class="sigma-filters-row">
                         <label>Refine:</label>
-                        <select id="sigma-level-filter" class="sigma-select-filter">
+                        <select id="sigma-level-filter" class="sigma-select-filter" aria-label="Filter Sigma rules by severity">
                             <option value="all">All Severity</option>
                             <option value="informational">Informational</option>
                             <option value="low">Low</option>
@@ -487,12 +538,12 @@
                             <option value="high">High</option>
                             <option value="critical">Critical</option>
                         </select>
-                        <select id="sigma-coverage-filter" class="sigma-select-filter">
+                        <select id="sigma-coverage-filter" class="sigma-select-filter" aria-label="Filter Sigma rules by linked query state">
                             <option value="all">All Query Links</option>
                             <option value="active">Linked Queries</option>
                             <option value="gap">Unlinked Rules</option>
                         </select>
-                        <select id="sigma-change-filter" class="sigma-select-filter">
+                        <select id="sigma-change-filter" class="sigma-select-filter" aria-label="Filter Sigma rules by release change state">
                             <option value="all">All Changes</option>
                             <option value="new">New</option>
                             <option value="update">Updated</option>
@@ -507,11 +558,11 @@
                                 <!-- Checkboxes injected dynamically -->
                             </div>
                         </div>
-                        <select id="sigma-date-filter" class="sigma-select-filter">
+                        <select id="sigma-date-filter" class="sigma-select-filter" aria-label="Filter Sigma rules by date">
                             <option value="all">All Dates</option>
                             <option value="new">New Since Sync</option>
                         </select>
-                        <select id="sigma-sort-select" class="sigma-select-filter">
+                        <select id="sigma-sort-select" class="sigma-select-filter" aria-label="Sort Sigma rules">
                             <option value="default">Sort: Default</option>
                             <option value="az">Sort: A -> Z</option>
                             <option value="za">Sort: Z -> A</option>
@@ -520,12 +571,20 @@
                             <option value="date-desc">Sort: Newest First</option>
                         </select>
                     </div>
-                </details>
+                    </details>
+                </div>
 
                 <!-- MAIN WORKSPACE -->
                 <div class="sigma-layout-container">
                     <!-- Rules List -->
                     <div class="sigma-list-wrapper">
+                        <div class="sigma-panel-heading">
+                            <div>
+                                <span class="sigma-panel-kicker">Release feed</span>
+                                <h5>SigmaHQ rules by month</h5>
+                            </div>
+                            <span class="sigma-panel-note">Select a rule to inspect</span>
+                        </div>
                         <div id="sigma-feed-grid" class="sigma-grid"></div>
                     </div>
                     <!-- Rule Details Workspace -->
@@ -799,6 +858,10 @@
                         <label class="form-label archive-query-modal-label">Archive Reason <span class="required-marker">*</span></label>
                         <textarea id="archive-reason" class="form-control archive-query-reason" rows="3" placeholder="Why is this query being archived? (e.g., replaced by new detection, no longer relevant, high false positives)"></textarea>
                     </div>
+                    <div class="form-check archive-siem-check">
+                        <input class="form-check-input" type="checkbox" id="archive-implemented-siem">
+                        <label class="form-check-label" for="archive-implemented-siem">Implemented into SIEM</label>
+                    </div>
                 </div>
                 <div class="modal-footer archive-query-modal-footer">
                     <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
@@ -992,14 +1055,14 @@
                                 <div class="mb-2">
                                     <label class="form-label text-xs mb-1 export-option-label">Accent Color Picker</label>
                                     <div class="d-flex align-items-center gap-2">
-                                        <input type="color" class="form-control form-control-color border-0 p-0 export-color-picker" id="export-banner-hue" value="#7c3aed" title="Choose Accent Color">
+                                        <input type="color" class="form-control form-control-color border-0 p-0 export-color-picker" id="export-banner-hue" value="#89b7ae" title="Choose Accent Color">
                                         <div class="flex-grow-1">
-                                            <input type="text" class="form-control form-control-sm text-xs font-monospace export-color-text" id="export-banner-hue-text" value="#7c3aed" readonly>
+                                            <input type="text" class="form-control form-control-sm text-xs font-monospace export-color-text" id="export-banner-hue-text" value="#89b7ae" readonly>
                                         </div>
                                     </div>
                                     <div class="form-check form-switch mt-2">
                                         <input class="form-check-input" type="checkbox" id="export-use-nebula-tint" checked>
-                                        <label class="form-check-label text-xs export-option-label" for="export-use-nebula-tint">Apply Cyber-Nebula gradient tinting</label>
+                                        <label class="form-check-label text-xs export-option-label" for="export-use-nebula-tint">Apply analyst-workbench gradient tinting</label>
                                     </div>
                                 </div>
                             </div>

@@ -102,13 +102,13 @@ export function renderMatrix() {
     const parentId = (t) => t.external_references?.[0]?.external_id?.split('.')[0];
 
     let hasAnyVisible = false;
-    let html = '<table class="matrix-table"><thead><tr>';
+    let html = '<table class="matrix-table" aria-describedby="matrix-subtitle"><thead><tr>';
     let tacticIndex = 0;
     for (const tactic of tacticOrder) {
         const short = tactic.x_mitre_shortname;
         const count = techniqueMap[short]?.length || 0;
         const spectrumColor = getSpectrumColor(tacticIndex);
-        html += `<th style="border-top: 3px solid ${spectrumColor};"><div class="font-bold">${tactic.name}</div><div class="tactic-short">${short}</div><div class="tactic-count">${count} techniques</div></th>`;
+        html += `<th scope="col" style="border-top: 3px solid ${spectrumColor};"><div class="font-bold">${tactic.name}</div><div class="tactic-short">${short}</div><div class="tactic-count">${count} techniques</div></th>`;
         tacticIndex++;
     }
     html += '</tr></thead><tbody><tr>';
@@ -135,7 +135,7 @@ export function renderMatrix() {
         });
         if (parentTechs.length > 0) hasAnyVisible = true;
 
-        html += '<td><div>';
+        html += `<td><div class="matrix-column" data-tactic="${escapeHtml(short)}">`;
         for (const tech of parentTechs) {
             const id = tech.external_references?.[0]?.external_id || '';
             const subs = (subTechsByParent.get(id) || []).sort((a, b) => {
@@ -148,6 +148,11 @@ export function renderMatrix() {
         html += '</div></td>';
     }
     html += '</tr></tbody></table>';
+
+    if (!state.matrixSelectedTechniqueId && filtered.length > 0) {
+        state.matrixSelectedTechniqueId = filtered.find(t => !t.x_mitre_is_subtechnique)?.external_references?.[0]?.external_id ||
+            filtered[0]?.external_references?.[0]?.external_id || '';
+    }
 
     container.innerHTML = window.DOMSanitizer ? window.DOMSanitizer.sanitize(html) : html;
     noResults.classList.toggle('hidden', hasAnyVisible);
@@ -213,6 +218,125 @@ export function renderMatrix() {
             </div>
         `).join('');
     }
+
+    updateMatrixWorkbenchStats(filtered);
+    updateMatrixInspector();
+}
+
+function updateMatrixWorkbenchStats(filteredTechniques) {
+    const layerTechniques = state.currentLayer?.techniques || [];
+    const covered = layerTechniques.filter(ann => ann?.color || ann?.queries?.length > 0).length;
+    const queryCount = layerTechniques.reduce((sum, ann) => sum + (ann?.queries?.length || 0), 0);
+    const sigmaCount = layerTechniques.reduce((sum, ann) => sum + (ann?.queries || []).filter(q => q?.sentinelCandidate || q?.sigmaRuleId || q?.sigmaRuleTitle || q?.sigmaRuleUrl).length, 0);
+    const visibleTechniqueIds = new Set(filteredTechniques.map(t => t.external_references?.[0]?.external_id).filter(Boolean));
+    const coveredTechniqueIds = new Set(layerTechniques.filter(ann => ann?.color || ann?.queries?.length > 0).map(ann => ann.techniqueID));
+    const visibleGaps = [...visibleTechniqueIds].filter(id => !coveredTechniqueIds.has(id)).length;
+
+    setText('matrix-stat-covered', covered);
+    setText('matrix-stat-queries', queryCount);
+    setText('matrix-stat-sigma', sigmaCount);
+    setText('matrix-stat-gaps', visibleGaps);
+    setText('matrix-stat-platforms', state.activePlatforms?.size || 0);
+}
+
+function setText(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = String(value);
+}
+
+function selectMatrixTechnique(techniqueId) {
+    state.matrixSelectedTechniqueId = techniqueId;
+    document.querySelectorAll('.technique-cell.matrix-selected-technique').forEach(cell => cell.classList.remove('matrix-selected-technique'));
+    document.querySelectorAll(`.technique-cell[data-id="${cssEscape(techniqueId)}"]`).forEach(cell => cell.classList.add('matrix-selected-technique'));
+    updateMatrixInspector();
+}
+
+function cssEscape(value) {
+    if (window.CSS?.escape) return window.CSS.escape(value);
+    return String(value || '').replace(/"/g, '\\"');
+}
+
+function updateMatrixInspector() {
+    const inspector = document.getElementById('matrix-inspector');
+    if (!inspector) return;
+
+    const selectedId = state.matrixSelectedTechniqueId;
+    const technique = state.techniquesByExternalId?.get(selectedId) || state.techniques.find(t => t.external_references?.[0]?.external_id === selectedId);
+    if (!technique) {
+        inspector.innerHTML = `
+            <div class="matrix-inspector-title-card">
+                <span class="matrix-inspector-chip">Selection</span>
+                <h3>No technique selected</h3>
+                <p>Select a technique in the matrix to inspect procedures, linked queries, Sigma candidates, mitigations and coverage state without losing browsing context.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const id = technique.external_references?.[0]?.external_id || selectedId;
+    const ann = getTechniqueAnnotation(id);
+    const queries = ann?.queries || [];
+    const activeQueries = queries.filter(q => !q.archived);
+    const sigmaQueries = queries.filter(q => q?.sentinelCandidate || q?.sigmaRuleId || q?.sigmaRuleTitle || q?.sigmaRuleUrl);
+    const subTechniques = state.techniques.filter(t => t.x_mitre_is_subtechnique && t.external_references?.[0]?.external_id?.startsWith(`${id}.`));
+    const coveredSubs = subTechniques.filter(t => {
+        const subId = t.external_references?.[0]?.external_id;
+        const subAnn = getTechniqueAnnotation(subId);
+        return subAnn?.color || subAnn?.queries?.length > 0;
+    }).length;
+    const coverageTotal = subTechniques.length || 1;
+    const coverageValue = subTechniques.length ? Math.round((coveredSubs / coverageTotal) * 100) : (queries.length > 0 || ann?.color ? 100 : 0);
+    const relationships = state.relationshipsByTarget?.get(technique.id) || [];
+    const linkedProcedures = relationships.filter(rel => rel.relationship_type === 'uses').length;
+    const linkedMitigations = relationships.filter(rel => {
+        const source = state.mitigationsByStixId?.get(rel.source_ref);
+        return Boolean(source);
+    }).length;
+    const tactics = (technique.kill_chain_phases || [])
+        .filter(phase => phase.kill_chain_name === 'mitre-attack')
+        .map(phase => phase.phase_name.replace(/-/g, ' '));
+    const tacticLabel = tactics[0] || 'Technique';
+    const priorityClass = coverageValue === 0 ? 'bad' : coverageValue < 60 ? 'warn' : 'good';
+    const priorityLabel = coverageValue === 0 ? 'High' : coverageValue < 60 ? 'Medium' : 'Covered';
+    const queryRows = queries.slice(0, 4).map(query => `
+        <div class="matrix-link-row">
+            <code>${escapeHtml((query.language || query.type || 'query').slice(0, 4).toUpperCase())}</code>
+            <span>${escapeHtml(query.name || query.title || 'Untitled detection logic')}</span>
+            <span class="matrix-status ${query.archived ? 'warn' : 'good'}">${query.archived ? 'stale' : 'live'}</span>
+        </div>
+    `).join('') || '<div class="matrix-empty-link">No linked queries yet.</div>';
+
+    inspector.innerHTML = `
+        <div class="matrix-inspector-title-card">
+            <div class="matrix-inspector-chips">
+                <span class="matrix-inspector-chip">${escapeHtml(id)}</span>
+                <span class="matrix-inspector-chip">${escapeHtml(tacticLabel)}</span>
+            </div>
+            <h3>${escapeHtml(technique.name || id)}</h3>
+            <p>${escapeHtml(stripHtml(technique.description || 'Review linked detection logic, procedures and coverage state for the selected technique.'))}</p>
+        </div>
+        <div class="matrix-inspector-body">
+            <div class="matrix-kv"><span>Coverage</span><strong>${subTechniques.length ? `${coveredSubs} / ${subTechniques.length}` : `${coverageValue}%`}</strong></div>
+            <div class="matrix-coverage-bar" aria-label="Coverage ${coverageValue} percent"><span style="width:${coverageValue}%"></span></div>
+            <div class="matrix-kv"><span>Linked queries</span><strong>${activeQueries.length} / ${queries.length}</strong></div>
+            <div class="matrix-kv"><span>Sigma candidates</span><strong>${sigmaQueries.length}</strong></div>
+            <div class="matrix-kv"><span>Linked procedures</span><strong>${linkedProcedures}</strong></div>
+            <div class="matrix-kv"><span>Mitigations</span><strong>${linkedMitigations}</strong></div>
+            <div class="matrix-kv"><span>Priority</span><strong class="matrix-priority-${priorityClass}">${priorityLabel}</strong></div>
+            <div class="matrix-link-stack">${queryRows}</div>
+            <button type="button" class="btn btn-sm btn-primary matrix-open-detail" data-technique-id="${escapeHtml(id)}">
+                <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i> Open full details
+            </button>
+        </div>
+    `;
+
+    inspector.querySelector('.matrix-open-detail')?.addEventListener('click', () => showTechniqueModal(id));
+}
+
+function stripHtml(value) {
+    const div = document.createElement('div');
+    div.innerHTML = value;
+    return div.textContent || div.innerText || '';
 }
 
 function handleMatrixInteraction(event) {
@@ -224,7 +348,7 @@ function handleMatrixInteraction(event) {
     }
 
     const cell = event.target.closest('.technique-cell[data-id]');
-    if (cell) showTechniqueModal(cell.dataset.id);
+    if (cell) selectMatrixTechnique(cell.dataset.id);
 }
 
 function handleMatrixKeyboardInteraction(event) {
@@ -241,7 +365,7 @@ function handleMatrixKeyboardInteraction(event) {
     const cell = event.target.closest('.technique-cell[data-id]');
     if (!cell || event.target !== cell) return;
     event.preventDefault();
-    showTechniqueModal(cell.dataset.id);
+    selectMatrixTechnique(cell.dataset.id);
 }
 
 function safeId(value) {
@@ -287,12 +411,16 @@ export function buildTechniqueCell(tech, subs = []) {
     
     const autoColor = getAutoColorForTechnique(id, subs);
     const ann = getTechniqueAnnotation(id);
+    const queryCount = ann?.queries?.length || 0;
+    const activeQueryCount = ann?.queries?.filter(q => !q.archived).length || 0;
     const effectiveColor = state.autoColorByQueries ? autoColor : ann?.color;
     const annotatedClass = effectiveColor ? 'annotated' : '';
     const focusedClass = state.matrixFocusTechniques?.has(id) ? 'matrix-focused-technique' : '';
+    const queryClass = activeQueryCount > 0 ? 'has-active-queries' : (queryCount > 0 ? 'has-archived-queries' : 'has-no-queries');
+    const subCountClass = hasSubs ? 'has-subtechniques' : 'no-subtechniques';
     const bgColor = effectiveColor ? effectiveColor : '';
-    const textColor = effectiveColor ? getContrastColor(effectiveColor.replace(/80$/, '')) : '';
-    const colorStyle = effectiveColor ? `style="background: ${bgColor}; color: ${textColor};"` : '';
+    const textColor = effectiveColor ? '#e9efea' : '';
+    const colorStyle = effectiveColor ? `style="--tech-fill: ${bgColor}; --tech-text: ${textColor}; background: ${bgColor}; color: ${textColor};"` : '';
     
     const hasSentinelCandidate = ann?.queries?.some(q => q.sentinelCandidate);
     const sentinelBadge = hasSentinelCandidate ? '<span class="matrix-sentinel-badge" title="Has Sentinel candidate queries"><i class="bi bi-robot"></i></span>' : '';
@@ -311,9 +439,17 @@ export function buildTechniqueCell(tech, subs = []) {
     const isNew = state.changelogDiff?.added?.techniques?.has(id);
     const newBadge = isNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm mr-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: top;">NEW</span>' : '';
 
-    let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass} ${focusedClass}" data-id="${id}" role="button" tabindex="0" aria-label="View technique ${escapeHtml(id)} ${escapeHtml(name)}" ${colorStyle}>
+    const metaItems = [];
+    if (hasSubs) metaItems.push(`<span><i class="bi bi-diagram-2"></i>${subs.length}</span>`);
+    if (queryCount > 0) metaItems.push(`<span><i class="bi bi-code-slash"></i>${activeQueryCount}/${queryCount}</span>`);
+    const metaHtml = metaItems.length ? `<div class="tech-meta" aria-hidden="true">${metaItems.join('')}</div>` : '';
+
+    const selectedClass = state.matrixSelectedTechniqueId === id ? 'matrix-selected-technique' : '';
+
+    let html = `<div class="technique-cell ${hasSubs ? 'has-children' : ''} ${annotatedClass} ${focusedClass} ${selectedClass} ${queryClass} ${subCountClass}" data-id="${id}" data-query-count="${queryCount}" data-active-query-count="${activeQueryCount}" data-sub-count="${subs.length}" role="button" tabindex="0" aria-label="Inspect technique ${escapeHtml(id)} ${escapeHtml(name)}" ${colorStyle}>
         <div class="tech-id" ${textColor ? `style="color: ${textColor};"` : ''}>${displayId}</div>
         <div class="tech-name" ${textColor ? `style="color: ${textColor};"` : ''}>${displayName}</div>
+        ${metaHtml}
         <div class="matrix-badges">
             ${newBadge}${sentinelBadge}
             ${archivedBadge}
@@ -329,21 +465,28 @@ export function buildTechniqueCell(tech, subs = []) {
             const subName = s.name;
             const subAutoColor = getAutoColorForTechnique(subId, []);
             const subAnn = getTechniqueAnnotation(subId);
+            const subQueryCount = subAnn?.queries?.length || 0;
+            const subActiveQueryCount = subAnn?.queries?.filter(q => !q.archived).length || 0;
             const subEffectiveColor = state.autoColorByQueries ? subAutoColor : subAnn?.color;
             const subAnnotated = subEffectiveColor ? 'annotated' : '';
             const subFocusedClass = state.matrixFocusTechniques?.has(subId) ? 'matrix-focused-technique' : '';
+            const subQueryClass = subActiveQueryCount > 0 ? 'has-active-queries' : (subQueryCount > 0 ? 'has-archived-queries' : 'has-no-queries');
             const subBgColor = subEffectiveColor ? subEffectiveColor : '';
-            const subTextColor = subEffectiveColor ? getContrastColor(subEffectiveColor.replace(/80$/, '')) : '';
-            const subColor = subEffectiveColor ? `style="background: ${subBgColor}; color: ${subTextColor};"` : '';
+            const subTextColor = subEffectiveColor ? '#e9efea' : '';
+            const subColor = subEffectiveColor ? `style="--tech-fill: ${subBgColor}; --tech-text: ${subTextColor}; background: ${subBgColor}; color: ${subTextColor};"` : '';
             const subDisplayId = highlightText(subId, state.matrixSearchQuery);
             const subDisplayName = highlightText(subName, state.matrixSearchQuery);
             
             const isSubNew = state.changelogDiff?.added?.techniques?.has(subId);
             const subNewBadge = isSubNew ? '<span class="badge bg-success text-xxs px-1 py-0 shadow-sm ml-1" title="Added in this version" style="font-size: 0.5rem; vertical-align: middle;">NEW</span>' : '';
 
-            return `<div class="technique-cell sub-technique ${subAnnotated} ${subFocusedClass}" data-id="${subId}" role="button" tabindex="0" aria-label="View technique ${escapeHtml(subId)} ${escapeHtml(subName)}" ${subColor}>
+            const subMetaHtml = subQueryCount > 0 ? `<span class="sub-tech-meta" aria-hidden="true"><i class="bi bi-code-slash"></i>${subActiveQueryCount}/${subQueryCount}</span>` : '';
+
+            const selectedSubClass = state.matrixSelectedTechniqueId === subId ? 'matrix-selected-technique' : '';
+
+            return `<div class="technique-cell sub-technique ${subAnnotated} ${subFocusedClass} ${selectedSubClass} ${subQueryClass}" data-id="${subId}" data-query-count="${subQueryCount}" data-active-query-count="${subActiveQueryCount}" role="button" tabindex="0" aria-label="Inspect technique ${escapeHtml(subId)} ${escapeHtml(subName)}" ${subColor}>
                 <span class="sub-connector"></span>
-                <span class="tech-id" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayId}</span> <span class="tech-name" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayName}</span>${subNewBadge}
+                <span class="tech-id" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayId}</span> <span class="tech-name" ${subTextColor ? `style="color: ${subTextColor};"` : ''}>${subDisplayName}</span>${subNewBadge}${subMetaHtml}
             </div>`;
         }).join('');
         html += `</div>`;

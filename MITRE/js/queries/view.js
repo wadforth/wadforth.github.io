@@ -5,6 +5,7 @@ export let queriesSortDir = 'desc';
 export let queriesViewMode = 'grid';
 export let queriesShowFavoritesOnly = false;
 export let queriesShowHeatmap = false;
+export let selectedQueryId = null;
 
 export function getDateGroup(timestamp) {
     if (!timestamp) return 'older';
@@ -13,13 +14,17 @@ export function getDateGroup(timestamp) {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const yesterdayStart = todayStart - 86400000;
     const weekStart = todayStart - (now.getDay() * 86400000);
+    const lastWeekStart = weekStart - (7 * 86400000);
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime();
     
     const ts = date.getTime();
     if (ts >= todayStart) return 'today';
     if (ts >= yesterdayStart) return 'yesterday';
     if (ts >= weekStart) return 'thisWeek';
+    if (ts >= lastWeekStart) return 'lastWeek';
     if (ts >= monthStart) return 'thisMonth';
+    if (ts >= lastMonthStart) return 'lastMonth';
     return 'older';
 }
 
@@ -28,7 +33,9 @@ export function getDateGroupLabel(group) {
         today: 'Today',
         yesterday: 'Yesterday',
         thisWeek: 'This Week',
+        lastWeek: 'Last Week',
         thisMonth: 'This Month',
+        lastMonth: 'Last Month',
         older: 'Older'
     };
     return labels[group] || 'Older';
@@ -39,13 +46,15 @@ export function getDateGroupIcon(group) {
         today: 'bi-calendar-check',
         yesterday: 'bi-calendar-minus',
         thisWeek: 'bi-calendar-week',
+        lastWeek: 'bi-calendar2-week',
         thisMonth: 'bi-calendar-month',
+        lastMonth: 'bi-calendar2-month',
         older: 'bi-clock-history'
     };
     return icons[group] || 'bi-clock-history';
 }
 
-export const DATE_GROUP_ORDER = ['today', 'yesterday', 'thisWeek', 'thisMonth', 'older'];
+export const DATE_GROUP_ORDER = ['today', 'yesterday', 'thisWeek', 'lastWeek', 'thisMonth', 'lastMonth', 'older'];
 
 export function getAllQueries() {
     const queryMap = new Map();
@@ -135,6 +144,10 @@ export function renderQueriesView() {
             return String(q.name || '').toLowerCase().includes(query) ||
                 String(q.query || '').toLowerCase().includes(query) ||
                 String(q.description || '').toLowerCase().includes(query) ||
+                String(q.source || '').toLowerCase().includes(query) ||
+                String(q.language || '').toLowerCase().includes(query) ||
+                String(q.sigmaRuleId || '').toLowerCase().includes(query) ||
+                String(q.sigmaRuleTitle || '').toLowerCase().includes(query) ||
                 techniqueIds.some(id => String(id || '').toLowerCase().includes(query));
         });
     }
@@ -148,34 +161,49 @@ export function renderQueriesView() {
     queries.forEach(q => {
         langCounts[q.language] = (langCounts[q.language] || 0) + 1;
     });
+    const activeQueries = queries.filter(q => !q.archived).length;
+    const archivedQueries = queries.filter(q => q.archived).length;
+    const favoriteQueries = queries.filter(q => q.favorite).length;
+    const sentinelCandidates = queries.filter(q => q.sentinelCandidate).length;
     
     document.getElementById('queries-subtitle').textContent = 
         `${queries.length} quer${queries.length === 1 ? 'y' : 'ies'} across ${techsWithQueries.size} techniques`;
     
-    const statsHtml = `
-        <div class="queries-stats-bar">
-            <div class="queries-stat">
-                <span class="queries-stat-value">${queries.length}</span>
-                <span class="queries-stat-label">Queries</span>
+    if (queries.length === 0) {
+        controlsContainer.innerHTML = '';
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="bi bi-code-slash"></i>
+                <p>${query || lang !== 'all' || queriesShowFavoritesOnly ? 'No queries match your filters.' : 'No queries added yet. Right-click a technique to add one.'}</p>
             </div>
-            <div class="queries-stat">
-                <span class="queries-stat-value">${techsWithQueries.size}</span>
-                <span class="queries-stat-label">Techniques</span>
-            </div>
-            ${Object.entries(langCounts).map(([lang, count]) => `
-                <div class="queries-stat">
-                    <span class="queries-stat-value">${count}</span>
-                    <span class="queries-stat-label">${lang}</span>
+        `;
+        bindQueriesToolbar();
+        return;
+    }
+
+    controlsContainer.innerHTML = '';
+    if (!selectedQueryId || !queries.some(q => q.id === selectedQueryId)) selectedQueryId = sortQueries(queries)[0]?.id || null;
+    container.innerHTML = renderQueryWorkbench(queries, { activeQueries, archivedQueries, favoriteQueries, sentinelCandidates, techCount: techsWithQueries.size, langCounts });
+    bindQueriesToolbar();
+    bindQueryCardActions(queries);
+}
+
+function renderQueryWorkbench(queries, summary) {
+    const sorted = sortQueries(queries);
+    const selected = sorted.find(q => q.id === selectedQueryId) || sorted[0];
+    const language = getSafeQueryLanguage(selected?.language);
+    const techIds = selected?.techniqueIDs || [selected?.techniqueID].filter(Boolean);
+    const mappedCount = techIds.length;
+
+    return `
+        <div class="query-workbench-layout">
+            <aside class="query-record-panel query-panel" aria-label="Query records">
+                <div class="query-panel-head">
+                    <strong>Records</strong>
+                    <span class="query-chip">${queries.length}</span>
                 </div>
-            `).join('')}
-        </div>
-    `;
-    
-    const toolbarHtml = `
-        <div class="queries-toolbar">
-            <div class="queries-toolbar-left">
-                <div class="queries-sort-group">
-                    <label class="queries-sort-label">Sort:</label>
+                <div class="query-record-toolbar">
+                    <label class="queries-sort-label" for="queries-sort-select">Sort</label>
                     <select class="queries-sort-select" id="queries-sort-select">
                         <option value="date" ${queriesSortBy === 'date' ? 'selected' : ''}>Date Created</option>
                         <option value="name" ${queriesSortBy === 'name' ? 'selected' : ''}>Name</option>
@@ -186,71 +214,193 @@ export function renderQueriesView() {
                     <button class="btn btn-sm btn-ghost queries-sort-dir" id="queries-sort-dir" title="Toggle sort direction">
                         <i class="bi bi-sort-${queriesSortDir === 'asc' ? 'up' : 'down'}"></i>
                     </button>
-                </div>
-                <button class="btn btn-sm ${queriesShowFavoritesOnly ? 'btn-warning' : 'btn-ghost'}" id="queries-fav-filter" title="Show favorites only">
-                    <i class="bi bi-star${queriesShowFavoritesOnly ? '-fill' : ''}"></i>
-                </button>
-            </div>
-            <div class="queries-toolbar-right">
-                <div class="btn-group btn-group-sm">
-                    <button class="btn ${queriesViewMode === 'grid' ? 'btn-primary' : 'btn-outline-secondary'}" id="queries-view-grid" title="Grid view">
-                        <i class="bi bi-grid-3x3-gap"></i>
-                    </button>
-                    <button class="btn ${queriesViewMode === 'list' ? 'btn-primary' : 'btn-outline-secondary'}" id="queries-view-list" title="List view">
-                        <i class="bi bi-list-ul"></i>
+                    <button class="btn btn-sm ${queriesShowFavoritesOnly ? 'btn-warning' : 'btn-ghost'}" id="queries-fav-filter" title="Show favorites only">
+                        <i class="bi bi-star${queriesShowFavoritesOnly ? '-fill' : ''}"></i>
                     </button>
                 </div>
-            </div>
+                <div class="query-record-rows">
+                    ${renderQueryRecordRows(sorted, selected?.id)}
+                </div>
+            </aside>
+            <main class="query-code-panel" aria-label="Selected query editor">
+                <div class="query-code-toolbar">
+                    <strong>${escapeHtml(selected?.name || 'Untitled query')}</strong>
+                    <div class="query-code-status">
+                        <span class="query-chip">modified ${escapeHtml(formatShortDate(selected?.lastModified || selected?.created))}</span>
+                    </div>
+                </div>
+                <pre class="query-code-view"><code>${escapeHtml(formatQueryForPreview(selected?.query || '// No query body saved yet'))}</code></pre>
+                <div class="query-code-foot">
+                    <button class="btn btn-outline-secondary btn-copy-query" data-query-id="${escapeHtml(selected?.id || '')}">Copy query</button>
+                    ${selected?.archived
+                        ? `<button class="btn btn-outline-secondary btn-unarchive-query" data-query-id="${escapeHtml(selected?.id || '')}" data-tech="${escapeHtml(selected?.techniqueID || '')}">Restore</button>`
+                        : `<button class="btn btn-outline-secondary btn-archive-query" data-query-id="${escapeHtml(selected?.id || '')}" data-tech="${escapeHtml(selected?.techniqueID || '')}">Archive</button>`
+                    }
+                    <button class="btn btn-primary btn-edit-query" data-query-id="${escapeHtml(selected?.id || '')}">Edit query</button>
+                </div>
+            </main>
+            <aside class="query-side-stack" aria-label="Selected query metadata">
+                <section class="query-panel">
+                    <div class="query-panel-head"><strong>Technique coverage</strong><span class="query-chip">${mappedCount} mapped</span></div>
+                    <div class="query-panel-body">
+                        <div class="query-mini-matrix">${renderQueryMiniMatrix(techIds)}</div>
+                        ${renderSelectedTechniqueChips(techIds)}
+                    </div>
+                </section>
+                <section class="query-panel">
+                    <div class="query-panel-head"><strong>Editable metadata</strong></div>
+                    <div class="query-panel-body">
+                        <div class="query-kv"><span>Language</span><strong>${language.label}</strong></div>
+                        <div class="query-kv"><span>Sentinel candidate</span><strong>${selected?.sentinelCandidate ? 'yes' : 'no'}</strong></div>
+                        <div class="query-kv"><span>Month added</span><strong>${escapeHtml(selected?.monthAdded || 'not set')}</strong></div>
+                        <div class="query-kv"><span>Mapped techniques</span><strong>${mappedCount}</strong></div>
+                        ${selected?.archived && selected?.archiveReason ? `<div class="query-archive-note"><span>Archive reason</span><p>${escapeHtml(selected.archiveReason)}</p></div>` : ''}
+                    </div>
+                </section>
+                <section class="query-panel">
+                    <div class="query-panel-head"><strong>Linked artefacts</strong></div>
+                    <div class="query-panel-body"><div class="query-link-stack">${renderQueryLinkedArtifacts(selected, language, summary)}</div></div>
+                </section>
+            </aside>
         </div>
     `;
-    
-    if (queries.length === 0) {
-        controlsContainer.innerHTML = statsHtml + toolbarHtml;
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="bi bi-code-slash"></i>
-                <p>${query || lang !== 'all' || queriesShowFavoritesOnly ? 'No queries match your filters.' : 'No queries added yet. Right-click a technique to add one.'}</p>
+}
+
+function renderQueryRecordRows(sorted, selectedId) {
+    if (queriesSortBy !== 'date') return sorted.map(q => renderQueryRecordRow(q, selectedId)).join('');
+
+    const groups = groupQueriesByDate(sorted);
+    return DATE_GROUP_ORDER.map(group => {
+        const groupQueries = groups[group] || [];
+        if (groupQueries.length === 0) return '';
+        return `
+            <div class="query-record-date-group">
+                <div class="query-record-date-header"><i class="bi ${getDateGroupIcon(group)}"></i><span>${getDateGroupLabel(group)}</span><span>${groupQueries.length}</span></div>
+                ${groupQueries.map(q => renderQueryRecordRow(q, selectedId)).join('')}
             </div>
         `;
-        bindQueriesToolbar();
-        return;
-    }
-    
-    controlsContainer.innerHTML = statsHtml + toolbarHtml;
-    
-    const groupedQueries = groupQueriesByDate(queries);
-    
-    let cardsHtml = '';
-    for (const group of DATE_GROUP_ORDER) {
-        const groupQueries = groupedQueries[group];
-        if (!groupQueries || groupQueries.length === 0) continue;
-        
-        cardsHtml += `
-            <div class="query-date-group">
-                <div class="query-date-group-header">
-                    <i class="bi ${getDateGroupIcon(group)}"></i>
-                    <span>${getDateGroupLabel(group)}</span>
-                    <span class="query-date-group-count">${groupQueries.length}</span>
-                </div>
-                <div class="query-date-group-content ${queriesViewMode === 'grid' ? 'queries-grid' : 'queries-list-view'}">
-                    ${groupQueries.map(q => renderQueryCard(q)).join('')}
-                </div>
+    }).join('');
+}
+
+function renderQueryRecordRow(q, selectedId) {
+    const techIds = q.techniqueIDs || [q.techniqueID].filter(Boolean);
+    const language = getSafeQueryLanguage(q.language);
+    return `
+        <button type="button" class="query-record-row ${q.id === selectedId ? 'selected' : ''}" data-query-id="${escapeHtml(q.id)}">
+            <div class="query-record-topline"><h4>${escapeHtml(q.name || 'Untitled query')}</h4></div>
+            <p>${escapeHtml(truncateDescription(q.description || q.source || 'Detection logic mapped to ATT&CK coverage.', 112))}</p>
+            <div class="query-meta-line">
+                ${techIds.slice(0, 2).map(id => `<span class="query-chip">${escapeHtml(id)}</span>`).join('')}
+                ${techIds.length > 2 ? `<span class="query-chip" title="${escapeHtml(techIds.join(', '))}">+${techIds.length - 2} more</span>` : ''}
+                <span class="query-chip">${language.label}</span>
+                ${q.archived ? '<span class="query-status warn">archived</span>' : ''}
             </div>
-        `;
+        </button>
+    `;
+}
+
+function renderSelectedTechniqueChips(techIds) {
+    if (!techIds?.length) return '<p class="query-tech-empty">No mapped techniques recorded.</p>';
+    return `
+        <div class="query-tech-chip-grid" aria-label="Mapped techniques">
+            ${techIds.map(id => {
+                const technique = state.techniquesByExternalId?.get(id) || state.techniques.find(t => t.external_references?.[0]?.external_id === id);
+                const name = technique?.name || id;
+                return `<span class="query-tech-chip" title="${escapeHtml(`${id} ${name}`)}"><strong>${escapeHtml(id)}</strong><span>${escapeHtml(name)}</span></span>`;
+            }).join('')}
+        </div>
+    `;
+}
+
+function renderQueryMiniMatrix(techIds) {
+    const mappedTactics = new Set();
+    for (const techId of techIds || []) {
+        const technique = state.techniquesByExternalId?.get(techId) || state.techniques.find(t => t.external_references?.[0]?.external_id === techId);
+        for (const phase of technique?.kill_chain_phases || []) {
+            if (phase.kill_chain_name === 'mitre-attack') mappedTactics.add(phase.phase_name);
+        }
     }
-    
-    container.innerHTML = cardsHtml;
-    bindQueriesToolbar();
-    bindQueryCardActions(queries);
+
+    const tactics = state.tactics
+        .filter(t => t.x_mitre_shortname)
+        .sort((a, b) => (a.x_mitre_order || 0) - (b.x_mitre_order || 0));
+
+    return tactics.map(tactic => {
+        const cls = mappedTactics.has(tactic.x_mitre_shortname) ? 'on' : '';
+        return `<span class="query-mini-cell ${cls}" title="${escapeHtml(tactic.name)}"></span>`;
+    }).join('');
+}
+
+function normalizeQuerySourceToken(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\/sigmahq\.io\/.*\/(rules\/)?/i, '')
+        .replace(/^https?:\/\/github\.com\/sigmahq\/sigma\/blob\/master\/rules\//i, '')
+        .replace(/\.(ya?ml)$/i, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+}
+
+function isDuplicateSigmaSource(query, source) {
+    const rawSource = String(source || '').trim();
+    if (!rawSource) return false;
+    const sigmaUrls = new Set(String(query?.sigmaRuleUrl || '').split('|').map(url => url.trim()).filter(Boolean));
+    if (sigmaUrls.has(rawSource)) return true;
+    const sigmaTokens = new Set([
+        ...String(query?.sigmaRuleUrl || '').split('|'),
+        ...String(query?.sigmaRuleTitle || '').split('|'),
+        ...String(query?.sigmaRuleId || '').split('|')
+    ].map(normalizeQuerySourceToken).filter(Boolean));
+    const sourceToken = normalizeQuerySourceToken(rawSource);
+    return sourceToken && sigmaTokens.has(sourceToken);
+}
+
+function renderQueryLinkedArtifacts(q, language) {
+    const rows = [];
+    const techIds = q?.techniqueIDs || [q?.techniqueID].filter(Boolean);
+    const sigmaTitles = String(q?.sigmaRuleTitle || '').split('|').filter(Boolean);
+    const sigmaIds = String(q?.sigmaRuleId || '').split('|').filter(Boolean);
+    const source = isDuplicateSigmaSource(q, q?.source) ? '' : q?.source;
+
+    if (source) rows.push(['SRC', source]);
+    if (sigmaTitles.length || sigmaIds.length) rows.push(['SIG', sigmaTitles[0] || sigmaIds[0]]);
+    if (techIds.length) rows.push(['MIT', techIds.join(', ')]);
+    if (q?.description) rows.push(['DESC', truncateDescription(q.description, 90)]);
+    if (rows.length === 0) rows.push([language.label.slice(0, 4).toUpperCase(), 'No source, Sigma reference, or description recorded']);
+
+    return rows.map(([label, value]) => `
+        <div class="query-link-row"><code>${escapeHtml(label)}</code><span>${escapeHtml(value)}</span><span></span></div>
+    `).join('');
+}
+
+function formatQueryForPreview(value) {
+    const text = String(value || '');
+    if (text.includes('\n')) return text;
+    if (/\s+\|\s+/.test(text)) {
+        const parts = text.split(/\s+\|\s+/).map(part => part.trim()).filter(Boolean);
+        if (parts.length > 1) return [parts[0], ...parts.slice(1).map(part => `| ${part}`)].join('\n');
+    }
+
+    return text
+        .replace(/\s+(where|project|summarize|extend|join|union|table|stats|eval|search)\s+/gi, '\n$1 ')
+        .trim();
+}
+
+function formatShortDate(value) {
+    if (!value) return 'not recorded';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value).slice(0, 10);
+    return date.toLocaleDateString('en-GB');
 }
 
 export function groupQueriesByDate(queries) {
     const sorted = sortQueries(queries);
-    const groups = { today: [], yesterday: [], thisWeek: [], thisMonth: [], older: [] };
+    const groups = { today: [], yesterday: [], thisWeek: [], lastWeek: [], thisMonth: [], lastMonth: [], older: [] };
     
     for (const q of sorted) {
         const group = getDateGroup(q.created || q.lastModified);
-        groups[group].push(q);
+        (groups[group] || groups.older).push(q);
     }
     
     return groups;
@@ -269,6 +419,13 @@ export function renderQueryCard(q) {
     const techIdList = escapeHtml(techIds.join(', '));
     const techBadges = techIds.map(tid => `<span class="query-tech-ref">${escapeHtml(tid)}</span>`).join('');
     const multiTechLabel = techIds.length > 1 ? `<span class="text-on-surface-tertiary text-xs">+${techIds.length - 1} more</span>` : `<span class="text-on-surface-tertiary text-xs">${escapeHtml(primaryTechName)}</span>`;
+    const sigmaTitles = String(q.sigmaRuleTitle || '').split('|').filter(Boolean);
+    const sigmaIds = String(q.sigmaRuleId || '').split('|').filter(Boolean);
+    const source = isDuplicateSigmaSource(q, q.source) ? '' : q.source;
+    const linkedArtifacts = [
+        source ? `<span class="query-linked-artifact"><i class="bi bi-link-45deg"></i>${escapeHtml(source)}</span>` : '',
+        sigmaIds.length || sigmaTitles.length ? `<span class="query-linked-artifact"><i class="bi bi-shield-check"></i>${escapeHtml(sigmaTitles[0] || sigmaIds[0] || 'Linked Sigma')}${Math.max(sigmaIds.length, sigmaTitles.length) > 1 ? ` +${Math.max(sigmaIds.length, sigmaTitles.length) - 1}` : ''}</span>` : ''
+    ].filter(Boolean).join('');
     
     if (queriesViewMode === 'list') {
         return `
@@ -342,6 +499,7 @@ export function renderQueryCard(q) {
                 </div>
             </div>
             ${q.description ? `<p class="query-card-desc" title="${escapeHtml(cleanDescription(q.description))}">${escapeHtml(truncateDescription(q.description, 150))}</p>` : ''}
+            ${linkedArtifacts ? `<div class="query-linked-artifacts" aria-label="Linked query artefacts">${linkedArtifacts}</div>` : ''}
             ${q.archived && q.archiveReason ? `<div class="query-archive-reason"><i class="bi bi-info-circle"></i> ${escapeHtml(q.archiveReason)}</div>` : ''}
             <div class="query-card-collapsible">
                 <div class="query-card-body">${highlightQuerySyntax(q.query, q.language)}</div>
@@ -421,6 +579,13 @@ export function bindQueriesToolbar() {
     if (queriesList && !queriesList.dataset.expandBound) {
         queriesList.dataset.expandBound = 'true';
         queriesList.addEventListener('click', (e) => {
+            const record = e.target.closest('.query-record-row[data-query-id]');
+            if (record) {
+                selectedQueryId = record.dataset.queryId;
+                renderQueriesView();
+                return;
+            }
+
             const expandBtn = e.target.closest('.btn-expand-query');
             if (expandBtn) {
                 const card = expandBtn.closest('.query-card');

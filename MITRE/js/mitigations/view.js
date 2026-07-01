@@ -4,6 +4,7 @@ export let mitigationsSortBy = 'name';
 export let mitigationsSortDir = 'asc';
 export let mitigationsViewMode = 'grid';
 export let mitigationsStatusFilter = 'all';
+export let selectedMitigationId = null;
 
 function getAlphaSectionLabel(name) {
     const first = String(name || '').trim().charAt(0).toUpperCase();
@@ -33,6 +34,46 @@ export function setMitigationStatus(mitigationId, status) {
     state.currentLayer.mitigationStatus[mitigationId] = status;
     logActivity('mitigation_status', null, `${mitigationId}: ${status}`);
     autoSaveLayer();
+}
+
+function renderCoverageRuler(techniques) {
+    const blocks = techniques.slice(0, 12).map(tech => {
+        const tid = tech.external_references?.[0]?.external_id || '';
+        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+        const hasQuery = ann?.queries && ann.queries.length > 0;
+        return `<span class="${hasQuery ? 'on' : 'gap'}" title="${tid}: ${escapeHtml(tech.name)} (${hasQuery ? 'covered' : 'gap'})"></span>`;
+    }).join('');
+    const filler = Array.from({ length: Math.max(0, 12 - techniques.length) })
+        .map(() => '<span title="No mapped technique"></span>')
+        .join('');
+    return `<div class="mitigation-coverage-ruler" aria-label="Coverage ruler">${blocks}${filler}</div>`;
+}
+
+function getMitigationExternalId(mitigation) {
+    return mitigation?.external_references?.[0]?.external_id || '';
+}
+
+function getMitigationCoverage(mitigation) {
+    const techniques = getMitigationTechniques(mitigation.id);
+    const covered = techniques.filter(t => {
+        const tid = t.external_references?.[0]?.external_id || '';
+        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+        return ann?.queries?.length > 0;
+    });
+    return {
+        techniques,
+        covered,
+        gaps: techniques.filter(t => !covered.includes(t)),
+        coveredCount: covered.length,
+        gapCount: Math.max(0, techniques.length - covered.length),
+        coveragePct: techniques.length ? Math.round((covered.length / techniques.length) * 100) : 0
+    };
+}
+
+function getMitigationStatusMeta(status) {
+    if (status === 'implemented') return { label: 'Implemented', icon: 'bi-check-circle-fill', className: 'implemented' };
+    if (status === 'planned') return { label: 'Planned', icon: 'bi-clock-history', className: 'planned' };
+    return { label: 'Untracked', icon: 'bi-circle', className: 'none' };
 }
 
 export function sortMitigations(mitigations) {
@@ -88,11 +129,15 @@ export function renderMitigationsView() {
             const techs = getMitigationTechniques(m.id);
             const techNames = techs.map(t => t.name.toLowerCase()).join(' ');
             const techIds = techs.map(t => (t.external_references?.[0]?.external_id || '').toLowerCase()).join(' ');
+            const tacticNames = techs.flatMap(t => t.kill_chain_phases || []).map(p => p.phase_name || '').join(' ').toLowerCase();
+            const platforms = techs.flatMap(t => t.x_mitre_platforms || []).join(' ').toLowerCase();
             return m.name.toLowerCase().includes(query) ||
                 (m.description || '').toLowerCase().includes(query) ||
                 (m.external_references?.[0]?.external_id || '').toLowerCase().includes(query) ||
                 techNames.includes(query) ||
-                techIds.includes(query);
+                techIds.includes(query) ||
+                tacticNames.includes(query) ||
+                platforms.includes(query);
         });
     }
     
@@ -107,65 +152,31 @@ export function renderMitigationsView() {
     }).length, 0);
     const uncoveredTechniqueLinks = Math.max(0, totalTechniques - coveredTechniqueLinks);
     
-    const statsHtml = `
-        <div class="mitigations-stats-bar">
-            <div class="mitigations-stat">
-                <span class="mitigations-stat-value">${mitigations.length}</span>
-                <span class="mitigations-stat-label">Mitigations</span>
+    document.getElementById('mitigations-subtitle').textContent = `${mitigations.length} defensive controls mapped to ${totalTechniques} technique links, ${uncoveredTechniqueLinks} open detection gaps`;
+
+    controlsContainer.innerHTML = `
+        <div class="mitigations-filter-row">
+            <div class="mitigations-sort-group">
+                <label class="mitigations-sort-label" for="mitigations-sort-select">Sort</label>
+                <select class="mitigations-sort-select" id="mitigations-sort-select">
+                    <option value="name" ${mitigationsSortBy === 'name' ? 'selected' : ''}>Name</option>
+                    <option value="id" ${mitigationsSortBy === 'id' ? 'selected' : ''}>ID</option>
+                    <option value="techniques" ${mitigationsSortBy === 'techniques' ? 'selected' : ''}>Technique links</option>
+                    <option value="status" ${mitigationsSortBy === 'status' ? 'selected' : ''}>Detection coverage</option>
+                </select>
+                <button class="btn btn-sm btn-ghost mitigations-sort-dir" id="mitigations-sort-dir" title="Toggle sort direction"><i class="bi bi-sort-${mitigationsSortDir === 'asc' ? 'up' : 'down'}"></i></button>
             </div>
-            <div class="mitigations-stat">
-                <span class="mitigations-stat-value" style="color: #198754;">${mappedMitigations}</span>
-                <span class="mitigations-stat-label">Mapped</span>
-            </div>
-            <div class="mitigations-stat">
-                <span class="mitigations-stat-value" style="color: #10b981;">${coveredTechniqueLinks}</span>
-                <span class="mitigations-stat-label">Covered Links</span>
-            </div>
-            <div class="mitigations-stat">
-                <span class="mitigations-stat-value" style="color: #f59e0b;">${uncoveredTechniqueLinks}</span>
-                <span class="mitigations-stat-label">Detection Gaps</span>
-            </div>
-            <div class="mitigations-stat">
-                <span class="mitigations-stat-value">${totalTechniques}</span>
-                <span class="mitigations-stat-label">Technique Links</span>
+            <div class="mitigation-status-filters" aria-label="Mitigation status filters">
+                ${renderMitigationFilterButton('all', 'Status: any')}
+                ${renderMitigationFilterButton('implemented', 'Implemented')}
+                ${renderMitigationFilterButton('planned', 'Planned')}
+                ${renderMitigationFilterButton('none', 'Untracked')}
             </div>
         </div>
     `;
-    
-    const toolbarHtml = `
-        <div class="mitigations-toolbar">
-            <div class="mitigations-toolbar-left">
-                <div class="mitigations-sort-group">
-                    <label class="mitigations-sort-label">Sort:</label>
-                    <select class="mitigations-sort-select" id="mitigations-sort-select">
-                        <option value="name" ${mitigationsSortBy === 'name' ? 'selected' : ''}>Name</option>
-                        <option value="id" ${mitigationsSortBy === 'id' ? 'selected' : ''}>ID</option>
-                        <option value="techniques" ${mitigationsSortBy === 'techniques' ? 'selected' : ''}>Techniques</option>
-                        <option value="status" ${mitigationsSortBy === 'status' ? 'selected' : ''}>Detection Coverage</option>
-                    </select>
-                    <button class="btn btn-sm btn-ghost mitigations-sort-dir" id="mitigations-sort-dir" title="Toggle sort direction">
-                        <i class="bi bi-sort-${mitigationsSortDir === 'asc' ? 'up' : 'down'}"></i>
-                    </button>
-                </div>
-                <div class="mitigation-guidance-note"><i class="bi bi-info-circle"></i> MITRE mitigations are shown as defensive guidance linked to your detection coverage, not as ownership/status tasks.</div>
-            </div>
-            <div class="mitigations-toolbar-right">
-                <div class="btn-group btn-group-sm">
-                    <button class="btn ${mitigationsViewMode === 'grid' ? 'btn-primary' : 'btn-outline-secondary'}" id="mitigations-view-grid" title="Grid view">
-                        <i class="bi bi-grid-3x3-gap"></i>
-                    </button>
-                    <button class="btn ${mitigationsViewMode === 'list' ? 'btn-primary' : 'btn-outline-secondary'}" id="mitigations-view-list" title="List view">
-                        <i class="bi bi-list-ul"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    controlsContainer.innerHTML = statsHtml + toolbarHtml;
     
     if (mitigations.length === 0) {
-        container.className = 'mitigations-grid';
+        container.className = 'mitigation-control-workbench';
         container.innerHTML = `
             <div class="empty-state">
                 <i class="bi bi-shield-check"></i>
@@ -176,124 +187,118 @@ export function renderMitigationsView() {
         return;
     }
     
-    container.className = mitigationsViewMode === 'grid' ? 'mitigations-grid' : 'mitigations-list-view';
-    
-    const cardsHtml = mitigations.map((m, index) => {
+    if (!selectedMitigationId || !mitigations.some(m => m.id === selectedMitigationId)) {
+        selectedMitigationId = mitigations[0]?.id || null;
+    }
+
+    const selected = mitigations.find(m => m.id === selectedMitigationId) || mitigations[0];
+    container.className = 'mitigation-control-workbench';
+    container.innerHTML = `
+        <main class="mitigation-controls-panel" aria-label="Mitigation controls">
+            <div class="mitigation-panel-head"><strong>Controls</strong><span class="mitigation-chip">${mitigations.length} shown</span></div>
+            <div class="mitigation-card-grid">
+                ${renderMitigationCards(mitigations, selected?.id)}
+            </div>
+        </main>
+        <aside class="mitigation-side-stack" aria-label="Selected mitigation">
+            ${renderMitigationInspector(selected)}
+            ${renderMitigationNextWork(selected)}
+        </aside>
+    `;
+    bindMitigationsToolbar();
+    bindMitigationCardActions();
+}
+
+function renderMitigationFilterButton(value, label) {
+    return `<button type="button" class="mitigation-filter-chip ${mitigationsStatusFilter === value ? 'active' : ''}" data-mit-filter="${value}">${escapeHtml(label)}</button>`;
+}
+
+function renderMitigationCards(mitigations, selectedId) {
+    return mitigations.map((m, index) => {
         const sectionLabel = getAlphaSectionLabel(m.name);
         const previousLabel = index > 0 ? getAlphaSectionLabel(mitigations[index - 1].name) : '';
         const sectionHeader = mitigationsSortBy === 'name' && sectionLabel !== previousLabel
-            ? `<div class="az-section-header"><span>${sectionLabel}</span></div>`
+            ? `<div class="mitigation-az-section"><span>${sectionLabel}</span></div>`
             : '';
-        const mitId = m.external_references?.[0]?.external_id || '';
-        const techs = getMitigationTechniques(m.id);
-        const status = getMitigationStatus(m.id);
-        const desc = m.description || '';
-        const truncatedDesc = truncateDescription(desc, 140);
-        
-        const isNew = state.changelogDiff?.added?.mitigations?.has(mitId);
-        const newBadge = isNew ? `<span class="badge bg-success text-xxs shadow-sm" style="font-size: 0.55rem; padding: 2px 4px; margin-left: 4px; vertical-align: middle;">NEW</span>` : '';
-
-        // Pre-calculate real-time query coverage maturity grade for the mitigation
-        const coveredTechs = techs.filter(t => {
-            const tid = t.external_references?.[0]?.external_id || '';
-            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
-            return ann?.queries && ann.queries.length > 0;
-        }).length;
-        const maturityPct = techs.length > 0 ? Math.round((coveredTechs / techs.length) * 100) : 0;
-        const progressColor = maturityPct >= 70 ? '#10b981' : maturityPct >= 40 ? '#f59e0b' : '#584cf4';
-
-        const maturityBarHtml = techs.length > 0 ? `
-            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.04);">
-                <div class="mitigation-maturity-ring" title="Maturity Grade">
-                    <svg viewBox="0 0 48 48">
-                        <circle class="bg" cx="24" cy="24" r="20"></circle>
-                        <circle class="progress" cx="24" cy="24" r="20" stroke="${progressColor}" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${100 - maturityPct}"></circle>
-                    </svg>
-                    <div class="percentage" style="color: ${progressColor}">${maturityPct}%</div>
-                </div>
-                <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--on-surface-secondary); text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Maturity Grade</span>
-                    <span style="font-size: 0.72rem; color: var(--on-surface-tertiary);">${coveredTechs} / ${techs.length} Techniques covered</span>
-                </div>
-            </div>
-        ` : `
-            <div style="display: flex; align-items: center; gap: 1rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.04);">
-                <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; color: var(--on-surface-tertiary);">
-                    <i class="bi bi-dash" style="font-size: 1.2rem;"></i>
-                </div>
-                <div style="display: flex; flex-direction: column;">
-                    <span style="font-size: 0.65rem; font-weight: 700; color: var(--on-surface-secondary); text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Maturity Grade N/A</span>
-                    <span style="font-size: 0.72rem; color: var(--on-surface-tertiary);">Cannot calculate grade without mapped techniques</span>
-                </div>
-            </div>
-        `;
-        
-        if (mitigationsViewMode === 'list') {
-            const listMaturityBar = techs.length > 0 ? `
-                <div class="mitigation-maturity-ring" title="Maturity Grade">
-                    <svg viewBox="0 0 48 48">
-                        <circle class="bg" cx="24" cy="24" r="20"></circle>
-                        <circle class="progress" cx="24" cy="24" r="20" stroke="${progressColor}" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${100 - maturityPct}"></circle>
-                    </svg>
-                    <div class="percentage" style="color: ${progressColor}">${maturityPct}%</div>
-                </div>
-            ` : `<div style="width: 48px; text-align: center; font-size: 0.62rem; color: var(--on-surface-tertiary); font-style: italic;">N/A</div>`;
-
-            return sectionHeader + `
-                <div class="mitigation-card mitigation-card-list mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" role="button" tabindex="0" aria-label="View mitigation details for ${escapeHtml(m.name)}" style="cursor: pointer;">
-                    <div class="mitigation-list-row" style="display: grid !important; grid-template-columns: 28px minmax(200px, 2fr) minmax(130px, 1.2fr) 60px minmax(150px, 1.5fr) 20px !important; align-items: center; gap: 1rem !important; width: 100%;">
-                        <div class="mitigation-guidance-icon" title="Defensive guidance"><i class="bi bi-shield-check"></i></div>
-                        <div class="mitigation-list-info" style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-                            <span class="mitigation-list-name" style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(m.name)}${newBadge}</span>
-                            <span class="mitigation-list-id" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px; flex-shrink: 0;">${mitId}</span>
-                        </div>
-                        <span class="mitigation-tech-count" style="font-size: 0.72rem; font-weight: 600; white-space: nowrap;">${techs.length} technique${techs.length === 1 ? '' : 's'}</span>
-                        ${listMaturityBar}
-                        <div class="mitigation-list-techs" style="display: flex; align-items: center; gap: 0.25rem; overflow: hidden;">
-                            ${techs.length === 0 ? '<span class="mitigation-no-techs" style="font-size: 0.68rem; color: var(--on-surface-tertiary); display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-exclamation-triangle"></i> No mappings</span>' : ''}
-                            ${techs.slice(0, 3).map(t => {
-                                const tid = t.external_references?.[0]?.external_id || '';
-                                return `<span class="mitigation-tech-tag" style="font-size: 0.65rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: var(--on-surface-secondary); font-family: 'JetBrains Mono', monospace;">${tid}</span>`;
-                            }).join('')}
-                            ${techs.length > 3 ? `<span class="mitigation-tech-more" style="font-size: 0.65rem; color: var(--on-surface-tertiary); font-weight: 600;">+${techs.length - 3}</span>` : ''}
-                        </div>
-                        <i class="bi bi-chevron-right" style="color: var(--on-surface-tertiary); justify-self: end;"></i>
-                    </div>
-                </div>
-            `;
-        }
-        
-        return sectionHeader + `
-            <div class="mitigation-card mitigation-card-clickable" data-mit="${m.id}" data-status="${status}" role="button" tabindex="0" aria-label="View mitigation details for ${escapeHtml(m.name)}" style="cursor: pointer; display: flex; flex-direction: column; height: 100%;">
-                <div class="mitigation-card-header">
-                    <div class="mitigation-card-header-left">
-                        <span class="mitigation-id-badge" style="background: rgba(139, 92, 246, 0.12); color: var(--primary); font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${mitId}</span>
-                        <h6 class="mitigation-card-title" title="${escapeHtml(m.name)}">${escapeHtml(m.name)}${newBadge}</h6>
-                    </div>
-                    <span class="mitigation-guidance-badge"><i class="bi bi-compass"></i> Guidance</span>
-                </div>
-                <p class="mitigation-card-desc">${escapeHtml(truncatedDesc)}</p>
-                <div class="mitigation-card-techs" style="margin-top: 0.75rem;">
-                    <span class="mitigation-tech-count-badge" style="font-size: 0.7rem; font-weight: 700; color: var(--on-surface-secondary); text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">${techs.length} Techniques Covered</span>
-                    ${techs.length === 0 ? '<div class="mitigation-no-techs" style="font-size: 0.68rem; color: var(--on-surface-tertiary); margin-top: 0.25rem;"><i class="bi bi-exclamation-triangle"></i> No technique mappings</div>' : ''}
-                    <div class="mitigation-tech-tags" style="display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem;">
-                        ${techs.slice(0, 5).map(t => {
-                            const tid = t.external_references?.[0]?.external_id || '';
-                            return `<span class="mitigation-tech-tag" style="font-size: 0.65rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; color: var(--on-surface-secondary); font-family: 'JetBrains Mono', monospace;">${tid}</span>`;
-                        }).join('')}
-                        ${techs.length > 5 ? `<span class="mitigation-tech-more" style="font-size: 0.65rem; color: var(--on-surface-tertiary); font-weight: 600; line-height: 1.8;">+${techs.length - 5} more</span>` : ''}
-                    </div>
-                </div>
-                <div style="margin-top: auto;">
-                    ${maturityBarHtml}
-                </div>
-            </div>
-        `;
+        return sectionHeader + renderMitigationCard(m, selectedId);
     }).join('');
-    
-    container.innerHTML = cardsHtml;
-    bindMitigationsToolbar();
-    bindMitigationCardActions();
+}
+
+function renderMitigationCard(mitigation, selectedId) {
+    const mitId = getMitigationExternalId(mitigation);
+    const coverage = getMitigationCoverage(mitigation);
+    const hasMappedTechniques = coverage.techniques.length > 0;
+    const status = getMitigationStatus(mitigation.id);
+    const statusMeta = getMitigationStatusMeta(status);
+    const isNew = state.changelogDiff?.added?.mitigations?.has(mitId);
+    const newBadge = isNew ? '<span class="mitigation-new-badge">NEW</span>' : '';
+    return `
+        <article class="mitigation-control-card ${!hasMappedTechniques ? 'mitigation-no-mapping' : ''} ${selectedId === mitigation.id ? 'selected' : ''}" data-mit="${escapeHtml(mitigation.id)}" data-status="${status}" tabindex="0" role="button" aria-label="Select mitigation ${escapeHtml(mitigation.name)}">
+            <div class="mitigation-card-topline">
+                <span class="mitigation-id-badge">${escapeHtml(mitId || 'N/A')}</span>
+                <button class="mit-status-toggle ${statusMeta.className}" data-mit="${escapeHtml(mitigation.id)}" title="Cycle implementation status" aria-label="Cycle implementation status for ${escapeHtml(mitigation.name)}"><i class="bi ${statusMeta.icon}"></i><span class="mit-status-label">${statusMeta.label}</span></button>
+            </div>
+            <h4>${escapeHtml(mitigation.name)}${newBadge}</h4>
+            <p>${escapeHtml(truncateDescription(mitigation.description || 'No description available.', 150))}</p>
+            ${renderCoverageRuler(coverage.techniques)}
+            <div class="mitigation-card-foot"><span>${coverage.techniques.length} mapped techniques</span><strong>${hasMappedTechniques ? `${coverage.coveragePct}% covered` : 'ATT&CK data not mapped'}</strong></div>
+            ${!hasMappedTechniques ? '<div class="mitigation-data-note"><i class="bi bi-info-circle"></i> ATT&amp;CK relationship data does not list mapped techniques for this mitigation.</div>' : ''}
+        </article>
+    `;
+}
+
+function renderMitigationInspector(mitigation) {
+    if (!mitigation) return `<section class="mitigation-inspector-panel"><div class="mitigation-panel-head"><strong>Selected control</strong></div><div class="mitigation-panel-body"><p class="mitigation-empty-copy">No matching control selected.</p></div></section>`;
+    const coverage = getMitigationCoverage(mitigation);
+    const status = getMitigationStatus(mitigation.id);
+    const statusMeta = getMitigationStatusMeta(status);
+    const mitId = getMitigationExternalId(mitigation);
+    const modified = mitigation.modified ? new Date(mitigation.modified).toLocaleDateString('en-GB') : 'not recorded';
+    const hasMappedTechniques = coverage.techniques.length > 0;
+    return `
+        <section class="mitigation-inspector-panel">
+            <div class="mitigation-panel-head"><strong>Selected control</strong><span class="mitigation-status-pill ${statusMeta.className}">${statusMeta.label}</span></div>
+            <div class="mitigation-panel-body">
+                <span class="mitigation-id-badge">${escapeHtml(mitId || 'N/A')}</span>
+                <h3>${escapeHtml(mitigation.name)}</h3>
+                <p>${escapeHtml(truncateDescription(mitigation.description || 'No description available.', 220))}</p>
+                <div class="mitigation-kv"><span>Implementation status</span><strong>${statusMeta.label}</strong></div>
+                <div class="mitigation-kv"><span>Mapped detections</span><strong>${hasMappedTechniques ? coverage.coveredCount : 'N/A'}</strong></div>
+                <div class="mitigation-kv"><span>Open detection gaps</span><strong class="mitigation-gap-value">${hasMappedTechniques ? coverage.gapCount : 'N/A'}</strong></div>
+                <div class="mitigation-kv"><span>Mapped techniques</span><strong>${coverage.techniques.length}</strong></div>
+                <div class="mitigation-kv"><span>ATT&CK modified</span><strong>${escapeHtml(modified)}</strong></div>
+                ${hasMappedTechniques ? `<div class="mitigation-coverage-bar"><span style="width:${coverage.coveragePct}%"></span></div>` : '<div class="mitigation-data-note inspector"><i class="bi bi-info-circle"></i> This ATT&amp;CK mitigation entry does not include technique relationship mappings in the loaded dataset, so coverage cannot be calculated from this control alone.</div>'}
+                <div class="mitigation-inspector-actions">
+                    <button class="btn btn-primary btn-open-mitigation-detail" data-mit="${escapeHtml(mitigation.id)}">Open full details</button>
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+function renderMitigationNextWork(mitigation) {
+    if (!mitigation) return '';
+    const coverage = getMitigationCoverage(mitigation);
+    const status = getMitigationStatus(mitigation.id);
+    const gapItems = coverage.gaps.slice(0, 2).map(t => {
+        const tid = t.external_references?.[0]?.external_id || '';
+        return `Map or attach detection coverage for ${tid} ${t.name}`;
+    });
+    const items = [
+        ...gapItems,
+        status === 'none' ? 'Set implementation status if this control is owned internally' : '',
+        coverage.techniques.length ? 'Review linked techniques in full details for control validation' : 'Treat as unmapped ATT&CK source data rather than a detection coverage failure'
+    ].filter(Boolean).slice(0, 3);
+    return `
+        <section class="mitigation-inspector-panel">
+            <div class="mitigation-panel-head"><strong>Recommended next work</strong></div>
+            <div class="mitigation-panel-body">
+                <div class="mitigation-next-list">
+                    ${items.map((item, index) => `<div><code>${index + 1}</code><span>${escapeHtml(item)}</span></div>`).join('')}
+                </div>
+            </div>
+        </section>
+    `;
 }
 
 export function bindMitigationsToolbar() {
@@ -364,6 +369,23 @@ export function bindMitigationCardActions() {
             if (mitId) showMitigationModal(mitId);
         });
     });
+
+    document.querySelectorAll('.mitigation-control-card').forEach(card => {
+        const select = () => {
+            selectedMitigationId = card.dataset.mit;
+            renderMitigationsView();
+        };
+        card.addEventListener('click', select);
+        card.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            select();
+        });
+    });
+
+    document.querySelectorAll('.btn-open-mitigation-detail').forEach(btn => {
+        btn.addEventListener('click', () => showMitigationModal(btn.dataset.mit));
+    });
 }
 
 export function showMitigationModal(mitigationId) {
@@ -372,6 +394,9 @@ export function showMitigationModal(mitigationId) {
     
     const mitIdDisplay = mitigation.external_references?.[0]?.external_id || 'N/A';
     const status = getMitigationStatus(mitigation.id);
+    const statusMeta = getMitigationStatusMeta(status);
+    const statusIcon = statusMeta.icon;
+    const statusLabel = statusMeta.label;
     const techs = getMitigationTechniques(mitigation.id);
     
     const coveredTechs = techs.filter(t => {
@@ -381,6 +406,7 @@ export function showMitigationModal(mitigationId) {
     }).length;
     const maturityPct = techs.length > 0 ? Math.round((coveredTechs / techs.length) * 100) : 0;
     const progressColor = maturityPct >= 70 ? '#10b981' : maturityPct >= 40 ? '#f59e0b' : '#584cf4';
+    const unmappedNotice = techs.length === 0 ? '<div class="mitigation-data-note modal-note"><i class="bi bi-info-circle"></i> The loaded ATT&amp;CK data does not include technique relationships for this mitigation. This is source-data absence, not proof that the control has no defensive relevance.</div>' : '';
 
     let relatedGroupsMap = new Map();
     let relatedSoftwareMap = new Map();
@@ -417,6 +443,7 @@ export function showMitigationModal(mitigationId) {
             <div class="mitigation-overview-layout">
                 <div class="mitigation-overview-main">
                     <div style="font-size: 0.95rem; line-height: 1.6; color: var(--on-surface);">${parseDescription(mitigation.description || 'No description available.')}</div>
+                    ${unmappedNotice}
                     
                     ${techs.length ? `
                         <div style="margin-top: 2rem;">
@@ -442,7 +469,7 @@ export function showMitigationModal(mitigationId) {
                 <div class="mitigation-overview-sidebar">
                     <div class="mitigation-meta-grid">
                         <div style="display: flex; align-items: center; gap: 1rem;">
-                            <div class="mitigation-maturity-ring" title="Maturity Grade">
+                    <div class="mitigation-maturity-ring" title="Query coverage">
                                 <svg viewBox="0 0 48 48">
                                     <circle class="bg" cx="24" cy="24" r="20"></circle>
                                     <circle class="progress" cx="24" cy="24" r="20" stroke="${progressColor}" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${100 - maturityPct}"></circle>
@@ -451,7 +478,8 @@ export function showMitigationModal(mitigationId) {
                             </div>
                             <div style="display: flex; flex-direction: column;">
                                 <span style="font-size: 0.7rem; font-weight: 700; color: var(--on-surface-secondary); text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Query Coverage</span>
-                                <span style="font-size: 0.8rem; color: var(--on-surface); font-weight: 600;">${coveredTechs} / ${techs.length} Techniques</span>
+                                <span style="font-size: 0.8rem; color: var(--on-surface); font-weight: 600;">${techs.length ? `${coveredTechs} / ${techs.length} Techniques` : 'No technique mappings in ATT&CK data'}</span>
+                                <span class="mitigation-detail-status ${status}"><i class="bi ${statusIcon}"></i> ${statusLabel}</span>
                             </div>
                         </div>
                         ${created ? `<div style="display: flex; flex-direction: column; gap: 0.25rem;"><span style="font-size: 0.65rem; color: var(--on-surface-tertiary); text-transform: uppercase;">Created</span><span style="font-size: 0.85rem;">${created}</span></div>` : ''}
@@ -479,7 +507,7 @@ export function showMitigationModal(mitigationId) {
                             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                                 ${relatedSoftware.map(s => {
                                     const sId = s.external_references?.[0]?.external_id || '';
-                                    return `<div class="entity-chip-clickable" data-software-id="${s.id}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+                                    return `<div class="entity-chip-clickable" data-software-id="${escapeHtml(sId)}" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
                                         <span style="color: var(--primary); font-family: 'JetBrains Mono', monospace; font-weight: bold; font-size: 0.65rem;">${sId}</span>
                                         <span>${escapeHtml(s.name)}</span>
                                     </div>`;

@@ -34,9 +34,15 @@ export class Router {
         }
         
         // Update navigation active states
-        document.querySelectorAll('[data-view]').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('[data-view]').forEach(l => {
+            l.classList.remove('active');
+            l.removeAttribute('aria-current');
+        });
         const activeLink = document.querySelector(`[data-view="${view}"]`);
-        if (activeLink) activeLink.classList.add('active');
+        if (activeLink) {
+            activeLink.classList.add('active');
+            activeLink.setAttribute('aria-current', 'page');
+        }
         
         // Toggle view sections
         document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
@@ -70,7 +76,7 @@ export class Router {
         document.getElementById('btn-create-new')?.addEventListener('click', () => {
             const state = window.state;
             if (!state) return;
-            state.currentDomain = document.getElementById('domain-select')?.value || 'enterprise-attack';
+            state.currentDomain = 'enterprise-attack';
             state.currentVersion = document.getElementById('version-select')?.value || 'master';
             state.expandedTechniques.clear();
             state.companyName = '';
@@ -82,13 +88,15 @@ export class Router {
         document.getElementById('btn-view-matrix')?.addEventListener('click', () => {
             const state = window.state;
             if (!state) return;
-            state.currentDomain = document.getElementById('domain-select')?.value || 'enterprise-attack';
-            state.currentVersion = document.getElementById('version-select')?.value || 'master';
-            state.expandedTechniques.clear();
-            state.companyName = '';
-            state.companyLogo = null;
+            state.currentDomain = 'enterprise-attack';
             if (typeof window.showWorkspace === 'function') window.showWorkspace();
-            if (typeof window.loadSTIX === 'function') window.loadSTIX(state.currentDomain, state.currentVersion);
+            const matrixLink = document.querySelector('[data-view="matrix"]');
+            if (matrixLink) matrixLink.click();
+
+            if (!state.currentLayer && typeof window.loadSTIX === 'function') {
+                state.currentVersion = document.getElementById('version-select')?.value || 'master';
+                window.loadSTIX(state.currentDomain, state.currentVersion);
+            }
         });
     }
 }

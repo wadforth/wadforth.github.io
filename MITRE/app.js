@@ -38,25 +38,33 @@ export function showWorkspace() {
 export function initTheme() {
     const saved = localStorage.getItem('attack-explorer-theme');
     const theme = saved === 'dark' ? 'dark' : 'light';
-    const icon = theme === 'dark' ? '<i class="bi bi-sun-fill"></i>' : '<i class="bi bi-moon-fill"></i>';
+    const icon = theme === 'dark' ? '<i class="bi bi-sun-fill" aria-hidden="true"></i>' : '<i class="bi bi-moon-fill" aria-hidden="true"></i>';
 
     document.documentElement.setAttribute('data-theme', theme);
 
     const themeBtn = document.getElementById('theme-toggle');
     const landingThemeBtn = document.getElementById('landing-theme-toggle');
-    if (themeBtn) themeBtn.innerHTML = icon;
-    if (landingThemeBtn) landingThemeBtn.innerHTML = icon;
+    [themeBtn, landingThemeBtn].forEach(btn => {
+        if (!btn) return;
+        btn.innerHTML = icon;
+        btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+        btn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    });
 }
 
 const toggleTheme = () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
-    const newIcon = isDark ? '<i class="bi bi-moon-fill"></i>' : '<i class="bi bi-sun-fill"></i>';
+    const newIcon = isDark ? '<i class="bi bi-moon-fill" aria-hidden="true"></i>' : '<i class="bi bi-sun-fill" aria-hidden="true"></i>';
     
     const themeBtn = document.getElementById('theme-toggle');
     const landingThemeBtn = document.getElementById('landing-theme-toggle');
-    if (themeBtn) themeBtn.innerHTML = newIcon;
-    if (landingThemeBtn) landingThemeBtn.innerHTML = newIcon;
+    [themeBtn, landingThemeBtn].forEach(btn => {
+        if (!btn) return;
+        btn.innerHTML = newIcon;
+        btn.setAttribute('aria-label', isDark ? 'Switch to dark mode' : 'Switch to light mode');
+        btn.setAttribute('aria-pressed', isDark ? 'false' : 'true');
+    });
     
     localStorage.setItem('attack-explorer-theme', isDark ? 'light' : 'dark');
 };
@@ -102,11 +110,15 @@ export async function checkForUpdates() {
             return;
         }
 
-        const res = await fetch('https://api.github.com/repos/mitre/cti/releases/latest');
-        if (!res.ok) return;
-        const data = await res.json();
-        const rawTag = data.tag_name || '';
-        const latestVer = rawTag.replace(/ATT&CK-?v?/i, '');
+        const releaseFromState = window.state?.releases?.[0]?.tag;
+        let rawTag = releaseFromState || '';
+        if (!rawTag) {
+            const res = await fetch(`${window.GITHUB_API || 'https://api.github.com/repos/mitre-attack/attack-stix-data'}/releases?per_page=1`);
+            if (!res.ok) return;
+            const data = await res.json();
+            rawTag = data?.[0]?.tag_name || '';
+        }
+        const latestVer = rawTag.replace(/ATT&CK-?v?/i, '').replace(/^v/i, '');
         
         if (latestVer) {
             localStorage.setItem('attack-explorer-latest-version', latestVer);
@@ -145,7 +157,7 @@ export async function init() {
         if (sigmaModulePromise) return sigmaModulePromise;
         if (!sigmaModuleLoaded) {
             sigmaModulePromise = (async () => {
-                sigmaModule = await import('./js/intel/sigma.js?v=7');
+                sigmaModule = await import('./js/intel/sigma.js?v=12');
                 sigmaModuleLoaded = true;
                 window.sigmaModule = sigmaModule;
                 await sigmaModule.initSigmaModule();
@@ -191,7 +203,7 @@ export async function init() {
     // Restore current layer if exists
     const savedLayer = window.loadCurrentLayer ? await window.loadCurrentLayer() : null;
     if (savedLayer) {
-        state.currentDomain = savedLayer.domain || localStorage.getItem('attack-explorer-current-domain') || 'enterprise-attack';
+        state.currentDomain = 'enterprise-attack';
         state.currentVersion = localStorage.getItem('attack-explorer-current-version') || state.currentVersion;
         const savedExpanded = JSON.parse(localStorage.getItem('attack-explorer-expanded') || '[]');
         if (state.expandedTechniques) state.expandedTechniques = new Set(savedExpanded);

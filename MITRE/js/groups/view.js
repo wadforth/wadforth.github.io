@@ -58,250 +58,375 @@ export function sortGroups(groups) {
 }
 
 export function renderGroupsView() {
-    const container = document.getElementById('groups-list');
-    const controlsContainer = document.getElementById('groups-controls');
-    const searchInput = document.getElementById('groups-search-input');
-    
-    if (!controlsContainer) return;
-    
-    const query = (searchInput?.value || '').toLowerCase().trim();
-    
-    let groups = [...state.groups];
-    
-    if (query) {
-        groups = groups.filter(g =>
-            g.name.toLowerCase().includes(query) ||
-            (g.description || '').toLowerCase().includes(query) ||
-            (g.external_references?.[0]?.external_id || '').toLowerCase().includes(query) ||
-            (g.aliases || []).some(a => a.toLowerCase().includes(query)) ||
-            (g.x_mitre_aliases || []).some(a => a.toLowerCase().includes(query))
-        );
-    }
-    
-    groups = sortGroups(groups);
-    
-    const totalTechniques = groups.reduce((sum, g) => sum + getGroupTechniqueCount(g.id), 0);
-    const avgTechniques = groups.length ? Math.round(totalTechniques / groups.length) : 0;
-    const maxTechniques = groups.length ? Math.max(...groups.map(g => getGroupTechniqueCount(g.id))) : 0;
-    
-    const statsHtml = `
-        <div class="groups-stats-bar">
-            <div class="groups-stat">
-                <span class="groups-stat-value">${groups.length}</span>
-                <span class="groups-stat-label">Groups</span>
-            </div>
-            <div class="groups-stat">
-                <span class="groups-stat-value">${totalTechniques}</span>
-                <span class="groups-stat-label">Technique Links</span>
-            </div>
-            <div class="groups-stat">
-                <span class="groups-stat-value">${avgTechniques}</span>
-                <span class="groups-stat-label">Avg Techniques</span>
-            </div>
-            <div class="groups-stat">
-                <span class="groups-stat-value">${maxTechniques}</span>
-                <span class="groups-stat-label">Max Techniques</span>
-            </div>
-        </div>
-    `;
-    
-    const toolbarHtml = `
-        <div class="groups-toolbar">
-            <div class="groups-toolbar-left">
-                <div class="groups-sort-group">
-                    <label class="groups-sort-label">Sort:</label>
-                    <select class="groups-sort-select" id="groups-sort-select">
-                        <option value="name" ${groupsSortBy === 'name' ? 'selected' : ''}>Name</option>
-                        <option value="id" ${groupsSortBy === 'id' ? 'selected' : ''}>ID</option>
-                        <option value="techniques" ${groupsSortBy === 'techniques' ? 'selected' : ''}>Techniques</option>
-                        <option value="modified" ${groupsSortBy === 'modified' ? 'selected' : ''}>Modified</option>
-                    </select>
-                    <button class="btn btn-sm btn-ghost groups-sort-dir" id="groups-sort-dir" title="Toggle sort direction">
-                        <i class="bi bi-sort-${groupsSortDir === 'asc' ? 'up' : 'down'}"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="groups-toolbar-right">
-                <div class="btn-group btn-group-sm">
-                    <button class="btn ${groupsViewMode === 'grid' ? 'btn-primary' : 'btn-outline-secondary'}" id="groups-view-grid" title="Grid view">
-                        <i class="bi bi-grid-3x3-gap"></i>
-                    </button>
-                    <button class="btn ${groupsViewMode === 'list' ? 'btn-primary' : 'btn-outline-secondary'}" id="groups-view-list" title="List view">
-                        <i class="bi bi-list-ul"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    controlsContainer.innerHTML = statsHtml + toolbarHtml;
-    
-    if (groups.length === 0) {
-        container.className = 'groups-grid';
-        container.innerHTML = `
-            <div class="empty-state">
-                <i class="bi bi-people"></i>
-                <p>${query ? 'No groups match your search.' : 'No adversary groups loaded.'}</p>
-            </div>
-        `;
-        bindGroupsToolbar();
-        return;
-    }
-    
-    container.className = groupsViewMode === 'grid' ? 'groups-grid' : 'groups-list-view';
-    
-    const cardsHtml = groups.map((g, index) => {
-        const sectionLabel = getAlphaSectionLabel(g.name);
-        const previousLabel = index > 0 ? getAlphaSectionLabel(groups[index - 1].name) : '';
-        const sectionHeader = groupsSortBy === 'name' && sectionLabel !== previousLabel
-            ? `<div class="az-section-header"><span>${sectionLabel}</span></div>`
-            : '';
-        const groupId = g.external_references?.[0]?.external_id || '';
-        const techCount = getGroupTechniqueCount(g.id);
-        const desc = g.description || '';
-        const truncatedDesc = truncateDescription(desc, 140);
-        const domains = getGroupDomains(g);
-        const aliases = (g.x_mitre_aliases || g.aliases || []).slice(0, 2);
-        
-        const theme = getAttributionTheme(g);
-        const themeClass = `group-theme-${theme.id}`;
-        const avatarSvg = getProceduralAvatarSVG(g.id, g.name);
-        
-        const isNew = state.changelogDiff?.added?.groups?.has(groupId);
-        const newBadge = isNew ? `<span class="badge bg-success text-xxs shadow-sm" style="font-size: 0.55rem; padding: 2px 4px; margin-left: 4px; vertical-align: middle;">NEW</span>` : '';
-
-        // Retrieve techniques related to this group
-        const groupTechniques = (state.relationshipsBySource?.get(g.id) || [])
-            .filter(r => r.relationship_type === 'uses')
-            .map(r => state.techniquesByStixId?.get(r.target_ref))
-            .filter(Boolean);
-            
-        // Build 12-block tactical sparkline indicators representing covered/gap status
-        const sparklineBlocks = groupTechniques.slice(0, 12).map(tech => {
-            const tid = tech.external_references?.[0]?.external_id || '';
-            const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
-            const hasQuery = ann?.queries && ann.queries.length > 0;
-            return `<div class="group-spark-block ${hasQuery ? 'covered' : 'uncovered'}" title="${tid}: ${escapeHtml(tech.name)} (${hasQuery ? 'Covered' : 'Gap Blindspot'})"></div>`;
-        }).join('');
-        
-        const fillerCount = Math.max(0, 12 - groupTechniques.length);
-        const sparklineFiller = Array.from({ length: fillerCount }).map(() => {
-            return `<div class="group-spark-block" style="background: rgba(255,255,255,0.02); cursor: default;" title="No Technique link"></div>`;
-        }).join('');
-        
-        const sparklineHtml = `<div class="group-sparkline" title="Defensive Sparkline Preview (Covered vs Gaps)">
-            ${sparklineBlocks}
-            ${sparklineFiller}
-        </div>`;
-        
-        if (groupsViewMode === 'list') {
-            return sectionHeader + `
-                <div class="group-card group-card-list group-card-glass ${themeClass}" data-group-id="${g.id}" role="button" tabindex="0" aria-label="View group details for ${escapeHtml(g.name)}" style="cursor: pointer;">
-                    <div class="group-list-row">
-                        <div class="group-avatar-container" style="width: 26px; height: 26px; border-radius: 4px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
-                            ${avatarSvg}
-                        </div>
-                        <div class="group-list-info">
-                            <span class="group-list-name" style="font-weight: 700;">${escapeHtml(g.name)} <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="font-size: 0.7rem; margin-left: 2px; color: ${theme.accentHex}; text-shadow: 0 0 6px rgba(${theme.accentRGB}, 0.8);"></i>${newBadge}</span>
-                            <span class="group-list-id" style="background: rgba(${theme.accentRGB}, 0.1); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; border-radius: 4px; font-weight: bold; font-size: 0.65rem; padding: 2px 6px;">${groupId}</span>
-                            <span class="${theme.badgeClass}" style="transform: scale(0.9); transform-origin: left center; margin-left: 4px;"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 170px;">
-                            <span class="group-tech-count" style="font-weight: 600; font-size: 0.72rem; min-width: 65px; margin: 0; white-space: nowrap;">${techCount} tech${techCount === 1 ? '' : 's'}</span>
-                            ${sparklineHtml}
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.25rem; overflow: hidden;">
-                            ${domains.length ? `<span class="group-domain-badge" style="margin: 0; font-size: 0.68rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><i class="bi bi-globe mr-1"></i>${escapeHtml(domains[0])}</span>` : `<span class="text-on-surface-tertiary text-xs">—</span>`}
-                        </div>
-                        <i class="bi bi-chevron-right group-list-arrow" style="color: ${theme.accentHex}; font-size: 0.85rem; justify-self: end;"></i>
-                    </div>
-                </div>
-            `;
-        }
-        
-        return sectionHeader + `
-            <div class="group-card group-card-glass ${themeClass}" data-group-id="${g.id}" role="button" tabindex="0" aria-label="View group details for ${escapeHtml(g.name)}" style="cursor: pointer;">
-                <div class="group-card-avatar-row" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem;">
-                    <div class="group-avatar-container" style="width: 42px; height: 42px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: none; padding: 0;">
-                        ${avatarSvg}
-                    </div>
-                    <div class="group-card-header-left" style="display: flex; flex-direction: column; gap: 0.2rem; flex: 1; min-width: 0;">
-                        <div style="display: flex; align-items: center; gap: 0.4rem;">
-                            <span class="group-id-badge" style="background: rgba(${theme.accentRGB}, 0.12); color: ${theme.accentHex}; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: bold; border-radius: 4px; padding: 2px 6px;">${groupId}</span>
-                            <span class="${theme.badgeClass}"><i class="bi ${theme.icon} mr-1"></i>${theme.name}</span>
-                        </div>
-                        <h6 class="group-card-title" style="margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--on-surface); display: flex; align-items: center; gap: 4px;">
-                            ${escapeHtml(g.name)}
-                            <i class="bi bi-terminal-fill hacker-glow-icon" title="Threat Actor Group" style="color: ${theme.accentHex}; text-shadow: 0 0 8px rgba(${theme.accentRGB}, 0.8); margin: 0; font-size: 0.8rem; vertical-align: middle;"></i>${newBadge}
-                        </h6>
-                    </div>
-                    <span class="group-tech-badge" style="background: rgba(${theme.accentRGB}, 0.08); color: ${theme.accentHex}; border: 1px solid rgba(${theme.accentRGB}, 0.15); border-radius: 6px; font-weight: 800; font-size: 0.75rem; padding: 3px 7px;">${techCount}</span>
-                </div>
-                ${aliases.length ? `
-                    <div class="group-aliases">
-                        ${aliases.map(a => `<span class="group-alias-tag">${escapeHtml(a)}</span>`).join('')}
-                    </div>
-                ` : ''}
-                <p class="group-card-desc">${escapeHtml(truncatedDesc)}</p>
-                ${sparklineHtml}
-                <div class="group-card-footer" style="border-top: 1px solid rgba(255,255,255,0.04); padding-top: 0.6rem;">
-                    ${domains.length ? `<span class="group-domain-badge"><i class="bi bi-globe"></i> ${escapeHtml(domains.join(', '))}</span>` : ''}
-                    <span class="group-card-link" style="color: ${theme.accentHex};"><i class="bi bi-arrow-right"></i> View details</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-    
-    container.innerHTML = cardsHtml;
-    bindGroupsToolbar();
-    bindGroupCardActions();
+    renderThreatIntelCatalogue('groups');
 }
 
 export function bindGroupsToolbar() {
-    const sortSelect = document.getElementById('groups-sort-select');
-    const sortDir = document.getElementById('groups-sort-dir');
-    const viewGrid = document.getElementById('groups-view-grid');
-    const viewList = document.getElementById('groups-view-list');
-    
-    if (sortSelect) {
-        sortSelect.addEventListener('change', (e) => {
-            groupsSortBy = e.target.value;
-            renderGroupsView();
-        });
-    }
-    
-    if (sortDir) {
-        sortDir.addEventListener('click', () => {
-            groupsSortDir = groupsSortDir === 'asc' ? 'desc' : 'asc';
-            renderGroupsView();
-        });
-    }
-    
-    if (viewGrid) {
-        viewGrid.addEventListener('click', () => {
-            groupsViewMode = 'grid';
-            renderGroupsView();
-        });
-    }
-    
-    if (viewList) {
-        viewList.addEventListener('click', () => {
-            groupsViewMode = 'list';
-            renderGroupsView();
-        });
-    }
+    bindThreatIntelCatalogue('groups');
 }
 
 export function bindGroupCardActions() {
-    document.querySelectorAll('.group-card').forEach(card => {
-        card.addEventListener('click', () => {
-            showGroupModal(card.dataset.groupId);
+    bindThreatIntelCatalogue('groups');
+}
+
+let entitySortBy = 'name';
+let entitySortDir = 'asc';
+let entityTypeFilter = 'all';
+let selectedEntityKey = null;
+
+function getEntityExternalId(item) {
+    return item.external_references?.[0]?.external_id || '';
+}
+
+function getInitials(name) {
+    const words = String(name || '').match(/[A-Za-z0-9]+/g) || [];
+    return (words[0]?.[0] || '?') + (words[1]?.[0] || words[0]?.[1] || '');
+}
+
+function isEntityDeprecated(item) {
+    const description = String(item?.description || '').toLowerCase();
+    return !!(item?.x_mitre_deprecated || item?.deprecated || item?.revoked || description.includes('deprecated') || description.includes('revoked'));
+}
+
+function getEntityStatusLabel(item) {
+    if (item?.revoked) return 'revoked';
+    const description = String(item?.description || '').toLowerCase();
+    if (item?.x_mitre_deprecated || item?.deprecated || description.includes('deprecated')) return 'deprecated';
+    if (description.includes('revoked')) return 'revoked';
+    return '';
+}
+
+function renderEntityAvatar(entity) {
+    if (entity.type === 'group' && typeof getProceduralAvatarSVG === 'function') {
+        return `<div class="entity-avatar entity-avatar-svg" aria-hidden="true">${getProceduralAvatarSVG(entity.item.id, entity.name)}</div>`;
+    }
+    if (entity.family === 'software' && typeof getProceduralSoftwareAvatarSVG === 'function') {
+        return `<div class="entity-avatar entity-avatar-svg" aria-hidden="true">${getProceduralSoftwareAvatarSVG(entity.item.id, entity.name, entity.item.type)}</div>`;
+    }
+    return `<div class="entity-avatar" aria-hidden="true">${escapeHtml(getInitials(entity.name).toUpperCase())}</div>`;
+}
+
+function getEntitySearchText(entity) {
+    const item = entity.item;
+    return [
+        entity.id,
+        entity.name,
+        entity.kind,
+        entity.family,
+        item.description,
+        ...(item.aliases || []),
+        ...(item.x_mitre_aliases || []),
+        ...(item.x_mitre_platforms || []),
+        ...(item.x_mitre_contributors || []),
+        ...(item.x_mitre_domains || [])
+    ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function getEntityTechniques(entity) {
+    return (state.relationshipsBySource?.get(entity.item.id) || [])
+        .filter(r => r.relationship_type === 'uses')
+        .map(r => state.techniquesByStixId?.get(r.target_ref))
+        .filter(Boolean);
+}
+
+function getCoverageStats(techniques) {
+    const covered = techniques.filter(tech => {
+        const tid = getEntityExternalId(tech);
+        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+        return ann?.queries?.length > 0;
+    }).length;
+    const total = techniques.length;
+    return { covered, total, gaps: Math.max(0, total - covered), pct: total ? Math.round((covered / total) * 100) : 0 };
+}
+
+function getEntities() {
+    const groups = state.groups.map(item => ({
+        key: `group:${item.id}`,
+        type: 'group',
+        family: 'group',
+        kind: 'Group',
+        icon: 'bi-people',
+        item,
+        id: getEntityExternalId(item),
+        name: item.name || 'Unnamed group'
+    }));
+    const software = state.software.map(item => ({
+        key: `software:${getEntityExternalId(item)}`,
+        type: item.type === 'malware' ? 'malware' : 'tool',
+        family: 'software',
+        kind: item.type === 'malware' ? 'Malware' : 'Tool',
+        icon: item.type === 'malware' ? 'bi-bug' : 'bi-wrench-adjustable',
+        item,
+        id: getEntityExternalId(item),
+        name: item.name || 'Unnamed software'
+    }));
+    return [...groups, ...software];
+}
+
+function sortEntities(entities) {
+    const dir = entitySortDir === 'asc' ? 1 : -1;
+    return [...entities].sort((a, b) => {
+        if (entitySortBy === 'techniques') return (getEntityTechniques(b).length - getEntityTechniques(a).length) * dir;
+        if (entitySortBy === 'type') return a.kind.localeCompare(b.kind) * dir || a.name.localeCompare(b.name) * dir;
+        if (entitySortBy === 'modified') return ((a.item.modified || a.item.created || '') < (b.item.modified || b.item.created || '') ? -dir : dir);
+        if (entitySortBy === 'id') return a.id.localeCompare(b.id, undefined, { numeric: true }) * dir;
+        return a.name.localeCompare(b.name) * dir;
+    });
+}
+
+function getRouteElements(route) {
+    const isSoftware = route === 'software';
+    return {
+        view: document.getElementById(isSoftware ? 'software-view' : 'groups-view'),
+        controls: document.getElementById(isSoftware ? 'software-controls' : 'groups-controls'),
+        list: document.getElementById(isSoftware ? 'software-list' : 'groups-list'),
+        search: document.getElementById(isSoftware ? 'software-search-input' : 'groups-search-input'),
+        subtitle: document.getElementById(isSoftware ? 'software-subtitle' : 'groups-subtitle'),
+        title: document.querySelector(`#${isSoftware ? 'software-view' : 'groups-view'} .view-title`),
+        softwareType: document.getElementById('software-type-filter')
+    };
+}
+
+export function renderThreatIntelCatalogue(route = 'groups') {
+    const els = getRouteElements(route);
+    if (!els.controls || !els.list) return;
+
+    if (route === 'software' && els.softwareType?.value && els.softwareType.value !== 'all') {
+        entityTypeFilter = els.softwareType.value;
+    }
+
+    const query = (els.search?.value || '').toLowerCase().trim();
+    const allEntities = getEntities();
+    const counts = {
+        all: allEntities.length,
+        group: allEntities.filter(e => e.type === 'group').length,
+        tool: allEntities.filter(e => e.type === 'tool').length,
+        malware: allEntities.filter(e => e.type === 'malware').length
+    };
+
+    let entities = allEntities;
+    if (entityTypeFilter !== 'all') entities = entities.filter(e => e.type === entityTypeFilter);
+    if (query) entities = entities.filter(e => getEntitySearchText(e).includes(query));
+    entities = sortEntities(entities);
+
+    if (!selectedEntityKey || !entities.some(e => e.key === selectedEntityKey)) selectedEntityKey = entities[0]?.key || null;
+    const selected = entities.find(e => e.key === selectedEntityKey) || entities[0] || null;
+    const totalTechniqueLinks = entities.reduce((sum, entity) => sum + getEntityTechniques(entity).length, 0);
+    const coveredLinks = entities.reduce((sum, entity) => sum + getCoverageStats(getEntityTechniques(entity)).covered, 0);
+
+    if (els.title) els.title.textContent = 'Threat Intelligence';
+    if (els.subtitle) {
+        els.subtitle.textContent = `${entities.length} entities, ${totalTechniqueLinks} technique links, ${coveredLinks} covered by selected layer`;
+    }
+
+    els.controls.innerHTML = `
+        <div class="entity-intel-summary" aria-label="Threat intelligence summary">
+            ${renderEntityStat('Entities', entities.length)}
+            ${renderEntityStat('Groups', counts.group)}
+            ${renderEntityStat('Software', counts.tool + counts.malware)}
+            ${renderEntityStat('Technique links', totalTechniqueLinks)}
+        </div>
+    `;
+
+    els.list.className = 'entity-intel-shell';
+    els.list.innerHTML = `
+        <aside class="entity-facet-panel entity-panel" aria-label="Catalogue facets">
+            <div class="entity-panel-head"><strong>Facets</strong><span class="entity-chip">Enterprise</span></div>
+            <div class="entity-panel-body">
+                <div class="entity-facet-list">
+                    ${renderFacetButton('all', 'All entities', counts.all, 'bi-diagram-3')}
+                    ${renderFacetButton('group', 'Groups', counts.group, 'bi-people')}
+                    ${renderFacetButton('tool', 'Tools', counts.tool, 'bi-wrench-adjustable')}
+                    ${renderFacetButton('malware', 'Malware', counts.malware, 'bi-bug')}
+                </div>
+                <div class="entity-sort-block">
+                    <label for="entity-sort-select">Sort</label>
+                    <div class="entity-sort-row">
+                        <select id="entity-sort-select" class="entity-sort-select">
+                            <option value="techniques" ${entitySortBy === 'techniques' ? 'selected' : ''}>Technique count</option>
+                            <option value="name" ${entitySortBy === 'name' ? 'selected' : ''}>Name</option>
+                            <option value="id" ${entitySortBy === 'id' ? 'selected' : ''}>ATT&CK ID</option>
+                            <option value="type" ${entitySortBy === 'type' ? 'selected' : ''}>Entity type</option>
+                            <option value="modified" ${entitySortBy === 'modified' ? 'selected' : ''}>Modified</option>
+                        </select>
+                        <button class="btn btn-sm btn-ghost" id="entity-sort-dir" title="Toggle sort direction"><i class="bi bi-sort-${entitySortDir === 'asc' ? 'up' : 'down'}"></i></button>
+                    </div>
+                </div>
+                <div class="entity-facet-kv">
+                    <div><span>Coverage</span><strong>${totalTechniqueLinks ? Math.round((coveredLinks / totalTechniqueLinks) * 100) : 0}%</strong></div>
+                    <div><span>View</span><strong>Combined catalogue</strong></div>
+                </div>
+            </div>
+        </aside>
+        <main class="entity-results-panel entity-panel" aria-label="Entity results">
+            <div class="entity-panel-head"><strong>Entity results</strong><span class="entity-chip">${entities.length} shown</span></div>
+            <div class="entity-panel-body entity-results-scroll">
+                ${entities.length ? `<div class="entity-card-grid">${renderEntityCards(entities, selected?.key)}</div>` : renderEntityEmpty(query)}
+            </div>
+        </main>
+        <aside class="entity-side-stack" aria-label="Selected entity details">
+            ${renderEntityInspector(selected)}
+        </aside>
+    `;
+
+    bindThreatIntelCatalogue(route);
+}
+
+function renderEntityStat(label, value) {
+    return `<div class="entity-stat"><span>${value}</span><strong>${escapeHtml(label)}</strong></div>`;
+}
+
+function renderFacetButton(type, label, count, icon) {
+    return `
+        <button type="button" class="entity-facet-btn ${entityTypeFilter === type ? 'active' : ''}" data-entity-filter="${type}">
+            <code><i class="bi ${icon}"></i></code><span>${escapeHtml(label)}</span><strong>${count}</strong>
+        </button>
+    `;
+}
+
+function renderEntityCards(entities, selectedKey) {
+    return entities.map((entity, index) => {
+        const sectionLabel = getAlphaSectionLabel(entity.name);
+        const previousLabel = index > 0 ? getAlphaSectionLabel(entities[index - 1].name) : '';
+        const sectionHeader = entitySortBy === 'name' && sectionLabel !== previousLabel
+            ? `<div class="entity-az-section"><span>${sectionLabel}</span></div>`
+            : '';
+        return sectionHeader + renderEntityCard(entity, selectedKey);
+    }).join('');
+}
+
+function renderEntityCard(entity, selectedKey) {
+    const techniques = getEntityTechniques(entity);
+    const coverage = getCoverageStats(techniques);
+    const isHighRiskGap = coverage.total > 0 && coverage.pct === 0;
+    const aliases = (entity.item.x_mitre_aliases || entity.item.aliases || []).slice(0, 2);
+    const desc = truncateDescription(entity.item.description || 'No description available.', 150);
+    const className = entity.type === 'group' ? 'entity-kind-group' : entity.type === 'malware' ? 'entity-kind-malware' : 'entity-kind-tool';
+    const statusLabel = getEntityStatusLabel(entity.item);
+    return `
+        <article class="entity-result-card ${className} ${isHighRiskGap ? 'entity-high-risk-gap' : ''} ${isEntityDeprecated(entity.item) ? 'entity-deprecated' : ''} ${selectedKey === entity.key ? 'selected' : ''}" data-entity-key="${escapeHtml(entity.key)}" tabindex="0" role="button" aria-label="Select ${escapeHtml(entity.name)}">
+            <div class="entity-result-topline">
+                ${renderEntityAvatar(entity)}
+                <span class="entity-status"><i class="bi ${entity.icon}"></i>${escapeHtml(entity.kind)}</span>
+            </div>
+            <h4>${escapeHtml(entity.name)}</h4>
+            <div class="entity-id-row"><code>${escapeHtml(entity.id || 'N/A')}</code>${statusLabel ? `<span class="entity-deprecated-badge">${statusLabel}</span>` : ''}${aliases.map(a => `<span>${escapeHtml(a)}</span>`).join('')}</div>
+            <p>${escapeHtml(desc)}</p>
+            <div class="entity-sparkline" title="${coverage.covered} covered, ${coverage.gaps} gaps">
+                ${renderCoverageSparkline(techniques)}
+            </div>
+            <div class="entity-card-foot"><span>${techniques.length} techniques</span><strong>${coverage.pct}% covered</strong></div>
+            ${isHighRiskGap ? '<div class="entity-risk-banner"><i class="bi bi-exclamation-triangle-fill"></i> High risk: no linked detection queries</div>' : ''}
+        </article>
+    `;
+}
+
+function renderCoverageSparkline(techniques) {
+    const blocks = techniques.slice(0, 12).map(tech => {
+        const tid = getEntityExternalId(tech);
+        const ann = state.currentLayer?.techniques?.find(a => a.techniqueID === tid);
+        return `<span class="${ann?.queries?.length ? 'covered' : 'gap'}" title="${escapeHtml(tid)} ${escapeHtml(tech.name)}"></span>`;
+    });
+    while (blocks.length < 12) blocks.push('<span></span>');
+    return blocks.join('');
+}
+
+function renderEntityInspector(entity) {
+    if (!entity) {
+        return `<section class="entity-panel"><div class="entity-panel-head"><strong>Inspector</strong></div><div class="entity-panel-body"><p class="entity-empty-copy">No matching entity selected.</p></div></section>`;
+    }
+    const techniques = getEntityTechniques(entity);
+    const coverage = getCoverageStats(techniques);
+    const isHighRiskGap = coverage.total > 0 && coverage.pct === 0;
+    const related = getRelatedEntities(entity, techniques).slice(0, 5);
+    const detailType = entity.type === 'group' ? 'group' : 'software';
+    const detailId = entity.type === 'group' ? entity.item.id : entity.id;
+    return `
+        <section class="entity-panel entity-inspector-card">
+            <div class="entity-panel-head"><strong>Relationship map</strong><span class="entity-chip">selected</span></div>
+            <div class="entity-panel-body">
+                <div class="entity-map" aria-hidden="true">
+                    <svg viewBox="0 0 400 260"><path d="M200 130 L75 58 M200 130 L325 66 M200 130 L72 212 M200 130 L325 205 M200 130 L200 38" fill="none" stroke="rgba(137,183,174,.5)" stroke-dasharray="4 7" stroke-width="1"></path></svg>
+                    <span class="entity-node primary">${escapeHtml(entity.name)}</span>
+                    ${related.map((r, index) => `<span class="entity-node n${index + 1}">${escapeHtml(r)}</span>`).join('')}
+                </div>
+                <button type="button" class="btn btn-primary entity-open-detail" data-detail-type="${detailType}" data-detail-id="${escapeHtml(detailId)}">Open full details</button>
+            </div>
+        </section>
+        <section class="entity-panel ${isHighRiskGap ? 'entity-high-risk-panel' : ''}">
+            <div class="entity-panel-head"><strong>Coverage against layer</strong>${isHighRiskGap ? '<span class="entity-risk-chip">High risk</span>' : ''}</div>
+            <div class="entity-panel-body">
+                <div class="entity-kv"><span>Type</span><strong>${escapeHtml(entity.kind)}</strong></div>
+                <div class="entity-kv"><span>ATT&CK ID</span><strong>${escapeHtml(entity.id || 'N/A')}</strong></div>
+                <div class="entity-kv"><span>Techniques</span><strong>${coverage.total}</strong></div>
+                <div class="entity-kv"><span>Covered</span><strong>${coverage.covered}</strong></div>
+                <div class="entity-kv"><span>Priority gaps</span><strong class="entity-gap-value">${coverage.gaps}</strong></div>
+                <div class="entity-coverage-bar"><span style="width:${coverage.pct}%"></span></div>
+                ${isHighRiskGap ? '<p class="entity-risk-note">This entity has mapped ATT&amp;CK techniques, but none currently link to active detection queries in this layer.</p>' : ''}
+                <div class="entity-tech-preview">${techniques.slice(0, 8).map(tech => `<span title="${escapeHtml(tech.name)}">${escapeHtml(getEntityExternalId(tech))}</span>`).join('')}</div>
+            </div>
+        </section>
+    `;
+}
+
+function getRelatedEntities(entity, techniques) {
+    const values = [];
+    if (entity.type === 'group') {
+        values.push(...(entity.item.x_mitre_aliases || entity.item.aliases || []).slice(0, 2));
+        values.push(...state.software.filter(sw => {
+            const swTechIds = new Set(getEntityTechniques({ item: sw }).map(t => t.id));
+            return techniques.some(t => swTechIds.has(t.id));
+        }).slice(0, 3).map(sw => sw.name));
+    } else {
+        const techIds = new Set(techniques.map(t => t.id));
+        values.push(...state.groups.filter(group => getEntityTechniques({ item: group }).some(t => techIds.has(t.id))).slice(0, 3).map(group => group.name));
+        values.push(...(entity.item.x_mitre_platforms || []).slice(0, 2));
+    }
+    values.push(...techniques.slice(0, 2).map(t => getEntityExternalId(t)));
+    return [...new Set(values.filter(Boolean))];
+}
+
+function renderEntityEmpty(query) {
+    return `<div class="empty-state"><i class="bi bi-diagram-3"></i><p>${query ? 'No entities match your filters.' : 'No ATT&CK entities loaded.'}</p></div>`;
+}
+
+export function bindThreatIntelCatalogue(route = 'groups') {
+    const rerender = () => renderThreatIntelCatalogue(route);
+    document.querySelectorAll('[data-entity-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            entityTypeFilter = btn.dataset.entityFilter || 'all';
+            const softwareType = document.getElementById('software-type-filter');
+            if (softwareType) softwareType.value = entityTypeFilter === 'group' ? 'all' : entityTypeFilter;
+            rerender();
         });
-        card.addEventListener('keydown', (event) => {
-            if (event.target !== card) return;
+    });
+    document.getElementById('entity-sort-select')?.addEventListener('change', event => {
+        entitySortBy = event.target.value;
+        rerender();
+    });
+    document.getElementById('entity-sort-dir')?.addEventListener('click', () => {
+        entitySortDir = entitySortDir === 'asc' ? 'desc' : 'asc';
+        rerender();
+    });
+    document.querySelectorAll('.entity-result-card').forEach(card => {
+        const select = () => {
+            selectedEntityKey = card.dataset.entityKey;
+            rerender();
+        };
+        card.addEventListener('click', select);
+        card.addEventListener('keydown', event => {
             if (event.key !== 'Enter' && event.key !== ' ') return;
             event.preventDefault();
-            showGroupModal(card.dataset.groupId);
+            select();
+        });
+    });
+    document.querySelectorAll('.entity-open-detail').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (btn.dataset.detailType === 'group') {
+                showGroupModal(btn.dataset.detailId);
+            } else {
+                showSoftwareModal(btn.dataset.detailId);
+            }
         });
     });
 }
@@ -317,5 +442,6 @@ window.getGroupSoftwareCount = getGroupSoftwareCount;
 window.getGroupDomains = getGroupDomains;
 window.sortGroups = sortGroups;
 window.renderGroupsView = renderGroupsView;
+window.renderThreatIntelCatalogue = renderThreatIntelCatalogue;
 window.bindGroupsToolbar = bindGroupsToolbar;
 window.bindGroupCardActions = bindGroupCardActions;

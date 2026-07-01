@@ -1,0 +1,1586 @@
+/* Sigma checkpoint: rule triage and deployment workbench styling. */
+
+.sigma-workbench-view {
+    gap: 0.8rem;
+}
+
+.sigma-workbench-view .view-header {
+    display: grid !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+    background:
+        linear-gradient(120deg, rgba(16, 24, 32, 0.94), rgba(6, 9, 12, 0.92)),
+        radial-gradient(circle at 82% 8%, rgba(123, 168, 216, 0.12), transparent 22rem) !important;
+}
+
+.sigma-workbench-view .view-header::before {
+    content: "triage to deploy";
+    width: max-content;
+    padding: 0.22rem 0.45rem;
+    border: 1px solid rgba(123, 168, 216, 0.28);
+    border-radius: var(--ax-radius-xs);
+    color: var(--ax-query);
+    background: rgba(123, 168, 216, 0.08);
+    font: 760 0.62rem/1 var(--ax-font-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.sigma-summary-strip,
+.sigma-stats-dashboard {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.55rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.sigma-summary-chip,
+.sigma-stat-card {
+    align-items: flex-start !important;
+    min-width: 0 !important;
+    min-height: 64px;
+    padding: 0.72rem !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: var(--ax-radius-md) !important;
+    background: var(--ax-ink-850) !important;
+    color: var(--ax-muted) !important;
+    box-shadow: var(--ax-shadow-tight) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.sigma-summary-chip strong,
+.sigma-stat-value {
+    display: block;
+    color: var(--ax-text) !important;
+    font: 820 1.15rem/1 var(--ax-font-mono) !important;
+}
+
+.sigma-summary-chip em,
+.sigma-stat-label {
+    color: var(--ax-muted) !important;
+    font: 720 0.62rem/1.2 var(--ax-font-mono) !important;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.sigma-summary-linked {
+    border-color: rgba(101, 182, 135, 0.25) !important;
+}
+
+.sigma-summary-release {
+    border-color: rgba(201, 170, 104, 0.25) !important;
+}
+
+.sigma-top-bar,
+.sigma-advanced-filters,
+.sigma-sync-container,
+.sigma-hydrate-status {
+    border: 1px solid var(--ax-line) !important;
+    border-radius: var(--ax-radius-md) !important;
+    background: var(--ax-ink-850) !important;
+    box-shadow: var(--ax-shadow-tight) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.sigma-top-bar {
+    align-items: stretch !important;
+    padding: 0.72rem !important;
+}
+
+.sigma-top-bar-left,
+.sigma-top-bar-right {
+    gap: 0.55rem !important;
+}
+
+.sigma-search-wrapper {
+    width: min(32rem, 42vw) !important;
+}
+
+.sigma-search-wrapper input,
+.sigma-select-filter,
+.sigma-multi-select-header {
+    min-height: 38px;
+    border-color: var(--ax-line) !important;
+    border-radius: var(--ax-radius-sm) !important;
+    background: rgba(255, 255, 255, 0.035) !important;
+    color: var(--ax-text) !important;
+}
+
+.sigma-multi-select-dropdown {
+    border-color: var(--ax-line) !important;
+    border-radius: var(--ax-radius-md) !important;
+    background: var(--ax-ink-850) !important;
+    box-shadow: var(--ax-shadow-soft) !important;
+}
+
+.sigma-filters-row {
+    margin: 0 !important;
+    padding: 0.72rem !important;
+}
+
+.sigma-advanced-filters summary {
+    min-height: 38px;
+    padding: 0.6rem 0.72rem;
+    color: var(--ax-muted);
+    font-family: var(--ax-font-mono);
+    font-weight: 760;
+    cursor: pointer;
+}
+
+.sigma-layout-container {
+    display: grid !important;
+    grid-template-columns: minmax(22rem, 0.38fr) minmax(0, 1fr);
+    gap: 0.85rem !important;
+    height: min(72vh, calc(100vh - 320px)) !important;
+    min-height: 560px;
+    margin-top: 0.75rem !important;
+}
+
+.sigma-list-wrapper,
+.sigma-details-panel {
+    border: 1px solid var(--ax-line) !important;
+    border-radius: var(--ax-radius-lg) !important;
+    background: var(--ax-ink-850) !important;
+    box-shadow: var(--ax-shadow-tight) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.sigma-list-wrapper {
+    width: auto !important;
+    padding: 0.72rem !important;
+    border-right: 1px solid var(--ax-line) !important;
+}
+
+#sigma-feed-grid {
+    padding-right: 0.25rem;
+}
+
+.sigma-date-group-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    margin: 0.1rem 0 0.4rem !important;
+    padding: 0.45rem 0.55rem !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: var(--ax-radius-sm) !important;
+    background: rgba(8, 12, 16, 0.95) !important;
+    color: var(--ax-muted) !important;
+    font-family: var(--ax-font-mono);
+}
+
+.sigma-card {
+    border: 1px solid var(--ax-line) !important;
+    border-left: 3px solid rgba(123, 168, 216, 0.35) !important;
+    border-radius: var(--ax-radius-md) !important;
+    background: rgba(11, 17, 22, 0.94) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+}
+
+.sigma-card:hover,
+.sigma-card:focus-visible {
+    border-color: rgba(123, 168, 216, 0.38) !important;
+    box-shadow: 0 0 0 1px rgba(123, 168, 216, 0.12) !important;
+}
+
+.sigma-card.active {
+    border-color: rgba(137, 183, 174, 0.5) !important;
+    border-left-color: var(--ax-accent) !important;
+    background: rgba(137, 183, 174, 0.1) !important;
+    box-shadow: inset 3px 0 0 var(--ax-accent) !important;
+}
+
+.sigma-card-title,
+.sigma-details-title,
+.candidate-title {
+    color: var(--ax-text) !important;
+    font-family: var(--ax-font-display);
+    letter-spacing: -0.025em;
+}
+
+.sigma-card-desc,
+.sigma-rule-meta-line,
+.sigma-details-body,
+.candidates-subtitle,
+.candidate-meta {
+    color: var(--ax-muted) !important;
+}
+
+.sigma-card-tech,
+.sigma-details-tag,
+.sigma-card-folder,
+.sigma-card-file,
+.sigma-linked-query-tech,
+.sigma-linked-query-lang,
+.sigma-date-action-count {
+    border-radius: var(--ax-radius-xs) !important;
+    font-family: var(--ax-font-mono) !important;
+}
+
+.sigma-badge-coverage.active-coverage {
+    background: rgba(101, 182, 135, 0.1) !important;
+    border-color: rgba(101, 182, 135, 0.28) !important;
+    color: var(--ax-good) !important;
+}
+
+.sigma-badge-coverage.defensive-gap {
+    background: rgba(212, 106, 99, 0.1) !important;
+    border-color: rgba(212, 106, 99, 0.28) !important;
+    color: var(--ax-bad) !important;
+}
+
+.level-critical,
+.level-high {
+    animation: none !important;
+}
+
+.sigma-details-panel {
+    padding: 1rem !important;
+}
+
+.sigma-details-header,
+.sigma-linked-query-card,
+.sigma-release-note-card,
+.sigma-description-block,
+.sigma-definition-panel,
+.sigma-candidates-section,
+.candidate-card,
+.sigma-candidates-empty {
+    border: 1px solid var(--ax-line) !important;
+    border-radius: var(--ax-radius-md) !important;
+    background: rgba(8, 12, 16, 0.72) !important;
+}
+
+.sigma-details-header,
+.sigma-description-block {
+    padding: 0.9rem;
+}
+
+.sigma-linked-query-card,
+.sigma-release-note-card,
+.sigma-definition-panel {
+    padding: 0.85rem 1rem;
+}
+
+.sigma-linked-query-card::before {
+    content: "deployment gate";
+    display: block;
+    width: max-content;
+    margin-bottom: 0.55rem;
+    padding: 0.18rem 0.42rem;
+    border: 1px solid rgba(123, 168, 216, 0.25);
+    border-radius: var(--ax-radius-xs);
+    color: var(--ax-query);
+    background: rgba(123, 168, 216, 0.08);
+    font: 760 0.6rem/1 var(--ax-font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sigma-linked-query-item {
+    border-color: var(--ax-line) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+}
+
+.sigma-yaml-container {
+    border-color: var(--ax-line) !important;
+    border-radius: var(--ax-radius-md) !important;
+    background: var(--ax-ink-950) !important;
+    backdrop-filter: none !important;
+}
+
+.sigma-yaml-code {
+    color: #d8e6e4 !important;
+    font-size: 0.78rem !important;
+}
+
+.sigma-pivot-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    margin: 0.25rem -1rem -1rem;
+    padding: 0.8rem 1rem;
+    border-top: 1px solid var(--ax-line);
+    background: rgba(8, 12, 16, 0.94);
+}
+
+.sigma-pivot-row::before {
+    content: "rule actions";
+    align-self: center;
+    color: var(--ax-muted);
+    font: 760 0.62rem/1 var(--ax-font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.candidates-header {
+    border-color: var(--ax-line) !important;
+}
+
+.sigma-candidates-section {
+    margin-top: 0.85rem;
+    padding: 1rem !important;
+}
+
+@media (max-width: 1200px) {
+    .sigma-summary-strip,
+    .sigma-stats-dashboard {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .sigma-layout-container {
+        grid-template-columns: minmax(19rem, 0.42fr) minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 920px) {
+    .sigma-search-wrapper {
+        width: 100% !important;
+    }
+
+    .sigma-layout-container {
+        grid-template-columns: 1fr;
+        height: auto !important;
+    }
+
+    .sigma-list-wrapper,
+    .sigma-details-panel {
+        min-height: min(420px, 62dvh);
+        max-height: 70vh;
+    }
+
+    .sigma-split-pane,
+    .sigma-split-pane.active-split {
+        flex-direction: column;
+    }
+
+    .sigma-pivot-row {
+        position: static;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 640px) {
+    .sigma-summary-strip,
+    .sigma-stats-dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .sigma-top-bar,
+    .sigma-top-bar-left,
+    .sigma-top-bar-right,
+    .sigma-filters-row,
+    .candidates-header {
+        align-items: stretch !important;
+        flex-direction: column;
+    }
+
+    .sigma-select-filter,
+    .sigma-multi-select {
+        width: 100% !important;
+    }
+}
+
+/* Sigma v3: align with the Queries workbench shell while retaining Sigma-specific controls. */
+#sigma-view.sigma-workbench-view {
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: var(--ax-ink-950);
+}
+
+#sigma-view.sigma-workbench-view.hidden {
+    display: none !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 1rem 1.05rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--ax-line) !important;
+    border-radius: 0 !important;
+    background:
+        linear-gradient(110deg, rgba(17, 26, 32, 0.82), rgba(6, 9, 12, 0.86) 58%),
+        radial-gradient(circle at 70% 0%, rgba(123, 168, 216, 0.1), transparent 20rem) !important;
+    box-shadow: none !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header > div {
+    width: auto;
+    margin: 0 !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header::before,
+#sigma-view.sigma-workbench-view .view-header::after {
+    display: none !important;
+    content: none !important;
+}
+
+#sigma-view.sigma-workbench-view .view-title {
+    margin: 0 !important;
+    font-size: 1.35rem !important;
+    line-height: 1.1 !important;
+}
+
+#sigma-view.sigma-workbench-view .view-subtitle {
+    max-width: 72rem;
+    margin-top: 0.25rem !important;
+    font-size: 0.84rem !important;
+}
+
+#sigma-view .sigma-command-deck {
+    display: grid;
+    gap: 0.6rem !important;
+    margin: 0 !important;
+    padding: 0.75rem 1.05rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--ax-line) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#sigma-view .sigma-kpi-rail {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+#sigma-view .sigma-kpi-card {
+    min-height: 76px;
+    border-radius: 13px;
+}
+
+#sigma-view .sigma-kpi-card strong {
+    font-size: 1.28rem;
+}
+
+#sigma-view .sigma-top-bar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.55rem !important;
+}
+
+#sigma-view .sigma-search-wrapper input,
+#sigma-view .sigma-select-filter,
+#sigma-view .sigma-multi-select-header,
+#sigma-view .sigma-actions-menu summary,
+#sigma-view #sigma-rules-count {
+    min-height: 44px !important;
+    border-radius: 14px !important;
+    background: #030608 !important;
+}
+
+#sigma-view .sigma-advanced-filters summary {
+    min-height: 44px !important;
+    border-radius: 14px !important;
+    background: #030608 !important;
+}
+
+#sigma-view .sigma-layout-container {
+    grid-template-columns: 390px minmax(0, 1fr) !important;
+    gap: 0.75rem !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0.85rem 1.05rem 1rem;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    overflow: hidden;
+}
+
+#sigma-view .sigma-list-wrapper,
+#sigma-view .sigma-details-panel {
+    min-height: 0;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.026) !important;
+}
+
+#sigma-view .sigma-list-wrapper {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    padding: 0.65rem !important;
+}
+
+#sigma-view #sigma-feed-grid {
+    min-height: 0;
+}
+
+#sigma-view .sigma-card.sigma-rule-row.sigma-linked-rule {
+    border-color: rgba(101, 182, 135, 0.28) !important;
+    background:
+        linear-gradient(180deg, rgba(101, 182, 135, 0.105), rgba(255, 255, 255, 0.018)),
+        rgba(255, 255, 255, 0.026) !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row.sigma-linked-rule::before {
+    background: linear-gradient(180deg, rgba(101, 182, 135, 0.86), rgba(137, 183, 174, 0.34)) !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row.sigma-linked-rule:hover,
+#sigma-view .sigma-card.sigma-rule-row.sigma-linked-rule.active {
+    border-color: rgba(101, 182, 135, 0.52) !important;
+    background: rgba(101, 182, 135, 0.13) !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row.sigma-unlinked-rule {
+    background: rgba(255, 255, 255, 0.026) !important;
+}
+
+#sigma-view .sigma-details-panel {
+    display: block;
+    overflow: auto;
+}
+
+@media (max-width: 1400px) {
+    #sigma-view .sigma-kpi-rail {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 980px) {
+    #sigma-view .sigma-layout-container,
+    #sigma-view .sigma-top-bar {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 640px) {
+    #sigma-view .sigma-kpi-rail {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Sigma redesign v2: stronger visual hierarchy for the actual loaded page. */
+#sigma-view.sigma-workbench-view {
+    gap: 0.7rem;
+}
+
+#sigma-view.sigma-workbench-view .view-header {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: space-between !important;
+    min-height: 138px !important;
+    padding: 1.35rem 1.5rem !important;
+    text-align: left !important;
+    background:
+        linear-gradient(105deg, rgba(6, 12, 18, 0.98) 0%, rgba(9, 19, 28, 0.95) 55%, rgba(16, 28, 34, 0.9) 100%),
+        radial-gradient(circle at 74% 28%, rgba(137, 183, 174, 0.24), transparent 24rem) !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header > div {
+    width: min(760px, 68vw);
+    margin: 0 !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header::before {
+    content: "SigmaHQ live triage";
+    position: absolute;
+    top: 1rem;
+    left: 1.35rem;
+}
+
+#sigma-view.sigma-workbench-view .view-header::after {
+    content: "Map -> Translate -> Deploy";
+    inset: auto 1.35rem 1.25rem auto;
+    width: auto;
+    height: auto;
+    padding: 0.32rem 0.55rem;
+    border: 1px solid rgba(137, 183, 174, 0.24);
+    border-radius: 999px;
+    background: rgba(137, 183, 174, 0.08);
+    color: var(--ax-accent);
+    font: 780 0.68rem/1 var(--ax-font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#sigma-view.sigma-workbench-view .view-title {
+    margin-top: 1.6rem;
+    font-size: clamp(2rem, 3vw, 3.1rem) !important;
+    line-height: 0.95 !important;
+}
+
+#sigma-view.sigma-workbench-view .view-subtitle {
+    max-width: 780px;
+    margin-top: 0.65rem;
+    font-size: 0.94rem;
+    line-height: 1.55;
+}
+
+#sigma-view .sigma-command-deck {
+    gap: 0.72rem !important;
+    padding: 0.85rem !important;
+    border-color: rgba(137, 183, 174, 0.18) !important;
+    background:
+        linear-gradient(180deg, rgba(8, 15, 22, 0.98), rgba(4, 8, 12, 0.98)),
+        radial-gradient(circle at 10% 0%, rgba(123, 168, 216, 0.16), transparent 18rem) !important;
+}
+
+#sigma-view #sigma-stats-dashboard.sigma-stats-dashboard {
+    display: block !important;
+    margin: 0 !important;
+}
+
+#sigma-view .sigma-kpi-rail {
+    display: grid !important;
+    grid-template-columns: minmax(180px, 1.35fr) repeat(5, minmax(132px, 1fr));
+    gap: 0.55rem;
+}
+
+#sigma-view .sigma-kpi-card {
+    position: relative;
+    display: grid;
+    min-height: 92px;
+    padding: 0.8rem 0.85rem;
+    overflow: hidden;
+    border: 1px solid rgba(123, 168, 216, 0.16);
+    border-radius: 14px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.018)),
+        rgba(3, 8, 12, 0.82);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+#sigma-view .sigma-kpi-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: rgba(123, 168, 216, 0.55);
+}
+
+#sigma-view .sigma-kpi-card em {
+    color: var(--ax-muted);
+    font: 780 0.62rem/1 var(--ax-font-mono);
+    font-style: normal;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+#sigma-view .sigma-kpi-card strong {
+    color: var(--ax-text);
+    font: 860 1.75rem/1 var(--ax-font-mono);
+    letter-spacing: -0.06em;
+}
+
+#sigma-view .sigma-kpi-card small {
+    color: var(--ax-muted);
+    font-size: 0.7rem;
+}
+
+#sigma-view .sigma-kpi-primary {
+    background:
+        linear-gradient(135deg, rgba(123, 168, 216, 0.16), rgba(255, 255, 255, 0.025)),
+        rgba(3, 8, 12, 0.86);
+}
+
+#sigma-view .sigma-kpi-linked::before {
+    background: rgba(101, 182, 135, 0.72);
+}
+
+#sigma-view .sigma-kpi-release::before {
+    background: rgba(201, 170, 104, 0.72);
+}
+
+#sigma-view .sigma-top-bar {
+    grid-template-columns: minmax(0, 1fr) max-content !important;
+    padding: 0.15rem 0 0 !important;
+}
+
+#sigma-view .sigma-search-wrapper input {
+    min-height: 48px !important;
+    padding-left: 2.45rem !important;
+    border-color: rgba(123, 168, 216, 0.18) !important;
+    background: rgba(255, 255, 255, 0.065) !important;
+}
+
+#sigma-view .sigma-select-filter,
+#sigma-view .sigma-multi-select-header,
+#sigma-view .sigma-actions-menu summary,
+#sigma-view #sigma-rules-count {
+    min-height: 48px !important;
+    border-color: rgba(123, 168, 216, 0.16) !important;
+    background: rgba(255, 255, 255, 0.052) !important;
+}
+
+#sigma-view .sigma-advanced-filters summary {
+    min-height: 54px;
+    border: 1px solid rgba(123, 168, 216, 0.12);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+#sigma-view .sigma-layout-container {
+    grid-template-columns: minmax(420px, 0.78fr) minmax(620px, 1.22fr) !important;
+    min-height: 690px !important;
+    height: min(75vh, calc(100vh - 330px)) !important;
+    border: 1px solid rgba(123, 168, 216, 0.16) !important;
+    background: rgba(3, 7, 11, 0.9) !important;
+}
+
+#sigma-view .sigma-panel-heading {
+    padding: 0.35rem 0.35rem 0.85rem !important;
+}
+
+#sigma-view .sigma-panel-heading h5 {
+    font-size: 1.05rem;
+}
+
+#sigma-view .sigma-date-group-header {
+    border-radius: 12px !important;
+    background: linear-gradient(90deg, rgba(123, 168, 216, 0.11), rgba(255, 255, 255, 0.02)) !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row {
+    padding: 0.82rem 0.86rem !important;
+    border-radius: 14px !important;
+    background:
+        linear-gradient(180deg, rgba(10, 20, 29, 0.96), rgba(5, 10, 15, 0.98)) !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row:hover,
+#sigma-view .sigma-card.sigma-rule-row.active {
+    border-color: rgba(137, 183, 174, 0.44) !important;
+    background:
+        linear-gradient(180deg, rgba(14, 31, 38, 0.96), rgba(5, 12, 16, 0.98)) !important;
+    box-shadow: 0 0 0 1px rgba(137, 183, 174, 0.12) inset, 0 12px 28px rgba(0, 0, 0, 0.22) !important;
+}
+
+#sigma-view .sigma-rule-index-strip {
+    opacity: 0.86;
+}
+
+#sigma-view .sigma-card-title {
+    font-size: 0.9rem !important;
+}
+
+#sigma-view .sigma-card-desc {
+    color: rgba(198, 211, 218, 0.72) !important;
+    line-height: 1.5 !important;
+}
+
+#sigma-view .sigma-details-panel {
+    padding: 0.85rem !important;
+}
+
+#sigma-view .sigma-details-header {
+    background:
+        linear-gradient(135deg, rgba(123, 168, 216, 0.12), rgba(255, 255, 255, 0.025)),
+        rgba(5, 11, 16, 0.95) !important;
+}
+
+#sigma-view .sigma-details-health-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.85rem;
+}
+
+#sigma-view .sigma-details-health-row span {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid rgba(123, 168, 216, 0.13);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+#sigma-view .sigma-details-health-row strong {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ax-text);
+    font: 780 0.78rem/1.15 var(--ax-font-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#sigma-view .sigma-details-health-row small {
+    color: var(--ax-muted);
+    font: 720 0.58rem/1 var(--ax-font-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#sigma-view .sigma-linked-query-card,
+#sigma-view .sigma-description-block,
+#sigma-view .sigma-definition-panel {
+    margin-bottom: 0.75rem !important;
+    background: rgba(255, 255, 255, 0.026) !important;
+}
+
+#sigma-view .sigma-definition-panel:not([open]) summary {
+    border-bottom: 0;
+}
+
+#sigma-view .sigma-definition-panel summary {
+    min-height: 58px;
+}
+
+#sigma-view .sigma-translate-btn {
+    font-size: 0.75rem;
+    padding: 0.32rem 0.7rem;
+    border-color: rgba(137, 183, 174, 0.46) !important;
+    color: var(--ax-accent) !important;
+}
+
+#sigma-view .sigma-definition-panel .sigma-yaml-code {
+    max-height: 360px !important;
+    min-height: 220px !important;
+}
+
+#sigma-view .sigma-pivot-row {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.55rem !important;
+}
+
+@media (max-width: 1400px) {
+    #sigma-view .sigma-kpi-rail {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    #sigma-view .sigma-layout-container {
+        grid-template-columns: minmax(360px, 0.82fr) minmax(520px, 1.18fr) !important;
+    }
+}
+
+@media (max-width: 980px) {
+    #sigma-view.sigma-workbench-view .view-header > div {
+        width: 100%;
+    }
+
+    #sigma-view.sigma-workbench-view .view-header::after {
+        display: none;
+    }
+
+    #sigma-view .sigma-layout-container {
+        grid-template-columns: 1fr !important;
+        height: auto !important;
+    }
+
+    #sigma-view .sigma-details-health-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    #sigma-view .sigma-kpi-rail,
+    #sigma-view .sigma-details-health-row {
+        grid-template-columns: 1fr;
+    }
+
+    #sigma-view.sigma-workbench-view .view-title {
+        font-size: 2rem !important;
+    }
+}
+
+/* Sigma v4 final cascade: Queries-style workbench. This block intentionally wins over older Sigma passes above. */
+#sigma-view.sigma-workbench-view.hidden {
+    display: none !important;
+}
+
+#sigma-view.sigma-workbench-view:not(.hidden) {
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr) auto !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: var(--ax-ink-950) !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: end !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 1rem 1.05rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--ax-line) !important;
+    border-radius: 0 !important;
+    background:
+        linear-gradient(110deg, rgba(17, 26, 32, 0.82), rgba(6, 9, 12, 0.86) 58%),
+        radial-gradient(circle at 70% 0%, rgba(123, 168, 216, 0.1), transparent 20rem) !important;
+    box-shadow: none !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header::before,
+#sigma-view.sigma-workbench-view .view-header::after {
+    display: none !important;
+    content: none !important;
+}
+
+#sigma-view.sigma-workbench-view .view-header > div {
+    width: auto !important;
+    margin: 0 !important;
+}
+
+#sigma-view.sigma-workbench-view .view-title {
+    margin: 0 !important;
+    font-size: 1.35rem !important;
+    line-height: 1.1 !important;
+}
+
+#sigma-view.sigma-workbench-view .view-subtitle {
+    max-width: 72rem !important;
+    margin-top: 0.25rem !important;
+    font-size: 0.84rem !important;
+    line-height: 1.45 !important;
+}
+
+#sigma-view .sigma-command-deck {
+    display: grid !important;
+    gap: 0.6rem !important;
+    margin: 0 !important;
+    padding: 0.75rem 1.05rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--ax-line) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#sigma-view #sigma-stats-dashboard.sigma-stats-dashboard {
+    display: block !important;
+    margin: 0 !important;
+}
+
+#sigma-view .sigma-kpi-rail {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 0.45rem !important;
+}
+
+#sigma-view .sigma-kpi-card {
+    min-height: 68px !important;
+    padding: 0.62rem 0.68rem !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: 13px !important;
+    background: rgba(255, 255, 255, 0.026) !important;
+    box-shadow: none !important;
+}
+
+#sigma-view .sigma-kpi-card strong {
+    font-size: 1.08rem !important;
+}
+
+#sigma-view .sigma-top-bar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.55rem !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#sigma-view .sigma-search-wrapper {
+    width: 100% !important;
+}
+
+#sigma-view .sigma-search-wrapper input,
+#sigma-view .sigma-select-filter,
+#sigma-view .sigma-multi-select-header,
+#sigma-view .sigma-actions-menu summary,
+#sigma-view #sigma-rules-count,
+#sigma-view .sigma-advanced-filters summary {
+    min-height: 44px !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: 14px !important;
+    background: #030608 !important;
+    box-shadow: none !important;
+}
+
+#sigma-view .sigma-layout-container {
+    display: grid !important;
+    grid-template-columns: 380px minmax(0, 1fr) !important;
+    gap: 0.75rem !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0.85rem 1.05rem 1rem !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    overflow: hidden !important;
+}
+
+#sigma-view .sigma-list-wrapper,
+#sigma-view .sigma-details-panel {
+    min-height: 0 !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.026) !important;
+    box-shadow: none !important;
+}
+
+#sigma-view .sigma-list-wrapper {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    padding: 0.65rem !important;
+    overflow: hidden !important;
+}
+
+#sigma-view #sigma-feed-grid {
+    min-height: 0 !important;
+    overflow: auto !important;
+    height: 100% !important;
+    padding: 0.55rem 0.2rem 0 0 !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row {
+    border-radius: 13px !important;
+    background: rgba(255, 255, 255, 0.026) !important;
+    box-shadow: none !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row.sigma-linked-rule {
+    border-color: rgba(101, 182, 135, 0.36) !important;
+    background: rgba(101, 182, 135, 0.09) !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row.sigma-linked-rule::before {
+    background: linear-gradient(180deg, rgba(101, 182, 135, 0.92), rgba(137, 183, 174, 0.36)) !important;
+}
+
+#sigma-view .sigma-details-panel {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+#sigma-view .sigma-details-empty {
+    margin: 0.85rem !important;
+}
+
+#sigma-view .sigma-details-header {
+    margin: 0 !important;
+    padding: 0.75rem 0.85rem !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--ax-line) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+#sigma-view .sigma-details-title {
+    font-size: 1.1rem !important;
+    line-height: 1.22 !important;
+}
+
+#sigma-view .sigma-details-health-row {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.4rem !important;
+    margin-top: 0.72rem !important;
+}
+
+#sigma-view .sigma-details-health-row span {
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.026) !important;
+}
+
+#sigma-view .sigma-details-body {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 310px !important;
+    grid-auto-rows: max-content !important;
+    gap: 0.75rem !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0.75rem !important;
+    overflow: auto !important;
+}
+
+#sigma-view .sigma-definition-panel {
+    grid-column: 1 !important;
+    grid-row: 1 / span 20 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: 16px !important;
+    background: #040609 !important;
+}
+
+#sigma-view .sigma-definition-panel summary {
+    min-height: 48px !important;
+    border-bottom: 1px solid var(--ax-line) !important;
+    background: rgba(255, 255, 255, 0.018) !important;
+}
+
+#sigma-view .sigma-yaml-header-row {
+    margin: 0 !important;
+    padding: 0.65rem 0.75rem !important;
+}
+
+#sigma-view .sigma-split-pane,
+#sigma-view .sigma-definition-panel .sigma-split-pane {
+    margin: 0 !important;
+    padding: 0 0.75rem 0.75rem !important;
+    height: auto !important;
+}
+
+#sigma-view .sigma-yaml-container {
+    min-height: 460px !important;
+    height: 100% !important;
+    background: #030506 !important;
+}
+
+#sigma-view .sigma-definition-panel .sigma-yaml-code,
+#sigma-view .sigma-yaml-code {
+    display: block !important;
+    min-height: 460px !important;
+    max-height: calc(100vh - 480px) !important;
+    height: auto !important;
+    overflow: auto !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+    color: #cfd9d6 !important;
+    background:
+        linear-gradient(rgba(137, 183, 174, 0.035) 1px, transparent 1px) 0 0 / 100% 31px,
+        #030506 !important;
+    font: 500 0.8rem/1.6 var(--ax-font-mono) !important;
+}
+
+#sigma-view .sigma-release-note-card,
+#sigma-view .sigma-linked-query-card,
+#sigma-view .sigma-description-block,
+#sigma-view .sigma-pivot-row {
+    grid-column: 2 !important;
+    margin: 0 !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.026) !important;
+}
+
+#sigma-view .sigma-linked-query-item {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 0.42rem 0.55rem !important;
+    align-items: center !important;
+}
+
+#sigma-view .sigma-linked-query-item .sigma-linked-query-name {
+    grid-column: 1;
+    grid-row: 1;
+    color: var(--ax-text) !important;
+    font-weight: 760 !important;
+    white-space: normal !important;
+}
+
+#sigma-view .sigma-linked-query-item .sigma-linked-query-lang {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+}
+
+#sigma-view .sigma-linked-query-item .sigma-linked-query-tech {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    width: max-content;
+    max-width: 100%;
+    color: var(--ax-muted) !important;
+    font-size: 0.62rem !important;
+    font-weight: 720 !important;
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+#sigma-view .sigma-pivot-row {
+    display: grid !important;
+    gap: 0.45rem !important;
+    padding: 0.75rem !important;
+    position: static !important;
+}
+
+@media (max-width: 1400px) {
+    #sigma-view .sigma-kpi-rail {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+
+    #sigma-view .sigma-details-body {
+        grid-template-columns: minmax(0, 1fr) 280px !important;
+    }
+}
+
+@media (max-width: 980px) {
+    #sigma-view .sigma-layout-container,
+    #sigma-view .sigma-top-bar,
+    #sigma-view .sigma-details-body {
+        grid-template-columns: 1fr !important;
+    }
+
+    #sigma-view .sigma-definition-panel,
+    #sigma-view .sigma-release-note-card,
+    #sigma-view .sigma-linked-query-card,
+    #sigma-view .sigma-description-block,
+    #sigma-view .sigma-pivot-row {
+        grid-column: 1 !important;
+        grid-row: auto !important;
+    }
+}
+
+@media (max-width: 640px) {
+    #sigma-view .sigma-kpi-rail,
+    #sigma-view .sigma-details-health-row {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Final Sigma workstation pass. Keep these scoped to the Sigma view so legacy Sigma styles remain available elsewhere. */
+#sigma-view.sigma-workbench-view {
+    --sigma-card-bg: rgba(6, 12, 18, 0.88);
+    --sigma-panel-bg: rgba(7, 12, 18, 0.92);
+    --sigma-panel-edge: rgba(123, 168, 216, 0.18);
+}
+
+#sigma-view .view-header {
+    position: relative;
+    overflow: hidden;
+    min-height: 112px;
+    padding: 1.1rem 1.2rem !important;
+    border: 1px solid var(--sigma-panel-edge) !important;
+}
+
+#sigma-view .view-header::after {
+    content: "";
+    position: absolute;
+    inset: auto 1.2rem 1rem auto;
+    width: min(30vw, 360px);
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(123, 168, 216, 0.75));
+}
+
+#sigma-view .view-title {
+    font-size: clamp(1.35rem, 2.1vw, 2rem) !important;
+    letter-spacing: -0.045em;
+}
+
+.sigma-command-deck {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.75rem;
+    border: 1px solid var(--sigma-panel-edge);
+    border-radius: var(--ax-radius-lg);
+    background:
+        linear-gradient(180deg, rgba(11, 18, 24, 0.96), rgba(5, 8, 12, 0.92)),
+        radial-gradient(circle at 18% 0%, rgba(137, 183, 174, 0.09), transparent 20rem);
+    box-shadow: var(--ax-shadow-tight);
+}
+
+#sigma-view .sigma-summary-strip,
+#sigma-view .sigma-stats-dashboard {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin-bottom: 0 !important;
+}
+
+#sigma-view .sigma-summary-chip {
+    position: relative;
+    display: grid !important;
+    gap: 0.28rem;
+    min-height: 86px;
+    padding: 0.85rem !important;
+    overflow: hidden;
+}
+
+#sigma-view .sigma-summary-chip::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    height: 2px;
+    background: linear-gradient(90deg, rgba(123, 168, 216, 0.72), transparent);
+}
+
+#sigma-view .sigma-summary-chip strong {
+    font-size: 1.45rem !important;
+    letter-spacing: -0.04em;
+}
+
+#sigma-view .sigma-summary-chip small {
+    color: var(--ax-muted);
+    font: 650 0.68rem/1.25 var(--ax-font-mono);
+}
+
+#sigma-view .sigma-summary-linked::after {
+    background: linear-gradient(90deg, rgba(101, 182, 135, 0.82), transparent);
+}
+
+#sigma-view .sigma-summary-release::after {
+    background: linear-gradient(90deg, rgba(201, 170, 104, 0.82), transparent);
+}
+
+#sigma-view .sigma-top-bar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#sigma-view .sigma-top-bar-left,
+#sigma-view .sigma-top-bar-right,
+#sigma-view .sigma-filters-row {
+    gap: 0.5rem !important;
+}
+
+#sigma-view .sigma-search-wrapper {
+    width: min(100%, 36rem) !important;
+}
+
+#sigma-view .sigma-search-wrapper input,
+#sigma-view .sigma-select-filter,
+#sigma-view .sigma-multi-select-header {
+    min-height: 42px;
+    background: rgba(255, 255, 255, 0.045) !important;
+}
+
+#sigma-view .sigma-advanced-filters {
+    margin: 0 !important;
+}
+
+#sigma-view .sigma-layout-container {
+    grid-template-columns: minmax(23rem, 0.42fr) minmax(0, 1fr);
+    height: min(74vh, calc(100vh - 300px)) !important;
+    min-height: 620px;
+    gap: 0.75rem !important;
+}
+
+#sigma-view .sigma-list-wrapper,
+#sigma-view .sigma-details-panel {
+    background:
+        linear-gradient(180deg, rgba(10, 16, 22, 0.96), rgba(4, 7, 10, 0.96)),
+        radial-gradient(circle at 18% 0%, rgba(123, 168, 216, 0.08), transparent 16rem) !important;
+    border-color: var(--sigma-panel-edge) !important;
+}
+
+#sigma-view .sigma-list-wrapper {
+    gap: 0.55rem;
+    overflow: hidden;
+}
+
+.sigma-panel-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.15rem 0.15rem 0.65rem;
+    border-bottom: 1px solid var(--ax-line);
+}
+
+.sigma-panel-heading h5 {
+    margin: 0.1rem 0 0;
+    color: var(--ax-text);
+    font: 780 0.95rem/1.2 var(--ax-font-display);
+    letter-spacing: -0.025em;
+}
+
+.sigma-panel-kicker,
+.sigma-panel-note,
+.sigma-details-eyebrow {
+    color: var(--ax-muted);
+    font: 760 0.62rem/1 var(--ax-font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.sigma-panel-note {
+    padding-top: 0.22rem;
+    text-align: right;
+    white-space: nowrap;
+}
+
+#sigma-view #sigma-feed-grid {
+    padding-right: 0.25rem;
+}
+
+#sigma-view .sigma-date-group-header {
+    top: 0;
+    margin: 0.2rem 0 0.45rem !important;
+    padding: 0.5rem 0.58rem !important;
+    border: 1px solid rgba(123, 168, 216, 0.16) !important;
+    background: rgba(5, 9, 13, 0.96) !important;
+}
+
+#sigma-view .sigma-date-action-summary,
+#sigma-view .sigma-date-action-count {
+    display: inline-flex !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row {
+    display: grid !important;
+    gap: 0.48rem !important;
+    padding: 0.72rem !important;
+    border-color: rgba(123, 168, 216, 0.12) !important;
+    border-left: 0 !important;
+    background: var(--sigma-card-bg) !important;
+}
+
+#sigma-view .sigma-card.sigma-rule-row::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: linear-gradient(180deg, rgba(123, 168, 216, 0.65), rgba(137, 183, 174, 0.22));
+}
+
+#sigma-view .sigma-card.sigma-rule-row.active::before {
+    background: linear-gradient(180deg, var(--ax-accent), rgba(123, 168, 216, 0.55));
+}
+
+.sigma-rule-index-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    color: var(--ax-muted);
+    font: 720 0.58rem/1 var(--ax-font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+#sigma-view .sigma-rule-main {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+#sigma-view .sigma-rule-title-line {
+    align-items: flex-start;
+}
+
+#sigma-view .sigma-card-title {
+    font-size: 0.84rem !important;
+    line-height: 1.28 !important;
+}
+
+#sigma-view .sigma-rule-meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.28rem 0.45rem;
+    margin-top: 0.38rem;
+    white-space: normal;
+}
+
+#sigma-view .sigma-rule-meta-line span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+    max-width: 100%;
+}
+
+#sigma-view .sigma-rule-meta-line span + span::before {
+    content: none;
+}
+
+#sigma-view .sigma-card-desc {
+    display: -webkit-box !important;
+    margin: 0 !important;
+    padding-left: 0 !important;
+    -webkit-line-clamp: 2 !important;
+}
+
+#sigma-view .sigma-rule-signals {
+    align-content: flex-start;
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+    max-width: 150px;
+}
+
+#sigma-view .sigma-load-more-control {
+    border-color: rgba(123, 168, 216, 0.42) !important;
+    color: var(--ax-query) !important;
+}
+
+#sigma-view .sigma-details-panel {
+    padding: 1rem !important;
+}
+
+#sigma-view .sigma-details-header {
+    position: relative;
+    padding: 1rem !important;
+    border: 1px solid var(--ax-line) !important;
+    border-radius: var(--ax-radius-md) !important;
+    background: rgba(255, 255, 255, 0.025) !important;
+}
+
+#sigma-view .sigma-details-title {
+    font-size: clamp(1.25rem, 1.7vw, 1.65rem) !important;
+    letter-spacing: -0.045em;
+}
+
+#sigma-view .sigma-details-body {
+    margin-top: 0.85rem;
+}
+
+#sigma-view .sigma-details-empty {
+    min-height: 100% !important;
+    padding: 1.2rem !important;
+    border: 1px dashed var(--sigma-panel-edge);
+    border-radius: var(--ax-radius-md);
+    background: rgba(255, 255, 255, 0.025);
+}
+
+#sigma-view .sigma-details-empty .sigma-details-eyebrow {
+    margin-bottom: 0.4rem;
+}
+
+#sigma-view .sigma-linked-query-card::before {
+    content: none;
+}
+
+@media (max-width: 1200px) {
+    #sigma-view .sigma-summary-strip,
+    #sigma-view .sigma-stats-dashboard {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 920px) {
+    #sigma-view .sigma-top-bar {
+        grid-template-columns: 1fr;
+    }
+
+    #sigma-view .sigma-layout-container {
+        grid-template-columns: 1fr;
+        height: auto !important;
+    }
+
+    #sigma-view .sigma-list-wrapper,
+    #sigma-view .sigma-details-panel {
+        max-height: none;
+    }
+}
+
+@media (max-width: 640px) {
+    #sigma-view .sigma-summary-strip,
+    #sigma-view .sigma-stats-dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    #sigma-view .sigma-command-deck {
+        padding: 0.55rem;
+    }
+
+    #sigma-view .sigma-rule-main {
+        grid-template-columns: 1fr;
+    }
+
+    #sigma-view .sigma-rule-signals {
+        max-width: none;
+        margin-left: 0 !important;
+    }
+}
