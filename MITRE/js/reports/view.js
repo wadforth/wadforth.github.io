@@ -3263,11 +3263,21 @@ function buildExportSectionTitle(title, subtitle = '', isDark = false, accent = 
 function buildExportTierHeading(number, title, subtitle, isDark = false, accent = null) {
     const v = getExportVisuals(isDark);
     const color = accent || v.accent;
+    const chapterNumber = String(number).padStart(2, '0');
     return `
-        <div class="export-tier-heading" style="margin:0 0 18px;padding:18px 20px;border:1px solid ${v.border};border-left:6px solid ${color};border-radius:18px;background:${isDark ? 'linear-gradient(135deg,#111820,#0c0f12)' : 'linear-gradient(135deg,#f8fafc,#ffffff)'};">
-            <div style="font-size:11px;font-weight:900;color:${color};text-transform:uppercase;letter-spacing:0.16em;margin-bottom:6px;">Tier ${number}</div>
-            <div style="font-size:26px;font-weight:900;color:${v.heading};line-height:1.05;letter-spacing:-0.045em;">${escapeHtml(title)}</div>
-            <div style="font-size:12.5px;color:${v.muted};line-height:1.45;margin-top:7px;">${escapeHtml(subtitle)}</div>
+        <div class="export-chapter-heading" style="margin:0 0 26px;padding:30px 0 18px;border-top:4px solid ${color};border-bottom:1px solid ${v.border};background:transparent;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;border:0;margin:0;">
+                <tr>
+                    <td style="width:86px;border:0;padding:0 22px 0 0;vertical-align:top;">
+                        <div class="export-chapter-number" style="color:${color};font-size:42px;font-weight:950;line-height:0.95;letter-spacing:-0.08em;">${chapterNumber}</div>
+                    </td>
+                    <td style="border:0;padding:0;vertical-align:top;">
+                        <div style="font-size:10px;font-weight:900;color:${color};text-transform:uppercase;letter-spacing:0.16em;margin-bottom:7px;">Report Section</div>
+                        <h2 style="margin:0;color:${v.heading};font-size:34px;font-weight:950;line-height:0.98;letter-spacing:-0.065em;">${escapeHtml(title)}</h2>
+                        <p style="margin:9px 0 0;color:${v.muted};font-size:13px;line-height:1.55;max-width:760px;">${escapeHtml(subtitle)}</p>
+                    </td>
+                </tr>
+            </table>
         </div>
     `;
 }
@@ -3434,11 +3444,11 @@ function buildTeamAssignmentsExport(report, isDark = false) {
 function buildDetectionResultsExport(report, isDark = false) {
     const results = report.detectionResults || [];
     if (results.length === 0) {
-        return `<div class="section" id="detection-results" style="page-break-inside: avoid;"><a name="detection-results"></a>${buildExportSectionTitle('Triggered Detection Results', 'Imported alert or hunt execution outcomes for this reporting period.', isDark, '#34d399')}<p style="font-size: 12.5px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin: 0;">No triggered detection results were imported for this reporting period. This does not prove active queries produced no alerts unless result ingestion is enabled and complete.</p></div>`;
+        return `<div class="section" id="detection-results" style="page-break-inside: avoid;"><a name="detection-results"></a>${buildExportSectionTitle('Imported Detection Results', 'Alert or hunt execution outcomes imported for this reporting period.', isDark, '#34d399')}<p style="font-size: 12.5px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin: 0;">No detection results were imported for this reporting period. This does not prove active queries produced no alerts unless result ingestion is enabled and complete.</p></div>`;
     }
     return `
         <div class="section" id="detection-results" style="page-break-inside: avoid;"><a name="detection-results"></a>
-            ${buildExportSectionTitle('Triggered Detection Results', 'Imported alert or hunt execution outcomes for this reporting period.', isDark, '#34d399')}
+            ${buildExportSectionTitle('Imported Detection Results', 'Alert or hunt execution outcomes imported for this reporting period.', isDark, '#34d399')}
             <p style="margin-bottom: 12px; font-size: 13px; color: ${isDark ? '#cbd5e1' : '#475569'};">Imported results from executed hunts or alert pipelines. Treat absence of records as an ingestion state, not proof of no alerts.</p>
             ${results.map(r => `
                 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse; margin-bottom:12px;" class="detection-item">
@@ -3478,10 +3488,10 @@ function buildRiskHeatMapExport(report, isDark = false) {
     const rows = getThreatGroupRiskRows(report);
     const v = getExportVisuals(isDark);
     if (!state.groups || state.groups.length === 0) {
-        return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>${buildExportSectionTitle('Risk Heat Map', 'Threat group data was not imported, so risk distribution cannot be calculated.', isDark, '#f59e0b')}</div>`;
+        return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>${buildExportSectionTitle('Mapped Risk Distribution', 'Threat group data was not imported, so mapped risk distribution cannot be calculated.', isDark, '#f59e0b')}</div>`;
     }
     if (rows.length === 0) {
-        return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>${buildExportSectionTitle('Risk Heat Map', 'Threat group relationships are unavailable or did not match mapped techniques for this period.', isDark, '#f59e0b')}</div>`;
+        return `<div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>${buildExportSectionTitle('Mapped Risk Distribution', 'Threat group relationships are unavailable or did not match mapped techniques for this period.', isDark, '#f59e0b')}</div>`;
     }
 
     const impacts = ['Critical', 'High', 'Medium', 'Low'];
@@ -3501,7 +3511,7 @@ function buildRiskHeatMapExport(report, isDark = false) {
 
     return `
         <div class="section" id="risk-heatmap" style="page-break-inside: avoid;"><a name="risk-heatmap"></a>
-            ${buildExportSectionTitle('Risk Heat Map', 'Compact distribution of threat groups by mapped coverage gap impact and ATT&CK technique-count likelihood.', isDark, '#f59e0b')}
+            ${buildExportSectionTitle('Mapped Risk Distribution', 'Compact distribution of threat groups by mapped coverage gap impact and ATT&CK technique-count likelihood.', isDark, '#f59e0b')}
             <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:11px;line-height:1.4;margin-bottom:10px;">
                 <thead><tr><th>Impact / Likelihood</th>${likelihoods.map(label => `<th style="text-align:center;">${label}</th>`).join('')}</tr></thead>
                 <tbody>
@@ -4146,10 +4156,10 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         <div class="html-export-toolbar" role="navigation" aria-label="Export navigation">
             <strong>${escapeHtml(reportTitle)}</strong>
             <span>Generated ${escapeHtml(formatReportDate(report.generatedAt || report.generatedDate || new Date()))}</span>
-            <a href="#tier-1">Executive</a>
-            <a href="#tier-2">Threats</a>
-            <a href="#tier-3">Operations</a>
-            <a href="#tier-4">Appendix</a>
+            <a href="#tier-1">Summary</a>
+            <a href="#tier-2">Exposure</a>
+            <a href="#tier-3">Progress</a>
+            <a href="#tier-4">Evidence</a>
             <span>Print-ready</span>
         </div>
     ` : '';
@@ -4328,11 +4338,11 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                     </tr>
                 `;
             }).join('');
-            newQueriesHtml = `<div class="section" id="query-library"><a name="query-library"></a><h3>${reportIcon('search', isDark ? '#38bdf8' : '#0284c7', 14)}New Threat Hunt Queries</h3>
+            newQueriesHtml = `<div class="section" id="query-library"><a name="query-library"></a><h3>${reportIcon('search', isDark ? '#38bdf8' : '#0284c7', 14)}New Query Evidence</h3>
                 ${queryRepositoryHtml}
                 <p style="margin-bottom: 12px; color: ${isDark ? '#cbd5e1' : '#475569'}; font-size: 13px;">${newQueries.length} queries for this period:</p>
                 <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; font-size: 11px; line-height: 1.45;">
-                    <thead><tr><th>Query</th><th>Type</th><th>Created</th><th>Mappings &amp; sources</th></tr></thead>
+                    <thead><tr><th>Query</th><th>Language</th><th>Recorded</th><th>Mappings &amp; sources</th></tr></thead>
                     <tbody>${queryRows}</tbody>
                 </table>
             </div>`;
@@ -4340,7 +4350,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
     }
 
     if (!newQueriesHtml) {
-        newQueriesHtml = `<div class="section" id="query-library"><a name="query-library"></a><h3>${reportIcon('search', isDark ? '#38bdf8' : '#0284c7', 14)}New Threat Hunt Queries</h3>${queryRepositoryHtml}<p style="color:${isDark ? '#94a3b8' : '#64748b'}; font-size:13px; margin:0;">No new threat hunt queries were recorded for this period.</p></div>`;
+        newQueriesHtml = `<div class="section" id="query-library"><a name="query-library"></a><h3>${reportIcon('search', isDark ? '#38bdf8' : '#0284c7', 14)}New Query Evidence</h3>${queryRepositoryHtml}<p style="color:${isDark ? '#94a3b8' : '#64748b'}; font-size:13px; margin:0;">No new threat hunt queries were recorded for this period.</p></div>`;
     }
     
     // Tactics Graph Revamp: Column Gap Triage
@@ -4381,7 +4391,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
 
         tacticsGraphHtml = `
             <div class="section">
-                <h3>Tactic Gap Triage Radar</h3>
+                <h3>Tactic Coverage Triage</h3>
                 <table width="100%" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
                     <tr>
                         <td valign="top" style="width: 32%; padding-right: 2%; vertical-align: top; border: none;">
@@ -4484,7 +4494,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         if (app.limitations) sections.push(`<div class="subsection"><h4>Limitations</h4><p>${markdownToHtml(app.limitations)}</p></div>`);
         if (app.additionalNotes) sections.push(`<div class="subsection"><h4>Additional Notes</h4><p>${markdownToHtml(app.additionalNotes)}</p></div>`);
         appendixHtml = `<div class="section" id="mitre-appendix" style="page-break-inside: avoid;"><a name="mitre-appendix"></a>
-            <h3>${reportIcon('search', isDark ? '#38bdf8' : '#0284c7', 14)}MITRE ATT&amp;CK Appendix</h3>
+            <h3>${reportIcon('search', isDark ? '#38bdf8' : '#0284c7', 14)}Report Appendix</h3>
             <p style="font-size: 12px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-bottom: 10px;">Methodology, scope, limitations, and export context retained from the interactive report.</p>
             ${sections.join('')}
         </div>`;
@@ -4547,13 +4557,13 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
         <nav class="export-toc" aria-label="Report contents">
             <h4>Contents</h4>
             <ol class="export-toc-list">
-                <li><a href="#tier-1"><code>01</code><strong>Executive posture</strong><span>Summary, focus areas, leadership guidance.</span><em class="pdf-page-ref">Page 2</em></a></li>
-                <li><a href="#tier-2"><code>02</code><strong>Threat landscape</strong><span>Actor/software overlap and strategic gaps.</span><em class="pdf-page-ref">Page 3</em></a></li>
-                <li><a href="#gap-analysis"><code>03</code><strong>Gap analysis</strong><span>Tactic visibility, roadmap and ownership.</span><em class="pdf-page-ref">Page 3</em></a></li>
-                <li><a href="#tier-3"><code>04</code><strong>Operational progress</strong><span>Timeline, trend movement and query changes.</span><em class="pdf-page-ref">Page 4</em></a></li>
-                <li><a href="#query-library"><code>05</code><strong>Hunt queries</strong><span>New detections, mappings and deployment state.</span><em class="pdf-page-ref">Page 5</em></a></li>
-                <li><a href="#methodology-scope"><code>06</code><strong>Methodology</strong><span>Telemetry scope, assumptions and references.</span><em class="pdf-page-ref">Page 5</em></a></li>
-                <li><a href="#mitre-appendix"><code>07</code><strong>Appendix</strong><span>Dynamic layout, data quality and export rules.</span><em class="pdf-page-ref">Page 6</em></a></li>
+                <li><a href="#tier-1"><code>01</code><strong>Executive Summary</strong><span>Current position, focus areas and leadership guidance.</span><em class="pdf-page-ref">Page 2</em></a></li>
+                <li><a href="#tier-2"><code>02</code><strong>Threat Exposure &amp; Gaps</strong><span>Adversary overlap, zero-coverage exposure, priorities and ownership.</span><em class="pdf-page-ref">Page 3</em></a></li>
+                <li><a href="#gap-analysis"><code>03</code><strong>Gap Priorities</strong><span>Tactic visibility, roadmap and mapped coverage gaps.</span><em class="pdf-page-ref">Page 3</em></a></li>
+                <li><a href="#tier-3"><code>04</code><strong>Operational Progress</strong><span>Activity history, detection results and coverage movement.</span><em class="pdf-page-ref">Page 4</em></a></li>
+                <li><a href="#query-library"><code>05</code><strong>Query Evidence</strong><span>New hunt queries, mappings, Sigma links and deployment state.</span><em class="pdf-page-ref">Page 5</em></a></li>
+                <li><a href="#methodology-scope"><code>06</code><strong>Methodology &amp; Scope</strong><span>Telemetry scope, assumptions and assessment method.</span><em class="pdf-page-ref">Page 5</em></a></li>
+                <li><a href="#mitre-appendix"><code>07</code><strong>Appendix &amp; References</strong><span>References, ATT&amp;CK version context and export notes.</span><em class="pdf-page-ref">Page 6</em></a></li>
                 <li><a href="#top"><code>Top</code><strong>Back to top</strong><span>Normal anchor navigation, export friendly.</span></a></li>
             </ol>
         </nav>
@@ -5110,13 +5120,41 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
             font-style: normal;
         }
         #posture-dashboard { border-bottom-color: ${isDark ? '#2a313a' : '#d8e0e7'} !important; }
-        .section, .tier-container > div:not(.page-number-footer) {
-            border-color: ${isDark ? '#27303a' : '#dfe7ee'} !important;
-            border-radius: 22px !important;
+        .tier-container {
+            margin-top: 52px !important;
+        }
+        .export-chapter-heading,
+        .export-chapter-heading table,
+        .export-chapter-heading td {
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+        .export-chapter-heading table {
+            border: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+        }
+        .export-chapter-heading td {
+            border: 0 !important;
+        }
+        .tier-container > div:not(.page-number-footer):not(.export-chapter-heading),
+        .section {
+            border-radius: 0 !important;
+            box-shadow: none !important;
         }
         .section {
-            padding: 18px !important;
-            background: ${isDark ? 'linear-gradient(180deg,#111820,#0d1116)' : '#ffffff'} !important;
+            margin: 0 !important;
+            padding: 30px 0 !important;
+            border: 0 !important;
+            border-bottom: 1px solid ${isDark ? '#27303a' : '#e5edf2'} !important;
+            background: transparent !important;
+        }
+        .section:last-child {
+            border-bottom: 0 !important;
+        }
+        .section > .export-section-title {
+            margin-bottom: 18px !important;
         }
         .section h3 {
             padding-left: 0 !important;
@@ -5213,7 +5251,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 1: Executive Security Posture Briefing -->
                 <div class="tier-container" id="tier-1" style="margin-top: 24px; margin-bottom: 30px;">
                     <a name="tier-1"></a>
-                    ${buildExportTierHeading('1', 'Executive Security Posture', 'Leadership view of posture, focus areas and business-facing guidance.', isDark, isDark ? '#9ccfd8' : '#0369a1')}
+                    ${buildExportTierHeading('1', 'Executive Summary', 'Leadership view of mapped coverage, current focus areas and business-facing guidance.', isDark, isDark ? '#9ccfd8' : '#0369a1')}
                     ${buildExecutiveSecurityExport({ execSummary, monthlyFocus, leadership }, isDark)}
                 </div>
                 <div class="page-number-footer" style="display:none; text-align:center; font-size:9px; color:#94a3b8; padding:8px 0; border-top:1px solid #e2e8f0; margin-top:15px;">Page 2 of 5</div>
@@ -5223,7 +5261,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 2: Threat Landscape & Strategic Gaps -->
                 <div class="tier-container" id="tier-2" style="margin-bottom: 30px;">
                     <a name="tier-2"></a>
-                    ${buildExportTierHeading('2', 'Threat Landscape & Strategic Gaps', 'Adversary overlap, zero-coverage exposure, roadmap priorities and team ownership.', isDark, isDark ? '#fbbf24' : '#d97706')}
+                    ${buildExportTierHeading('2', 'Threat Exposure & Gap Priorities', 'Adversary overlap, zero-coverage exposure, roadmap priorities and team ownership.', isDark, isDark ? '#fbbf24' : '#d97706')}
                     
                     ${buildThreatsSectionEmail(report, isDark) ? `<div id="adversary-mapper"><a name="adversary-mapper"></a>${buildThreatsSectionEmail(report, isDark)}</div>` : ''}
                     
@@ -5244,7 +5282,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 3: Operational Hunt Progress -->
                 <div class="tier-container" id="tier-3" style="margin-bottom: 30px;">
                     <a name="tier-3"></a>
-                    ${buildExportTierHeading('3', 'Operational Hunt Progress', 'Reporting-period changes, detection results, trend movement and coverage breakdown.', isDark, isDark ? '#34d399' : '#16a34a')}
+                    ${buildExportTierHeading('3', 'Operational Progress', 'Reporting-period activity, imported detection results, trend movement and coverage breakdown.', isDark, isDark ? '#34d399' : '#16a34a')}
                     
                     ${buildEmailMonthlyActivity(report, theme, isDark)}
                     ${tacticsGraphHtml}
@@ -5260,7 +5298,7 @@ export function buildEmailHTML(report, isDark = false, options = {}) {
                 <!-- Tier 4: Telemetry Proof & Appendix -->
                 <div class="tier-container" id="tier-4" style="margin-bottom: 0;">
                     <a name="tier-4"></a>
-                    ${buildExportTierHeading('4', 'Telemetry Proof & Appendix', 'New hunt queries, methodology, ATT&CK version context, references and export notes.', isDark, isDark ? '#38bdf8' : '#0284c7')}
+                    ${buildExportTierHeading('4', 'Query Evidence & Appendix', 'New hunt queries, methodology, ATT&CK version context, references and export notes.', isDark, isDark ? '#38bdf8' : '#0284c7')}
                     
                     ${newQueriesHtml}
                     
@@ -5423,16 +5461,16 @@ export function buildThreatsSectionEmail(report, isDark = false) {
     }).join('');
 
     return `<div class="section" id="adversary-mapper-section" style="page-break-inside: avoid;">
-        ${buildExportSectionTitle('Adversary Group Defensive Gap Mapper', 'Threat groups ranked by ATT&CK technique overlap, defensive readiness and remaining mapped gaps.', isDark, '#f59e0b')}
+        ${buildExportSectionTitle('Adversary Coverage Overlap', 'Threat groups ranked by ATT&CK technique overlap, mapped coverage and remaining gaps.', isDark, '#f59e0b')}
         <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border-spacing:10px 0;margin:0 -10px 14px;border:0;">
             <tr>
                 <td width="33.33%" style="width:33.33%;border:1px solid ${v.border};border-radius:14px;background:${v.panel};padding:12px;"><div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;">Threat groups ranked</div><div style="font-size:24px;font-weight:900;color:${v.heading};line-height:1;margin-top:6px;">${allGroups.length}</div></td>
-                <td width="33.33%" style="width:33.33%;border:1px solid ${v.border};border-radius:14px;background:${v.panel};padding:12px;"><div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;">Average readiness</div><div style="font-size:24px;font-weight:900;color:${avgCoverage >= 70 ? '#10b981' : avgCoverage >= 40 ? '#f59e0b' : '#ef4444'};line-height:1;margin-top:6px;">${avgCoverage}%</div></td>
+                <td width="33.33%" style="width:33.33%;border:1px solid ${v.border};border-radius:14px;background:${v.panel};padding:12px;"><div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;">Average mapped coverage</div><div style="font-size:24px;font-weight:900;color:${avgCoverage >= 70 ? '#10b981' : avgCoverage >= 40 ? '#f59e0b' : '#ef4444'};line-height:1;margin-top:6px;">${avgCoverage}%</div></td>
                 <td width="33.33%" style="width:33.33%;border:1px solid ${v.border};border-radius:14px;background:${v.panel};padding:12px;"><div style="font-size:9px;font-weight:900;color:${v.muted};text-transform:uppercase;letter-spacing:0.08em;">Mapped gaps</div><div style="font-size:24px;font-weight:900;color:${totalGaps > 0 ? '#ef4444' : '#10b981'};line-height:1;margin-top:6px;">${totalGaps}</div><div style="font-size:10px;color:${v.muted};margin-top:4px;">across ${totalTechniques} adversary techniques</div></td>
             </tr>
         </table>
         <table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:11px;line-height:1.45;">
-            <thead><tr><th>Rank</th><th>Threat group</th><th>Exposure</th><th>Readiness</th><th>Mapped coverage</th><th>Gap state</th></tr></thead>
+            <thead><tr><th>Rank</th><th>Threat group</th><th>Exposure</th><th>Mapped coverage</th><th>Mapped count</th><th>Gap state</th></tr></thead>
             <tbody>${rowsHtml}</tbody>
         </table>
     </div>`;
@@ -5490,7 +5528,7 @@ export function buildTechniquesAtRiskEmail(report, isDark = false) {
     atRisk.sort((a, b) => b.count - a.count);
     if (atRisk.length === 0) return '';
     
-    let html = `<div class="section"><h3>Techniques at Risk</h3>
+    let html = `<div class="section"><h3>Threat-Linked Zero-Coverage Techniques</h3>
         <p style="margin-bottom: 8px; color: ${isDark ? '#94a3b8' : '#64748b'}; font-size: 13px;">Zero-coverage techniques used by known threat groups active this month:</p>`;
     
     atRisk.slice(0, 8).forEach(item => {
