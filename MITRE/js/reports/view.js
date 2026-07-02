@@ -3848,12 +3848,13 @@ export async function exportReportHTMLPDF(reportId) {
     await ensureAttackVersionAppendixDiff(report, true);
     const qaWarnings = runReportQaValidation(report);
     if (qaWarnings.length) showToast(`Report QA warnings: ${qaWarnings.length} issue${qaWarnings.length === 1 ? '' : 's'} included in export`, 'warning');
-    showToast('Opening print-ready HTML PDF view...', 'info');
+    showToast('Opening single-page PDF view...', 'info');
     const darkToggle = document.getElementById('export-dark-mode-toggle');
     const isDark = darkToggle ? darkToggle.checked : true;
-    const htmlContent = buildEmailHTML(report, isDark, { isPrint: true, isStandaloneHtml: true }).replace(/<body([^>]*)>/i, '<body class="is-pdf"$1>');
+    const htmlContent = buildEmailHTML(report, isDark, { isPrint: true, isStandaloneHtml: true }).replace(/<body([^>]*)>/i, '<body class="is-pdf is-single-page-pdf"$1>');
     const printBodyBg = isDark ? '#06080a' : '#ffffff';
-    const printWindow = window.open('', '_blank', 'width=900,height=1100');
+    const pageWidthPx = 1200;
+    const printWindow = window.open('', '_blank', `width=${pageWidthPx},height=1100`);
 
     if (!printWindow) {
         showToast('Pop-up blocked. Allow pop-ups to export PDF.', 'warning');
@@ -3861,25 +3862,83 @@ export async function exportReportHTMLPDF(reportId) {
     }
 
     try {
+        const singlePageScript = `
+            <script>
+            (() => {
+                const pageWidthPx = ${pageWidthPx};
+                const printBodyBg = ${JSON.stringify(printBodyBg)};
+                const isDark = ${JSON.stringify(isDark)};
+                const installSinglePageStyles = () => {
+                    const wrapper = document.querySelector('.email-wrapper');
+                    const container = document.querySelector('.container');
+                    const doc = document.documentElement;
+                    const body = document.body;
+                    const contentHeight = Math.ceil(Math.max(
+                        container?.scrollHeight || 0,
+                        wrapper?.scrollHeight || 0,
+                        body.scrollHeight || 0,
+                        doc.scrollHeight || 0
+                    ) + 80);
+                    const style = document.createElement('style');
+                    style.id = 'single-page-pdf-print-size';
+                    style.textContent = '@page { size: ' + pageWidthPx + 'px ' + contentHeight + 'px; margin: 0; }'
+                        + '@media print {'
+                        + 'html,body{width:' + pageWidthPx + 'px !important;min-width:' + pageWidthPx + 'px !important;height:' + contentHeight + 'px !important;background:' + printBodyBg + ' !important;overflow:visible !important;}'
+                        + '.html-export-toolbar{display:none !important;}'
+                        + '.email-wrapper{width:' + pageWidthPx + 'px !important;max-width:none !important;margin:0 !important;padding:0 !important;background:' + printBodyBg + ' !important;}'
+                        + '.container{width:' + pageWidthPx + 'px !important;max-width:none !important;border-radius:0 !important;box-shadow:none !important;background:' + (isDark ? '#0c0f12' : '#ffffff') + ' !important;}'
+                        + '.content{background:' + (isDark ? '#0c0f12' : '#ffffff') + ' !important;}'
+                        + '.pdf-page-break{display:none !important;break-before:auto !important;page-break-before:auto !important;height:0 !important;margin:0 !important;border:0 !important;}'
+                        + '.tier-container,.section,tr,table{break-inside:auto !important;page-break-inside:auto !important;}'
+                        + '.page-number-footer{display:none !important;}'
+                        + '.pdf-advisory-bar{display:block !important;}'
+                        + 'a{color:inherit;text-decoration:underline;text-underline-offset:2px;}'
+                        + '*{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}'
+                        + '}'
+                        + '@media screen {'
+                        + '.single-page-print-note{position:sticky;top:0;z-index:50;margin:0;padding:10px 16px;background:' + (isDark ? '#101820' : '#eef7f8') + ';color:' + (isDark ? '#9ccfd8' : '#0369a1') + ';border-bottom:1px solid ' + (isDark ? '#27303a' : '#d8e0e7') + ';font:600 12px system-ui,-apple-system,Segoe UI,sans-serif;text-align:center;}'
+                        + '}'
+                        + 'body.is-single-page-pdf .pdf-advisory-bar{display:block !important;}';
+                    document.head.appendChild(style);
+                    const note = document.createElement('div');
+                    note.className = 'single-page-print-note';
+                    note.textContent = 'Single-page PDF mode: choose Save as PDF. If your browser still paginates, set paper size to custom/default and scale to fit.';
+                    document.body.prepend(note);
+                };
+                window.addEventListener('load', () => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            installSinglePageStyles();
+                            setTimeout(() => {
+                                window.focus();
+                                window.print();
+                            }, 250);
+                        });
+                    });
+                });
+            })();
+            </script>`;
         printWindow.document.open();
         printWindow.document.write(htmlContent.replace('</style>', `
-            @page { size: A4; margin: 14mm; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            html, body { background: ${printBodyBg} !important; }
+            body.is-single-page-pdf { width: ${pageWidthPx}px; min-width: ${pageWidthPx}px; }
+            body.is-single-page-pdf .email-wrapper { width: ${pageWidthPx}px !important; max-width: none !important; padding: 0 !important; }
+            body.is-single-page-pdf .container { width: ${pageWidthPx}px !important; max-width: none !important; box-shadow: none !important; }
+            body.is-single-page-pdf .pdf-page-break { display: none !important; break-before: auto !important; page-break-before: auto !important; }
+            body.is-single-page-pdf .page-number-footer { display: none !important; }
             @media print {
                 body { background: ${printBodyBg} !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 .email-wrapper { max-width: none !important; width: 100% !important; padding: 0 !important; }
                 .container { box-shadow: none !important; border-radius: 0 !important; background-color: ${isDark ? '#0c0f12' : '#ffffff'} !important; }
                 .content { background-color: ${isDark ? '#0c0f12' : '#ffffff'} !important; }
-                .pdf-page-break { break-before: page; page-break-before: always; }
-                a { color: inherit; text-decoration: none; }
+                .pdf-page-break { display: none !important; break-before: auto !important; page-break-before: auto !important; }
+                a { color: inherit; text-decoration: underline; }
             }
-        </style>`));
+        </style>`).replace('</body>', `${singlePageScript}</body>`));
         printWindow.document.close();
         printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-        }, 500);
-        showToast('Print dialog opened. Choose Save as PDF.', 'success');
+        showToast('Single-page print view opened. Choose Save as PDF.', 'success');
     } catch (e) {
         console.error('HTML to PDF print export failed:', e);
         showToast('Failed to open PDF print view: ' + e.message, 'error');
