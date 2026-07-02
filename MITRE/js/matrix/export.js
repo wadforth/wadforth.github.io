@@ -317,24 +317,32 @@ function getTechniqueExportState(tech, subs = []) {
 function renderLegendItems(items, x, y, availableWidth) {
     let cursorX = x;
     let cursorY = y;
-    const rowHeight = 28;
+    const rowHeight = 32;
     const parts = [];
 
     for (const item of items) {
         const label = String(item.label || 'State');
-        const width = Math.max(112, Math.min(220, label.length * 8 + 42));
+        const width = Math.max(130, Math.min(250, label.length * 7.2 + 46));
         if (cursorX + width > x + availableWidth && cursorX > x) {
             cursorX = x;
             cursorY += rowHeight;
         }
         const fill = normalizeHexColor(item.fill || item.color, SVG_EXPORT_COLORS.cell);
         const stroke = normalizeHexColor(item.stroke || item.color, SVG_EXPORT_COLORS.line);
-        parts.push(`<rect x="${toSvgNumber(cursorX)}" y="${toSvgNumber(cursorY - 14)}" width="18" height="18" rx="4" fill="${fill}" stroke="${stroke}"/>`);
-        parts.push(`<text class="legend" x="${toSvgNumber(cursorX + 28)}" y="${toSvgNumber(cursorY)}">${svgEscape(label)}</text>`);
+        parts.push(`<rect x="${toSvgNumber(cursorX)}" y="${toSvgNumber(cursorY - 16)}" width="20" height="20" rx="5" fill="${fill}" stroke="${stroke}"/>`);
+        parts.push(`<text class="legend" x="${toSvgNumber(cursorX + 30)}" y="${toSvgNumber(cursorY)}">${svgEscape(label)}</text>`);
         cursorX += width;
     }
 
     return { svg: parts.join(''), height: cursorY - y + rowHeight };
+}
+
+function chunkArray(items, size) {
+    const chunks = [];
+    for (let index = 0; index < items.length; index += size) {
+        chunks.push(items.slice(index, index + size));
+    }
+    return chunks;
 }
 
 export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated, includeLegend, includeHeader, includeFooter, accentColor = '#89b7ae', useNebula = true) {
@@ -364,14 +372,16 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
 
     const isSub = (technique) => technique.x_mitre_is_subtechnique;
     const parentId = (technique) => getTechniqueId(technique).split('.')[0];
-    const colWidth = 156;
-    const colGap = 8;
-    const pagePadding = 28;
+    const colWidth = 220;
+    const colGap = 12;
+    const pagePadding = 32;
     const matrixPadding = 20;
-    const tacticHeaderHeight = 74;
-    const cellGap = 8;
-    const parentBaseHeight = 58;
-    const subBaseHeight = 46;
+    const tacticHeaderHeight = 94;
+    const cellGap = 10;
+    const parentBaseHeight = 92;
+    const subBaseHeight = 72;
+    const maxColumnsPerRow = 99;
+    const matrixRowGap = 34;
 
     const columns = tacticOrder.map((tactic, index) => {
         const short = tactic.x_mitre_shortname;
@@ -392,13 +402,13 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
                 .filter(sub => parentId(sub) === id)
                 .sort((a, b) => getTechniqueId(a).localeCompare(getTechniqueId(b), undefined, { numeric: true }));
             const stateInfo = getTechniqueExportState(tech, subs);
-            const lines = wrapSvgText(tech.name, 19, 2);
-            cells.push({ type: 'parent', id, lines, stateInfo, height: parentBaseHeight + (lines.length - 1) * 13, subCount: subs.length });
+            const lines = wrapSvgText(tech.name, 29, 2);
+            cells.push({ type: 'parent', id, lines, stateInfo, height: parentBaseHeight + (lines.length - 1) * 18, subCount: subs.length });
 
             if (expandSubs) {
                 for (const sub of subs) {
-                    const subLines = wrapSvgText(sub.name, 18, 2);
-                    cells.push({ type: 'sub', id: getTechniqueId(sub), lines: subLines, stateInfo: getTechniqueExportState(sub, []), height: subBaseHeight + (subLines.length - 1) * 11, subCount: 0 });
+                    const subLines = wrapSvgText(sub.name, 27, 2);
+                    cells.push({ type: 'sub', id: getTechniqueId(sub), lines: subLines, stateInfo: getTechniqueExportState(sub, []), height: subBaseHeight + (subLines.length - 1) * 16, subCount: 0 });
                 }
             }
         }
@@ -408,34 +418,43 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
         return { tactic, short, index, cells, covered, total: parentTechs.length, bodyHeight };
     });
 
-    const matrixBodyHeight = Math.max(150, ...columns.map(column => column.bodyHeight));
-    const matrixHeight = tacticHeaderHeight + matrixBodyHeight + matrixPadding * 2;
-    const matrixWidth = columns.length > 0
-        ? columns.length * colWidth + Math.max(columns.length - 1, 0) * colGap + matrixPadding * 2
+    const columnRows = chunkArray(columns, maxColumnsPerRow);
+    const rowMetrics = columnRows.map(row => {
+        const bodyHeight = Math.max(180, ...row.map(column => column.bodyHeight));
+        const rowWidth = row.length > 0
+            ? row.length * colWidth + Math.max(row.length - 1, 0) * colGap + matrixPadding * 2
+            : 720;
+        return { bodyHeight, width: rowWidth, height: tacticHeaderHeight + bodyHeight + matrixPadding * 2 };
+    });
+    const matrixHeight = rowMetrics.length
+        ? rowMetrics.reduce((sum, row, index) => sum + row.height + (index > 0 ? matrixRowGap : 0), 0)
+        : tacticHeaderHeight + 220;
+    const matrixWidth = rowMetrics.length > 0
+        ? Math.max(...rowMetrics.map(row => row.width))
         : 720;
-    const width = Math.max(1540, matrixWidth + pagePadding * 2);
-    const contentTop = includeHeader ? 198 : 40;
+    const width = Math.max(1280, matrixWidth + pagePadding * 2);
+    const contentTop = includeHeader ? 228 : 42;
 
     let legendSvg = '';
     let legendHeight = 0;
     if (includeLegend) {
         const stateLegend = [
-            { label: 'Covered: active detection query', fill: '#11271f', stroke: SVG_EXPORT_COLORS.good },
-            { label: 'Partial: covered sub-technique', fill: '#2a2413', stroke: SVG_EXPORT_COLORS.warn },
-            { label: 'Archived/planned query', fill: '#132333', stroke: SVG_EXPORT_COLORS.query },
+            { label: 'Covered query', fill: '#11271f', stroke: SVG_EXPORT_COLORS.good },
+            { label: 'Sub-tech covered', fill: '#2a2413', stroke: SVG_EXPORT_COLORS.warn },
+            { label: 'Archived/planned', fill: '#132333', stroke: SVG_EXPORT_COLORS.query },
             { label: 'Mapped annotation', fill: '#162126', stroke: SVG_EXPORT_COLORS.accent },
-            { label: 'Gap / no mapped coverage', fill: SVG_EXPORT_COLORS.cell, stroke: '#26343d' }
+            { label: 'No mapped coverage', fill: SVG_EXPORT_COLORS.cell, stroke: '#26343d' }
         ];
         const layerLegend = state.autoColorByQueries
-            ? buildAutoLegendSections().flatMap(section => (section.items || []).map(item => ({ label: `${section.title}: ${item.label}`, fill: item.color, stroke: item.color })))
+            ? buildAutoLegendSections().flatMap(section => (section.items || []).map(item => ({ label: item.label, fill: item.color, stroke: item.color })))
             : (state.currentLayer?.legend || defaultLegend || []).map(item => ({ label: item.label, fill: item.color, stroke: item.color }));
         const legendItems = [...stateLegend, ...layerLegend].filter((item, index, all) => {
             const key = `${item.label}-${normalizeHexColor(item.fill, '')}`;
             return all.findIndex(other => `${other.label}-${normalizeHexColor(other.fill, '')}` === key) === index;
         });
-        const legend = renderLegendItems(legendItems, pagePadding + 88, contentTop + 16, width - pagePadding * 2 - 110);
-        legendHeight = legend.height;
-        legendSvg = `<text class="mono" x="${pagePadding}" y="${contentTop + 16}">LEGEND</text>${legend.svg}`;
+        const legend = renderLegendItems(legendItems, pagePadding, contentTop + 42, width - pagePadding * 2);
+        legendHeight = legend.height + 44;
+        legendSvg = `<text class="sectionLabel" x="${pagePadding}" y="${contentTop + 18}">Legend</text><text class="hint" x="${pagePadding + 78}" y="${contentTop + 18}">Colors show mapped coverage state; selected tactics stay in ATT&amp;CK order across the full-width matrix.</text>${legend.svg}`;
     }
 
     const matrixY = contentTop + (includeLegend ? legendHeight + 14 : 0);
@@ -454,10 +473,10 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
 <title id="svg-title">${svgEscape(titleText)}</title>
 <desc id="svg-desc">${svgEscape(descText)}</desc>
 <defs>
-<pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#89b7ae" stroke-opacity="0.05"/></pattern>
+<pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#89b7ae" stroke-opacity="0.025"/></pattern>
 <linearGradient id="hero" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#89b7ae" stop-opacity="0.22"/><stop offset="0.58" stop-color="${accent}" stop-opacity="0.12"/><stop offset="1" stop-color="#050708" stop-opacity="0"/></linearGradient>
 <style><![CDATA[
-.bg{fill:#050708}.panel{fill:#0b1116;stroke:#2a3735;stroke-width:1}.panel2{fill:#0f171d;stroke:#273431;stroke-width:1}.title{fill:#e9efea;font:700 42px system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:-1.3px}.sub{fill:#aab6b2;font:500 17px system-ui,-apple-system,Segoe UI,sans-serif}.mono{fill:#9aa8a6;font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.7px}.kpiNum{fill:#e9efea;font:800 26px ui-monospace,SFMono-Regular,Consolas,monospace}.kpiLabel{fill:#9aa8a6;font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:1px}.tactic{fill:#e9efea;font:800 15px system-ui,-apple-system,Segoe UI,sans-serif}.tacticMeta{fill:#8a9996;font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.6px}.techId{font:800 12px ui-monospace,SFMono-Regular,Consolas,monospace}.techName{font:650 11.5px system-ui,-apple-system,Segoe UI,sans-serif}.techMeta{font:700 9.5px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.3px}.legend{fill:#c9d3cf;font:700 13px system-ui,-apple-system,Segoe UI,sans-serif}.empty{fill:#9aa8a6;font:700 17px system-ui,-apple-system,Segoe UI,sans-serif}.footer{fill:#697775;font:650 12px ui-monospace,SFMono-Regular,Consolas,monospace}
+.bg{fill:#050708}.panel{fill:#0b1116;stroke:#2a3735;stroke-width:1}.panel2{fill:#0f171d;stroke:#273431;stroke-width:1}.title{fill:#e9efea;font:800 36px system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:-1.1px}.sub{fill:#aab6b2;font:500 15px system-ui,-apple-system,Segoe UI,sans-serif}.mono{fill:#9aa8a6;font:700 12px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.7px}.sectionLabel{fill:#e9efea;font:900 15px system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:-.2px}.hint{fill:#9aa8a6;font:600 12px system-ui,-apple-system,Segoe UI,sans-serif}.kpiNum{fill:#e9efea;font:800 24px ui-monospace,SFMono-Regular,Consolas,monospace}.kpiLabel{fill:#9aa8a6;font:700 10px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:1px}.tactic{fill:#e9efea;font:850 18px system-ui,-apple-system,Segoe UI,sans-serif}.tacticMeta{fill:#8a9996;font:750 12px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.6px}.techId{font:850 13px ui-monospace,SFMono-Regular,Consolas,monospace}.techName{font:700 12.5px system-ui,-apple-system,Segoe UI,sans-serif}.techMeta{font:750 10px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.3px}.legend{fill:#c9d3cf;font:750 13px system-ui,-apple-system,Segoe UI,sans-serif}.empty{fill:#9aa8a6;font:700 18px system-ui,-apple-system,Segoe UI,sans-serif}.footer{fill:#697775;font:650 12px ui-monospace,SFMono-Regular,Consolas,monospace}
 ]]></style>
 </defs>
 <rect class="bg" x="0" y="0" width="${toSvgNumber(width)}" height="${toSvgNumber(height)}"/>
@@ -465,63 +484,76 @@ export async function exportMatrixSVG(selectedTactics, expandSubs, onlyAnnotated
 `;
 
     if (includeHeader) {
-        svg += `<rect x="${pagePadding}" y="28" width="${width - pagePadding * 2}" height="154" rx="22" fill="${heroFill}" stroke="#89b7ae" stroke-opacity="0.18"/>`;
-        svg += renderExportLogo(pagePadding + 26, 52, 68);
-        svg += `<text class="title" x="${pagePadding + 114}" y="82">${svgEscape('ATT&CK Xplorer coverage map')}</text>`;
-        svg += `<text class="sub" x="${pagePadding + 114}" y="116">${svgEscape(`Layer: ${state.currentLayer?.name || 'Untitled Layer'} | ${domainLabel} ATT&CK ${version}`)}</text>`;
-        svg += `<text class="mono" x="${pagePadding + 114}" y="148">${svgEscape(`SVG export | generated ${generated.toISOString().slice(0, 10)} | selectable text | self-contained`)}</text>`;
+        svg += `<rect x="${pagePadding}" y="28" width="${width - pagePadding * 2}" height="178" rx="22" fill="${heroFill}" stroke="#89b7ae" stroke-opacity="0.18"/>`;
+        svg += renderExportLogo(pagePadding + 24, 56, 62);
 
         const kpis = [
-            { label: 'TOTAL COVERAGE', value: `${stats.pct || 0}%`, color: (stats.pct || 0) >= 70 ? SVG_EXPORT_COLORS.good : ((stats.pct || 0) >= 35 ? SVG_EXPORT_COLORS.warn : SVG_EXPORT_COLORS.bad) },
+            { label: 'MAPPED COVERAGE', value: `${(stats.pct || 0) % 1 === 0 ? stats.pct || 0 : (stats.pct || 0).toFixed(1)}%`, color: (stats.pct || 0) >= 70 ? SVG_EXPORT_COLORS.good : ((stats.pct || 0) >= 35 ? SVG_EXPORT_COLORS.warn : SVG_EXPORT_COLORS.bad) },
             { label: 'TECHNIQUES', value: `${stats.covered || 0}/${stats.total || 0}`, color: SVG_EXPORT_COLORS.gold },
             { label: 'ACTIVE QUERIES', value: activeQueries, color: SVG_EXPORT_COLORS.query },
             { label: 'TACTICS', value: columns.length, color: SVG_EXPORT_COLORS.accent },
             { label: 'MAPPINGS', value: layerTechs.length, color: SVG_EXPORT_COLORS.good }
         ];
-        const cardWidth = 142;
+        const cardWidth = 132;
         const startX = width - pagePadding - (cardWidth * kpis.length) - (8 * (kpis.length - 1));
+        const titleMaxChars = Math.max(36, Math.floor((startX - (pagePadding + 104)) / 8.5));
+        svg += `<text class="title" x="${pagePadding + 104}" y="78">${svgEscape('ATT&CK Xplorer Coverage Map')}</text>`;
+        svg += renderSvgTextLines(wrapSvgText(`Layer: ${state.currentLayer?.name || 'Untitled Layer'} | ${domainLabel} ATT&CK ${version}`, titleMaxChars, 2), pagePadding + 104, 110, 'sub', 19);
+        svg += `<text class="mono" x="${pagePadding + 104}" y="162">${svgEscape(`SVG export | generated ${generated.toISOString().slice(0, 10)} | full-width readable matrix | self-contained`)}</text>`;
+        svg += `<text class="hint" x="${pagePadding + 104}" y="184">${svgEscape('Tip: open as standalone SVG and zoom for detail; all selected tactics are kept visible across one row.')}</text>`;
         kpis.forEach((kpi, index) => {
             const x = startX + index * (cardWidth + 8);
-            svg += `<rect class="panel2" x="${toSvgNumber(x)}" y="52" width="${cardWidth}" height="86" rx="12"/>`;
-            svg += `<rect x="${toSvgNumber(x)}" y="52" width="5" height="86" rx="3" fill="${kpi.color}"/>`;
-            svg += `<text class="kpiNum" x="${toSvgNumber(x + 18)}" y="92" fill="${kpi.color}">${svgEscape(kpi.value)}</text>`;
-            svg += `<text class="kpiLabel" x="${toSvgNumber(x + 18)}" y="118">${svgEscape(kpi.label)}</text>`;
+            svg += `<rect class="panel2" x="${toSvgNumber(x)}" y="52" width="${cardWidth}" height="84" rx="12"/>`;
+            svg += `<rect x="${toSvgNumber(x)}" y="52" width="5" height="84" rx="3" fill="${kpi.color}"/>`;
+            svg += `<text class="kpiNum" x="${toSvgNumber(x + 16)}" y="90" fill="${kpi.color}">${svgEscape(kpi.value)}</text>`;
+            svg += `<text class="kpiLabel" x="${toSvgNumber(x + 16)}" y="116">${svgEscape(kpi.label)}</text>`;
         });
     }
 
     if (includeLegend) svg += legendSvg;
 
-    svg += `<rect class="panel" x="${pagePadding}" y="${matrixY}" width="${width - pagePadding * 2}" height="${matrixHeight}" rx="18"/>`;
     if (columns.length === 0) {
+        svg += `<rect class="panel" x="${pagePadding}" y="${matrixY}" width="${width - pagePadding * 2}" height="${matrixHeight}" rx="18"/>`;
         svg += `<text class="empty" x="${width / 2}" y="${matrixY + 88}" text-anchor="middle">No tactics selected for export.</text>`;
     }
 
-    columns.forEach((column, columnIndex) => {
-        const x = pagePadding + matrixPadding + columnIndex * (colWidth + colGap);
-        const y = matrixY + matrixPadding;
-        const spectrumColor = normalizeHexColor(window.getSpectrumColor ? window.getSpectrumColor(column.index) : accent, accent);
-        const tacticLines = wrapSvgText(column.tactic.name, 16, 2);
-
-        svg += `<g transform="translate(${toSvgNumber(x)} ${toSvgNumber(y)})">`;
-        svg += `<rect x="0" y="0" width="${colWidth}" height="${tacticHeaderHeight}" rx="10" fill="#101820" stroke="#2f3b38"/>`;
-        svg += `<rect x="0" y="0" width="${colWidth}" height="4" rx="3" fill="${spectrumColor}"/>`;
-        svg += renderSvgTextLines(tacticLines, 12, 24, 'tactic', 18);
-        svg += `<text class="tacticMeta" x="12" y="62">${svgEscape(`${column.covered}/${column.total} covered`)}</text>`;
-
-        let cellY = tacticHeaderHeight + 10;
-        for (const cell of column.cells) {
-            const inset = cell.type === 'sub' ? 10 : 0;
-            const cellWidth = colWidth - inset;
-            const stateInfo = cell.stateInfo;
-            const label = cell.subCount > 0 && cell.type === 'parent' ? `${stateInfo.label} | ${cell.subCount} sub` : stateInfo.label;
-            svg += `<rect x="${inset}" y="${toSvgNumber(cellY)}" width="${cellWidth}" height="${toSvgNumber(cell.height)}" rx="9" fill="${stateInfo.fill}" fill-opacity="${stateInfo.opacity}" stroke="${stateInfo.stroke}" stroke-opacity="0.72"/>`;
-            svg += `<rect x="${inset}" y="${toSvgNumber(cellY)}" width="5" height="${toSvgNumber(cell.height)}" rx="3" fill="${stateInfo.marker}" opacity="0.92"/>`;
-            svg += `<text class="techId" x="${inset + 13}" y="${toSvgNumber(cellY + 20)}" fill="${stateInfo.text}">${svgEscape(cell.id)}</text>`;
-            svg += renderSvgTextLines(cell.lines, inset + 13, cellY + 39, 'techName', cell.type === 'sub' ? 11 : 13, ` fill="${stateInfo.text}"`);
-            svg += `<text class="techMeta" x="${inset + 13}" y="${toSvgNumber(cellY + cell.height - 10)}" fill="${stateInfo.text}" opacity="0.72">${svgEscape(label)}</text>`;
-            cellY += cell.height + cellGap;
+    let rowY = matrixY;
+    columnRows.forEach((row, rowIndex) => {
+        const rowMetric = rowMetrics[rowIndex];
+        svg += `<rect class="panel" x="${pagePadding}" y="${toSvgNumber(rowY)}" width="${width - pagePadding * 2}" height="${toSvgNumber(rowMetric.height)}" rx="18"/>`;
+        if (columnRows.length > 1) {
+            svg += `<text class="mono" x="${pagePadding + 20}" y="${toSvgNumber(rowY + 18)}">${svgEscape(`TACTIC BAND ${rowIndex + 1}/${columnRows.length}`)}</text>`;
         }
-        svg += '</g>';
+
+        row.forEach((column, columnIndex) => {
+            const x = pagePadding + matrixPadding + columnIndex * (colWidth + colGap);
+            const y = rowY + matrixPadding;
+            const spectrumColor = normalizeHexColor(window.getSpectrumColor ? window.getSpectrumColor(column.index) : accent, accent);
+            const tacticLines = wrapSvgText(column.tactic.name, 22, 2);
+
+            svg += `<g transform="translate(${toSvgNumber(x)} ${toSvgNumber(y)})">`;
+            svg += `<rect x="0" y="0" width="${colWidth}" height="${tacticHeaderHeight}" rx="12" fill="#101820" stroke="#2f3b38"/>`;
+            svg += `<rect x="0" y="0" width="${colWidth}" height="5" rx="3" fill="${spectrumColor}"/>`;
+            svg += renderSvgTextLines(tacticLines, 14, 30, 'tactic', 21);
+            svg += `<text class="tacticMeta" x="14" y="80">${svgEscape(`${column.covered}/${column.total} covered`)}</text>`;
+
+            let cellY = tacticHeaderHeight + 12;
+            for (const cell of column.cells) {
+                const inset = cell.type === 'sub' ? 12 : 0;
+                const cellWidth = colWidth - inset;
+                const stateInfo = cell.stateInfo;
+                const label = cell.subCount > 0 && cell.type === 'parent' ? `${stateInfo.label} | ${cell.subCount} sub-techniques` : stateInfo.label;
+                svg += `<rect x="${inset}" y="${toSvgNumber(cellY)}" width="${cellWidth}" height="${toSvgNumber(cell.height)}" rx="10" fill="${stateInfo.fill}" fill-opacity="${stateInfo.opacity}" stroke="${stateInfo.stroke}" stroke-opacity="0.72"/>`;
+                svg += `<rect x="${inset}" y="${toSvgNumber(cellY)}" width="6" height="${toSvgNumber(cell.height)}" rx="4" fill="${stateInfo.marker}" opacity="0.92"/>`;
+                svg += `<text class="techId" x="${inset + 16}" y="${toSvgNumber(cellY + 23)}" fill="${stateInfo.text}">${svgEscape(cell.id)}</text>`;
+                svg += renderSvgTextLines(cell.lines, inset + 16, cellY + 49, 'techName', cell.type === 'sub' ? 16 : 18, ` fill="${stateInfo.text}"`);
+                svg += `<text class="techMeta" x="${inset + 16}" y="${toSvgNumber(cellY + cell.height - 14)}" fill="${stateInfo.text}" opacity="0.76">${svgEscape(label)}</text>`;
+                cellY += cell.height + cellGap;
+            }
+            svg += '</g>';
+        });
+
+        rowY += rowMetric.height + matrixRowGap;
     });
 
     if (includeFooter) {
