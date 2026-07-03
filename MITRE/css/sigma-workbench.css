@@ -75,7 +75,9 @@
 .sigma-top-bar,
 .sigma-advanced-filters,
 .sigma-sync-container,
-.sigma-hydrate-status {
+.sigma-hydrate-status,
+.sigma-health-banner,
+.sigma-quick-actions {
     border: 1px solid var(--ax-line) !important;
     border-radius: var(--ax-radius-md) !important;
     background: var(--ax-ink-850) !important;
@@ -87,6 +89,83 @@
 .sigma-top-bar {
     align-items: stretch !important;
     padding: 0.72rem !important;
+}
+
+.sigma-health-banner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.7rem;
+    align-items: center;
+    margin-bottom: 0.65rem;
+    padding: 0.65rem 0.75rem;
+}
+
+.sigma-health-main,
+.sigma-health-meta,
+.sigma-quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.sigma-health-main span,
+.sigma-health-meta span {
+    color: var(--ax-muted);
+    font: 720 0.72rem/1.2 var(--ax-font-mono);
+}
+
+.sigma-health-status {
+    color: var(--ax-text) !important;
+    font-weight: 850 !important;
+}
+
+.sigma-health-status i {
+    margin-right: 0.35rem;
+}
+
+.sigma-health-banner.is-ok {
+    border-color: rgba(101, 182, 135, 0.24) !important;
+}
+
+.sigma-health-banner.is-syncing {
+    border-color: rgba(123, 168, 216, 0.32) !important;
+}
+
+.sigma-health-banner.is-warning {
+    border-color: rgba(201, 170, 104, 0.34) !important;
+}
+
+.sigma-health-error {
+    color: var(--ax-gold) !important;
+    max-width: 44rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sigma-quick-actions {
+    margin-top: 0.55rem;
+    padding: 0.55rem;
+}
+
+.sigma-quick-actions button {
+    min-height: 32px;
+    border: 1px solid var(--ax-line);
+    border-radius: 999px;
+    padding: 0 0.7rem;
+    color: var(--ax-muted);
+    background: rgba(255, 255, 255, 0.03);
+    font: 760 0.72rem/1 var(--ax-font-mono);
+}
+
+.sigma-quick-actions button:hover,
+.sigma-quick-actions button.active,
+.sigma-quick-actions .sigma-quick-action-primary {
+    border-color: rgba(137, 183, 174, 0.35);
+    color: var(--ax-text);
+    background: rgba(137, 183, 174, 0.09);
 }
 
 .sigma-top-bar-left,

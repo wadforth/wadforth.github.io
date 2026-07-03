@@ -26,13 +26,13 @@
     <link href="css/professional.css?v=9" rel="stylesheet">
     <link href="css/workstation.css?v=3" rel="stylesheet">
     <link href="css/design-system.css?v=1" rel="stylesheet">
-    <link href="css/landing-redesign.css?v=1" rel="stylesheet">
+    <link href="css/landing-redesign.css?v=2" rel="stylesheet">
     <link href="css/matrix-workbench.css?v=4" rel="stylesheet">
     <link href="css/queries-workbench.css?v=3" rel="stylesheet">
     <link href="css/entity-workbench.css?v=2" rel="stylesheet">
     <link href="css/mitigations-workbench.css?v=2" rel="stylesheet">
     <link href="css/reports-workbench.css?v=3" rel="stylesheet">
-    <link href="css/sigma-workbench.css?v=6" rel="stylesheet">
+    <link href="css/sigma-workbench.css?v=7" rel="stylesheet">
 </head>
 <body>
     <a class="skip-link" href="#workspace-view">Skip to workspace</a>
@@ -112,13 +112,16 @@
                     </button>
                 </div>
                 <div class="command-box-header stagger-1">
-                    <h2 class="text-gradient">Know where you can see attacker behaviour, and where you cannot.</h2>
-                    <p>Map detections, Sigma rules, mitigations, telemetry and adversary procedures against ATT&amp;CK without losing operational context.</p>
+                    <h2 class="text-gradient">Operational ATT&amp;CK coverage without the guesswork.</h2>
+                    <p>Resume a layer, inspect high-gap tactics, map Sigma evidence and produce reports from one analyst launchpad.</p>
                 </div>
 
                 <div class="command-box-actions stagger-2">
                     <button class="pill-btn primary" id="btn-create-new">
                         <i class="bi bi-plus-lg"></i> New Layer
+                    </button>
+                    <button class="pill-btn secondary landing-continue-btn hidden" id="btn-continue-layer" type="button" data-landing-action="continue" disabled>
+                        <i class="bi bi-arrow-return-right"></i> Continue Last Layer
                     </button>
                     <button class="pill-btn secondary" id="btn-import-layer">
                         <i class="bi bi-upload"></i> Import JSON
@@ -157,7 +160,7 @@
                     <div class="landing-panel-header">
                         <div>
                             <h4 id="landing-summary-title">Workspace snapshot</h4>
-                            <p class="landing-panel-note">Use the landing page for immediate orientation, not marketing filler.</p>
+                            <p class="landing-panel-note">Live counts from the current layer and loaded ATT&amp;CK dataset.</p>
                         </div>
                     </div>
                     <div id="landing-workspace-summary" class="landing-summary-grid landing-summary-compact" aria-live="polite"></div>
@@ -169,7 +172,7 @@
                             <h4 id="landing-journey-title">Suggested analyst journeys</h4>
                         </div>
                     </div>
-                    <div class="landing-journeys">
+                    <div class="landing-journeys" id="landing-next-steps" aria-live="polite">
                         <button type="button" class="landing-journey-item" data-landing-open-view="matrix">
                             <i>01</i>
                             <div><strong>Review high-risk gaps</strong><span>Credential Access, Privilege Escalation, Stealth.</span></div>
@@ -191,7 +194,8 @@
 
             <div id="recent-layers-section" class="recent-layers-panel hidden">
                 <div class="panel-header">
-                    <span><i class="bi bi-clock-history mr-2"></i> Recent Layers</span>
+                    <span><i class="bi bi-clock-history mr-2"></i> Recent Layers <b id="recent-layers-count" class="recent-layers-count">0</b></span>
+                    <small>Open a saved layer without importing again.</small>
                 </div>
                 <div id="recent-layers-list" class="recent-layers-grid"></div>
             </div>
@@ -447,6 +451,8 @@
                     <!-- STATISTICS DASHBOARD -->
                     <div id="sigma-stats-dashboard" class="sigma-stats-dashboard"></div>
 
+                    <div id="sigma-health-banner" class="sigma-health-banner" aria-live="polite"></div>
+
                     <!-- HYDRATION STATUS INDICATOR -->
                     <div id="sigma-hydrate-status" class="sigma-hydrate-status hidden">
                         <i class="bi bi-database"></i> Initializing...
@@ -508,11 +514,14 @@
                         <details class="sigma-actions-menu">
                             <summary><i class="bi bi-three-dots"></i> Operations</summary>
                             <div class="sigma-actions-panel">
-                                <button class="btn btn-sm btn-outline-primary" id="btn-load-live-sigma">
-                                    <i class="bi bi-github mr-1"></i> Connect Live
+                                <button class="btn btn-sm btn-outline-primary" id="btn-load-live-sigma" title="Fetch the latest SigmaHQ rule list and release metadata">
+                                    <i class="bi bi-github mr-1"></i> Sync Rule Index
                                 </button>
-                                <button class="btn btn-sm btn-outline-info" id="btn-hydrate-all-sigma" data-sigma-action="hydrate-all">
-                                    <i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate & Index
+                                <button class="btn btn-sm btn-outline-info" id="btn-hydrate-all-sigma" data-sigma-action="hydrate-all" title="Download YAML bodies for cached Sigma rules">
+                                    <i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate YAML
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" id="btn-reindex-sigma" data-sigma-action="reindex" title="Reparse cached YAML and rebuild filters/search metadata">
+                                    <i class="bi bi-database-gear mr-1"></i> Rebuild Index
                                 </button>
                                 <button class="btn btn-sm btn-outline-secondary" id="btn-toggle-candidates" data-sigma-action="toggle-candidates">
                                     <i class="bi bi-bookmark-star"></i> Candidates <span id="candidates-count-badge" class="badge-candidates">0</span>
@@ -523,6 +532,17 @@
                             </div>
                         </details>
                     </div>
+                    </div>
+
+                    <div class="sigma-quick-actions" aria-label="Sigma quick filters and hydration actions">
+                        <button type="button" data-sigma-action="quick-filter" data-filter="all">All</button>
+                        <button type="button" data-sigma-action="quick-filter" data-filter="new">New</button>
+                        <button type="button" data-sigma-action="quick-filter" data-filter="updated">Updated</button>
+                        <button type="button" data-sigma-action="quick-filter" data-filter="hydrated">Hydrated</button>
+                        <button type="button" data-sigma-action="quick-filter" data-filter="unhydrated">Unhydrated</button>
+                        <button type="button" data-sigma-action="quick-filter" data-filter="linked">Linked</button>
+                        <button type="button" data-sigma-action="quick-filter" data-filter="unlinked">Unlinked</button>
+                        <button type="button" class="sigma-quick-action-primary" data-sigma-action="hydrate-visible"><i class="bi bi-cloud-arrow-down mr-1"></i>Hydrate Visible</button>
                     </div>
 
                     <!-- ADDITIONAL FILTERS ROW -->
@@ -1226,6 +1246,6 @@
     <script type="module" src="js/landing/enhancements.js"></script>
     <script type="module" src="js/routing/router.js"></script>
     <script type="module" src="js/layer/import.js"></script>
-    <script type="module" src="app.js?v=7"></script>
+    <script type="module" src="app.js?v=9"></script>
 </body>
 </html>

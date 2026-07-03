@@ -28,6 +28,7 @@ export let selectedSigmaProduct = [];
 export let selectedSigmaSort = "default";
 export let selectedSigmaDate = "all";
 export let selectedSigmaChange = "all";
+export let selectedSigmaHydration = "all";
 export let isLiveSigmaConnected = false;
 export let sigmaReleaseActionIndex = null;
 
@@ -83,6 +84,8 @@ export let sigmaModuleInitialized = false;
 export let sigmaModuleInitPromise = null;
 let sigmaActionsMenuBound = false;
 let sigmaFreshnessPromise = null;
+let sigmaPageRefreshPromise = null;
+let lastSigmaSyncError = '';
 
 function getSigmaCacheTtl() {
     return window.SIGMA_CACHE_TTL || 24 * 60 * 60 * 1000;
@@ -115,7 +118,7 @@ function getHydratableSigmaRules({ retryFailed = false } = {}) {
 export function initSigmaWorker() {
     if (sigmaWorker) return;
     try {
-        const workerUrl = new URL('sigma-worker.js?v=4', import.meta.url);
+        const workerUrl = new URL('sigma-worker.js?v=5', import.meta.url);
         sigmaWorker = new Worker(workerUrl, { type: 'module' });
         sigmaWorker.onmessage = function(e) {
             const { type, rule, ruleId, error, ids, requestId, total, count } = e.data;
@@ -217,9 +220,10 @@ export async function initSigmaModule() {
             renderSigmaList();
             renderSigmaDetails();
             updateHydrationStatus();
+            renderSigmaHealthBanner();
 
-            // Check freshness on Sigma entry. This syncs, hydrates, and indexes stale caches.
-            setTimeout(() => ensureSigmaFreshness({ background: true, hydrate: true }), 2000);
+            // Check freshness on Sigma entry and hydrate only newly changed entries.
+            setTimeout(() => syncAndHydrateSigmaPage({ background: true }), 2000);
             startAutoSyncCountdown();
 
             return;
@@ -231,9 +235,10 @@ export async function initSigmaModule() {
         renderSigmaStats();
         renderSigmaList();
         renderSigmaDetails();
+        renderSigmaHealthBanner();
 
-        // Auto-connect to GitHub to fetch, hydrate, and index all rules on first use.
-        setTimeout(() => ensureSigmaFreshness({ force: true, background: true, hydrate: true }), 500);
+        // Auto-connect visibly on first use and hydrate newly indexed entries.
+        setTimeout(() => syncAndHydrateSigmaPage({ force: true, background: false }), 500);
         startAutoSyncCountdown();
 
     } catch (err) {
@@ -390,6 +395,165 @@ export async function autoSyncFromGitHub() {
     await executeSyncFromGitHub(false);
 }
 
+export async function rebuildSigmaIndex() {
+    const btn = document.getElementById('btn-reindex-sigma');
+    const hydratedRules = sigmaRules.filter(rule => rule.yaml && rule.yaml.length > 50 && !isSigmaHydrationError(rule));
+
+    if (hydratedRules.length === 0) {
+        showToast('No hydrated Sigma YAML is available to reindex yet.', 'warning');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="bi bi-hourglass-split mr-1"></i> Reindexing...`;
+    }
+    showSigmaSyncProgress(true, 0, `Rebuilding metadata for ${hydratedRules.length.toLocaleString()} hydrated rules...`);
+
+    const batchSize = 250;
+    for (let i = 0; i < hydratedRules.length; i += batchSize) {
+        const batch = hydratedRules.slice(i, i + batchSize);
+        batch.forEach(rule => {
+            parseYAMLInMainThread(rule);
+            applySigmaReleaseActionToRule(rule);
+        });
+        const pct = Math.round(((i + batch.length) / hydratedRules.length) * 100);
+        showSigmaSyncProgress(true, Math.min(pct, 100), `Reindexed ${Math.min(i + batch.length, hydratedRules.length).toLocaleString()} / ${hydratedRules.length.toLocaleString()} hydrated rules...`);
+        await new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    await idbReplaceAll('rules', sigmaRules);
+    populateDynamicFilters(sigmaRules);
+    syncRulesToWorker();
+    await refreshSigmaFilteredCache();
+    renderSigmaStats();
+    renderSigmaList();
+    renderSigmaDetails();
+    updateHydrationStatus();
+    showSigmaSyncProgress(true, 100, 'Sigma metadata index rebuilt.');
+    setTimeout(() => showSigmaSyncProgress(false), 1800);
+
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="bi bi-database-gear mr-1"></i> Rebuild Index`;
+    }
+    showToast(`Reindexed ${hydratedRules.length.toLocaleString()} hydrated Sigma rule${hydratedRules.length === 1 ? '' : 's'}.`, 'success');
+}
+
+function getHydratableSubset(rules, { retryFailed = true } = {}) {
+    const retryCutoff = Date.now() - getSigmaCacheTtl();
+    return (rules || []).filter(rule => {
+        if (!rule?.path) return false;
+        if (rule.isVirtual || !rule.yaml) return true;
+        if (!retryFailed || !isSigmaHydrationError(rule)) return false;
+        return !rule.lastHydrateAttemptAt || rule.lastHydrateAttemptAt <= retryCutoff;
+    });
+}
+
+function getVisibleHydrationFallback() {
+    return getHydratableSubset(sigmaFilteredCache.slice(0, Math.max(currentVisibleCount, SIGMA_PAGINATION_CHUNK)), { retryFailed: true });
+}
+
+export async function hydrateSigmaRuleSet(rules, { background = true, label = 'Hydrating Sigma YAML', updateGlobalHydrateTimestamp = false } = {}) {
+    const virtualRules = getHydratableSubset(rules, { retryFailed: true });
+    if (virtualRules.length === 0) return { hydratedCount: 0, failedCount: 0, total: 0 };
+
+    console.log(`${label}: ${virtualRules.length} rules`);
+    showSigmaSyncProgress(true, 0, `${label} (${virtualRules.length.toLocaleString()} rules)...`);
+
+    const batchSize = 10;
+    const delayBetweenBatches = 1200;
+    let hydratedCount = 0;
+    let failedCount = 0;
+
+    for (let i = 0; i < virtualRules.length; i += batchSize) {
+        const batch = virtualRules.slice(i, i + batchSize);
+        const promises = batch.map(async (rule) => {
+            try {
+                const rawUrl = `https://raw.githubusercontent.com/SigmaHQ/sigma/master/${rule.path}`;
+                let rawContent;
+
+                if (typeof fetchViaProxy === 'function') {
+                    rawContent = await fetchViaProxy(rawUrl);
+                } else {
+                    const resp = await fetch(rawUrl);
+                    if (!resp.ok) throw new Error('Raw fetch failed');
+                    rawContent = await resp.text();
+                }
+
+                if (!rawContent || rawContent.trim().length === 0) throw new Error('Empty content');
+
+                rule.yaml = rawContent;
+                rule.hydrateError = '';
+                rule.lastHydrateAttemptAt = Date.now();
+
+                parseYAMLInMainThread(rule);
+                applySigmaReleaseActionToRule(rule);
+                updateWorkerRule(rule);
+                await idbPut('rules', rule);
+                hydratedCount++;
+            } catch (err) {
+                console.warn(`${label} failed for ${rule.path}:`, err.message);
+                rule.yaml = `error: Hydrate failed.\nurl: ${rule.url}`;
+                rule.isVirtual = true;
+                rule.hydrateError = err.message || 'Hydrate failed';
+                rule.lastHydrateAttemptAt = Date.now();
+                await idbPut('rules', rule);
+                failedCount++;
+            }
+        });
+
+        await Promise.allSettled(promises);
+        const pct = Math.round(((i + batch.length) / virtualRules.length) * 100);
+        showSigmaSyncProgress(true, pct, `${label}: ${hydratedCount.toLocaleString()} / ${virtualRules.length.toLocaleString()} hydrated...`);
+        if (i + batchSize < virtualRules.length) await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
+    }
+
+    if (updateGlobalHydrateTimestamp) await idbSetMeta('lastHydrateTimestamp', Date.now());
+    await idbSetMeta('lastChangedHydrateTimestamp', Date.now());
+    await refreshSigmaFilteredCache();
+    renderSigmaStats();
+    renderSigmaList();
+    renderSigmaDetails();
+    updateHydrationStatus();
+    renderSigmaHealthBanner();
+    if (!background && hydratedCount > 0) showToast(`Hydrated ${hydratedCount.toLocaleString()} Sigma rule${hydratedCount === 1 ? '' : 's'}.`, 'success');
+    return { hydratedCount, failedCount, total: virtualRules.length };
+}
+
+export async function hydrateNewSigmaEntries(syncResult, { background = true } = {}) {
+    const changedIds = new Set(syncResult?.changedRuleIds || []);
+    let targets = changedIds.size ? sigmaRules.filter(rule => changedIds.has(rule.id)) : [];
+    let label = 'Hydrating new Sigma YAML';
+
+    if (targets.length === 0) {
+        targets = getVisibleHydrationFallback();
+        label = 'No new Sigma entries; hydrating visible gaps';
+        if (targets.length === 0) {
+            renderSigmaHealthBanner();
+            if (!background) showToast('SigmaHQ is up to date. No new YAML entries needed hydration.', 'info');
+            return { hydratedCount: 0, failedCount: 0, total: 0, fallback: true };
+        }
+    }
+
+    return hydrateSigmaRuleSet(targets, { background, label, updateGlobalHydrateTimestamp: false });
+}
+
+export async function syncAndHydrateSigmaPage({ force = false, background = true } = {}) {
+    if (sigmaPageRefreshPromise) return sigmaPageRefreshPromise;
+
+    sigmaPageRefreshPromise = (async () => {
+        const result = await ensureSigmaFreshness({ force, background, hydrate: false });
+        await hydrateNewSigmaEntries(result?.syncResult, { background });
+        renderSigmaHealthBanner();
+        return result;
+    })().finally(() => {
+        sigmaPageRefreshPromise = null;
+    });
+
+    return sigmaPageRefreshPromise;
+}
+
 export async function backgroundResync() {
     await executeSyncFromGitHub(true);
 }
@@ -413,7 +577,7 @@ export async function ensureSigmaFreshness({ force = false, background = true, h
             syncResult = await executeSyncFromGitHub(background);
         }
 
-        if (needsHydrate || syncResult?.newCount || syncResult?.updatedCount) {
+        if (hydrate && (needsHydrate || syncResult?.newCount || syncResult?.updatedCount)) {
             await autoHydrateAllVirtualRules({ retryFailed: true, background });
         }
 
@@ -559,6 +723,7 @@ export async function executeSyncFromGitHub(isBackground) {
 
         let newCount = 0;
         let updatedCount = 0;
+        const changedRuleIds = [];
         const now = Date.now();
         const previousSyncTimestamp = await idbGetMeta('previousSyncTimestamp') || 0;
 
@@ -598,6 +763,7 @@ export async function executeSyncFromGitHub(isBackground) {
                     applySigmaReleaseActionToRule(newRule, releaseActionIndex);
                     sigmaRules.push(newRule);
                     existingMap.set(item.path, newRule);
+                    changedRuleIds.push(newRule.id);
                     newCount++;
                 } else {
                     // Existing rule — check if SHA changed (modified upstream)
@@ -610,6 +776,7 @@ export async function executeSyncFromGitHub(isBackground) {
                         existing.detectedAt = now;
                         existing.detectedType = 'modified';
                         applySigmaReleaseActionToRule(existing, releaseActionIndex);
+                        changedRuleIds.push(existing.id);
                         updatedCount++;
                     } else if (!existing.sha) {
                         existing.sha = item.sha;
@@ -646,6 +813,7 @@ export async function executeSyncFromGitHub(isBackground) {
 
         showSigmaSyncProgress(true, 100, `Synced! ${newCount > 0 ? newCount + ' new rules' : 'Up to date'}${updatedCount > 0 ? ', ' + updatedCount + ' modified' : ''}${removedCount > 0 ? ', ' + removedCount + ' removed' : ''}`);
 
+        lastSigmaSyncError = '';
         isLiveSigmaConnected = true;
         window.sigmaRules = sigmaRules;
         updateSyncButton('synced');
@@ -667,24 +835,27 @@ export async function executeSyncFromGitHub(isBackground) {
         renderSigmaList();
         renderSigmaDetails();
         updateHydrationStatus();
+        renderSigmaHealthBanner();
 
         // Start auto-sync countdown
         startAutoSyncCountdown();
 
-        return { newCount, updatedCount, removedCount, total: sigmaRules.length };
+        return { newCount, updatedCount, removedCount, total: sigmaRules.length, changedRuleIds, syncedAt: now };
 
     } catch (err) {
         console.error("Failed to sync SigmaHQ:", err);
         showSigmaSyncProgress(false);
+        lastSigmaSyncError = err.message || 'SigmaHQ sync failed';
 
         if (sigmaRules.length > 100) {
             // We have cached data, just warn
             updateSyncButton('cached');
-            if (!isBackground) showToast("GitHub API unavailable. Using cached rules.", "warning");
+            if (!isBackground) showToast(`${lastSigmaSyncError}. Using cached rules.`, "warning");
         } else {
             updateSyncButton('error');
-            if (!isBackground) showToast("Failed to connect to GitHub. Please try again.", "error");
+            if (!isBackground) showToast(lastSigmaSyncError, "error");
         }
+        renderSigmaHealthBanner();
         return null;
     }
 }
@@ -747,7 +918,7 @@ export function startAutoSyncCountdown() {
 
         if (remaining <= 0) {
             countdownEl.innerHTML = `<i class="bi bi-arrow-repeat"></i> Auto-refresh due`;
-            ensureSigmaFreshness({ background: true, hydrate: true });
+            syncAndHydrateSigmaPage({ background: true });
             return;
         }
 
@@ -808,6 +979,41 @@ export function updateHydrationStatus() {
         el.innerHTML = `<i class="bi bi-database"></i> ${hydratedCount.toLocaleString()} / ${total.toLocaleString()} hydrated (click rules to load details)`;
         el.className = 'sigma-hydrate-status sigma-hydrate-partial';
     }
+}
+
+function formatSigmaHealthTime(timestamp) {
+    if (!timestamp) return 'never';
+    return new Date(timestamp).toLocaleString();
+}
+
+export async function renderSigmaHealthBanner() {
+    const el = document.getElementById('sigma-health-banner');
+    if (!el) return;
+
+    const [lastSync, lastHydrate, lastChangedHydrate] = await Promise.all([
+        idbGetMeta('lastSyncTimestamp'),
+        idbGetMeta('lastHydrateTimestamp'),
+        idbGetMeta('lastChangedHydrateTimestamp')
+    ]);
+    const hydratedCount = sigmaRules.filter(r => r.isVirtual === false && r.yaml && r.yaml.length > 50).length;
+    const pendingCount = getHydratableSigmaRules({ retryFailed: true }).length;
+    const statusClass = lastSigmaSyncError ? 'is-warning' : (sigmaPageRefreshPromise || sigmaFreshnessPromise ? 'is-syncing' : 'is-ok');
+    const statusLabel = lastSigmaSyncError ? 'GitHub sync issue' : (sigmaPageRefreshPromise || sigmaFreshnessPromise ? 'Syncing' : 'Ready');
+
+    el.className = `sigma-health-banner ${statusClass}`;
+    el.innerHTML = `
+        <div class="sigma-health-main">
+            <span class="sigma-health-status"><i class="bi ${lastSigmaSyncError ? 'bi-exclamation-triangle' : 'bi-database-check'}"></i>${escapeHtml(statusLabel)}</span>
+            <span>${sigmaRules.length.toLocaleString()} indexed</span>
+            <span>${hydratedCount.toLocaleString()} hydrated</span>
+            <span>${pendingCount.toLocaleString()} pending YAML</span>
+        </div>
+        <div class="sigma-health-meta">
+            <span>Last sync: ${escapeHtml(formatSigmaHealthTime(lastSync))}</span>
+            <span>Changed YAML: ${escapeHtml(formatSigmaHealthTime(lastChangedHydrate || lastHydrate))}</span>
+            ${lastSigmaSyncError ? `<span class="sigma-health-error">${escapeHtml(lastSigmaSyncError)}</span>` : ''}
+        </div>
+    `;
 }
 
 // ---- Section 7: On-Demand Hydration (with cache persistence) ----
@@ -984,7 +1190,7 @@ export async function manualHydrateAll() {
 
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = `<i class="bi bi-hourglass-split mr-1"></i> Hydrating... (0/${virtualRules.length})`;
+        btn.innerHTML = `<i class="bi bi-hourglass-split mr-1"></i> Hydrating YAML... (0/${virtualRules.length})`;
     }
 
     showSigmaSyncProgress(true, 0, `Hydrating ${virtualRules.length.toLocaleString()} rules...`);
@@ -1059,7 +1265,7 @@ export async function manualHydrateAll() {
         await Promise.allSettled(promises);
 
         const pct = Math.round(((i + batch.length) / virtualRules.length) * 100);
-        if (btn) btn.innerHTML = `<i class="bi bi-cloud-arrow-down mr-1"></i> Hydrating... (${hydratedCount}/${virtualRules.length})`;
+        if (btn) btn.innerHTML = `<i class="bi bi-cloud-arrow-down mr-1"></i> Hydrating YAML... (${hydratedCount}/${virtualRules.length})`;
         showSigmaSyncProgress(true, pct, `Hydrated ${hydratedCount.toLocaleString()} / ${virtualRules.length.toLocaleString()}...`);
 
         if (i + batchSize < virtualRules.length) {
@@ -1076,7 +1282,7 @@ export async function manualHydrateAll() {
 
     if (btn) {
         btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate & Index All`;
+        btn.innerHTML = `<i class="bi bi-cloud-arrow-down mr-1"></i> Hydrate YAML`;
     }
 
     setTimeout(() => showSigmaSyncProgress(false), 3000);
@@ -1195,7 +1401,8 @@ export async function refreshSigmaFilteredCache() {
                         coverage: selectedSigmaCoverage,
                         product: selectedSigmaProduct,
                         date: selectedSigmaDate,
-                        change: selectedSigmaChange
+                        change: selectedSigmaChange,
+                        hydration: selectedSigmaHydration
                     },
                     coverageMap,
                     sort: selectedSigmaSort
@@ -1260,8 +1467,12 @@ export function refreshSigmaFilteredCacheSync(coverageMap) {
         }
 
         const matchChange = selectedSigmaChange === 'all' || rule.releaseAction === selectedSigmaChange;
+        const isHydrated = rule.isVirtual === false && Boolean(rule.yaml && rule.yaml.length > 50) && !isSigmaHydrationError(rule);
+        const matchHydration = selectedSigmaHydration === 'all'
+            || (selectedSigmaHydration === 'hydrated' && isHydrated)
+            || (selectedSigmaHydration === 'unhydrated' && !isHydrated);
 
-        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate && matchChange;
+        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate && matchChange && matchHydration;
     });
 
     // Apply sorting
@@ -1316,6 +1527,7 @@ export async function renderSigmaView() {
         renderSigmaList();
         renderSigmaDetails();
         updateHydrationStatus();
+        renderSigmaHealthBanner();
     }
     populateDynamicFilters(sigmaRules);
     await refreshSigmaFilteredCache();
@@ -1323,7 +1535,8 @@ export async function renderSigmaView() {
     renderSigmaList();
     renderSigmaDetails();
     updateHydrationStatus();
-    ensureSigmaFreshness({ background: true, hydrate: true });
+    renderSigmaHealthBanner();
+    syncAndHydrateSigmaPage({ background: true });
 }
 
 function populateDynamicFilters(rules) {
@@ -1746,9 +1959,9 @@ export function renderSigmaCard(rule, idx) {
     let statusBadge = '';
     if (rule.detectedAt && (Date.now() - rule.detectedAt) < 30 * 24 * 60 * 60 * 1000) {
         if (rule.detectedType === 'new') {
-            statusBadge = `<span class="sigma-card-status-badge badge-new"><i class="bi bi-stars"></i> NEW</span>`;
+            statusBadge = rule.releaseAction === 'new' ? '' : `<span class="sigma-card-status-badge badge-new"><i class="bi bi-stars"></i> NEW</span>`;
         } else if (rule.detectedType === 'modified') {
-            statusBadge = `<span class="sigma-card-status-badge badge-modified"><i class="bi bi-pencil-square"></i> MODIFIED</span>`;
+            statusBadge = rule.releaseAction === 'update' ? '' : `<span class="sigma-card-status-badge badge-modified"><i class="bi bi-pencil-square"></i> MODIFIED</span>`;
         }
     }
 
@@ -2092,7 +2305,7 @@ export function bindSigmaEvents() {
 
     // Force sync button
     ids['btn-load-live-sigma']?.addEventListener('click', () => {
-        ensureSigmaFreshness({ force: true, background: false, hydrate: true });
+        syncAndHydrateSigmaPage({ force: true, background: false });
         document.querySelector('.sigma-actions-menu')?.removeAttribute('open');
     });
 
@@ -2116,6 +2329,56 @@ export async function resetSigmaView() {
     renderSigmaStats();
     renderSigmaList();
     renderSigmaDetails();
+    renderSigmaHealthBanner();
+    updateSigmaQuickFilterStates();
+}
+
+function updateSigmaQuickFilterStates(activeFilter = null) {
+    const current = activeFilter || (
+        selectedSigmaChange === 'new' ? 'new' :
+        selectedSigmaChange === 'update' ? 'updated' :
+        selectedSigmaHydration === 'hydrated' ? 'hydrated' :
+        selectedSigmaHydration === 'unhydrated' ? 'unhydrated' :
+        selectedSigmaCoverage === 'active' ? 'linked' :
+        selectedSigmaCoverage === 'gap' ? 'unlinked' : 'all'
+    );
+
+    document.querySelectorAll('[data-sigma-action="quick-filter"]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === current);
+    });
+}
+
+export async function applySigmaQuickFilter(filter) {
+    selectedSigmaChange = 'all';
+    selectedSigmaHydration = 'all';
+    selectedSigmaCoverage = 'all';
+    selectedSigmaDate = 'all';
+
+    if (filter === 'new') selectedSigmaChange = 'new';
+    if (filter === 'updated') selectedSigmaChange = 'update';
+    if (filter === 'hydrated') selectedSigmaHydration = 'hydrated';
+    if (filter === 'unhydrated') selectedSigmaHydration = 'unhydrated';
+    if (filter === 'linked') selectedSigmaCoverage = 'active';
+    if (filter === 'unlinked') selectedSigmaCoverage = 'gap';
+
+    const coverageSelect = document.getElementById('sigma-coverage-filter');
+    if (coverageSelect) coverageSelect.value = selectedSigmaCoverage;
+    const changeSelect = document.getElementById('sigma-change-filter');
+    if (changeSelect) changeSelect.value = selectedSigmaChange;
+    const dateSelect = document.getElementById('sigma-date-filter');
+    if (dateSelect) dateSelect.value = selectedSigmaDate;
+
+    updateSigmaQuickFilterStates(filter || 'all');
+    await resetSigmaView();
+}
+
+export async function hydrateVisibleSigmaRules() {
+    const targets = getVisibleHydrationFallback();
+    if (targets.length === 0) {
+        showToast('Visible Sigma rules are already hydrated or no rules are visible.', 'info');
+        return;
+    }
+    await hydrateSigmaRuleSet(targets, { background: false, label: 'Hydrating visible Sigma YAML', updateGlobalHydrateTimestamp: false });
 }
 
 // ---- Section 16: Query Modal Autocomplete ----
@@ -2548,6 +2811,15 @@ function handleSigmaAction(action, el, event) {
         case 'hydrate-all':
             manualHydrateAll();
             break;
+        case 'hydrate-visible':
+            hydrateVisibleSigmaRules();
+            break;
+        case 'reindex':
+            rebuildSigmaIndex();
+            break;
+        case 'quick-filter':
+            applySigmaQuickFilter(el.dataset.filter || 'all');
+            break;
         case 'toggle-candidates':
             toggleCandidatesView();
             break;
@@ -2606,6 +2878,7 @@ window.selectedSigmaProduct = selectedSigmaProduct;
 window.selectedSigmaSort = selectedSigmaSort;
 window.selectedSigmaDate = selectedSigmaDate;
 window.selectedSigmaChange = selectedSigmaChange;
+window.selectedSigmaHydration = selectedSigmaHydration;
 window.isLiveSigmaConnected = isLiveSigmaConnected;
 window.sigmaReleaseActionIndex = sigmaReleaseActionIndex;
 window.SIGMA_PAGINATION_CHUNK = SIGMA_PAGINATION_CHUNK;
@@ -2626,6 +2899,10 @@ window.fetchSigmaReleaseActionIndex = fetchSigmaReleaseActionIndex;
 window.applySigmaReleaseActionToRule = applySigmaReleaseActionToRule;
 window.applySigmaReleaseActions = applySigmaReleaseActions;
 window.autoSyncFromGitHub = autoSyncFromGitHub;
+window.rebuildSigmaIndex = rebuildSigmaIndex;
+window.hydrateSigmaRuleSet = hydrateSigmaRuleSet;
+window.hydrateNewSigmaEntries = hydrateNewSigmaEntries;
+window.syncAndHydrateSigmaPage = syncAndHydrateSigmaPage;
 window.backgroundResync = backgroundResync;
 window.ensureSigmaFreshness = ensureSigmaFreshness;
 window.executeSyncFromGitHub = executeSyncFromGitHub;
@@ -2637,6 +2914,7 @@ window.startAutoSyncCountdown = startAutoSyncCountdown;
 window.stopAutoSyncCountdown = stopAutoSyncCountdown;
 window.showSigmaSyncProgress = showSigmaSyncProgress;
 window.updateHydrationStatus = updateHydrationStatus;
+window.renderSigmaHealthBanner = renderSigmaHealthBanner;
 window.fetchVirtualRuleContent = fetchVirtualRuleContent;
 window.autoHydrateAllVirtualRules = autoHydrateAllVirtualRules;
 window.manualHydrateAll = manualHydrateAll;
@@ -2666,6 +2944,8 @@ window.renderSigmaDetails = renderSigmaDetails;
 window.sigmaFilterDebounceTimer = sigmaFilterDebounceTimer;
 window.bindSigmaEvents = bindSigmaEvents;
 window.resetSigmaView = resetSigmaView;
+window.applySigmaQuickFilter = applySigmaQuickFilter;
+window.hydrateVisibleSigmaRules = hydrateVisibleSigmaRules;
 window.initQueryModalSigmaSearch = initQueryModalSigmaSearch;
 window.attachSigmaRuleToModal = attachSigmaRuleToModal;
 window.renderAttachedSigmaBadges = renderAttachedSigmaBadges;

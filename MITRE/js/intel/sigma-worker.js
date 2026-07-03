@@ -137,7 +137,7 @@ export function handleParseYAML(rule) {
 }
 
 export function handleFilterAndSort({ requestId, filters, coverageMap, sort }) {
-    const { searchQuery, logsource, tactic, level, coverage, product, date, change } = filters;
+    const { searchQuery, logsource, tactic, level, coverage, product, date, change, hydration = 'all' } = filters;
     const recentCutoff = Date.now() - (30 * 24 * 60 * 60 * 1000);
     
     let filtered = sigmaRulesCache.filter(rule => {
@@ -181,8 +181,12 @@ export function handleFilterAndSort({ requestId, filters, coverageMap, sort }) {
         }
 
         const matchChange = !change || change === 'all' || rule.releaseAction === change;
+        const isHydrated = rule.isVirtual === false && Boolean(rule.yaml && rule.yaml.length > 50) && !String(rule.yaml || '').startsWith('error:');
+        const matchHydration = hydration === 'all'
+            || (hydration === 'hydrated' && isHydrated)
+            || (hydration === 'unhydrated' && !isHydrated);
 
-        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate && matchChange;
+        return matchText && matchLog && matchTactic && matchLevel && matchCov && matchProd && matchDate && matchChange && matchHydration;
     });
     
     // Apply sorting
