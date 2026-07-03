@@ -1663,3 +1663,27 @@
         margin-left: 0 !important;
     }
 }
+
+/* Keep the expanded Sigma workbench reachable after health/action rows are rendered. */
+#sigma-view.sigma-workbench-view {
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-command-deck {
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-layout-container {
+    height: auto !important;
+    min-height: min(620px, calc(100dvh - 11rem)) !important;
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-list-wrapper,
+#sigma-view .sigma-details-panel {
+    max-height: none !important;
+}
+
+#sigma-view #sigma-feed-grid {
+    max-height: min(760px, 66dvh) !important;
+}

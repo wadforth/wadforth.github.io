@@ -18,6 +18,7 @@ body.landing-active .navbar {
     align-items: stretch !important;
     justify-content: flex-start !important;
     padding: 0 !important;
+    padding-top: 0 !important;
     background: transparent !important;
 }
 

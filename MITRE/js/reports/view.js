@@ -732,6 +732,16 @@ function resolveAttackObjectName(value) {
     return 'Unresolved ATT&CK object. Review ATT&CK relationship import.';
 }
 
+function formatAttackRelationshipTarget(value) {
+    const id = String(value || '').trim();
+    if (!id) return '';
+    const techniqueId = getTechniqueIdFromStix(id);
+    if (techniqueId) return techniqueId;
+    if (!isRawAttackObjectId(id)) return id;
+    const resolved = resolveAttackObjectName(id);
+    return resolved.startsWith('Unresolved ATT&CK object') ? 'ATT&CK object not loaded' : resolved;
+}
+
 function formatReportDate(value, options = {}) {
     if (!value) return '';
     const date = value instanceof Date ? value : new Date(value);
@@ -2273,9 +2283,9 @@ export function buildThreatsSection(report) {
         
         // Truncate techniques list to top 6 elements with a more badge
         const techListHtml = t.techniqueIds?.slice(0, 6).map(id => {
-            const techId = getTechniqueIdFromStix(id);
-            const name = getTechniqueName(techId || id);
-            return techId ? `<span class="roi-tech-chip" title="${techId} - ${name}">${techId}</span>` : `<span class="roi-tech-chip">${id}</span>`;
+            const label = formatAttackRelationshipTarget(id);
+            const name = getTechniqueName(label) || label;
+            return `<span class="roi-tech-chip" title="${escapeHtml(name)}">${escapeHtml(label)}</span>`;
         }).join('') || '';
         const moreCount = t.techniqueIds?.length > 6 ? t.techniqueIds.length - 6 : 0;
         const moreTechsHtml = moreCount > 0 ? `<span class="roi-tech-chip more">+${moreCount} more</span>` : '';
@@ -5498,7 +5508,7 @@ export function buildThreatsSectionEmail(report, isDark = false) {
         }
         
         // Truncate techniques list to top 6 elements
-        const techIds = t.techniqueIds?.map(id => getTechniqueIdFromStix(id) || (isRawAttackObjectId(id) ? 'Unresolved ATT&CK object. Review ATT&CK relationship import.' : id)) || [];
+        const techIds = t.techniqueIds?.map(formatAttackRelationshipTarget).filter(Boolean) || [];
         const truncatedTechIds = techIds.slice(0, 6);
         const extraCount = techIds.length - truncatedTechIds.length;
         const techList = truncatedTechIds.join(', ') + (extraCount > 0 ? `, +${extraCount} more` : '');
