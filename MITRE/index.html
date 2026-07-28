@@ -32,7 +32,7 @@
     <link href="css/entity-workbench.css?v=2" rel="stylesheet">
     <link href="css/mitigations-workbench.css?v=2" rel="stylesheet">
     <link href="css/reports-workbench.css?v=3" rel="stylesheet">
-    <link href="css/sigma-workbench.css?v=7" rel="stylesheet">
+    <link href="css/sigma-workbench.css?v=9" rel="stylesheet">
 </head>
 <body>
     <a class="skip-link" href="#workspace-view">Skip to workspace</a>
@@ -511,6 +511,9 @@
                     
                     <div class="sigma-top-bar-right">
                         <span id="sigma-rules-count" class="badge bg-secondary font-monospace">Rules: 0</span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary sigma-focus-toggle" id="btn-toggle-sigma-focus" data-sigma-action="toggle-focus" aria-pressed="false" title="Expand the selected rule dossier">
+                            <i class="bi bi-arrows-angle-expand mr-1"></i><span>Focus Dossier</span>
+                        </button>
                         <details class="sigma-actions-menu">
                             <summary><i class="bi bi-three-dots"></i> Operations</summary>
                             <div class="sigma-actions-panel">
@@ -1246,6 +1249,6 @@
     <script type="module" src="js/landing/enhancements.js"></script>
     <script type="module" src="js/routing/router.js"></script>
     <script type="module" src="js/layer/import.js"></script>
-    <script type="module" src="app.js?v=9"></script>
+    <script type="module" src="app.js?v=10"></script>
 </body>
 </html>

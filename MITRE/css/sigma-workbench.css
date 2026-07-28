@@ -1687,3 +1687,123 @@
 #sigma-view #sigma-feed-grid {
     max-height: min(760px, 66dvh) !important;
 }
+
+/* Sigma v5 layout contract: keep the dossier readable without removing any actions. */
+#sigma-view.sigma-workbench-view:not(.hidden) {
+    display: block !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+#sigma-view .sigma-command-deck {
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-layout-container {
+    grid-template-columns: minmax(22rem, 0.36fr) minmax(0, 0.64fr) !important;
+    align-items: stretch !important;
+    height: auto !important;
+    min-height: clamp(620px, calc(100dvh - 18rem), 900px) !important;
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-list-wrapper {
+    min-height: clamp(520px, calc(100dvh - 18rem), 760px) !important;
+    max-height: none !important;
+    align-self: stretch !important;
+    overflow: hidden !important;
+}
+
+#sigma-view #sigma-feed-grid {
+    height: 100% !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+}
+
+#sigma-view .sigma-details-panel {
+    display: block !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-details-header {
+    position: relative !important;
+    top: auto !important;
+    z-index: auto !important;
+}
+
+#sigma-view .sigma-details-body {
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-definition-panel {
+    overflow: visible !important;
+}
+
+#sigma-view .sigma-definition-panel .sigma-yaml-code {
+    max-height: min(720px, 70dvh) !important;
+    min-height: 360px !important;
+    overflow: auto !important;
+}
+
+#sigma-view .sigma-details-title {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal !important;
+}
+
+#sigma-view.sigma-focus-mode .sigma-layout-container {
+    grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#sigma-view.sigma-focus-mode .sigma-list-wrapper {
+    display: none !important;
+}
+
+#sigma-view .sigma-focus-toggle {
+    white-space: nowrap;
+}
+
+@media (max-width: 1200px) {
+    #sigma-view .sigma-top-bar {
+        grid-template-columns: 1fr !important;
+    }
+
+    #sigma-view .sigma-layout-container {
+        grid-template-columns: 1fr !important;
+        min-height: 0 !important;
+    }
+
+    #sigma-view .sigma-list-wrapper {
+        min-height: 420px !important;
+        max-height: min(540px, 58dvh) !important;
+    }
+
+    #sigma-view .sigma-details-panel {
+        min-height: 0 !important;
+    }
+
+    #sigma-view .sigma-details-body {
+        grid-template-columns: 1fr !important;
+    }
+
+    #sigma-view .sigma-definition-panel,
+    #sigma-view .sigma-release-note-card,
+    #sigma-view .sigma-linked-query-card,
+    #sigma-view .sigma-description-block,
+    #sigma-view .sigma-pivot-row {
+        grid-column: 1 !important;
+        grid-row: auto !important;
+    }
+}
+
+@media (max-width: 640px) {
+    #sigma-view .sigma-focus-toggle span {
+        display: none;
+    }
+}

@@ -19,6 +19,7 @@ import { cleanTitleFromPath, extractLevelFromYaml, extractYamlStringField, parse
 import { idbGetAll, idbGetMeta, idbPut, idbReplaceAll, idbSetMeta, openSigmaDB } from '../utils/db.js';
 export let sigmaRules = [];
 export let selectedSigmaIdx = null;
+export let selectedSigmaRuleId = null;
 export let sigmaSearchQuery = "";
 export let selectedSigmaLogsource = [];
 export let selectedSigmaTactic = "all";
@@ -86,6 +87,8 @@ let sigmaActionsMenuBound = false;
 let sigmaFreshnessPromise = null;
 let sigmaPageRefreshPromise = null;
 let lastSigmaSyncError = '';
+let sigmaFocusMode = false;
+const sigmaHydrationPromises = new Map();
 
 function getSigmaCacheTtl() {
     return window.SIGMA_CACHE_TTL || 24 * 60 * 60 * 1000;
@@ -98,6 +101,36 @@ function parseStoredArray(key) {
     } catch {
         return null;
     }
+}
+
+function applySigmaFocusMode() {
+    const view = document.getElementById('sigma-view');
+    const button = document.getElementById('btn-toggle-sigma-focus');
+    if (!view || !button) return;
+
+    view.classList.toggle('sigma-focus-mode', sigmaFocusMode);
+    button.setAttribute('aria-pressed', sigmaFocusMode ? 'true' : 'false');
+    button.title = sigmaFocusMode ? 'Show the Sigma release feed' : 'Expand the selected rule dossier';
+    button.innerHTML = sigmaFocusMode
+        ? '<i class="bi bi-arrows-angle-contract mr-1"></i><span>Show Release Feed</span>'
+        : '<i class="bi bi-arrows-angle-expand mr-1"></i><span>Focus Dossier</span>';
+}
+
+export function toggleSigmaFocusMode() {
+    sigmaFocusMode = !sigmaFocusMode;
+    safeLocalStorageSet('sigma-focus-mode', sigmaFocusMode ? 'true' : 'false');
+    applySigmaFocusMode();
+}
+
+function hydrateRuleOnce(rule) {
+    if (!rule?.id) return Promise.resolve();
+    if (sigmaHydrationPromises.has(rule.id)) return sigmaHydrationPromises.get(rule.id);
+
+    const promise = fetchVirtualRuleContent(rule).finally(() => {
+        sigmaHydrationPromises.delete(rule.id);
+    });
+    sigmaHydrationPromises.set(rule.id, promise);
+    return promise;
 }
 
 function isSigmaHydrationError(rule) {
@@ -828,7 +861,6 @@ export async function executeSyncFromGitHub(isBackground) {
 
         setTimeout(() => showSigmaSyncProgress(false), 3000);
 
-        selectedSigmaIdx = null;
         currentVisibleCount = SIGMA_PAGINATION_CHUNK;
         await refreshSigmaFilteredCache();
         renderSigmaStats();
@@ -1520,6 +1552,11 @@ export function applySigmaSort() {
 // ---- Section 11: Rendering - Sigma View Entry ----
 
 export async function renderSigmaView() {
+    try {
+        sigmaFocusMode = localStorage.getItem('sigma-focus-mode') === 'true';
+    } catch {}
+    applySigmaFocusMode();
+
     if (sigmaRules.length === 0) {
         await initSigmaModule();
         await refreshSigmaFilteredCache();
@@ -1933,6 +1970,7 @@ export function renderSigmaList() {
             if (event.target.closest('[data-sigma-action]')) return;
             const idx = parseInt(card.dataset.idx, 10);
             selectedSigmaIdx = idx;
+            selectedSigmaRuleId = card.dataset.ruleId;
             grid.querySelectorAll('.sigma-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
             renderSigmaDetails();
@@ -1947,7 +1985,7 @@ export function loadMoreSigmaRules() {
 
 export function renderSigmaCard(rule, idx) {
     const level = rule.level || (rule.isVirtual ? '' : extractLevelFromYaml(rule.yaml));
-    const isActive = selectedSigmaIdx === idx;
+    const isActive = selectedSigmaRuleId === rule.id || (selectedSigmaRuleId === null && selectedSigmaIdx === idx);
     const coverage = getSigmaCoverageStatus(rule);
     const linkedQueries = getSigmaLinkedQueries(rule);
     const dateStr = formatRuleDate(rule);
@@ -2039,7 +2077,13 @@ export function renderSigmaDetails() {
 
     const filtered = sigmaFilteredCache;
 
-    if (selectedSigmaIdx === null || !filtered[selectedSigmaIdx]) {
+    const selectedRule = selectedSigmaRuleId
+        ? filtered.find(item => item.id === selectedSigmaRuleId)
+        : (selectedSigmaIdx === null ? null : filtered[selectedSigmaIdx]);
+
+    if (!selectedRule) {
+        selectedSigmaRuleId = null;
+        selectedSigmaIdx = null;
         panel.innerHTML = `
             <div class="sigma-details-empty">
                 <i class="bi bi-terminal"></i>
@@ -2054,7 +2098,7 @@ export function renderSigmaDetails() {
         return;
     }
 
-    const rule = filtered[selectedSigmaIdx];
+    const rule = selectedRule;
 
     // On-demand hydration for virtual rules
     if (rule.isVirtual) {
@@ -2065,7 +2109,7 @@ export function renderSigmaDetails() {
                 <p class="text-xs text-on-surface-tertiary mt-1" style="max-width: 300px;">Retrieving YAML for "${escapeHtml(rule.title)}"</p>
             </div>`;
 
-        fetchVirtualRuleContent(rule).then(() => {
+        hydrateRuleOnce(rule).then(() => {
             refreshSigmaFilteredCache();
             renderSigmaList();
             renderSigmaDetails();
@@ -2236,7 +2280,7 @@ export function renderSigmaDetails() {
 
     document.getElementById('btn-hydrate-sigma-rule')?.addEventListener('click', async () => {
         rule.isVirtual = true;
-        await fetchVirtualRuleContent(rule);
+        await hydrateRuleOnce(rule);
         await refreshSigmaFilteredCache();
         renderSigmaList();
         renderSigmaDetails();
@@ -2324,6 +2368,7 @@ export function bindSigmaEvents() {
 
 export async function resetSigmaView() {
     selectedSigmaIdx = null;
+    selectedSigmaRuleId = null;
     currentVisibleCount = SIGMA_PAGINATION_CHUNK;
     await refreshSigmaFilteredCache();
     renderSigmaStats();
@@ -2436,7 +2481,7 @@ export function initQueryModalSigmaSearch() {
                     if (rule) {
                         if (rule.isVirtual || !rule.yaml) {
                             showToast(`Fetching YAML from GitHub...`, 'info');
-                            fetchVirtualRuleContent(rule).then(() => {
+                            hydrateRuleOnce(rule).then(() => {
                                 attachSigmaRuleToModal(rule.id, rule.title, rule.url);
                                 showToast(`Linked: "${rule.title}"`, 'success');
                             });
@@ -2820,6 +2865,9 @@ function handleSigmaAction(action, el, event) {
         case 'quick-filter':
             applySigmaQuickFilter(el.dataset.filter || 'all');
             break;
+        case 'toggle-focus':
+            toggleSigmaFocusMode();
+            break;
         case 'toggle-candidates':
             toggleCandidatesView();
             break;
@@ -2869,6 +2917,7 @@ document.addEventListener('change', (event) => {
 // Legacy Window Bindings
 window.sigmaRules = sigmaRules;
 window.selectedSigmaIdx = selectedSigmaIdx;
+window.selectedSigmaRuleId = selectedSigmaRuleId;
 window.sigmaSearchQuery = sigmaSearchQuery;
 window.selectedSigmaLogsource = selectedSigmaLogsource;
 window.selectedSigmaTactic = selectedSigmaTactic;
@@ -2903,6 +2952,7 @@ window.rebuildSigmaIndex = rebuildSigmaIndex;
 window.hydrateSigmaRuleSet = hydrateSigmaRuleSet;
 window.hydrateNewSigmaEntries = hydrateNewSigmaEntries;
 window.syncAndHydrateSigmaPage = syncAndHydrateSigmaPage;
+window.toggleSigmaFocusMode = toggleSigmaFocusMode;
 window.backgroundResync = backgroundResync;
 window.ensureSigmaFreshness = ensureSigmaFreshness;
 window.executeSyncFromGitHub = executeSyncFromGitHub;
