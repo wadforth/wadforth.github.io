@@ -89,6 +89,8 @@ let sigmaPageRefreshPromise = null;
 let lastSigmaSyncError = '';
 let sigmaFocusMode = false;
 const sigmaHydrationPromises = new Map();
+let sigmaDossierResizeBound = false;
+let sigmaDossierScrollBound = false;
 
 function getSigmaCacheTtl() {
     return window.SIGMA_CACHE_TTL || 24 * 60 * 60 * 1000;
@@ -114,6 +116,54 @@ function applySigmaFocusMode() {
     button.innerHTML = sigmaFocusMode
         ? '<i class="bi bi-arrows-angle-contract mr-1"></i><span>Show Release Feed</span>'
         : '<i class="bi bi-arrows-angle-expand mr-1"></i><span>Focus Dossier</span>';
+    requestAnimationFrame(syncSigmaDossierGeometry);
+}
+
+function syncSigmaDossierGeometry() {
+    const view = document.getElementById('sigma-view');
+    const layout = view?.querySelector('.sigma-layout-container');
+    if (!view || !layout || window.innerWidth <= 1200 || sigmaFocusMode || view.classList.contains('hidden')) {
+        view?.classList.remove('sigma-dossier-pinned');
+        view?.style.removeProperty('--sigma-dossier-left');
+        view?.style.removeProperty('--sigma-dossier-right');
+        return;
+    }
+
+    const viewRect = view.getBoundingClientRect();
+    const layoutRect = layout.getBoundingClientRect();
+    const shellTopbarHeight = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--shell-topbar-height')) || 62;
+    const panelTopOffset = shellTopbarHeight + 54 + 12;
+    const layoutTop = view.scrollTop + layoutRect.top - viewRect.top;
+    const shouldPin = view.scrollTop >= Math.max(0, layoutTop - panelTopOffset);
+    view.classList.toggle('sigma-dossier-pinned', shouldPin);
+
+    if (!shouldPin) {
+        view.style.removeProperty('--sigma-dossier-left');
+        view.style.removeProperty('--sigma-dossier-right');
+        return;
+    }
+
+    const computed = getComputedStyle(layout);
+    const columns = computed.gridTemplateColumns.split(' ').map(value => parseFloat(value)).filter(Number.isFinite);
+    const firstColumn = columns[0] || layoutRect.width * 0.36;
+    const gap = parseFloat(computed.columnGap) || 0;
+    const left = layoutRect.left + firstColumn + gap;
+    const right = Math.max(window.innerWidth - layoutRect.right, 12);
+    view.style.setProperty('--sigma-dossier-left', `${left}px`);
+    view.style.setProperty('--sigma-dossier-right', `${right}px`);
+}
+
+function bindSigmaDossierResize() {
+    if (sigmaDossierResizeBound) return;
+    sigmaDossierResizeBound = true;
+    window.addEventListener('resize', syncSigmaDossierGeometry);
+}
+
+function bindSigmaDossierScroll() {
+    const view = document.getElementById('sigma-view');
+    if (!view || sigmaDossierScrollBound) return;
+    sigmaDossierScrollBound = true;
+    view.addEventListener('scroll', syncSigmaDossierGeometry, { passive: true });
 }
 
 export function toggleSigmaFocusMode() {
@@ -1556,6 +1606,8 @@ export async function renderSigmaView() {
         sigmaFocusMode = localStorage.getItem('sigma-focus-mode') === 'true';
     } catch {}
     applySigmaFocusMode();
+    bindSigmaDossierResize();
+    bindSigmaDossierScroll();
 
     if (sigmaRules.length === 0) {
         await initSigmaModule();
@@ -1574,6 +1626,7 @@ export async function renderSigmaView() {
     updateHydrationStatus();
     renderSigmaHealthBanner();
     syncAndHydrateSigmaPage({ background: true });
+    requestAnimationFrame(syncSigmaDossierGeometry);
 }
 
 function populateDynamicFilters(rules) {
@@ -1974,6 +2027,7 @@ export function renderSigmaList() {
             grid.querySelectorAll('.sigma-card').forEach(c => c.classList.remove('active'));
             card.classList.add('active');
             renderSigmaDetails();
+            requestAnimationFrame(syncSigmaDossierGeometry);
         });
     });
 }

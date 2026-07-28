@@ -157,7 +157,7 @@ export async function init() {
         if (sigmaModulePromise) return sigmaModulePromise;
         if (!sigmaModuleLoaded) {
             sigmaModulePromise = (async () => {
-                sigmaModule = await import('./js/intel/sigma.js?v=16');
+                sigmaModule = await import('./js/intel/sigma.js?v=18');
                 sigmaModuleLoaded = true;
                 window.sigmaModule = sigmaModule;
                 await sigmaModule.initSigmaModule();
