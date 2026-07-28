@@ -1988,7 +1988,7 @@ export function renderSigmaCard(rule, idx) {
     const isActive = selectedSigmaRuleId === rule.id || (selectedSigmaRuleId === null && selectedSigmaIdx === idx);
     const coverage = getSigmaCoverageStatus(rule);
     const linkedQueries = getSigmaLinkedQueries(rule);
-    const dateStr = formatRuleDate(rule);
+    const dateStr = formatRuleFeedDate(rule);
     const folder = getRuleFolderName(rule);
     const isCandidate = isRuleCandidate(rule.id);
     const releaseConfig = getSigmaReleaseActionConfig(rule.releaseAction);
@@ -2067,6 +2067,14 @@ export function formatRuleDate(rule) {
         return `${months[parseInt(parts[1], 10) - 1]} ${parseInt(parts[2], 10)}, ${parts[0]}`;
     }
     return d;
+}
+
+export function formatRuleFeedDate(rule) {
+    const timestamp = getEffectiveDate(rule);
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
 // ---- Section 14: Rendering - Details Panel ----
@@ -2990,6 +2998,7 @@ window.renderSigmaList = renderSigmaList;
 window.renderSigmaCard = renderSigmaCard;
 window.loadMoreSigmaRules = loadMoreSigmaRules;
 window.formatRuleDate = formatRuleDate;
+window.formatRuleFeedDate = formatRuleFeedDate;
 window.renderSigmaDetails = renderSigmaDetails;
 window.sigmaFilterDebounceTimer = sigmaFilterDebounceTimer;
 window.bindSigmaEvents = bindSigmaEvents;
